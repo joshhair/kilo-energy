@@ -6,14 +6,14 @@ import { formatCurrency } from '../../../../lib/utils';
 type LeaderboardEntry = { userId: string; name: string; initials: string; deals: number; kW: number; payout: number };
 
 const RANK_GRADIENTS = ['from-yellow-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-amber-600 to-amber-800'];
-const RANK_BG = ['bg-yellow-900/20 border-yellow-600/30', 'bg-[var(--surface-card)]/40 border-[var(--border)]/30', 'bg-amber-900/20 border-amber-700/30'];
-const RANK_TEXT = ['text-yellow-400', 'text-[var(--text-secondary)]', 'text-amber-400'];
+const RANK_BG = ['bg-[var(--accent-amber-soft)] border-yellow-600/30', 'bg-[var(--surface-card)]/40 border-[var(--border)]/30', 'bg-[var(--accent-amber-soft)] border-amber-700/30'];
+const RANK_TEXT = ['text-[var(--accent-amber-text)]', 'text-[var(--text-secondary)]', 'text-[var(--accent-amber-text)]'];
 
 export function BlitzLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
   return (
     <div className="card-surface rounded-2xl p-4">
       <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-2">
-        <Trophy className="w-3.5 h-3.5 text-amber-400" /> Leaderboard
+        <Trophy className="w-3.5 h-3.5 text-[var(--accent-amber-text)]" /> Leaderboard
       </h3>
       <div className="space-y-2">
         {entries.slice(0, 5).map((rep, idx) => {

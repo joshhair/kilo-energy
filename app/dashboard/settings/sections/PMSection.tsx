@@ -147,7 +147,7 @@ export function PMSection() {
                   <p className="text-[var(--text-primary)] font-medium text-sm">{pm.firstName} {pm.lastName}</p>
                   <p className="text-[var(--text-muted)] text-xs">{pm.email}</p>
                 </div>
-                <button onClick={() => setConfirmDeletePmId(pm.id)} className="text-[var(--text-dim)] hover:text-red-400 transition-colors">
+                <button onClick={() => setConfirmDeletePmId(pm.id)} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -163,7 +163,7 @@ export function PMSection() {
                     disabled={!!pm.scopedInstallerId}
                     className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       pm[field]
-                        ? 'bg-emerald-900/30 text-emerald-300 border-[var(--accent-emerald-solid)]/30'
+                        ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30'
                         : 'bg-[var(--surface-card)]/50 text-[var(--text-muted)] border-[var(--border)]/50'
                     }`}
                     title={pm.scopedInstallerId ? 'Disabled while scoped to an installer' : undefined}
@@ -190,7 +190,7 @@ export function PMSection() {
                   ))}
                 </select>
                 {pm.scopedInstallerId && (
-                  <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                     Vendor PM — ops-only
                   </span>
                 )}

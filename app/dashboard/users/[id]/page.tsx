@@ -715,7 +715,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 ))}
               </select>
               {scopedInstallerId && (
-                <p className="text-[11px] text-amber-400">
+                <p className="text-[11px] text-[var(--accent-amber-text)]">
                   Vendor PM — can only see + edit this installer&apos;s projects. No payroll, training, reimbursements, or rep directory.
                 </p>
               )}
@@ -970,7 +970,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         {[
           { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-[var(--accent-amber-text)]',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
           ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-text)]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
         ].map((s) => (
           <div
@@ -988,7 +988,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
               )}
               {s.trend !== null && s.trend < 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400">
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-[var(--accent-red-text)]">
                   <TrendingDown className="w-2.5 h-2.5" /> {s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
                 </span>
               )}
@@ -1003,7 +1003,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <div className="card-surface rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-amber-400" />
+              <UserPlus className="w-4 h-4 text-[var(--accent-amber-text)]" />
               <h2 className="text-[var(--text-primary)] font-semibold text-sm">Trainer Assignment</h2>
             </div>
             {!assignment && !showTrainerPicker && (
@@ -1065,7 +1065,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     toast('Failed to remove trainer assignment', 'error');
                   });
                 }}
-                className="text-[var(--text-muted)] hover:text-red-400 transition-colors text-xs font-medium flex items-center gap-1"
+                className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors text-xs font-medium flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Remove
               </button>
@@ -1253,7 +1253,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <h2 className="text-[var(--text-primary)] font-semibold">Payment History</h2>
           <div className="flex gap-4 text-sm">
             <span className="text-[var(--accent-emerald-text)]">Paid: ${totalPaid.toLocaleString()}</span>
-            <span className="text-yellow-400">Pending: ${totalPending.toLocaleString()}</span>
+            <span className="text-[var(--accent-amber-text)]">Pending: ${totalPending.toLocaleString()}</span>
           </div>
         </div>
         <table className="w-full text-sm table-fixed">
@@ -1295,7 +1295,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </td>
                 <td className="px-5 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    entry.type === 'Bonus' ? 'bg-blue-900/50 text-[var(--accent-emerald-text)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'
+                    entry.type === 'Bonus' ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'
                   }`}>
                     {entry.type}
                   </span>
@@ -1563,7 +1563,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                         </td>
                         <td className="py-2.5 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums">${e.amount.toLocaleString()}</td>
                         <td className="py-2.5 pl-3">
-                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${e.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' : e.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{e.status}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${e.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' : e.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{e.status}</span>
                         </td>
                         <td className="py-2.5 pl-3 text-[var(--text-muted)] tabular-nums">{formatDate(e.date)}</td>
                       </tr>
@@ -1672,9 +1672,9 @@ function TrainerOverrideCard({
         <div>
           <h2 className="text-[var(--text-primary)] font-semibold">Trainer Override</h2>
           <p className="text-[var(--text-secondary)] text-sm mt-0.5">
-            Trainer: <span className="text-amber-400">{trainerName}</span>
+            Trainer: <span className="text-[var(--accent-amber-text)]">{trainerName}</span>
             <span className="text-[var(--text-dim)] mx-2">·</span>
-            Current rate: <span className="text-amber-400 font-semibold">${currentRate.toFixed(2)}/W</span>
+            Current rate: <span className="text-[var(--accent-amber-text)] font-semibold">${currentRate.toFixed(2)}/W</span>
             <span className="text-[var(--text-dim)] mx-2">·</span>
             {completedDeals} deal{completedDeals !== 1 ? 's' : ''} completed
           </p>
@@ -1723,14 +1723,14 @@ function TrainerOverrideCard({
             >
               {!editing ? (
                 <>
-                  <span className={`text-sm flex-1 ${isActive ? 'text-amber-300' : 'text-[var(--text-secondary)]'}`}>
+                  <span className={`text-sm flex-1 ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                     {dealRange}
                   </span>
-                  <span className={`font-semibold text-sm ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                  <span className={`font-semibold text-sm ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                     ${tier.ratePerW.toFixed(2)}/W
                   </span>
                   {isActive && (
-                    <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-lg">
+                    <span className="text-xs bg-amber-500/20 text-[var(--accent-amber-text)] px-2 py-0.5 rounded-lg">
                       Active
                     </span>
                   )}
@@ -1768,7 +1768,7 @@ function TrainerOverrideCard({
                   <button
                     onClick={() => removeTier(i)}
                     disabled={draftTiers.length <= 1}
-                    className="text-[var(--text-dim)] hover:text-red-400 transition-colors disabled:opacity-30"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors disabled:opacity-30"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1885,25 +1885,32 @@ function RepDetailSkeleton() {
   );
 }
 
-const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400'  },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400'  },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400'   },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400'    },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-green-300',   dot: 'bg-green-400'   },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400'     },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+const PHASE_HEX: Record<string, { solid: string; text: string }> = {
+  'New':             { solid: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)'    },
+  'Acceptance':      { solid: 'var(--accent-blue-solid)',    text: 'var(--accent-blue-text)'    },
+  'Site Survey':     { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Design':          { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Permitting':      { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Pending Install': { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Installed':       { solid: 'var(--accent-teal-solid)',    text: 'var(--accent-teal-text)'    },
+  'PTO':             { solid: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)' },
+  'Completed':       { solid: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)' },
+  'Cancelled':       { solid: 'var(--accent-red-solid)',     text: 'var(--accent-red-text)'     },
+  'On Hold':         { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
 };
 
 function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
+  const s = PHASE_HEX[phase] ?? { solid: 'var(--text-muted)', text: 'var(--text-secondary)' };
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={{
+        background: `color-mix(in srgb, ${s.solid} 14%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${s.solid} 30%, transparent)`,
+        color: s.text,
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.solid }} />
       {phase}
     </span>
   );
@@ -1911,7 +1918,7 @@ function PhaseBadge({ phase }: { phase: string }) {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
+  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 

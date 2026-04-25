@@ -64,8 +64,8 @@ export function SubDealerDashboard({
 
   const stats = [
     { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
-    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
+    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-[var(--accent-purple-text)]', accentGradient: 'from-purple-500 to-purple-400' },
+    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-[var(--accent-amber-text)]', accentGradient: 'from-yellow-500 to-yellow-400' },
     { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 

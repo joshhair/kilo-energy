@@ -130,7 +130,7 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
 
           {process.env.NODE_ENV === 'development' && this.state.error && (
-            <pre className="mt-4 text-xs text-red-400/70 max-w-lg overflow-auto text-left p-3 rounded-lg bg-red-500/5">
+            <pre className="mt-4 text-xs text-[var(--accent-red-text)]/70 max-w-lg overflow-auto text-left p-3 rounded-lg bg-red-500/5">
               {this.state.error.message}
             </pre>
           )}

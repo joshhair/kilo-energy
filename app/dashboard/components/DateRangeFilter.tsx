@@ -105,7 +105,7 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
           <button
             type="button"
             onClick={onClear}
-            className="px-2.5 py-1 text-xs rounded-lg border bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-red-500/50 hover:text-red-400 transition-colors"
+            className="px-2.5 py-1 text-xs rounded-lg border bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-red-500/50 hover:text-[var(--accent-red-text)] transition-colors"
           >
             Clear
           </button>

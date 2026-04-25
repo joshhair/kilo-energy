@@ -737,10 +737,10 @@ function UsersPageInner() {
         <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
-              <Mail className="w-4 h-4 text-amber-400" />
+              <Mail className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
             <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Pending Invitations</h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-[var(--accent-amber-text)] border border-amber-400/20">
               {pendingInvitations.length}
             </span>
           </div>
@@ -755,7 +755,7 @@ function UsersPageInner() {
                 style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <Clock className="w-4 h-4 text-amber-400/60 shrink-0" />
+                  <Clock className="w-4 h-4 text-[var(--accent-amber-text)]/60 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-[var(--text-primary)] font-medium truncate">{inv.emailAddress}</p>
                     <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
@@ -911,7 +911,7 @@ function UsersPageInner() {
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Deactivate sub-dealer"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1455,7 +1455,7 @@ function UsersPageInner() {
                         <span className="text-[var(--text-primary)] font-semibold flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-emerald-text)]' : 'text-red-400'}`}>
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
                               {deltaDeals > 0 ? '+' : ''}{deltaDeals}
                             </span>
                           )}
@@ -1464,7 +1464,7 @@ function UsersPageInner() {
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-[var(--text-primary)] font-semibold">{formatCompactKW(kwSold)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-[var(--text-primary)] font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-emerald-text)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
                 );
@@ -1704,7 +1704,7 @@ function UsersPageInner() {
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                       title="Deactivate rep"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

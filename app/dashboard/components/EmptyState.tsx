@@ -42,7 +42,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
   return (
     <div
       className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl"
-      style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}
+      style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}
     >
       {Icon && <Icon className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />}
       <div className="text-center">

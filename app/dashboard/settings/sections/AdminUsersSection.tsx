@@ -91,7 +91,7 @@ export function AdminUsersSection() {
               </div>
               <button
                 onClick={() => setConfirmDeleteId(admin.id)}
-                className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

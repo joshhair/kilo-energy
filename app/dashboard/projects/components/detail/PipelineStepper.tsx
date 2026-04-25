@@ -122,9 +122,9 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
           <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
             daysSinceSold > 30
               ? daysSinceSold > 60
-                ? 'bg-red-900/40 border border-red-500/20 text-red-300'
-                : 'bg-amber-900/40 border border-amber-500/20 text-amber-300'
-              : 'bg-blue-900/40 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-text)]'
+                ? 'bg-[var(--accent-red-soft)] border border-red-500/20 text-[var(--accent-red-text)]'
+                : 'bg-[var(--accent-amber-soft)] border border-amber-500/20 text-[var(--accent-amber-text)]'
+              : 'bg-[var(--accent-blue-soft)] border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-text)]'
           }`}>
             <Clock className="w-3 h-3" />
             {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
@@ -136,8 +136,8 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
           <span
             className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
               phase === 'Cancelled'
-                ? 'bg-red-900/40 border border-red-500/20 text-red-300'
-                : 'bg-yellow-900/40 border border-yellow-500/20 text-yellow-300'
+                ? 'bg-[var(--accent-red-soft)] border border-red-500/20 text-[var(--accent-red-text)]'
+                : 'bg-[var(--accent-amber-soft)] border border-yellow-500/20 text-[var(--accent-amber-text)]'
             }`}
           >
             {phase === 'Cancelled' ? 'Project Cancelled' : 'Project On Hold'}
@@ -166,15 +166,15 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
         <div className={`mt-3 px-3 py-2.5 rounded-xl border flex items-center gap-2 ${
           daysSinceSold > 30
             ? daysSinceSold > 60
-              ? 'bg-red-900/20 border-red-500/20'
-              : 'bg-amber-900/20 border-amber-500/20'
+              ? 'bg-[var(--accent-red-soft)] border-red-500/20'
+              : 'bg-[var(--accent-amber-soft)] border-amber-500/20'
             : 'bg-[var(--surface-card)]/40 border-[var(--border)]/40'
         }`}>
           <span className={`text-sm font-semibold ${
             daysSinceSold > 30
               ? daysSinceSold > 60
-                ? 'text-red-300'
-                : 'text-amber-300'
+                ? 'text-[var(--accent-red-text)]'
+                : 'text-[var(--accent-amber-text)]'
               : 'text-[var(--text-primary)]'
           }`}>
             Currently in: {phase}
@@ -198,13 +198,13 @@ export function PhaseBadge({ phase }: { phase: Phase }) {
   const completed = phase === 'Completed';
   const onHold = phase === 'On Hold';
   const cls = cancelled
-    ? 'bg-red-900/50 text-red-400'
+    ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)]'
     : completed
-    ? 'bg-green-900/50 text-green-400 ring-1 ring-green-500/30'
+    ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] ring-1 ring-green-500/30'
     : pto
-    ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]'
+    ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]'
     : onHold
-    ? 'bg-yellow-900/50 text-yellow-400'
-    : 'bg-blue-900/50 text-[var(--accent-emerald-text)]';
+    ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]'
+    : 'bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)]';
   return <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${cls}`}>{phase}{completed && ' ✓'}</span>;
 }

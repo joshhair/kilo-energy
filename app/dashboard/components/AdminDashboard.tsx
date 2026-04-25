@@ -551,7 +551,7 @@ export function AdminDashboard({
               className="flex items-center gap-2 w-full text-left group"
             >
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
-                <BarChart2 className="w-4 h-4 text-amber-400" />
+                <BarChart2 className="w-4 h-4 text-[var(--accent-amber-text)]" />
               </div>
               <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
               {insightsExpanded
@@ -583,7 +583,7 @@ export function AdminDashboard({
                           <td className="px-4 py-2.5 text-[var(--text-secondary)] tabular-nums">{inst.kW.toFixed(1)}</td>
                           <td className="px-4 py-2.5">
                             {inst.cancelled > 0 ? (
-                              <span className="text-red-400 text-xs font-medium">{inst.cancelled}</span>
+                              <span className="text-[var(--accent-red-text)] text-xs font-medium">{inst.cancelled}</span>
                             ) : (
                               <span className="text-[var(--text-dim)] text-xs">0</span>
                             )}
@@ -621,7 +621,7 @@ export function AdminDashboard({
               className="flex items-center gap-2 w-full text-left group"
             >
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
-                <AlertCircle className="w-4 h-4 text-red-400" />
+                <AlertCircle className="w-4 h-4 text-[var(--accent-red-text)]" />
               </div>
               <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons <span className="text-[var(--text-muted)] font-normal text-xs">(all time)</span></h2>
               <span className="text-[var(--text-muted)] text-xs mr-2">{cancelledProjects.length} cancelled</span>
@@ -636,7 +636,7 @@ export function AdminDashboard({
                   {reasonList.map(([reason, count]) => (
                     <div key={reason} className="flex items-center justify-between bg-[var(--surface-card)]/40 rounded-lg px-4 py-2">
                       <span className="text-[var(--text-secondary)] text-sm">{reason}</span>
-                      <span className="text-red-400 text-sm font-semibold tabular-nums">{count}</span>
+                      <span className="text-[var(--accent-red-text)] text-sm font-semibold tabular-nums">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -736,7 +736,7 @@ export function AdminDashboard({
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
                           <Link href={`/dashboard/projects/${proj.id}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors">{proj.customerName}</Link>
-                          {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
+                          {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/20">Sub-Dealer</span>}
                         </td>
                         {/* 2 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[var(--text-dim)]"> / {proj.setterName}</span> : ''}</td>
                         {/* 3 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{proj.installer}</td>

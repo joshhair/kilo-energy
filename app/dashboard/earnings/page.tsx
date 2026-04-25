@@ -338,7 +338,7 @@ function RepEarningsView() {
               onClick={() => setShowReimbModal(true)}
               className="flex items-center gap-2 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
             >
-              <Receipt className="w-4 h-4 text-violet-400" />
+              <Receipt className="w-4 h-4 text-[var(--accent-purple-text)]" />
               Request Reimbursement
             </button>
           </div>
@@ -403,7 +403,7 @@ function RepEarningsView() {
             </p>
             <Link
               href="/dashboard/new-deal"
-              className="inline-flex items-center gap-1.5 text-[var(--accent-emerald-text)] hover:text-emerald-300 text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)] text-sm font-semibold transition-colors"
             >
               Close a deal <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -438,9 +438,9 @@ function RepEarningsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Pending</span>
-            <TrendingUp className="w-4 h-4 text-yellow-400 shrink-0" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-yellow-400 animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-amber-text)] animate-count-up">
             ${totalPending.toLocaleString()}
           </p>
           <SparklineWithTooltip data={pendingMonthlyData} stroke="#eab308" />
@@ -470,9 +470,9 @@ function RepEarningsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ? `${monthFilterLabel} Reimbs` : 'Reimbursements'}</span>
-            <Receipt className="w-4 h-4 text-violet-400 shrink-0" />
+            <Receipt className="w-4 h-4 text-[var(--accent-purple-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-violet-400 animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-purple-text)] animate-count-up">
             ${approvedReimbs.toLocaleString()}
           </p>
           <SparklineWithTooltip data={reimbMonthlyData} stroke="#8b5cf6" />
@@ -504,7 +504,7 @@ function RepEarningsView() {
           <span className="inline-flex items-center gap-1.5 text-xs bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] px-3 py-1.5 rounded-full font-medium">
             Showing
           </span>
-          <span className="inline-flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full font-medium">
+          <span className="inline-flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 text-[var(--accent-blue-text)] px-3 py-1.5 rounded-full font-medium">
             {monthFilterLabel}
             <button onClick={() => setMonthFilter(null)} className="ml-0.5 hover:text-[var(--text-primary)] transition-colors" aria-label="Clear month filter">
               <X className="w-3 h-3" />
@@ -574,16 +574,16 @@ function RepEarningsView() {
                       <tr
                         key={row.entry.id}
                         style={!isReim ? ({ '--row-accent': getPayrollRowAccent(status) } as React.CSSProperties) : undefined}
-                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-violet-900/5' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
+                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-[var(--accent-purple-soft)]' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
                       >
                         <td className="px-5 py-3 text-[var(--text-primary)]">{name}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
                         <td className="px-5 py-3 text-xs">
-                          {isReim ? <span className="text-violet-400">Reimb.</span>
-                            : role.startsWith('Co-setter') ? <span className="text-sky-400">Co-setter</span>
+                          {isReim ? <span className="text-[var(--accent-purple-text)]">Reimb.</span>
+                            : role.startsWith('Co-setter') ? <span className="text-[var(--accent-cyan-text)]">Co-setter</span>
                             : role === 'Setter' ? <span className="text-[var(--accent-emerald-text)]">Setter</span>
-                            : role.startsWith('Co-closer') ? <span className="text-sky-400">Co-closer</span>
-                            : role.startsWith('Trainer override') ? <span className="text-amber-400">Trainer</span>
+                            : role.startsWith('Co-closer') ? <span className="text-[var(--accent-cyan-text)]">Co-closer</span>
+                            : role.startsWith('Trainer override') ? <span className="text-[var(--accent-amber-text)]">Trainer</span>
                             : <span className="text-[var(--accent-emerald-text)]">Closer</span>}
                         </td>
                         <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
@@ -716,7 +716,7 @@ function RepEarningsView() {
               <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Submission History</h2>
               <button onClick={() => setShowReimbModal(true)}
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors">
-                <Receipt className="w-3.5 h-3.5 text-violet-400" />
+                <Receipt className="w-3.5 h-3.5 text-[var(--accent-purple-text)]" />
                 New Request
               </button>
             </div>
@@ -1048,9 +1048,9 @@ function AdminFinancialsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Pending Payroll</span>
-            <TrendingUp className="w-4 h-4 text-yellow-400" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]" />
           </div>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-yellow-400">${totalPending.toLocaleString()}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-amber-text)]">${totalPending.toLocaleString()}</p>
           {pendingPayrollCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingPayrollCount} entries</p>}
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
@@ -1067,9 +1067,9 @@ function AdminFinancialsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Reimbs Pending</span>
-            <Receipt className="w-4 h-4 text-violet-400" />
+            <Receipt className="w-4 h-4 text-[var(--accent-purple-text)]" />
           </div>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-violet-400">${pendingReimbs.toLocaleString()}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-purple-text)]">${pendingReimbs.toLocaleString()}</p>
           {pendingReimbCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingReimbCount} requests</p>}
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
@@ -1106,7 +1106,7 @@ function AdminFinancialsView() {
               </select>
               {filteredPayroll.some((e) => e.status === 'Pending') && (
                 <button onClick={() => setMarkAllConfirmOpen(true)}
-                  className="ml-auto flex items-center gap-1.5 bg-emerald-900/30 hover:bg-emerald-800/40 border border-emerald-700/40 text-emerald-300 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors">
+                  className="ml-auto flex items-center gap-1.5 bg-[var(--accent-emerald-soft)] hover:bg-emerald-800/40 border border-emerald-700/40 text-[var(--accent-emerald-text)] font-medium px-3 py-1.5 rounded-lg text-sm transition-colors">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Mark All Pending Paid
                 </button>
@@ -1146,7 +1146,7 @@ function AdminFinancialsView() {
                         <td className="px-5 py-3">
                           {e.status === 'Pending' && (
                             <button onClick={() => markPaid(e.id)}
-                              className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
+                              className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-soft)] hover:bg-[var(--accent-emerald-soft)] border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Mark Paid
                             </button>
@@ -1241,12 +1241,12 @@ function AdminFinancialsView() {
                             {r.status === 'Pending' && (
                               <>
                                 <button onClick={() => approveReim(r.id)}
-                                  className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
+                                  className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-soft)] hover:bg-[var(--accent-emerald-soft)] border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Approve
                                 </button>
                                 <button onClick={() => rejectReim(r.id)}
-                                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 px-2 py-1 rounded-lg transition-colors">
+                                  className="flex items-center gap-1 text-xs text-[var(--accent-red-text)] hover:text-[var(--accent-red-text)] bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-700/30 px-2 py-1 rounded-lg transition-colors">
                                   <XCircle className="w-3.5 h-3.5" />
                                   Reject
                                 </button>
@@ -1266,7 +1266,7 @@ function AdminFinancialsView() {
                             )}
                             <button onClick={() => deleteReim(r.id)}
                               title="Permanently delete — typo cleanup only"
-                              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-900/10 hover:bg-red-900/30 border border-red-900/30 px-2 py-1 rounded-lg transition-colors">
+                              className="flex items-center gap-1 text-xs text-[var(--accent-red-text)] hover:text-[var(--accent-red-text)] bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-900/30 px-2 py-1 rounded-lg transition-colors">
                               Delete
                             </button>
                           </div>
@@ -1348,9 +1348,9 @@ function AdminFinancialsView() {
                         </div>
                       </td>
                       <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
-                      <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
+                      <td className="px-5 py-3 text-[var(--accent-amber-text)] font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
                       <td className="px-5 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmt$(s.draft)}</td>
-                      <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
+                      <td className="px-5 py-3 text-[var(--accent-purple-text)] whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
                       <td className="px-5 py-3 text-[var(--text-primary)] font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
                     </tr>
                   ))}

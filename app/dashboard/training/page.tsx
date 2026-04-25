@@ -78,10 +78,10 @@ type StatusPill = {
 };
 
 const STATUS_PILLS: Record<AdminStatus, StatusPill> = {
-  training:  { key: 'training',  label: 'In Training', text: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
+  training:  { key: 'training',  label: 'In Training', text: 'text-[var(--accent-emerald-text)]', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
   residuals: { key: 'residuals', label: 'Residuals',   text: 'text-[var(--text-secondary)]', bg: 'bg-slate-500/10', border: 'border-slate-500/30', dot: 'bg-slate-400' },
   maxed:     { key: 'maxed',     label: 'Maxed',       text: 'text-[var(--text-muted)]', bg: 'bg-[var(--surface-card)]/40', border: 'border-[var(--border-subtle)]', dot: 'bg-[var(--text-dim)]' },
-  paused:    { key: 'paused',    label: 'Paused',      text: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
+  paused:    { key: 'paused',    label: 'Paused',      text: 'text-[var(--accent-amber-text)]', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
 };
 
 /**
@@ -122,8 +122,8 @@ function StatusPillBadge({ status }: { status: AdminStatus }) {
 type PillStyle = { gradient: string; border: string; shadow: string; text: string; dot: string };
 
 const PAYROLL_PILL: Record<string, PillStyle> = {
-  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
+  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   Draft:   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',    border: 'border-[var(--border)]/30',   shadow: '',                                       text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
@@ -740,7 +740,7 @@ function TrainingPageInner() {
         <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
         <div className="card-surface rounded-2xl p-8 text-center">
           <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
-            <GraduationCap className="w-8 h-8 text-amber-400" />
+            <GraduationCap className="w-8 h-8 text-[var(--accent-amber-text)]" />
           </div>
           <h2 className="text-[var(--text-primary)] text-lg font-bold mb-2">No Trainees Assigned</h2>
           <p className="text-[var(--text-secondary)] text-sm max-w-md mx-auto mb-4">
@@ -778,7 +778,7 @@ function TrainingPageInner() {
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
-              <GraduationCap className="w-5 h-5 text-amber-400" />
+              <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
               Trainer Hub
@@ -819,7 +819,7 @@ function TrainingPageInner() {
               <div className="mt-4 ml-[52px] grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
                 <div className="card-surface rounded-xl p-3 bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime Paid</p>
-                  <p className="text-xl font-bold text-amber-400 tabular-nums mt-1">${lifetimeTrainerPaid.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-[var(--accent-amber-text)] tabular-nums mt-1">${lifetimeTrainerPaid.toLocaleString()}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">org-wide trainer override</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
@@ -844,7 +844,7 @@ function TrainingPageInner() {
                       >
                         {topTrainer.name}
                       </button>
-                      <p className="text-[10px] text-amber-400 tabular-nums mt-0.5">${topTrainerAmount.toLocaleString()} paid</p>
+                      <p className="text-[10px] text-[var(--accent-amber-text)] tabular-nums mt-0.5">${topTrainerAmount.toLocaleString()} paid</p>
                     </>
                   ) : (
                     <p className="text-sm text-[var(--text-muted)] mt-1">—</p>
@@ -944,7 +944,7 @@ function TrainingPageInner() {
           return (
             <div className="card-surface rounded-2xl p-5 mb-5 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border-amber-500/20">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-base font-bold flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-[var(--accent-amber-text)] flex items-center justify-center text-base font-bold flex-shrink-0">
                   {getInitials(trainerRep.name)}
                 </div>
                 <div className="flex-1 min-w-[200px]">
@@ -956,16 +956,16 @@ function TrainingPageInner() {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
                     <span><span className="text-[var(--text-primary)] font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
-                    {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-amber-400 font-semibold">{active}</span> training</span></>}
-                    {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-cyan-400 font-semibold">{residuals}</span> residuals</span></>}
+                    {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-amber-text)] font-semibold">{active}</span> training</span></>}
+                    {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-cyan-text)] font-semibold">{residuals}</span> residuals</span></>}
                     {paused > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-slate-400 font-semibold">{paused}</span> paused</span></>}
-                    {maxed > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-emerald-400 font-semibold">{maxed}</span> maxed</span></>}
+                    {maxed > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-emerald-text)] font-semibold">{maxed}</span> maxed</span></>}
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                   <div className="text-right">
                     <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime earned</p>
-                    <p className="text-xl font-bold text-amber-400 tabular-nums">${lifetimeEarned.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-[var(--accent-amber-text)] tabular-nums">${lifetimeEarned.toLocaleString()}</p>
                     {pendingEarnings > 0 && (
                       <p className="text-[11px] text-[var(--text-muted)] tabular-nums">+${pendingEarnings.toLocaleString()} pending</p>
                     )}
@@ -1033,7 +1033,7 @@ function TrainingPageInner() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0 transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
-                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-[var(--accent-amber-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             {getInitials(trainerName)}
                           </div>
                           <Link
@@ -1051,12 +1051,12 @@ function TrainingPageInner() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {activeCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/30">
                               {activeCount} training
                             </span>
                           )}
                           {residualsCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-[var(--accent-cyan-text)] border border-cyan-500/30">
                               {residualsCount} residuals
                             </span>
                           )}
@@ -1066,14 +1066,14 @@ function TrainingPageInner() {
                             </span>
                           )}
                           {maxedCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-[var(--accent-emerald-text)] border border-emerald-500/30">
                               {maxedCount} maxed
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-[var(--text-muted)] text-xs">—</td>
-                      <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
+                      <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">
                         ${avgRate.toFixed(2)}/W <span className="text-[10px] text-[var(--text-muted)] font-normal">avg</span>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums text-xs">
@@ -1125,7 +1125,7 @@ function TrainingPageInner() {
                                 title={`Tier ${i + 1}: up to ${rangeEnd} deals`}
                                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border ${
                                   isActive
-                                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                                    ? 'bg-amber-500/15 text-[var(--accent-amber-text)] border-amber-500/40'
                                     : 'bg-[var(--surface-card)]/40 text-[var(--text-muted)] border-[var(--border-subtle)]'
                                 }`}
                               >
@@ -1135,7 +1135,7 @@ function TrainingPageInner() {
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
+                      <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">
                         ${row.rate.toFixed(2)}/W
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-right">
@@ -1220,7 +1220,7 @@ function TrainingPageInner() {
                             <div className="border-t border-[var(--border-subtle)] my-1" />
                             <button
                               onClick={() => { setOpenMenuId(null); deleteAssignment(a.id); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--accent-red-text)] hover:bg-red-500/10 hover:text-[var(--accent-red-text)] transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete assignment
                             </button>
@@ -1294,7 +1294,7 @@ function TrainingPageInner() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
-            <GraduationCap className="w-5 h-5 text-amber-400" />
+            <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
             Trainer Hub
@@ -1329,9 +1329,9 @@ function TrainingPageInner() {
       {activeTab === 'overview' && (
         <div key="overview" className="animate-tab-enter space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-amber-400" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-amber-400/50" />} />
-            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-orange-400" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-orange-400/50" />} />
-            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-yellow-400" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-yellow-400/50" />} />
+            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-[var(--accent-amber-text)]" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
             <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
           </div>
 
@@ -1339,7 +1339,7 @@ function TrainingPageInner() {
             <h3 className="text-[var(--text-primary)] font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-emerald-text)]" value={fmt$(totalEarned)} />
-              <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-yellow-400" value={fmt$(pendingAmount)} />
+              <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-[var(--accent-amber-text)]" value={fmt$(pendingAmount)} />
               <BreakdownRow color="bg-[var(--text-muted)]" label="Draft" textColor="text-[var(--text-secondary)]" value={fmt$(draftAmount)} />
             </div>
           </div>
@@ -1438,7 +1438,7 @@ function TrainingPageInner() {
                   key={s}
                   onClick={() => setPaymentStatusFilter(s)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    paymentStatusFilter === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    paymentStatusFilter === s ? 'bg-amber-500/15 text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {s === 'all' ? 'All' : s}
@@ -1474,7 +1474,7 @@ function TrainingPageInner() {
                       >
                         <td className="px-4 py-3 text-[var(--text-primary)] text-sm">{entry.customerName || '—'}</td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan-text)] transition-colors">{t.name}</Link> : '—'; })()}</td>
-                        <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">{fmt$(entry.amount)}</td>
+                        <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">{fmt$(entry.amount)}</td>
                         <td className="px-4 py-3 text-center"><StatusBadge status={entry.status} /></td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                       </tr>
@@ -1535,11 +1535,11 @@ function TrainingPageInner() {
                         >
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
-                              <span className={`text-sm font-semibold ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                              <span className={`text-sm font-semibold ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                                 Tier {tierIdx + 1}
                               </span>
                               {isActive && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/25">
                                   ACTIVE
                                 </span>
                               )}
@@ -1548,7 +1548,7 @@ function TrainingPageInner() {
                           <td className={`px-3 py-2.5 text-sm ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {rangeLabel}
                           </td>
-                          <td className={`px-3 py-2.5 text-right text-sm font-bold tabular-nums ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                          <td className={`px-3 py-2.5 text-right text-sm font-bold tabular-nums ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                             ${tier.ratePerW.toFixed(2)}/W
                           </td>
                         </tr>
@@ -1559,7 +1559,7 @@ function TrainingPageInner() {
               </div>
 
               <div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                <GraduationCap className="w-3.5 h-3.5 text-amber-400/60" />
+                <GraduationCap className="w-3.5 h-3.5 text-[var(--accent-amber-text)]/60" />
                 <span>
                   {t.traineeName} has {t.dealCount} deal{t.dealCount !== 1 ? 's' : ''} —
                   currently at ${t.currentRate.toFixed(2)}/W
@@ -1661,7 +1661,7 @@ function TraineeSearch({
             key={s}
             onClick={() => onSort(s)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              sort === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              sort === s ? 'bg-amber-500/15 text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1696,8 +1696,8 @@ function ActiveTraineeCard({
 
   const roleBadgeColor =
     traineeRole === 'closer' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
-    : traineeRole === 'setter' ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
-    : 'text-teal-400 bg-teal-500/10 border-teal-500/20';
+    : traineeRole === 'setter' ? 'text-[var(--accent-purple-text)] bg-purple-500/10 border-purple-500/20'
+    : 'text-[var(--accent-teal-text)] bg-teal-500/10 border-teal-500/20';
 
   const activeProjects = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && p.phase !== 'Completed');
 
@@ -1727,7 +1727,7 @@ function ActiveTraineeCard({
           <button
             onClick={onGraduate}
             title="Mark as graduated — moves this trainee to Residuals"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-emerald-text)] hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             Mark Graduated
@@ -1744,7 +1744,7 @@ function ActiveTraineeCard({
 
       <div className="mt-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-amber-400/80 text-xs font-semibold">
+          <span className="text-[var(--accent-amber-text)]/80 text-xs font-semibold">
             Tier {activeTierIndex + 1}: ${currentRate.toFixed(2)}/W
           </span>
           {nextThreshold ? (
@@ -1832,7 +1832,7 @@ function ResidualTraineeCard({
           <button
             onClick={onResume}
             title="Resume training — move back to Active Trainees"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-amber-text)] hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Resume Training
@@ -1844,7 +1844,7 @@ function ResidualTraineeCard({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Current Rate</p>
-          <p className="text-amber-400 font-bold tabular-nums">${currentRate.toFixed(2)}/W</p>
+          <p className="text-[var(--accent-amber-text)] font-bold tabular-nums">${currentRate.toFixed(2)}/W</p>
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Total Earned</p>
@@ -1881,7 +1881,7 @@ function ResidualTraineeCard({
               <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-[var(--surface-card)]/30">
                 <span className="text-sm text-[var(--text-secondary)] truncate">{e.customerName || e.notes || '—'}</span>
                 <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{formatDate(e.date)}</span>
-                <span className="text-sm text-amber-400 font-semibold tabular-nums whitespace-nowrap">{fmt$(e.amount)}</span>
+                <span className="text-sm text-[var(--accent-amber-text)] font-semibold tabular-nums whitespace-nowrap">{fmt$(e.amount)}</span>
                 <StatusBadge status={e.status} />
               </div>
             ))}
@@ -2038,13 +2038,13 @@ function MilestoneDot({ label, paid }: { label: string; paid: boolean }) {
     <div className={`rounded-xl px-3 py-2 border text-center ${paid ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--surface-card)]/40 border-[var(--border-subtle)]'}`}>
       <div className="flex items-center justify-center gap-1.5 mb-0.5">
         {paid ? (
-          <Check className="w-3 h-3 text-emerald-400" />
+          <Check className="w-3 h-3 text-[var(--accent-emerald-text)]" />
         ) : (
           <span className="w-2 h-2 rounded-full bg-[var(--text-dim)]" />
         )}
-        <span className={`text-xs font-semibold ${paid ? 'text-emerald-300' : 'text-[var(--text-secondary)]'}`}>{label}</span>
+        <span className={`text-xs font-semibold ${paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`}>{label}</span>
       </div>
-      <p className={`text-[10px] ${paid ? 'text-emerald-400/80' : 'text-[var(--text-muted)]'}`}>
+      <p className={`text-[10px] ${paid ? 'text-[var(--accent-emerald-text)]/80' : 'text-[var(--text-muted)]'}`}>
         {paid ? 'Paid' : 'Pending'}
       </p>
     </div>
@@ -2212,7 +2212,7 @@ function NewAssignmentModal({
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/15">
-              <GraduationCap className="w-6 h-6 text-amber-400" />
+              <GraduationCap className="w-6 h-6 text-[var(--accent-amber-text)]" />
             </div>
             <div>
               <h2 className="text-[var(--text-primary)] font-semibold text-lg">New Assignment</h2>
@@ -2309,7 +2309,7 @@ function NewAssignmentModal({
                   {tiers.length > 1 && (
                     <button
                       onClick={() => removeTier(idx)}
-                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
+                      className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
                       title="Remove tier"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2320,7 +2320,7 @@ function NewAssignmentModal({
             </div>
             <button
               onClick={addTier}
-              className="mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+              className="mt-2 text-xs text-[var(--accent-amber-text)] hover:text-[var(--accent-amber-text)] transition-colors flex items-center gap-1"
             >
               <Plus className="w-3 h-3" /> Add tier
             </button>
@@ -2332,7 +2332,7 @@ function NewAssignmentModal({
               {firstTier.cap ? (
                 <>
                   Next {firstTier.cap} deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
-                  <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W.
+                  <span className="text-[var(--accent-amber-text)] font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W.
                   {secondTier && (
                     <> After cap, falls back to ${secondTier.rate.toFixed(2)}/W{secondTier.cap === null ? ' perpetuity' : ` for ${secondTier.cap} deals`}.</>
                   )}
@@ -2340,7 +2340,7 @@ function NewAssignmentModal({
               ) : (
                 <>
                   All deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
-                  <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W perpetuity.
+                  <span className="text-[var(--accent-amber-text)] font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W perpetuity.
                 </>
               )}
               {' '}Rate kicks in on M2 + M3 per installer pay schedule.
@@ -2349,7 +2349,7 @@ function NewAssignmentModal({
 
           {/* Error */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300 flex items-start gap-2">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-[var(--accent-red-text)] flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -2613,7 +2613,7 @@ function BackfillWizard({
             {assignment.tiers.map((tier, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border bg-amber-500/15 text-amber-300 border-amber-500/40"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border bg-amber-500/15 text-[var(--accent-amber-text)] border-amber-500/40"
               >
                 ${tier.ratePerW.toFixed(2)}/W
                 <span className="opacity-60">{tier.upToDeal === null ? 'perpetuity' : `cap ${tier.upToDeal}`}</span>
@@ -2643,7 +2643,7 @@ function BackfillWizard({
                     key={key}
                     onClick={() => setStatusFilter(key)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      statusFilter === key ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                      statusFilter === key ? 'bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {label}
@@ -2702,7 +2702,7 @@ function BackfillWizard({
                             </td>
                             <td className="px-3 py-2 text-center">
                               {hasTrainer ? (
-                                <span className="text-amber-400 text-[10px] font-medium">Yes</span>
+                                <span className="text-[var(--accent-amber-text)] text-[10px] font-medium">Yes</span>
                               ) : (
                                 <span className="text-[var(--text-dim)] text-[10px]">No</span>
                               )}
@@ -2743,18 +2743,18 @@ function BackfillWizard({
                 <h4 className="text-[var(--text-primary)] font-semibold text-sm">Preview</h4>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Will create <span className="text-[var(--text-primary)] font-medium">{preview.entries.length}</span> Trainer PayrollEntries totaling{' '}
-                  <span className="text-amber-400 font-medium">${(preview.m2Total + preview.m3Total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[var(--accent-amber-text)] font-medium">${(preview.m2Total + preview.m3Total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M2 Paid</p>
                     <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m2Count} entries</p>
-                    <p className="text-amber-400 text-sm tabular-nums">${preview.m2Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[var(--accent-amber-text)] text-sm tabular-nums">${preview.m2Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M3 Paid</p>
                     <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m3Count} entries</p>
-                    <p className="text-amber-400 text-sm tabular-nums">${preview.m3Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[var(--accent-amber-text)] text-sm tabular-nums">${preview.m3Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
 
@@ -2764,12 +2764,12 @@ function BackfillWizard({
                     {preview.entries.map((e, i) => (
                       <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-[var(--border-subtle)]/50">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${e.milestone === 'M2' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-blue-500/10 text-blue-300'}`}>{e.milestone}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${e.milestone === 'M2' ? 'bg-emerald-500/10 text-[var(--accent-emerald-text)]' : 'bg-blue-500/10 text-[var(--accent-blue-text)]'}`}>{e.milestone}</span>
                           <span className="text-[var(--text-secondary)] truncate">{e.customerName}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-[var(--text-muted)] tabular-nums">${e.rate.toFixed(2)}/W</span>
-                          <span className="text-amber-400 font-medium tabular-nums">${e.amount.toFixed(2)}</span>
+                          <span className="text-[var(--accent-amber-text)] font-medium tabular-nums">${e.amount.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
@@ -2811,13 +2811,13 @@ function BackfillWizard({
           {step === 'done' && commitResult && (
             <div className="text-center py-12 space-y-4">
               <div className="inline-flex p-4 rounded-2xl bg-emerald-500/10">
-                <CheckCircle className="w-12 h-12 text-emerald-400" />
+                <CheckCircle className="w-12 h-12 text-[var(--accent-emerald-text)]" />
               </div>
               <h3 className="text-[var(--text-primary)] text-lg font-bold">Backfill Complete</h3>
               <p className="text-[var(--text-secondary)] text-sm">
                 Created <span className="text-[var(--text-primary)] font-medium">{commitResult.created}</span> trainer entries
                 {commitResult.skipped.length > 0 && (
-                  <>, skipped <span className="text-amber-400 font-medium">{commitResult.skipped.length}</span></>
+                  <>, skipped <span className="text-[var(--accent-amber-text)] font-medium">{commitResult.skipped.length}</span></>
                 )}
               </p>
               <button

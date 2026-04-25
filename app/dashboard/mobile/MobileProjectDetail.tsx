@@ -122,7 +122,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         Project not found.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back to Projects</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back to Projects</button>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     return (
       <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
@@ -871,16 +871,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries));
         if (eligiblePaidEntries.length === 0) return null;
         return (
-          <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+          <div className="flex items-center justify-between gap-3 bg-[var(--accent-amber-soft)] border border-amber-500/30 rounded-xl p-4">
             <div>
-              <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+              <p className="text-[var(--accent-amber-text)] text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
                 {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback.
               </p>
             </div>
             <button
               onClick={() => setShowRecordChargeback(true)}
-              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 active:bg-amber-500/30 text-amber-300 border border-amber-500/40"
+              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 active:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/40"
             >
               Record Chargeback
             </button>

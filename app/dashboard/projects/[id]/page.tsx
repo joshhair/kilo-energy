@@ -631,7 +631,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl md:text-4xl font-black text-[var(--text-primary)] tracking-tight">{project.customerName}</h1>
             {project.flagged && (
-              <span className="flex items-center gap-1 bg-red-900/40 border border-red-500/30 text-red-400 text-xs px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-xs px-2 py-0.5 rounded-full">
                 <AlertTriangle className="w-3 h-3" />
                 Flagged
               </span>
@@ -648,7 +648,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={openEditModal}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] hover:bg-blue-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-blue-soft)] transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
@@ -657,7 +657,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               onClick={handleFlag}
               className={`flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border transition-colors ${
                 project.flagged
-                  ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
+                  ? 'border-red-500/40 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)]'
                   : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
               }`}
             >
@@ -675,7 +675,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
               >
                 Cancel
               </button>
@@ -683,7 +683,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -702,7 +702,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {(currentRepId === project.repId) && project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
+                className="bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
               >
                 Cancel Project
               </button>
@@ -836,8 +836,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                        entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                        entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                        entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                        entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                         'bg-[var(--border)] text-[var(--text-secondary)]'
                       }`}>{entry.status}</span>
                       <span className="text-[var(--accent-emerald-text)] font-bold">${entry.amount.toLocaleString()}</span>
@@ -863,8 +863,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                      entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                      entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                      entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                       'bg-[var(--border)] text-[var(--text-secondary)]'
                     }`}>
                       {entry.status}
@@ -900,7 +900,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 {expM3 > 0 && (
                   <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                     <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
-                    <p className="text-teal-400 font-bold">${expM3.toLocaleString()}</p>
+                    <p className="text-[var(--accent-teal-text)] font-bold">${expM3.toLocaleString()}</p>
                   </div>
                 )}
               </div>
@@ -936,7 +936,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </span>
             )}
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Kilo cost: <span className="text-purple-300 font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
+              Kilo cost: <span className="text-[var(--accent-purple-text)] font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
             </span>
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
               Sold: <span className="text-[var(--text-primary)] font-semibold">${project.netPPW.toFixed(3)}/W</span>
@@ -1009,8 +1009,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
                             <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
@@ -1050,8 +1050,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
                             <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
@@ -1091,8 +1091,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                            entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                            entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                            entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                             'bg-[var(--border)] text-[var(--text-secondary)]'
                           }`}>{entry.status}</span>
                           <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
@@ -1121,8 +1121,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                          entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                          entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                          entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                           'bg-[var(--border)] text-[var(--text-secondary)]'
                         }`}>{entry.status}</span>
                         <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
@@ -1140,16 +1140,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               if (eligiblePaidEntries.length === 0) return null;
               return (
                 <div className="border-t border-[var(--border-subtle)] pt-4">
-                  <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between gap-3 bg-[var(--accent-amber-soft)] border border-amber-500/30 rounded-xl p-4">
                     <div>
-                      <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+                      <p className="text-[var(--accent-amber-text)] text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
                       <p className="text-[var(--text-muted)] text-xs mt-0.5">
                         {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback. Record a clawback so payroll totals stay net-correct.
                       </p>
                     </div>
                     <button
                       onClick={() => setShowRecordChargeback(true)}
-                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors"
+                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/40 transition-colors"
                     >
                       Record Chargeback
                     </button>
@@ -1179,13 +1179,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={toggle}
                       className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
                         paid
-                          ? 'bg-emerald-900/30 text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30 hover:bg-emerald-900/40'
+                          ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30 hover:bg-[var(--accent-emerald-soft)]'
                           : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
                       }`}
                       title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
                     >
                       <span>{stage}</span>
-                      <span className={paid ? 'text-[var(--accent-emerald-text)]' : 'text-yellow-400'}>
+                      <span className={paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}>
                         {paid ? 'Paid' : 'Pending'}
                       </span>
                     </button>
@@ -1239,7 +1239,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)', border: '1px solid rgba(245,158,11,0.2)' }}>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
-            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
+            <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
               Admin · PM Only
             </span>
           </div>
@@ -1268,7 +1268,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-900/30">
+                <div className="p-2 rounded-lg bg-[var(--accent-blue-soft)]">
                   <Pencil className="w-5 h-5 text-[var(--accent-emerald-text)]" />
                 </div>
                 <h2 className="text-[var(--text-primary)] font-semibold">Edit Project</h2>
@@ -1289,7 +1289,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
                 />
-                {editErrors.installer && <p className="text-red-400 text-xs mt-1">{editErrors.installer}</p>}
+                {editErrors.installer && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.installer}</p>}
               </div>
 
               {/* SolarTech Product — shown only when installer is SolarTech */}
@@ -1348,14 +1348,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <input type="number" step="0.1" value={editVals.kWSize}
                     onChange={(e) => { setEditVals((v) => ({ ...v, kWSize: e.target.value })); setEditErrors((prev) => ({ ...prev, kWSize: '' })); }}
                     className={`w-full bg-[var(--surface-card)] border ${editErrors.kWSize ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
-                  {editErrors.kWSize && <p className="text-red-400 text-xs mt-1">{editErrors.kWSize}</p>}
+                  {editErrors.kWSize && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.kWSize}</p>}
                 </div>
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
                   <input type="number" step="0.01" value={editVals.netPPW}
                     onChange={(e) => { setEditVals((v) => ({ ...v, netPPW: e.target.value })); setEditErrors((prev) => ({ ...prev, netPPW: '' })); }}
                     className={`w-full bg-[var(--surface-card)] border ${editErrors.netPPW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
-                  {editErrors.netPPW && <p className="text-red-400 text-xs mt-1">{editErrors.netPPW}</p>}
+                  {editErrors.netPPW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.netPPW}</p>}
                 </div>
               </div>
 
@@ -1417,7 +1417,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       type="button"
                       onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '' }))}
-                      className="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors"
                     >
                       Clear
                     </button>
@@ -1461,7 +1461,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
                 {editVals.trainerId && editVals.trainerRate.trim() === '' && (
-                  <p className="text-amber-300 text-xs mt-2">
+                  <p className="text-[var(--accent-amber-text)] text-xs mt-2">
                     Rate is required — without a rate the trainer override calculates as $0.
                     Typical: $0.10–$0.20 per watt.
                   </p>
@@ -1475,7 +1475,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <input type="date" value={editVals.soldDate}
                   onChange={(e) => { setEditVals((v) => ({ ...v, soldDate: e.target.value })); setEditErrors((prev) => ({ ...prev, soldDate: '' })); }}
                   className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
-                {editErrors.soldDate && <p className="text-red-400 text-xs mt-1">{editErrors.soldDate}</p>}
+                {editErrors.soldDate && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.soldDate}</p>}
               </div>
 
               {/* Notes */}
@@ -1501,7 +1501,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideCloserPerW: '' })); }}
                         className={`w-full bg-[var(--border)] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
-                      {editErrors.overrideCloserPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
+                      {editErrors.overrideCloserPerW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
                     </div>
                     <div>
                       <label className="text-[var(--text-muted)] text-xs block mb-1">Setter $/W</label>
@@ -1518,7 +1518,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideKiloPerW: '' })); }}
                         className={`w-full bg-[var(--border)] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
-                      {editErrors.overrideKiloPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
+                      {editErrors.overrideKiloPerW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
                     </div>
                   </div>
                 )}
@@ -1537,9 +1537,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 const overrideKilo = parseFloat(editVals.overrideKiloPerW);
                 if (isNaN(overrideCloser) || isNaN(overrideKilo)) {
                   return (
-                    <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                    <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
                       <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
-                      <p className="text-amber-400 text-xs flex items-center gap-1">
+                      <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> Enter valid Closer $/W and Kilo $/W values to see the commission preview.
                       </p>
                     </div>
@@ -1553,9 +1553,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 };
               } else if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) {
                 return (
-                  <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                  <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
                     <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
-                    <p className="text-amber-400 text-xs flex items-center gap-1">
+                    <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> A SolarTech product selection is required to preview commission.
                     </p>
                   </div>
@@ -1592,37 +1592,37 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const setterM3 = editVals.setterId && previewHasM3 ? Math.round(Math.max(0, setterTotal - setterM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
 
               return (
-                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
+                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-[var(--accent-amber-soft)] border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
                   {editVals.setterId ? (
                     <div className={`grid ${previewHasM3 ? 'grid-cols-6' : 'grid-cols-4'} gap-3 text-center`}>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${setterM1.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM1.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${setterM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${setterM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : (
@@ -1633,22 +1633,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
                     </div>
                     {previewHasM3 && (
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
                       </div>
                     )}
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
                     </div>
                   </div>
                   )}
                   {belowBaseline && (
-                    <p className="text-amber-400 text-xs mt-2 flex items-center gap-1">
+                    <p className="text-[var(--accent-amber-text)] text-xs mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> PPW is below the installer baseline (${previewBaseline.closerPerW}/W)
                     </p>
                   )}
@@ -1750,7 +1750,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <AlertTriangle className="w-4 h-4 text-[var(--accent-red-text)]" />
                 <h2 className="text-[var(--text-primary)] font-bold text-base">Cancel Project</h2>
               </div>
               <button onClick={() => setShowCancelReasonModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">

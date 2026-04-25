@@ -61,8 +61,8 @@ export function RepCommissionCard({
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' :
-                  entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                  entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                  entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                   'bg-[var(--border)] text-[var(--text-secondary)]'
                 }`}>{entry.status}</span>
                 <span className="text-[var(--accent-emerald-text)] font-bold text-sm">

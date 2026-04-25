@@ -47,7 +47,7 @@ function validateField(field: string, value: string): string {
 
 function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
   return errors[field] ? (
-    <p id={`${field}-error`} className="text-red-400 text-xs mt-1" role="alert">
+    <p id={`${field}-error`} className="text-[var(--accent-red-text)] text-xs mt-1" role="alert">
       {errors[field]}
     </p>
   ) : null;
@@ -130,7 +130,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
       <div ref={panelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-2">
-            <Receipt className="w-4 h-4 text-violet-400" />
+            <Receipt className="w-4 h-4 text-[var(--accent-purple-text)]" />
             <h2 className="text-[var(--text-primary)] font-bold text-base">Request Reimbursement</h2>
           </div>
           <button onClick={onClose} aria-label="Close reimbursement modal" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">

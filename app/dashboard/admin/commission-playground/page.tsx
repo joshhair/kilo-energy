@@ -135,7 +135,7 @@ export default function CommissionPlaygroundPage() {
         <div className="space-y-4">
           {'error' in result ? (
             <div className="card-surface rounded-2xl p-6 border border-red-500/30 bg-red-500/5">
-              <p className="text-red-400 text-sm font-semibold mb-1">Computation error</p>
+              <p className="text-[var(--accent-red-text)] text-sm font-semibold mb-1">Computation error</p>
               <p className="text-[var(--text-secondary)] text-xs font-mono">{result.error}</p>
             </div>
           ) : (
@@ -171,7 +171,7 @@ export default function CommissionPlaygroundPage() {
                   <Row label="Trainer override" value={fmt$(inputs.trainerRate * inputs.kW * 1000)} />
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-[var(--border-subtle)]">
                     <span className="text-[var(--text-muted)]">Residual (gross − comms)</span>
-                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-cyan-text)]'}`}>
+                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-cyan-text)]'}`}>
                       {fmt$(kiloMargin)}
                     </span>
                   </div>
@@ -236,7 +236,7 @@ function MilestoneRow({ label, closer, setter }: { label: string; closer: number
       <span className="text-[var(--text-muted)] text-xs font-mono w-8">{label}</span>
       <div className="flex-1 grid grid-cols-2 gap-3">
         <span className="text-[var(--accent-emerald-text)] tabular-nums">{fmt$(closer)}</span>
-        <span className="text-violet-300 tabular-nums">{fmt$(setter)}</span>
+        <span className="text-[var(--accent-purple-text)] tabular-nums">{fmt$(setter)}</span>
       </div>
     </div>
   );

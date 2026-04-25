@@ -54,7 +54,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               }}
               className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
             />
-            {financerDup && <p className="text-red-400 text-[10px] mt-1">Already exists</p>}
+            {financerDup && <p className="text-[var(--accent-red-text)] text-[10px] mt-1">Already exists</p>}
           </div>
           <button
             disabled={!newFinancer.trim() || financerDup}
@@ -182,7 +182,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                   <button
                     onClick={() => setFinancerActive(fin.name, false)}
                     title="Archive financer"
-                    className="text-[var(--text-dim)] hover:text-amber-400 transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-amber-text)] transition-colors"
                   >
                     <EyeOff className="w-3.5 h-3.5" />
                   </button>
@@ -199,7 +199,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       });
                     }}
                     title="Delete financer"
-                    className="text-[var(--text-dim)] hover:text-red-400 transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -303,7 +303,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       });
                     }}
                     title="Delete financer"
-                    className="text-[var(--text-dim)] hover:text-red-400 transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

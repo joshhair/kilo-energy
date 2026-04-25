@@ -183,7 +183,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
                     <button
                       onClick={() => handleDelete(note.id)}
                       disabled={deleting}
-                      className="opacity-0 group-hover/note:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="opacity-0 group-hover/note:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Delete note"
                       title="Delete note"
                     >

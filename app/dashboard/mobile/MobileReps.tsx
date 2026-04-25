@@ -428,14 +428,14 @@ export default function MobileReps() {
       {isAdmin && pendingInvitations.length > 0 && (
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,176,32,0.25)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Mail className="w-4 h-4 text-amber-400 shrink-0" />
+            <Mail className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
             <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">{pendingInvitations.length}</span>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-[var(--accent-amber-text)] border border-amber-400/20">{pendingInvitations.length}</span>
           </div>
           <div className="space-y-2">
             {pendingInvitations.map((inv) => (
               <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }}>
-                <Clock className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
+                <Clock className="w-3.5 h-3.5 text-[var(--accent-amber-text)]/60 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--text-primary)] font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>

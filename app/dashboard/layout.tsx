@@ -577,7 +577,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald-solid)', boxShadow: '0 0 10px var(--accent-emerald-solid)', flexShrink: 0 }} />
                 <div className="flex items-baseline gap-0.5">
                   <span className="font-bold tracking-tighter text-xl leading-none" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
-                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
+                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 500 }}>energy</span>
                 </div>
               </div>
               {/* ⌘K hint badge — opens command palette on click */}
@@ -795,7 +795,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ backgroundColor: 'var(--surface-page)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         {dataError && (
-          <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] text-sm text-center">
             Failed to load data. Please check your connection and refresh.
           </div>
         )}
@@ -805,15 +805,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           return (
             <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-300 text-sm font-medium">
+                <Eye className="w-4 h-4 text-[var(--accent-amber-text)]" />
+                <span className="text-[var(--accent-amber-text)] text-sm font-medium">
                   {isSelfView
-                    ? <>My Rep View <span className="text-amber-400/60">— same as any rep sees</span></>
-                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></>
+                    ? <>My Rep View <span className="text-[var(--accent-amber-text)]/60">— same as any rep sees</span></>
+                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-[var(--accent-amber-text)]/60 capitalize">({viewAsUser.role})</span></>
                   }
                 </span>
               </div>
-              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-[var(--accent-amber-text)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
                 <XCircle className="w-3.5 h-3.5" /> Back to admin
               </button>
             </div>

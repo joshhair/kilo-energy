@@ -266,7 +266,7 @@ export function SearchableSelect({
                         <span className="text-[10px] text-[var(--text-muted)] truncate block">{opt.sub}</span>
                       )}
                     </div>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
                   </button>
                 );
               })

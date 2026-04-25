@@ -292,15 +292,15 @@ export default function KanbanView({
                           <p className="text-[var(--text-primary)] text-sm font-medium leading-snug group-hover:text-[var(--accent-emerald-text)] transition-colors flex items-center gap-1.5 flex-wrap">
                             {proj.customerName}
                             {proj.flagged && (
-                              <Flag className="w-3 h-3 text-red-400 flex-shrink-0" />
+                              <Flag className="w-3 h-3 text-[var(--accent-red-text)] flex-shrink-0" />
                             )}
                             <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
                             {/* Prominent "You" role pill next to customer name — shown in All Deals mode */}
                             {isMyCard && dealScope === 'all' && (
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                                 myRole === 'Closer'
-                                  ? 'bg-blue-900/60 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
-                                  : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-emerald-solid)]/40'
+                                  ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
+                                  : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/40'
                               }`}>
                                 You · {myRole}
                               </span>
@@ -563,15 +563,15 @@ export default function KanbanView({
                           </p>
                           <div className="flex items-center gap-1 shrink-0 mt-0.5">
                             <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
-                            {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                            {proj.flagged && <Flag className="w-3 h-3 text-[var(--accent-red-text)]" />}
                           </div>
                         </div>
                         {/* "You" role pill — prominent, shown in All Deals mode */}
                         {isMyCard && dealScope === 'all' && (
                           <span className={`inline-flex items-center mb-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-emerald-solid)]/40'
+                              ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
+                              : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/40'
                           }`}>
                             You · {myRole}
                           </span>
@@ -652,7 +652,7 @@ export default function KanbanView({
                   )}
                 </div>
                 {/* Bottom scroll-shadow gradient — only visible when content overflows */}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-xl" style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--surface-page) 80%, transparent), transparent)' }} />
               </div>
             </div>
           );
@@ -703,7 +703,7 @@ export default function KanbanView({
                   )}
                 </div>
                 {/* Bottom scroll-shadow gradient — only visible when content overflows */}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-xl" style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--surface-page) 80%, transparent), transparent)' }} />
               </div>
             </div>
           );

@@ -62,7 +62,7 @@ export default function ConfirmDialog({
               ? 'bg-red-500/15 border border-red-500/30'
               : 'bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/30'
           }`}>
-            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'}`} />
+            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`} />
           </div>
           <h3 className="text-[var(--text-primary)] font-bold">{title}</h3>
         </div>

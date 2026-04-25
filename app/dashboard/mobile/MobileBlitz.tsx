@@ -708,7 +708,7 @@ export default function MobileBlitz() {
                         </button>
                       </>
                     ) : (
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-emerald-solid)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`} style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20'}`} style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                         {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>

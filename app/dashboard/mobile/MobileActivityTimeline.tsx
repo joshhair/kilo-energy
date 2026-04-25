@@ -143,7 +143,7 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="min-h-[48px] text-base text-blue-400 active:text-blue-300 disabled:opacity-50"
+          className="min-h-[48px] text-base text-[var(--accent-blue-text)] active:text-[var(--accent-blue-text)] disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>

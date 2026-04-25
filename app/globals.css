@@ -133,6 +133,31 @@
   --text-on-accent: #ffffff;
 }
 
+/* ── Light-mode overrides for legacy class-based surfaces ───────────────────
+   A handful of utility classes (.card-surface, .table-header-frost,
+   .card-surface-interactive) bake hardcoded rgba(0,0,0,*) shadows or
+   navy gradient backgrounds that pre-date the token system. They look
+   correct in dark mode but render as muddy/dark blocks on light bg.
+   The overrides below swap those to soft, theme-correct equivalents.  */
+[data-theme="light"] .card-surface {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+[data-theme="light"] .card-surface:hover {
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+[data-theme="light"] .table-header-frost {
+  background: rgba(247, 248, 251, 0.92);
+}
+[data-theme="light"] .card-surface-interactive {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(247, 248, 251, 0.6) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+[data-theme="light"] .card-surface-interactive:hover {
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
    Collapses every animation and transition to an imperceptible duration so
    that users who have enabled "Reduce Motion" in their OS preferences are

@@ -218,7 +218,7 @@ export default function AdminAuditPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] text-sm">
           {error}
         </div>
       )}
@@ -267,13 +267,13 @@ export default function AdminAuditPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">Old</p>
-                            <pre className="text-xs text-red-300/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-red-text)]/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.oldValue ? JSON.stringify(tryParseJson(log.oldValue), null, 2) : '(none)'}
                             </pre>
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">New</p>
-                            <pre className="text-xs text-emerald-300/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-emerald-text)]/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.newValue ? JSON.stringify(tryParseJson(log.newValue), null, 2) : '(none)'}
                             </pre>
                           </div>

@@ -586,7 +586,7 @@ export default function IncentivesPage() {
       {isAdmin && expiredActiveCount > 0 && (
         <button
           onClick={handleBulkArchiveExpired}
-          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors bg-amber-900/30 text-amber-400 border border-amber-500/30 hover:bg-amber-900/50 whitespace-nowrap"
+          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/30 hover:bg-[var(--accent-amber-soft)] whitespace-nowrap"
         >
           <Archive className="w-3.5 h-3.5" />
           Archive All Expired ({expiredActiveCount})
@@ -731,7 +731,7 @@ export default function IncentivesPage() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Next Deadline</span>
-            <Calendar className="w-4 h-4 text-yellow-400 shrink-0" />
+            <Calendar className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
           </div>
           <p className="stat-value text-2xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-text)' }}>
             {nextDeadline ? formatDate(nextDeadline) : <span className="text-[var(--text-muted)] text-lg">None</span>}
@@ -816,9 +816,9 @@ export default function IncentivesPage() {
         <div className="mt-8">
           <CollapsibleSection
             title="Pending Rewards"
-            icon={<Gift className="w-4 h-4 text-amber-400" />}
+            icon={<Gift className="w-4 h-4 text-[var(--accent-amber-text)]" />}
             badge={
-              <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">
                 {pendingRewards.length}
               </span>
             }
@@ -829,22 +829,22 @@ export default function IncentivesPage() {
               {pendingRewards.map(({ incentive, milestone }) => (
                 <div
                   key={`${incentive.id}-${milestone.id}`}
-                  className="flex items-center justify-between rounded-xl px-4 py-3 border border-amber-500/20 bg-amber-900/5 card-surface"
+                  className="flex items-center justify-between rounded-xl px-4 py-3 border border-amber-500/20 bg-[var(--accent-amber-soft)] card-surface"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-500/20">
-                      <Zap className="w-4 h-4 text-amber-400" />
+                      <Zap className="w-4 h-4 text-[var(--accent-amber-text)]" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[var(--text-primary)] text-sm font-semibold truncate">{incentive.title}</p>
                       <p className="text-[var(--text-secondary)] text-xs">
-                        At {formatIncentiveMetric(incentive.metric, milestone.threshold)} — <span className="text-amber-400">{milestone.reward}</span>
+                        At {formatIncentiveMetric(incentive.metric, milestone.threshold)} — <span className="text-[var(--accent-amber-text)]">{milestone.reward}</span>
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleMilestoneAchieved(incentive.id, milestone.id, true)}
-                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-emerald-900/50 text-[var(--accent-emerald-text)] hover:bg-emerald-800/60 flex-shrink-0 ml-3"
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] hover:bg-emerald-800/60 flex-shrink-0 ml-3"
                   >
                     Mark Fulfilled
                   </button>
@@ -885,7 +885,7 @@ export default function IncentivesPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[var(--text-secondary)] font-semibold">{inc.title}</p>
-                            <span className="text-xs bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                            <span className="text-xs bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               Expired
                             </span>
@@ -902,7 +902,7 @@ export default function IncentivesPage() {
                         {isAdmin && (
                           <button
                             onClick={() => handleDelete(inc.id)}
-                            className="text-[var(--text-dim)] hover:text-red-400 transition-colors p-1"
+                            className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors p-1"
                             title="Delete from archive"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1094,13 +1094,13 @@ function IncentiveCard({
                 </span>
               )}
               {expired && (
-                <span className="text-xs bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <span className="text-xs bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   Expired
                 </span>
               )}
               {endingSoon && (
-                <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <span className="text-xs bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Ending Soon
                 </span>
@@ -1109,7 +1109,7 @@ function IncentiveCard({
                 <span className="text-xs bg-[var(--border)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full">Inactive</span>
               )}
               {rep && (
-                <span className="text-xs bg-amber-900/40 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/30 px-2 py-0.5 rounded-full">
                   {rep.name}
                 </span>
               )}
@@ -1164,7 +1164,7 @@ function IncentiveCard({
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(incentive.id); }}
-                className="text-[var(--text-dim)] hover:text-red-400 transition-colors p-1"
+                className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors p-1"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -1278,8 +1278,8 @@ function IncentiveCard({
                       onClick={() => onMilestoneAchieved(incentive.id, milestone.id, !milestone.achieved)}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                         milestone.achieved
-                          ? 'bg-[var(--border)] text-[var(--text-secondary)] hover:text-red-400'
-                          : 'bg-emerald-900/50 text-[var(--accent-emerald-text)] hover:bg-emerald-800/60'
+                          ? 'bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--accent-red-text)]'
+                          : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] hover:bg-emerald-800/60'
                       }`}
                     >
                       {milestone.achieved ? 'Undo' : 'Mark Achieved'}
@@ -1439,7 +1439,7 @@ function CreateIncentiveModal({
   const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500';
   const inputErrCls = 'w-full bg-[var(--surface-card)] border border-red-500/60 text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-500';
   const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5';
-  const errTextCls = 'text-red-400 text-xs mt-1';
+  const errTextCls = 'text-[var(--accent-red-text)] text-xs mt-1';
 
   // Year options: current year -1 to +3
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i).map((y) => ({
@@ -1483,7 +1483,7 @@ function CreateIncentiveModal({
                       }));
                       setMilestones(tpl.milestones.map((m) => ({ threshold: m.threshold, reward: m.reward })));
                     }}
-                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-emerald-solid)]/40 hover:text-[var(--accent-emerald-text)] hover:bg-blue-900/20"
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-emerald-solid)]/40 hover:text-[var(--accent-emerald-text)] hover:bg-[var(--accent-blue-soft)]"
                   >
                     {tpl.label}
                   </button>
@@ -1668,7 +1668,7 @@ function CreateIncentiveModal({
                       className={inputCls + ' flex-1 min-w-0'}
                     />
                     {milestones.length > 1 && (
-                      <button type="button" onClick={() => removeMilestone(i)} className="text-[var(--text-dim)] hover:text-red-400 transition-colors flex-shrink-0">
+                      <button type="button" onClick={() => removeMilestone(i)} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors flex-shrink-0">
                         <X className="w-4 h-4" />
                       </button>
                     )}

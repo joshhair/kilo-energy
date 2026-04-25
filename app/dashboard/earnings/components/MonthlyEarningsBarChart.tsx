@@ -179,9 +179,9 @@ export function MonthlyEarningsBarChart({
           >
             <p className="text-[var(--text-secondary)] font-semibold mb-1">{tooltip.datum.label}</p>
             <p className="text-[var(--accent-emerald-text)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
-            <p className="text-yellow-400">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
+            <p className="text-[var(--accent-amber-text)]">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
             {tooltip.datum.reimbursement > 0 && (
-              <p className="text-violet-400">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
+              <p className="text-[var(--accent-purple-text)]">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
             )}
           </div>
         )}

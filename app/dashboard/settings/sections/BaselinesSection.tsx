@@ -251,7 +251,7 @@ export function BaselinesSection({
     if (delta === 0) return null;
     const isPositive = delta > 0;
     return (
-      <span className={`text-[9px] font-medium leading-none ${isPositive ? 'text-[var(--accent-emerald-text)]' : 'text-red-400'}`}>
+      <span className={`text-[9px] font-medium leading-none ${isPositive ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
         {isPositive ? '+' : ''}{delta.toFixed(2)}
       </span>
     );
@@ -343,7 +343,7 @@ export function BaselinesSection({
                     </span>
                   </th>
                   {showSubDealerRates && (
-                    <th className="text-right px-4 py-3 text-amber-400/80 font-medium text-xs">SD Rate</th>
+                    <th className="text-right px-4 py-3 text-[var(--accent-amber-text)]/80 font-medium text-xs">SD Rate</th>
                   )}
                   <th className="px-4 py-3 w-28" />
                 </tr>
@@ -415,7 +415,7 @@ export function BaselinesSection({
                                 value={editInstallerVals.setterPerW}
                                 placeholder={editInstallerVals.closerPerW ? String(Math.round((parseFloat(editInstallerVals.closerPerW) + 0.10) * 100) / 100) : '\u2014'}
                                 onChange={(e) => setEditInstallerVals((v) => ({ ...v, setterPerW: e.target.value }))}
-                                className="w-20 bg-[var(--border)] border border-[var(--border)] text-violet-300 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                                className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--accent-purple-text)] rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                               />
                             </td>
                             <td className="px-4 py-2 text-right">
@@ -431,7 +431,7 @@ export function BaselinesSection({
                                   value={editInstallerVals.subDealerPerW}
                                   placeholder="\u2014"
                                   onChange={(e) => setEditInstallerVals((v) => ({ ...v, subDealerPerW: e.target.value }))}
-                                  className="w-20 bg-[var(--border)] border border-[var(--border)] text-amber-400 rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                  className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--accent-amber-text)] rounded-lg px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                 />
                               </td>
                             )}
@@ -463,7 +463,7 @@ export function BaselinesSection({
                           <>
                             <td className="px-4 py-3 text-[var(--accent-emerald-text)] font-medium text-right">${rates.closerPerW.toFixed(2)}</td>
                             <td className="px-4 py-3 text-right">
-                              <span className={`font-medium text-xs ${hasCustomSetter ? 'text-violet-300' : 'text-violet-400/60'}`}>
+                              <span className={`font-medium text-xs ${hasCustomSetter ? 'text-[var(--accent-purple-text)]' : 'text-[var(--accent-purple-text)]/60'}`}>
                                 ${displaySetter.toFixed(2)}
                                 {!hasCustomSetter && <span className="text-[var(--text-dim)] ml-1 text-[10px]">auto</span>}
                               </span>
@@ -472,7 +472,7 @@ export function BaselinesSection({
                             {showSubDealerRates && (
                               <td className="px-4 py-3 text-right">
                                 {rates.subDealerPerW != null
-                                  ? <span className="text-amber-400 font-medium">${rates.subDealerPerW.toFixed(2)}</span>
+                                  ? <span className="text-[var(--accent-amber-text)] font-medium">${rates.subDealerPerW.toFixed(2)}</span>
                                   : <span className="text-[var(--text-dim)]">&mdash;</span>}
                               </td>
                             )}
@@ -588,7 +588,7 @@ export function BaselinesSection({
                     value={newVersionVals.setterPerW}
                     placeholder={newVersionVals.closerPerW ? String(Math.round((parseFloat(newVersionVals.closerPerW) + 0.10) * 100) / 100) : 'auto'}
                     onChange={(e) => setNewVersionVals((v) => ({ ...v, setterPerW: e.target.value }))}
-                    className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-violet-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
+                    className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-purple-text)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
                   />
                 </div>
                 <div>
@@ -693,7 +693,7 @@ export function BaselinesSection({
                   </select>
                   {isViewingArchive && (
                     <>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[var(--accent-amber-text)] text-[10px] font-medium">
                         <History className="w-3 h-3" />
                         Viewing archived version
                         {(() => { const g = versionGroups.get(currentView); return g ? ` \u00b7 ${g.effectiveFrom} \u2192 ${g.effectiveTo}` : ''; })()}
@@ -715,7 +715,7 @@ export function BaselinesSection({
                             },
                           });
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] hover:bg-red-500/20 hover:text-[var(--accent-red-text)] transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Delete Version
                       </button>
@@ -842,7 +842,7 @@ export function BaselinesSection({
                           ))}
                           <th className="px-4 py-3 w-10" />
                         </tr>
-                        {showSubDealerRates && <tr><td colSpan={6} className="px-4 py-1 text-amber-400/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>}
+                        {showSubDealerRates && <tr><td colSpan={6} className="px-4 py-1 text-[var(--accent-amber-text)]/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>}
                       </thead>
                       <tbody>
                         {filteredProducts.length > 0 && (
@@ -851,7 +851,7 @@ export function BaselinesSection({
                             {[0, 1, 2, 3].map((ti) => {
                               const profits = filteredProducts.map((p) => (p.tiers[ti]?.closerPerW ?? 0) - (p.tiers[ti]?.kiloPerW ?? 0));
                               const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
-                              return <td key={ti} className="px-2 py-2 text-center"><span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[var(--accent-emerald-text)]/70' : 'text-red-400/70'}`}>${avgProfit.toFixed(2)} profit</span></td>;
+                              return <td key={ti} className="px-2 py-2 text-center"><span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[var(--accent-emerald-text)]/70' : 'text-[var(--accent-red-text)]/70'}`}>${avgProfit.toFixed(2)} profit</span></td>;
                             })}
                             {showSubDealerRates && <td />}
                             <td className="px-4 py-2 text-center"><span className="text-[var(--text-muted)] text-[10px]">${pcSpreadMin.toFixed(2)}\u2013${pcSpreadMax.toFixed(2)}</span></td>
@@ -890,7 +890,7 @@ export function BaselinesSection({
                                       <input ref={(el) => setTierInputRef(`${product.id}-${ti}-kilo`, el)} type="number" step="0.01" min="0" value={tier.kiloPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateProductCatalogTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, pcDisplayProductIds, product.id, ti, 'kilo')}
                                         className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                                       {renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}
-                                      {showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateProductCatalogTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}
+                                      {showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateProductCatalogTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-[var(--accent-amber-text)] rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}
                                     </div>
                                   </td>
                                 ))
@@ -899,7 +899,7 @@ export function BaselinesSection({
                                 {!pcIsArchive && (
                                   <div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button>
-                                    <button onClick={() => { setConfirmAction({ title: `Delete ${product.name}?`, message: 'Existing deals are unaffected.', onConfirm: async () => { try { await removeProductCatalogProduct(product.id); toast('Product removed', 'info'); } catch { toast('Failed to delete product', 'error'); } setConfirmAction(null); } }); }} className="text-[var(--text-dim)] hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => { setConfirmAction({ title: `Delete ${product.name}?`, message: 'Existing deals are unaffected.', onConfirm: async () => { try { await removeProductCatalogProduct(product.id); toast('Product removed', 'info'); } catch { toast('Failed to delete product', 'error'); } setConfirmAction(null); } }); }} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
                                 )}
                               </td>
@@ -1036,7 +1036,7 @@ export function BaselinesSection({
                   <option value="current">Current (editable)</option>
                   {stSortedGroups.map(([key, g]) => (<option key={key} value={key}>{g.label} &mdash; {g.effectiveFrom}</option>))}
                 </select>
-                {stIsArchive && (<><span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium"><History className="w-3 h-3" />Viewing archived version{(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` \u00b7 ${g.effectiveFrom} \u2192 ${g.effectiveTo}` : ''; })()}</span><button onClick={() => { const [label, effectiveFrom] = stCurrentView.split('|'); setConfirmAction({ title: 'Delete Pricing Version', message: 'Delete this pricing version? This cannot be undone.', onConfirm: () => { const idsToDelete = productCatalogPricingVersions.filter((v) => stFamilyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom).map((v) => v.id); deleteProductCatalogPricingVersions(idsToDelete); setStVersionView((prev) => ({ ...prev, [stFamily]: 'current' })); toast('Pricing version deleted', 'success'); setConfirmAction(null); } }); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete Version</button></>)}
+                {stIsArchive && (<><span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[var(--accent-amber-text)] text-[10px] font-medium"><History className="w-3 h-3" />Viewing archived version{(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` \u00b7 ${g.effectiveFrom} \u2192 ${g.effectiveTo}` : ''; })()}</span><button onClick={() => { const [label, effectiveFrom] = stCurrentView.split('|'); setConfirmAction({ title: 'Delete Pricing Version', message: 'Delete this pricing version? This cannot be undone.', onConfirm: () => { const idsToDelete = productCatalogPricingVersions.filter((v) => stFamilyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom).map((v) => v.id); deleteProductCatalogPricingVersions(idsToDelete); setStVersionView((prev) => ({ ...prev, [stFamily]: 'current' })); toast('Pricing version deleted', 'success'); setConfirmAction(null); } }); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] hover:bg-red-500/20 hover:text-[var(--accent-red-text)] transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete Version</button></>)}
                 {!stIsArchive && (<><button onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(suggestVersionLabel()); setDupAllEffectiveFrom(''); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"><Copy className="w-3.5 h-3.5" /> Duplicate All as New Version</button><button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button></>)}
               </div>
             );
@@ -1083,13 +1083,13 @@ export function BaselinesSection({
                   <table className="w-full text-sm">
                     <thead className="table-header-frost">
                       <tr className="border-b border-[var(--border-subtle)]"><th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Product</th>{['1\u20135 kW', '5\u201310 kW', '10\u201313 kW', '13+ kW'].map((label) => (<th key={label} className="text-center px-4 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">{label}</th>))}<th className="px-4 py-3 w-10" /></tr>
-                      {showSubDealerRates && <tr><td colSpan={6} className="px-4 py-1 text-amber-400/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>}
+                      {showSubDealerRates && <tr><td colSpan={6} className="px-4 py-1 text-[var(--accent-amber-text)]/60 text-[10px] text-right">Amber values = Sub-Dealer Rate</td></tr>}
                     </thead>
                     <tbody>
                       {stAllFamilyProducts.length > 0 && (
                         <tr className="bg-[var(--surface-card)]/60 border-b border-[var(--border-subtle)]">
                           <td className="px-5 py-2 text-[var(--text-secondary)] text-xs font-medium">{stSummaryCount} product{stSummaryCount !== 1 ? 's' : ''}</td>
-                          {[0, 1, 2, 3].map((ti) => { const profits = stAllFamilyProducts.map((p) => (p.tiers[ti]?.closerPerW ?? 0) - (p.tiers[ti]?.kiloPerW ?? 0)); const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0; return <td key={ti} className="px-2 py-2 text-center"><span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[var(--accent-emerald-text)]/70' : 'text-red-400/70'}`}>${avgProfit.toFixed(2)} profit</span></td>; })}
+                          {[0, 1, 2, 3].map((ti) => { const profits = stAllFamilyProducts.map((p) => (p.tiers[ti]?.closerPerW ?? 0) - (p.tiers[ti]?.kiloPerW ?? 0)); const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0; return <td key={ti} className="px-2 py-2 text-center"><span className={`text-[10px] font-semibold ${avgProfit > 0 ? 'text-[var(--accent-emerald-text)]/70' : 'text-[var(--accent-red-text)]/70'}`}>${avgProfit.toFixed(2)} profit</span></td>; })}
                           {showSubDealerRates && <td />}
                           <td className="px-4 py-2 text-center"><span className="text-[var(--text-muted)] text-[10px]">${stSpreadMin.toFixed(2)}\u2013${stSpreadMax.toFixed(2)}</span></td>
                         </tr>
@@ -1103,8 +1103,8 @@ export function BaselinesSection({
                               {editingProductName === product.id ? (<input autoFocus type="text" value={editProductNameVal} onChange={(e) => setEditProductNameVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { const trimmed = editProductNameVal.trim(); if (trimmed && trimmed !== product.name) { updateSolarTechProduct(product.id, { name: trimmed }); toast(`Renamed to "${trimmed}"`, 'success'); } productNameSavedRef.current = true; setEditingProductName(null); } else if (e.key === 'Escape') { productNameSavedRef.current = true; setEditingProductName(null); } }} onBlur={() => { if (productNameSavedRef.current) { productNameSavedRef.current = false; return; } const trimmed = editProductNameVal.trim(); if (trimmed && trimmed !== product.name) { updateSolarTechProduct(product.id, { name: trimmed }); toast(`Renamed to "${trimmed}"`, 'success'); } setEditingProductName(null); }} className="w-full bg-[var(--surface-card)] border border-[var(--accent-emerald-solid)] text-[var(--text-primary)] rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />) : (<span className="cursor-pointer hover:text-[var(--accent-cyan-text)] transition-colors inline-flex items-center gap-1.5 group/name" onClick={() => { if (!stIsArchive) { setEditingProductName(product.id); setEditProductNameVal(product.name); } }}>{product.name}{!stIsArchive && <Pencil className="w-3 h-3 text-[var(--text-dim)] opacity-0 group-hover/name:opacity-100 transition-opacity" />}</span>)}
                               {stIsArchive && !archiveVersion && <span className="ml-2 text-[var(--text-dim)] text-[10px]">(no data for this version)</span>}
                             </td>
-                            {stIsArchive ? (archiveVersion ? archiveVersion.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-1 items-center"><span className="text-[var(--accent-emerald-text)]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span><span className="text-[var(--accent-emerald-text)]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>{showSubDealerRates && <span className="text-amber-400/50 text-xs">{(tier as { subDealerPerW?: number | null }).subDealerPerW != null ? `$${(tier as { subDealerPerW: number }).subDealerPerW.toFixed(2)}` : '\u2014'}</span>}</div></td>)) : <td colSpan={4} className="px-4 py-3 text-center text-[var(--text-dim)] text-xs">No version data</td>) : (
-                              product.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-0.5 items-center"><input ref={(el) => setTierInputRef(`${product.id}-${ti}-closer`, el)} type="number" step="0.01" min="0" value={tier.closerPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}<input ref={(el) => setTierInputRef(`${product.id}-${ti}-kilo`, el)} type="number" step="0.01" min="0" value={tier.kiloPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}{showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateSolarTechTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-amber-400 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}</div></td>))
+                            {stIsArchive ? (archiveVersion ? archiveVersion.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-1 items-center"><span className="text-[var(--accent-emerald-text)]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span><span className="text-[var(--accent-emerald-text)]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>{showSubDealerRates && <span className="text-[var(--accent-amber-text)]/50 text-xs">{(tier as { subDealerPerW?: number | null }).subDealerPerW != null ? `$${(tier as { subDealerPerW: number }).subDealerPerW.toFixed(2)}` : '\u2014'}</span>}</div></td>)) : <td colSpan={4} className="px-4 py-3 text-center text-[var(--text-dim)] text-xs">No version data</td>) : (
+                              product.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-0.5 items-center"><input ref={(el) => setTierInputRef(`${product.id}-${ti}-closer`, el)} type="number" step="0.01" min="0" value={tier.closerPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}<input ref={(el) => setTierInputRef(`${product.id}-${ti}-kilo`, el)} type="number" step="0.01" min="0" value={tier.kiloPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}{showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateSolarTechTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-[var(--accent-amber-text)] rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}</div></td>))
                             )}
                             <td className="px-4 py-3 text-center">{!stIsArchive && (<div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button></div>)}</td>
                           </tr>

@@ -75,7 +75,7 @@ export function InstallersSection({
           onChange={(e) => setNewInstaller(e.target.value)}
           className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
         />
-        {installerDup && <p className="text-red-400 text-[10px] mb-2">Already exists</p>}
+        {installerDup && <p className="text-[var(--accent-red-text)] text-[10px] mb-2">Already exists</p>}
         {/* Pricing structure selector */}
         <div className="flex gap-2 mb-3">
           {(['standard', 'product-catalog'] as const).map((s) => (
@@ -122,7 +122,7 @@ export function InstallersSection({
                 <button onClick={() => {
                   if (newPcFamilies.length <= 1) return;
                   setNewPcFamilies((prev) => prev.filter((_, j) => j !== i));
-                }} disabled={newPcFamilies.length <= 1} className="text-[var(--text-dim)] hover:text-red-400 disabled:opacity-30 transition-colors">
+                }} disabled={newPcFamilies.length <= 1} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] disabled:opacity-30 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -258,7 +258,7 @@ export function InstallersSection({
                             <span className="text-[10px] text-[var(--accent-emerald-text)]/70">Product Catalog</span>
                           )}
                           {instPrepaid.length > 0 && (
-                            <span className="text-[10px] text-violet-400/70">Prepaid: {instPrepaid.join(', ')}</span>
+                            <span className="text-[10px] text-[var(--accent-purple-text)]/70">Prepaid: {instPrepaid.join(', ')}</span>
                           )}
                         </div>
                         {(() => {
@@ -293,14 +293,14 @@ export function InstallersSection({
                       <button
                         onClick={() => { setPrepaidInstallerExpanded(isExpanded ? null : inst.name); setNewPrepaidOption(''); setEditingPrepaid(null); setPayScheduleExpanded(null); }}
                         title="Configure prepaid options"
-                        className={`transition-colors ${isExpanded ? 'text-violet-400' : 'text-[var(--text-dim)] hover:text-violet-400 opacity-0 group-hover:opacity-100'}`}
+                        className={`transition-colors ${isExpanded ? 'text-[var(--accent-purple-text)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-purple-text)] opacity-0 group-hover:opacity-100'}`}
                       >
                         <CreditCard className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setInstallerActive(inst.name, false)}
                         title="Archive installer"
-                        className="text-[var(--text-dim)] hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-[var(--text-dim)] hover:text-[var(--accent-amber-text)] transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <EyeOff className="w-3.5 h-3.5" />
                       </button>
@@ -328,7 +328,7 @@ export function InstallersSection({
                           });
                         }}
                         title="Permanently delete installer"
-                        className="text-[var(--text-dim)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -338,7 +338,7 @@ export function InstallersSection({
                   {/* Expandable prepaid options panel */}
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 border-t border-[var(--border-subtle)]/50">
-                      <p className="text-xs font-semibold text-violet-400/80 uppercase tracking-wider mb-2">Prepaid Options</p>
+                      <p className="text-xs font-semibold text-[var(--accent-purple-text)]/80 uppercase tracking-wider mb-2">Prepaid Options</p>
                       {instPrepaid.length > 0 && (
                         <div className="space-y-1.5 mb-3">
                           {instPrepaid.map((opt) => (
@@ -355,7 +355,7 @@ export function InstallersSection({
                                     className="flex-1 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                                   />
                                   <button onClick={() => { if (editPrepaidVal.trim()) { updateInstallerPrepaidOption(inst.name, opt, editPrepaidVal.trim()); setEditingPrepaid(null); } }}
-                                    className="text-[var(--accent-emerald-text)] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
+                                    className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)]"><Check className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => setEditingPrepaid(null)}
                                     className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"><X className="w-3.5 h-3.5" /></button>
                                 </div>
@@ -366,7 +366,7 @@ export function InstallersSection({
                                     <button onClick={() => { setEditingPrepaid(`${inst.name}::${opt}`); setEditPrepaidVal(opt); }}
                                       className="text-[var(--text-muted)] hover:text-[var(--accent-emerald-text)] transition-colors"><Pencil className="w-3 h-3" /></button>
                                     <button onClick={() => removeInstallerPrepaidOption(inst.name, opt)}
-                                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                                      className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors"><Trash2 className="w-3 h-3" /></button>
                                   </div>
                                 </>
                               )}
@@ -385,7 +385,7 @@ export function InstallersSection({
                         />
                         <button
                           onClick={() => { if (newPrepaidOption.trim()) { addInstallerPrepaidOption(inst.name, newPrepaidOption.trim()); setNewPrepaidOption(''); } }}
-                          className="text-violet-400 hover:text-violet-300 transition-colors px-2"
+                          className="text-[var(--accent-purple-text)] hover:text-[var(--accent-purple-text)] transition-colors px-2"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -523,7 +523,7 @@ export function InstallersSection({
                         : 'This will not affect existing projects but will prevent new deals with this installer.',
                     })}
                     title="Permanently delete installer"
-                    className="text-[var(--text-dim)] hover:text-red-400 transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

@@ -50,9 +50,9 @@ function roleLabel(repType: Rep['repType']): string {
 
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
-  if (repType === 'closer') return 'text-purple-400';
+  if (repType === 'closer') return 'text-[var(--accent-purple-text)]';
   if (repType === 'setter') return 'text-[var(--accent-emerald-text)]';
-  return 'text-teal-400';
+  return 'text-[var(--accent-teal-text)]';
 }
 
 export function RepSelector({
@@ -234,7 +234,7 @@ export function RepSelector({
                 <X className="w-3 h-3 text-[var(--text-secondary)]" />
               </span>
               <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">{clearLabel}</span>
-              {!value && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+              {!value && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
             </button>
 
             {/* Divider */}
@@ -270,7 +270,7 @@ export function RepSelector({
                   <span className={`${roleBadgeClass(rep.repType)} text-[10px] font-medium flex-shrink-0`}>
                     {roleLabel(rep.repType)}
                   </span>
-                  {rep.id === value && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                  {rep.id === value && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
                 </button>
               ))
             )}

@@ -366,7 +366,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 ))}
               </select>
               {scopedInstallerId && (
-                <p className="text-[11px] mt-2 text-amber-400">
+                <p className="text-[11px] mt-2 text-[var(--accent-amber-text)]">
                   Vendor PM — installer-scoped, ops-only.
                 </p>
               )}

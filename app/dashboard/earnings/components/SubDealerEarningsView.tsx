@@ -38,7 +38,7 @@ export function SubDealerEarningsView() {
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider mb-1">Pending</p>
-          <p className="text-3xl font-black text-yellow-400 tabular-nums">{fmt$(totalPending)}</p>
+          <p className="text-3xl font-black text-[var(--accent-amber-text)] tabular-nums">{fmt$(totalPending)}</p>
           <p className="text-[var(--text-muted)] text-xs mt-1">{myPayroll.filter((p) => p.status === 'Pending').length} pending entries</p>
         </div>
       </div>

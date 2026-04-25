@@ -115,7 +115,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-500/15">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <AlertTriangle className="w-5 h-5 text-[var(--accent-amber-text)]" />
               </div>
               <div>
                 <h2 className="text-[var(--text-primary)] font-bold">Record Chargeback</h2>
@@ -179,7 +179,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
               <button
                 onClick={handleSubmit}
                 disabled={saving || !selected}
-                className="w-full flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold rounded-lg disabled:opacity-40 transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30"
+                className="w-full flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold rounded-lg disabled:opacity-40 transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/30"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
                 {saving ? 'Recording…' : 'Record chargeback (Draft)'}

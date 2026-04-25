@@ -205,7 +205,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan-text)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
               <Tent className="w-3 h-3" /> Leading
             </span>
           )}
@@ -219,7 +219,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             </button>
           )}
           {!isOwner && myParticipation && !canJoin && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
             </span>
           )}
@@ -285,7 +285,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
-            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
+            {touched && !name.trim() && <p className="text-xs text-[var(--accent-red-text)] mt-1">Blitz name is required</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Location / Market</label>
@@ -299,13 +299,13 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
-              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
+              {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
           </div>
           {isAdmin && (
@@ -388,14 +388,14 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
       <div ref={requestPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-amber-text)]" /> Request a Blitz</h2>
         <p className="text-sm text-[var(--text-muted)] mb-4">Submit a request for admin approval. You&apos;ll be notified when it&apos;s reviewed.</p>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Austin Spring Blitz" />
-            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
+            {touched && !name.trim() && <p className="text-xs text-[var(--accent-red-text)] mt-1">Name is required</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -411,13 +411,13 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
-              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
+              {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
           </div>
           <div>
@@ -824,7 +824,7 @@ function BlitzPageInner() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Deals</span>
-            <TrendingUp className="w-4 h-4 text-purple-400" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-purple-text)]" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{totalDeals}</p>
         </div>
@@ -832,7 +832,7 @@ function BlitzPageInner() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total kW</span>
-            <Zap className="w-4 h-4 text-cyan-400" />
+            <Zap className="w-4 h-4 text-[var(--accent-cyan-text)]" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKW(totalKW)}</p>
         </div>
@@ -841,7 +841,7 @@ function BlitzPageInner() {
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Costs</span>
-              <DollarSign className="w-4 h-4 text-amber-400" />
+              <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
             <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-text)' }}>{formatCurrency(totalCosts)}</p>
           </div>
@@ -948,7 +948,7 @@ function BlitzPageInner() {
               {pendingBlitzes.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-400" /> Pending Approval
+                    <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" /> Pending Approval
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {pendingBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
@@ -999,9 +999,9 @@ function BlitzPageInner() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       {req.type === 'cancel' ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20">Cancel Request</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                       )}
                       <h3 className="text-base font-bold text-[var(--text-primary)] truncate">{req.name}</h3>
                     </div>
@@ -1011,7 +1011,7 @@ function BlitzPageInner() {
                     </div>
                     {req.notes && <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">{req.notes}</p>}
                   </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-emerald-solid)]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
+                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : req.status === 'denied' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
                     {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : req.status === 'denied' ? <XCircle className="w-3 h-3" /> : <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                   </span>
@@ -1040,9 +1040,9 @@ function BlitzPageInner() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         {req.type === 'cancel' ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20">Cancel Request</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                         )}
                         <h3 className="text-base font-bold text-[var(--text-primary)] truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
@@ -1066,12 +1066,12 @@ function BlitzPageInner() {
                           >
                             {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
-                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
                             <XCircle className="w-3 h-3" /> Deny
                           </button>
                         </>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-emerald-solid)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20'}`}>
                           {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>

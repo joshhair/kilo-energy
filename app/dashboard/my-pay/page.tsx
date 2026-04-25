@@ -66,7 +66,7 @@ interface PayPeriod {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
+  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
@@ -84,9 +84,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function StageBadge({ stage }: { stage: string }) {
   const color = stage === 'M1' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
-    : stage === 'M2' ? 'text-violet-400 bg-violet-500/10 border-violet-500/20'
-    : stage === 'M3' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20'
-    : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    : stage === 'M2' ? 'text-[var(--accent-purple-text)] bg-violet-500/10 border-violet-500/20'
+    : stage === 'M3' ? 'text-[var(--accent-teal-text)] bg-teal-500/10 border-teal-500/20'
+    : 'text-[var(--accent-amber-text)] bg-amber-500/10 border-amber-500/20';
   return (
     <span className={`inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold border ${color}`}>
       {stage}
@@ -522,10 +522,10 @@ function MyPayPageInner() {
                style={{ '--card-accent': 'rgba(245,158,11,0.08)' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
+                <p className="text-[var(--accent-amber-text)] text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
                 <p className="text-[var(--text-dim)] text-[11px] mt-0.5">Amounts to be clawed back from a future paycheck.</p>
               </div>
-              <p className="font-black tabular-nums text-amber-400 text-2xl">-{fmt$(pendingChargebackTotal)}</p>
+              <p className="font-black tabular-nums text-[var(--accent-amber-text)] text-2xl">-{fmt$(pendingChargebackTotal)}</p>
             </div>
             <div className="space-y-2">
               {pendingEntries.map((e) => (
@@ -537,7 +537,7 @@ function MyPayPageInner() {
                       {e.notes && <span className="ml-2 text-[var(--text-muted)]">· {e.notes}</span>}
                     </p>
                   </div>
-                  <p className="text-red-400 font-bold tabular-nums ml-3 shrink-0">{fmt$(e.amount)}</p>
+                  <p className="text-[var(--accent-red-text)] font-bold tabular-nums ml-3 shrink-0">{fmt$(e.amount)}</p>
                 </div>
               ))}
             </div>
@@ -557,7 +557,7 @@ function MyPayPageInner() {
           <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
              style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {pendingChargebackCount > 0 && (
-            <p className="text-amber-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
+            <p className="text-[var(--accent-amber-text)]/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
               {pendingChargebackCount} pending chargeback{pendingChargebackCount === 1 ? '' : 's'} · -{fmt$(pendingChargebackTotal)}
             </p>
           )}
@@ -567,9 +567,9 @@ function MyPayPageInner() {
              style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
-            <TrendingUp className="w-4 h-4 text-amber-400/50" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-amber-400 stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-amber-text)] stat-value break-words"
              style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
@@ -625,14 +625,14 @@ function MyPayPageInner() {
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                      <span className="text-violet-400 text-xs font-bold">M2</span>
+                      <span className="text-[var(--accent-purple-text)] text-xs font-bold">M2</span>
                     </div>
                     <div>
                       <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M2</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
-                  <p className="text-violet-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
+                  <p className="text-[var(--accent-purple-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
                     {fmt$(projectedM2)}
                   </p>
                 </div>
@@ -641,14 +641,14 @@ function MyPayPageInner() {
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
-                      <span className="text-teal-400 text-xs font-bold">M3</span>
+                      <span className="text-[var(--accent-teal-text)] text-xs font-bold">M3</span>
                     </div>
                     <div>
                       <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M3</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
                     </div>
                   </div>
-                  <p className="text-teal-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(20,184,166,0.3)' }}>
+                  <p className="text-[var(--accent-teal-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(20,184,166,0.3)' }}>
                     {fmt$(projectedM3)}
                   </p>
                 </div>
@@ -661,7 +661,7 @@ function MyPayPageInner() {
       {/* ── Reimbursements ── */}
       <div className="card-surface rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center gap-3">
-          <Receipt className="w-4 h-4 text-violet-400" />
+          <Receipt className="w-4 h-4 text-[var(--accent-purple-text)]" />
           <div>
             <p className="text-[var(--text-primary)] text-sm font-medium">Reimbursements</p>
             <p className="text-[var(--text-muted)] text-xs">
@@ -671,7 +671,7 @@ function MyPayPageInner() {
             </p>
           </div>
         </div>
-        <button onClick={() => setShowReimbModal(true)} className="flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] sm:min-h-0 px-3 py-1.5 text-sm font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
+        <button onClick={() => setShowReimbModal(true)} className="flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] sm:min-h-0 px-3 py-1.5 text-sm font-semibold text-[var(--accent-purple-text)] bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
           <Receipt className="w-3.5 h-3.5" /> New Request
         </button>
       </div>
@@ -725,7 +725,7 @@ function MyPayPageInner() {
         {(payFilterFrom || payFilterTo) && (
           <button
             onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); setPeriodPage(1); }}
-            className="text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
+            className="text-xs text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)] font-medium transition-colors whitespace-nowrap"
           >
             Clear
           </button>
@@ -781,8 +781,8 @@ function MyPayPageInner() {
                     const preInstCount = myProjects.filter((p) => ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'].includes(p.phase)).length;
                     return preInstCount > 0 ? (
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                        <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
-                        <span className="text-violet-400 text-xs font-medium">{preInstCount} awaiting M2</span>
+                        <TrendingUp className="w-3.5 h-3.5 text-[var(--accent-purple-text)]" />
+                        <span className="text-[var(--accent-purple-text)] text-xs font-medium">{preInstCount} awaiting M2</span>
                       </div>
                     ) : null;
                   })()}
@@ -888,7 +888,7 @@ function MyPayPageInner() {
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
-                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-primary)]')}`}>
+                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-[var(--accent-red-text)]' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-primary)]')}`}>
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>

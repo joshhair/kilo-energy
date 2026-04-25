@@ -53,9 +53,9 @@ function getInitials(name: string): string {
 }
 
 const ROLE_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  admin:        { bg: 'bg-emerald-900/40', text: 'text-[var(--accent-emerald-text)]', label: 'Admin' },
-  rep:          { bg: 'bg-blue-900/40',    text: 'text-[var(--accent-emerald-text)]',    label: 'Rep' },
-  'sub-dealer': { bg: 'bg-amber-900/40',   text: 'text-amber-400',  label: 'Sub-Dealer' },
+  admin:        { bg: 'bg-[var(--accent-emerald-soft)]', text: 'text-[var(--accent-emerald-text)]', label: 'Admin' },
+  rep:          { bg: 'bg-[var(--accent-blue-soft)]',    text: 'text-[var(--accent-emerald-text)]',    label: 'Rep' },
+  'sub-dealer': { bg: 'bg-[var(--accent-amber-soft)]',   text: 'text-[var(--accent-amber-text)]',  label: 'Sub-Dealer' },
 };
 
 function formatDueDate(iso: string): string {
@@ -630,14 +630,14 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                                 : 'text-[var(--accent-emerald-text)] focus:ring-[var(--accent-emerald-solid)]/30 accent-[var(--accent-emerald-solid)]'
                             }`}
                           />
-                          <span className={`text-sm ${ci.completed ? 'text-[var(--text-muted)] line-through' : overdue ? 'text-red-300' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
+                          <span className={`text-sm ${ci.completed ? 'text-[var(--text-muted)] line-through' : overdue ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
                             {ci.text}
                           </span>
                           {ci.dueDate && !ci.completed && (
                             <span
                               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${
                                 overdue
-                                  ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                                  ? 'bg-red-500/15 text-[var(--accent-red-text)] border border-red-500/20'
                                   : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'
                               }`}
                             >

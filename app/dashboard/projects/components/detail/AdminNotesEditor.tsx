@@ -65,9 +65,9 @@ export function AdminNotesEditor({
     <div className="card-surface rounded-2xl p-6 border border-amber-500/20"
          style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), rgba(245,158,11,0.02))' }}>
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="w-4 h-4 text-amber-400" />
+        <Shield className="w-4 h-4 text-[var(--accent-amber-text)]" />
         <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
-        <span className="text-[10px] text-amber-400/70 uppercase tracking-wider font-semibold ml-auto">Admin · PM only</span>
+        <span className="text-[10px] text-[var(--accent-amber-text)]/70 uppercase tracking-wider font-semibold ml-auto">Admin · PM only</span>
       </div>
       <p className="text-[var(--text-muted)] text-xs mb-3">
         Private reference notes. Never visible to reps, trainers, or sub-dealers.
@@ -83,8 +83,8 @@ export function AdminNotesEditor({
       />
       <div className="flex items-center justify-between mt-1">
         <p className={`text-xs transition-colors duration-200 ${
-          draft.length >= 1920 ? 'text-red-400' :
-          draft.length >= 1600 ? 'text-amber-400' :
+          draft.length >= 1920 ? 'text-[var(--accent-red-text)]' :
+          draft.length >= 1600 ? 'text-[var(--accent-amber-text)]' :
           'text-[var(--text-muted)]'
         }`}>{draft.length} / 2000</p>
         {saved && <span className="text-xs text-[var(--accent-emerald-text)] animate-fade-in-up">Saved</span>}

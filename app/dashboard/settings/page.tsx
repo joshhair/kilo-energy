@@ -464,8 +464,8 @@ function SettingsPageInner() {
           <SettingsStatGrid items={[
             { label: 'Active Installers',   value: installers.filter(i => i.active).length,                                                      color: 'text-[var(--accent-emerald-text)]', bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20' },
             { label: 'Active Financers',    value: financers.filter(f => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length,  color: 'text-[var(--accent-emerald-text)]', bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20' },
-            { label: 'Trainer Assignments', value: trainerAssignments.length,                                                                     color: 'text-violet-400',             bg: 'bg-violet-500/10 border-violet-500/20' },
-            { label: 'Admin Users',         value: adminUsers.length,                                                                             color: 'text-amber-400',              bg: 'bg-amber-500/10 border-amber-500/20' },
+            { label: 'Trainer Assignments', value: trainerAssignments.length,                                                                     color: 'text-[var(--accent-purple-text)]',             bg: 'bg-violet-500/10 border-violet-500/20' },
+            { label: 'Admin Users',         value: adminUsers.length,                                                                             color: 'text-[var(--accent-amber-text)]',              bg: 'bg-amber-500/10 border-amber-500/20' },
           ]} />
         )}
 

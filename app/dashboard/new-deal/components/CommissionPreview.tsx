@@ -109,7 +109,7 @@ export function CommissionPreview({
             </div>
             {setterId && setterBaselinePerW === 0 && (
               <div className="flex justify-between items-center rounded-lg px-3 py-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)' }}>
-                <span className="text-amber-400 text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
+                <span className="text-[var(--accent-amber-text)] text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
               </div>
             )}
             {setterId && setterTotal > 0 && (
@@ -126,7 +126,7 @@ export function CommissionPreview({
             {trainerRep && trainerTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Trainer override ({trainerRep.name})</span>
-                <span className="text-amber-400 font-semibold">
+                <span className="text-[var(--accent-amber-text)] font-semibold">
                   <TickerAmount amount={trainerTotal} />
                   <span className="text-[var(--text-muted)] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
                 </span>
@@ -135,7 +135,7 @@ export function CommissionPreview({
             {closerTrainerRep && closerTrainerTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Trainer override ({closerTrainerRep.name})</span>
-                <span className="text-amber-400 font-semibold">
+                <span className="text-[var(--accent-amber-text)] font-semibold">
                   <TickerAmount amount={closerTrainerTotal} />
                   <span className="text-[var(--text-muted)] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
                 </span>

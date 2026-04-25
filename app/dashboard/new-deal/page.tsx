@@ -968,7 +968,7 @@ function NewDealPage() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-xs text-amber-400 mt-1.5">
+                  <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
                     ★ Trainer: {trainerRep.name} — override{' '}
                     <span className="font-semibold">${trainerOverrideRate.toFixed(2)}/W</span>
                     {currentTier?.upToDeal !== null && nextTier
@@ -1194,7 +1194,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1232,7 +1232,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1317,7 +1317,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1355,7 +1355,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{mappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1416,7 +1416,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1587,8 +1587,8 @@ function NewDealPage() {
               <div className="flex items-center justify-between mt-1 mb-4">
                 <p className="text-xs italic text-[var(--text-dim)]">Internal notes only — not visible to customer</p>
                 <p className={`text-xs transition-colors duration-200 ${
-                  form.notes.length >= 500 ? 'text-red-400' :
-                  form.notes.length >= 400 ? 'text-amber-400' :
+                  form.notes.length >= 500 ? 'text-[var(--accent-red-text)]' :
+                  form.notes.length >= 400 ? 'text-[var(--accent-amber-text)]' :
                   'text-[var(--text-muted)]'
                 }`}>
                   {form.notes.length}/500

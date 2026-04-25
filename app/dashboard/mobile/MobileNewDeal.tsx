@@ -54,7 +54,7 @@ function genId(prefix: string): string {
 
 function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
   return errors[field] ? (
-    <p className="text-red-400 text-base mt-1" role="alert">{errors[field]}</p>
+    <p className="text-[var(--accent-red-text)] text-base mt-1" role="alert">{errors[field]}</p>
   ) : null;
 }
 
@@ -129,7 +129,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
     <div className="px-4 pt-3 pb-24 space-y-4">
       <div className="flex flex-col items-center text-center pt-4 mb-4">
         <div className="success-icon-spring w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)' }}>
-          <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
+          <CheckCircle2 className="w-7 h-7 text-[var(--accent-emerald-text)]" strokeWidth={1.5} />
         </div>
         <div className="success-up-1">
           <h2 className="text-xl font-black text-[var(--text-primary)] mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
@@ -180,7 +180,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         {deal.setterTotal > 0 && (
           <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
             <p className="text-base font-medium" style={{ color: 'var(--text-muted)' }}>{deal.setterName} (Setter)</p>
-            <p className="text-lg font-bold text-blue-400">${deal.setterTotal.toLocaleString()}</p>
+            <p className="text-lg font-bold text-[var(--accent-blue-text)]">${deal.setterTotal.toLocaleString()}</p>
           </div>
         )}
       </MobileCard>
@@ -1055,7 +1055,7 @@ export default function MobileNewDeal() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-base text-amber-400 mt-1">
+                  <p className="text-base text-[var(--accent-amber-text)] mt-1">
                     Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
                   </p>
                 )}
@@ -1207,7 +1207,7 @@ export default function MobileNewDeal() {
             {/* Cash indicator */}
             {form.installer && form.productType === 'Cash' && (
               <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-base" style={{ background: 'rgba(13,21,37,0.6)', border: '1px solid rgba(26,40,64,0.5)', color: 'var(--text-muted)' }}>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                 Cash deal -- no financer required
               </div>
             )}
@@ -1305,7 +1305,7 @@ export default function MobileNewDeal() {
                         const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
                         const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
                         return mappedIsArchived ? (
-                          <p className="mt-1 text-sm text-yellow-400">
+                          <p className="mt-1 text-sm text-[var(--accent-amber-text)]">
                             The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
                           </p>
                         ) : null;
@@ -1424,7 +1424,7 @@ export default function MobileNewDeal() {
                         const hasFamilyMap = !!rawMappedFinancer && form.productType !== 'Loan';
                         const mappedIsArchived = hasFamilyMap && !activeFinancers.includes(rawMappedFinancer);
                         return mappedIsArchived ? (
-                          <p className="mt-1 text-sm text-yellow-400">
+                          <p className="mt-1 text-sm text-[var(--accent-amber-text)]">
                             The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
                           </p>
                         ) : null;
@@ -1539,7 +1539,7 @@ export default function MobileNewDeal() {
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
-                <p className={`text-base mt-1 ${soldPPW >= closerPerW ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <p className={`text-base mt-1 ${soldPPW >= closerPerW ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}`}>
                   {soldPPW >= closerPerW
                     ? `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W above baseline`
                     : `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W below baseline -- no commission`}
@@ -1599,13 +1599,13 @@ export default function MobileNewDeal() {
                     {form.setterId && setterTotal > 0 && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Setter</span>
-                        <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
+                        <span className="text-[var(--accent-blue-text)] font-semibold">${setterTotal.toLocaleString()}</span>
                       </div>
                     )}
                     {trainerRep && trainerTotal > 0 && (
                       <div className="flex justify-between text-base" style={{ color: 'var(--text-muted)' }}>
                         <span>Trainer ({trainerRep.name})</span>
-                        <span className="text-amber-400">${trainerTotal.toLocaleString()}</span>
+                        <span className="text-[var(--accent-amber-text)]">${trainerTotal.toLocaleString()}</span>
                       </div>
                     )}
                     {effectiveRole === 'admin' && (
@@ -1784,7 +1784,7 @@ export default function MobileNewDeal() {
                       <>
                         <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
                           <span style={{ color: 'var(--text-muted)' }}>Setter total</span>
-                          <span className="text-blue-400 font-semibold">${setterTotal.toLocaleString()}</span>
+                          <span className="text-[var(--accent-blue-text)] font-semibold">${setterTotal.toLocaleString()}</span>
                         </div>
                         <div className="text-base" style={{ color: 'var(--text-muted)' }}>
                           M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3 ? ` · M3: $${setterM3.toLocaleString()}` : ''}
@@ -1794,7 +1794,7 @@ export default function MobileNewDeal() {
                     {trainerRep && trainerTotal > 0 && (
                       <div className="flex justify-between pt-1.5 text-base" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Trainer ({trainerRep.name})</span>
-                        <span className="text-amber-400">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
+                        <span className="text-[var(--accent-amber-text)]">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
                     )}
                     {effectiveRole === 'admin' && (

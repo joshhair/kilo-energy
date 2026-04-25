@@ -30,7 +30,7 @@ export function ConfirmDeleteDialog({
       <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <AlertTriangle className="w-4 h-4 text-[var(--accent-red-text)]" />
           </div>
           <h3 className="text-[var(--text-primary)] font-bold">
             Delete {confirm.type === 'trainer' ? `Assignment: ${confirm.name}` : confirm.name}?

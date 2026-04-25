@@ -76,7 +76,7 @@ export function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; cl
   const above = soldPPW >= closerPerW;
   const diff = Math.abs(soldPPW - closerPerW).toFixed(2);
   return (
-    <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[var(--accent-emerald-text)]' : 'text-amber-400'}`}>
+    <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}`}>
       {above ? `$${diff}/W above baseline \u2713` : `$${diff}/W below baseline \u2014 no commission`}
     </p>
   );

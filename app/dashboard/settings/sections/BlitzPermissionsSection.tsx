@@ -122,9 +122,9 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
   };
   const roleBadge = (repType: string) => {
     const rt = repType?.toLowerCase() ?? '';
-    if (rt === 'closer') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Closer</span>;
+    if (rt === 'closer') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/20 text-[var(--accent-purple-text)]">Closer</span>;
     if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-text)]">Setter</span>;
-    if (rt === 'both') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">Both</span>;
+    if (rt === 'both') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-[var(--accent-teal-text)]">Both</span>;
     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--text-muted)]/20 text-[var(--text-secondary)]">{repType || 'N/A'}</span>;
   };
 
@@ -189,7 +189,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
           </button>
           <button
             onClick={() => setConfirmDialog({ open: true, action: 'revoke' })}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600/20 text-[var(--accent-red-text)] hover:bg-red-600/30 transition-colors"
           >
             Revoke All
           </button>

@@ -28,7 +28,7 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
       <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
       <div className="flex items-center gap-2 mb-5">
         <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(234,179,8,0.15)' }}>
-          <Trophy className="w-4 h-4 text-yellow-400" />
+          <Trophy className="w-4 h-4 text-[var(--accent-amber-text)]" />
         </div>
         <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Top Performers</h2>
       </div>
@@ -46,7 +46,7 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
             >
               <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${gradient}${isFirst ? ' animate-podium-glow' : ''}`} />
 
-              {isFirst && <Award className="w-4 h-4 text-yellow-400" />}
+              {isFirst && <Award className="w-4 h-4 text-[var(--accent-amber-text)]" />}
 
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} p-[2px] flex-shrink-0`}>
                 <div

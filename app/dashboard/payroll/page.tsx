@@ -811,7 +811,7 @@ function PayrollPageInner() {
         </div>
         <div className="grid grid-cols-3 gap-4 mb-8">
           <StatCard label="Draft" value={myDraft} color="text-[var(--text-secondary)]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
-          <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
+          <StatCard label="Pending" value={myPending} color="text-[var(--accent-amber-text)]" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
           <StatCard label="Paid" value={myPaid} color="text-[var(--accent-emerald-text)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
         </div>
         {/* Type and status filters */}
@@ -1073,7 +1073,7 @@ function PayrollPageInner() {
             ) : (
               <><Receipt className="w-3.5 h-3.5" /> Reimbursements
                 {pendingReimCount > 0 && (
-                  <span className="ml-1 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
+                  <span className="ml-1 text-xs bg-yellow-500/20 text-[var(--accent-amber-text)] px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
                 )}
               </>
             )}
@@ -1196,10 +1196,10 @@ function PayrollPageInner() {
                           <div className="flex gap-2 flex-wrap">
                             {r.status === 'Pending' && (
                               <>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-emerald-text)]`}>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-emerald-soft)] hover:bg-emerald-800/60 text-[var(--accent-emerald-text)]`}>
                                   <Check className="w-3 h-3" /> Approve
                                 </button>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-red-900/50 hover:bg-red-800/60 text-red-400`}>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-red-soft)] hover:bg-red-800/60 text-[var(--accent-red-text)]`}>
                                   <X className="w-3 h-3" /> Deny
                                 </button>
                               </>
@@ -1219,7 +1219,7 @@ function PayrollPageInner() {
                                 Unarchive
                               </button>
                             )}
-                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10`} title="Delete permanently">
+                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10`} title="Delete permanently">
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
@@ -1254,14 +1254,14 @@ function PayrollPageInner() {
           drill-down. 2026-04-23. */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {/* Draft */}
-        <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'rgba(77,159,255,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
           <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
-        <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'rgba(255,176,32,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
@@ -1543,7 +1543,7 @@ function PayrollPageInner() {
                         <button
                           disabled={processingEntryIds.has(entry.id)}
                           onClick={() => handleDeleteEntry(entry)}
-                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40 hover:text-red-400 hover:bg-red-500/10"
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40 hover:text-[var(--accent-red-text)] hover:bg-red-500/10"
                           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-dim)' }}
                           title="Delete entry"
                         >
@@ -1599,20 +1599,20 @@ function PayrollPageInner() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
             <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-yellow-900/30">
-                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                <div className="p-2 rounded-lg bg-[var(--accent-amber-soft)]">
+                  <AlertTriangle className="w-5 h-5 text-[var(--accent-amber-text)]" />
                 </div>
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[var(--text-secondary)] text-sm mb-3">
-                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-text)] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
+                This will mark <span className="text-[var(--accent-amber-text)] font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-text)] font-semibold">Paid</span>. Only <span className="text-[var(--accent-amber-text)] font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
               {filterRepId && (() => {
                 const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
                 return (
-                  <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                    <p className="text-yellow-300 text-xs leading-relaxed">
+                  <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
+                    <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
                       <span className="font-semibold">Rep filter is active.</span> Only entries for <span className="font-semibold">{filteredRepName}</span> will be published. Other reps&apos; Pending entries will not be affected.
                     </p>
                   </div>
@@ -1620,9 +1620,9 @@ function PayrollPageInner() {
               })()}
 
               {(payFilterFrom || payFilterTo) && (
-                <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                  <p className="text-yellow-300 text-xs leading-relaxed">
+                <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
+                  <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
                     <span className="font-semibold">Date filter is active.</span> Only entries{payFilterFrom && <> from <span className="font-semibold">{payFilterFrom}</span></>}{payFilterTo && <> to <span className="font-semibold">{payFilterTo}</span></>} will be published. Pending entries outside this date range will not be affected.
                   </p>
                 </div>
@@ -1642,7 +1642,7 @@ function PayrollPageInner() {
                           <p className="text-[var(--text-primary)] text-sm font-medium">{rep.name}</p>
                           <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className={`${rep.total < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
+                        <span className={`${rep.total < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>

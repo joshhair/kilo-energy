@@ -101,7 +101,7 @@ export function SubDealersSection() {
                     <span className="text-[var(--text-muted)] text-xs tabular-nums">{dealCount} deal{dealCount !== 1 ? 's' : ''}</span>
                     <button
                       onClick={() => setConfirmRemove(sd.id)}
-                      className="text-[var(--text-dim)] hover:text-red-400 transition-colors p-1"
+                      className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors p-1"
                       title="Deactivate sub-dealer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -44,14 +44,14 @@ export const ACCENT_COLOR_MAP: Record<string, string> = {
 
 /** Pipeline phase color palette — mirrors PHASE_PILL in projects/page.tsx */
 const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: string; chipBg: string; chipBorder: string }> = {
-  'New':             { bar: 'bg-sky-500',      text: 'text-sky-300',     dot: 'bg-sky-400',     chipBg: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         chipBorder: 'border-sky-700/30'      },
-  'Acceptance':      { bar: 'bg-indigo-500',   text: 'text-indigo-300',  dot: 'bg-indigo-400',  chipBg: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    chipBorder: 'border-indigo-700/30'   },
-  'Site Survey':     { bar: 'bg-violet-500',   text: 'text-violet-300',  dot: 'bg-violet-400',  chipBg: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    chipBorder: 'border-violet-700/30'   },
-  'Design':          { bar: 'bg-fuchsia-500',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400', chipBg: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  chipBorder: 'border-fuchsia-700/30'  },
-  'Permitting':      { bar: 'bg-amber-500',    text: 'text-amber-300',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
-  'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
-  'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
-  'PTO':             { bar: 'bg-[var(--accent-emerald-solid)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'New':             { bar: 'bg-sky-500',      text: 'text-[var(--accent-cyan-text)]',     dot: 'bg-sky-400',     chipBg: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         chipBorder: 'border-sky-700/30'      },
+  'Acceptance':      { bar: 'bg-indigo-500',   text: 'text-[var(--accent-blue-text)]',  dot: 'bg-indigo-400',  chipBg: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    chipBorder: 'border-indigo-700/30'   },
+  'Site Survey':     { bar: 'bg-violet-500',   text: 'text-[var(--accent-purple-text)]',  dot: 'bg-violet-400',  chipBg: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    chipBorder: 'border-violet-700/30'   },
+  'Design':          { bar: 'bg-fuchsia-500',  text: 'text-[var(--accent-purple-text)]', dot: 'bg-fuchsia-400', chipBg: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  chipBorder: 'border-fuchsia-700/30'  },
+  'Permitting':      { bar: 'bg-amber-500',    text: 'text-[var(--accent-amber-text)]',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
+  'Pending Install': { bar: 'bg-orange-500',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
+  'Installed':       { bar: 'bg-teal-500',     text: 'text-[var(--accent-teal-text)]',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
+  'PTO':             { bar: 'bg-[var(--accent-emerald-solid)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
   'Completed':       { bar: 'bg-slate-500',     text: 'text-slate-300',   dot: 'bg-slate-400',   chipBg: 'bg-gradient-to-r from-slate-900/40 to-slate-800/20',       chipBorder: 'border-slate-700/30'    },
 };
 
@@ -201,7 +201,7 @@ export function NeedsAttentionSection({
           <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${totalCount > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
           <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-emerald-solid)]/15'}`}>
             {totalCount > 0
-              ? <AlertCircle className="w-4 h-4 text-amber-400" />
+              ? <AlertCircle className="w-4 h-4 text-[var(--accent-amber-text)]" />
               : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             }
           </div>
@@ -209,7 +209,7 @@ export function NeedsAttentionSection({
             {totalCount > 0 ? 'Needs Attention' : 'All Clear'}
           </h2>
           {totalCount > 0 && (
-            <span className="bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-amber-500/20 border border-amber-500/30 text-[var(--accent-amber-text)] text-xs font-bold px-2 py-0.5 rounded-full">
               {totalCount}
             </span>
           )}
@@ -264,20 +264,20 @@ export function NeedsAttentionSection({
                               : 'bg-amber-500/15'
                           }`}
                         >
-                          {item.kind === 'flagged' && <Flag className="w-4 h-4 text-red-400" />}
+                          {item.kind === 'flagged' && <Flag className="w-4 h-4 text-[var(--accent-red-text)]" />}
                           {item.kind === 'stuck' && isCritical && (
                             <span className="relative flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-red-400" />
+                              <Clock className="w-4 h-4 text-[var(--accent-red-text)]" />
                               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                             </span>
                           )}
                           {item.kind === 'stuck' && isBehind && !isCritical && (
-                            <Clock className="w-4 h-4 text-orange-400" />
+                            <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" />
                           )}
                           {item.kind === 'stuck' && !isBehind && (
-                            <Clock className="w-4 h-4 text-amber-400" />
+                            <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" />
                           )}
-                          {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-yellow-400" />}
+                          {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-[var(--accent-amber-text)]" />}
                         </div>
                       );
                     })()}
@@ -290,9 +290,9 @@ export function NeedsAttentionSection({
                           if (item.kind !== 'stuck') return 'text-[var(--text-muted)]';
                           const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
                           const ratio = (item.staleDays ?? 0) / threshold;
-                          if (ratio >= 2) return 'text-red-400';
-                          if (ratio >= 1.5) return 'text-orange-400';
-                          return 'text-amber-400';
+                          if (ratio >= 2) return 'text-[var(--accent-red-text)]';
+                          if (ratio >= 1.5) return 'text-[var(--accent-amber-text)]';
+                          return 'text-[var(--accent-amber-text)]';
                         })()
                       }`}>
                         {item.kind === 'flagged' && 'Flagged for review'}
@@ -355,7 +355,7 @@ export function NeedsAttentionSection({
                   className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-500/15">
-                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[var(--text-primary)] text-sm font-medium truncate">Payroll needs review</p>
@@ -479,7 +479,7 @@ export function MyTasksSection({
                 className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-emerald-text)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-emerald-solid)] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[var(--text-secondary)]'}`}>
+                <p className={`text-sm font-medium truncate ${overdue ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-secondary)]'}`}>
                   {task.text}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -495,7 +495,7 @@ export function MyTasksSection({
                     <span
                       className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                         overdue
-                          ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                          ? 'bg-red-500/15 text-[var(--accent-red-text)] border border-red-500/20'
                           : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'
                       }`}
                     >
@@ -613,24 +613,31 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
 
 // ─── Phase Color Constants ───────────────────────────────────────────────────
 
-const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400'  },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400'  },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400'   },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400'    },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400'     },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+const PHASE_HEX: Record<string, { solid: string; text: string }> = {
+  'New':             { solid: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)'    },
+  'Acceptance':      { solid: 'var(--accent-blue-solid)',    text: 'var(--accent-blue-text)'    },
+  'Site Survey':     { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Design':          { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Permitting':      { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Pending Install': { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Installed':       { solid: 'var(--accent-teal-solid)',    text: 'var(--accent-teal-text)'    },
+  'PTO':             { solid: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)' },
+  'Cancelled':       { solid: 'var(--accent-red-solid)',     text: 'var(--accent-red-text)'     },
+  'On Hold':         { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
 };
 
 export function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
+  const s = PHASE_HEX[phase] ?? { solid: 'var(--text-muted)', text: 'var(--text-secondary)' };
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={{
+        background: `color-mix(in srgb, ${s.solid} 14%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${s.solid} 30%, transparent)`,
+        color: s.text,
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.solid }} />
       {phase}
     </span>
   );
@@ -640,7 +647,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -649,7 +656,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 
 export function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)]">{label}</span>;
-  const color = paid ? 'text-[var(--accent-emerald-text)]' : 'text-yellow-400';
+  const color = paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -1237,7 +1244,7 @@ export default function DashboardPage() {
       value: formatCompactKW(totalKWSold),
       sub: `${myProjects.length} projects this period`,
       icon: Zap,
-      color: 'text-yellow-400',
+      color: 'text-[var(--accent-amber-text)]',
       accentGradient: 'from-yellow-500 to-yellow-400',
       glowClass: 'stat-glow-yellow',
       sparkData: systemSizeSparkData,
@@ -1269,7 +1276,7 @@ export default function DashboardPage() {
       value: fmt$(totalChargebacks),
       sub: `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}`,
       icon: AlertCircle,
-      color: 'text-red-400',
+      color: 'text-[var(--accent-red-text)]',
       accentGradient: 'from-red-500 to-red-400',
       glowClass: 'stat-glow-red',
       sparkData: chargebackSparkData,
@@ -1558,7 +1565,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-[var(--text-primary)] text-sm font-medium">{incentive.title}</p>
                       {incentive.type === 'personal' && (
-                        <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
+                        <span className="text-xs text-[var(--accent-purple-text)] bg-[var(--accent-purple-soft)] px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
                     <p className="text-[var(--accent-emerald-text)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>

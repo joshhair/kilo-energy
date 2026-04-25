@@ -206,11 +206,11 @@ function SetterPopover({
                   <span className="flex-1 text-sm text-[var(--text-primary)] font-medium truncate">{currentSetter.name}</span>
                   {/* Role badge */}
                   {isTrainee(currentSetter.id)
-                    ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
+                    ? <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">★ Trainee</span>
                     : <span className="text-[var(--accent-emerald-text)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                   {/* Green checkmark */}
-                  <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />
                 </button>
                 {/* Divider + "Reassign" label */}
                 <div className="mx-3 border-t border-[var(--border)]/60" />
@@ -246,7 +246,7 @@ function SetterPopover({
                   <span className="flex-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] truncate">{rep.name}</span>
                   {/* Role badge */}
                   {isTrainee(rep.id)
-                    ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
+                    ? <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">★ Trainee</span>
                     : <span className="text-[var(--accent-emerald-text)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                 </button>
@@ -697,7 +697,7 @@ export default function TableView({
               <div className="flex justify-between items-start mb-2">
                 <span className="text-[var(--text-primary)] font-medium text-sm flex items-center gap-1.5">
                   {proj.customerName}
-                  {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                  {proj.flagged && <Flag className="w-3 h-3 text-[var(--accent-red-text)]" />}
                 </span>
                 <PhaseBadge phase={proj.phase} />
               </div>
@@ -815,7 +815,7 @@ export default function TableView({
                       onClick={(e) => e.stopPropagation()}
                     >
                       {proj.customerName}
-                      {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                      {proj.flagged && <Flag className="w-3 h-3 text-[var(--accent-red-text)]" />}
                       <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
                     </Link>
                   </td>
@@ -856,8 +856,8 @@ export default function TableView({
                         {isMyRow && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-emerald-solid)]/40'
+                              ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
+                              : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/40'
                           }`}>
                             You · {myRole}
                           </span>

@@ -30,34 +30,34 @@ import Link from 'next/link';
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
 
 const PHASE_COLORS: Record<string, string> = {
-  'New': 'bg-sky-900/40 text-sky-300 border-sky-700/30',
-  'Acceptance': 'bg-indigo-900/40 text-indigo-300 border-indigo-700/30',
-  'Site Survey': 'bg-violet-900/40 text-violet-300 border-violet-700/30',
-  'Design': 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/30',
-  'Permitting': 'bg-amber-900/40 text-amber-300 border-amber-700/30',
-  'Pending Install': 'bg-orange-900/40 text-orange-300 border-orange-700/30',
-  'Installed': 'bg-teal-900/40 text-teal-300 border-teal-700/30',
-  'PTO': 'bg-emerald-900/40 text-emerald-300 border-emerald-700/30',
-  'Completed': 'bg-green-900/40 text-green-300 border-green-600/30',
-  'Cancelled': 'bg-red-900/40 text-red-300 border-red-700/30',
+  'New': 'bg-[var(--accent-cyan-soft)] text-[var(--accent-cyan-text)] border-sky-700/30',
+  'Acceptance': 'bg-[var(--accent-blue-soft)] text-[var(--accent-blue-text)] border-indigo-700/30',
+  'Site Survey': 'bg-[var(--accent-purple-soft)] text-[var(--accent-purple-text)] border-violet-700/30',
+  'Design': 'bg-[var(--accent-purple-soft)] text-[var(--accent-purple-text)] border-fuchsia-700/30',
+  'Permitting': 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border-amber-700/30',
+  'Pending Install': 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border-orange-700/30',
+  'Installed': 'bg-[var(--accent-teal-soft)] text-[var(--accent-teal-text)] border-teal-700/30',
+  'PTO': 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-emerald-700/30',
+  'Completed': 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-green-600/30',
+  'Cancelled': 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border-red-700/30',
   'On Hold': 'bg-[var(--surface-card)]/40 text-[var(--text-secondary)] border-[var(--border)]/30',
 };
 
 const COST_CATEGORY_STYLES: Record<string, { badge: string; bar: string }> = {
-  housing:    { badge: 'bg-blue-900/40 text-[var(--accent-cyan-text)] border border-blue-700/30',       bar: 'bg-[var(--accent-emerald-solid)]' },
-  travel:     { badge: 'bg-purple-900/40 text-purple-300 border border-purple-700/30',  bar: 'bg-purple-500' },
-  gas:        { badge: 'bg-amber-900/40 text-amber-300 border border-amber-700/30',     bar: 'bg-amber-500' },
-  meals:      { badge: 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/30', bar: 'bg-[var(--accent-emerald-solid)]' },
-  incentives: { badge: 'bg-pink-900/40 text-pink-300 border border-pink-700/30',        bar: 'bg-pink-500' },
-  swag:       { badge: 'bg-orange-900/40 text-orange-300 border border-orange-700/30',  bar: 'bg-orange-500' },
+  housing:    { badge: 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-blue-700/30',       bar: 'bg-[var(--accent-emerald-solid)]' },
+  travel:     { badge: 'bg-[var(--accent-purple-soft)] text-[var(--accent-purple-text)] border border-purple-700/30',  bar: 'bg-purple-500' },
+  gas:        { badge: 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-700/30',     bar: 'bg-amber-500' },
+  meals:      { badge: 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-emerald-700/30', bar: 'bg-[var(--accent-emerald-solid)]' },
+  incentives: { badge: 'bg-[var(--accent-purple-soft)] text-[var(--accent-purple-text)] border border-pink-700/30',        bar: 'bg-pink-500' },
+  swag:       { badge: 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-orange-700/30',  bar: 'bg-orange-500' },
   other:      { badge: 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border border-[var(--border)]/30',        bar: 'bg-[var(--text-muted)]' },
 };
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; border: string }> = {
-  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-[var(--accent-cyan-text)]',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
-  active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
+  upcoming:  { bg: 'bg-[var(--accent-blue-soft)]',    text: 'text-[var(--accent-cyan-text)]',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
+  active:    { bg: 'bg-[var(--accent-emerald-soft)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
   completed: { bg: 'bg-[var(--surface-card)]/50',     text: 'text-[var(--text-secondary)]',    dot: 'bg-[var(--text-muted)]',    border: 'border-[var(--border)]/30' },
-  cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
+  cancelled: { bg: 'bg-[var(--accent-red-soft)]',      text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400',     border: 'border-red-700/30' },
 };
 
 type TabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'profitability';
@@ -646,14 +646,14 @@ export default function BlitzDetailPage() {
             {canManage ? (
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
-                {isAdmin && <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
-                {isOwner && canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && <button disabled={cancelRequesting} onClick={() => { setCancelReason(''); setShowCancelDialog(true); }} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors disabled:opacity-50"><XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}</button>}
+                {isAdmin && <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
+                {isOwner && canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && <button disabled={cancelRequesting} onClick={() => { setCancelReason(''); setShowCancelDialog(true); }} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors disabled:opacity-50"><XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}</button>}
               </div>
             ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && blitz.createdById === effectiveRepId && (
               <button
                 disabled={cancelRequesting}
                 onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-900/20 transition-colors shrink-0 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors shrink-0 disabled:opacity-50"
               >
                 <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}
               </button>
@@ -701,7 +701,7 @@ export default function BlitzDetailPage() {
             {isAdmin ? (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Net Profit</p>
-                <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
+                <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>{formatCurrency(netProfit)}</p>
               </div>
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
@@ -885,7 +885,7 @@ export default function BlitzDetailPage() {
                     <tr key={p.id} className={`border-b border-[var(--border-subtle)]/50 last:border-0 hover:bg-[var(--surface-card)]/40 transition-colors ${idx % 2 === 0 ? 'bg-[var(--surface)]/20' : ''}`}>
                       <td className="px-4 py-3 text-[var(--text-primary)] font-medium"><Link href={`/dashboard/users/${p.user.id}`} className="hover:text-[var(--accent-cyan-text)] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : p.joinStatus === 'pending' ? 'bg-amber-900/30 text-amber-300' : 'bg-red-900/30 text-red-300'}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' : p.joinStatus === 'pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' : 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)]'}`}>
                           {p.joinStatus}
                         </span>
                       </td>
@@ -908,10 +908,10 @@ export default function BlitzDetailPage() {
                           {p.joinStatus === 'pending' ? (
                             <div className="flex items-center justify-end gap-1.5">
                               <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[var(--accent-emerald-solid)] text-[var(--text-primary)] rounded hover:bg-[var(--accent-emerald-solid)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
-                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
+                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-[var(--accent-red-text)] border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
-                            p.user.id !== blitz.owner.id && <button disabled={removingParticipants.has(p.user.id)} onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will permanently remove them from the blitz. Deals where their co-participant (closer or setter) is also no longer in the blitz will be unlinked; deals where the co-participant remains will stay linked to the blitz. This cannot be undone.', onConfirm: () => { setConfirmAction(null); handleRemoveParticipant(p.user.id); } })} className="text-[var(--text-dim)] hover:text-red-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-4 h-4" /></button>
+                            p.user.id !== blitz.owner.id && <button disabled={removingParticipants.has(p.user.id)} onClick={() => setConfirmAction({ title: `Remove ${p.user.firstName} ${p.user.lastName}?`, message: 'This will permanently remove them from the blitz. Deals where their co-participant (closer or setter) is also no longer in the blitz will be unlinked; deals where the co-participant remains will stay linked to the blitz. This cannot be undone.', onConfirm: () => { setConfirmAction(null); handleRemoveParticipant(p.user.id); } })} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-4 h-4" /></button>
                           )}
                         </td>
                       )}
@@ -1088,7 +1088,7 @@ export default function BlitzDetailPage() {
                       <td className="px-4 py-3 text-[var(--text-secondary)]">{formatDate(c.date)}</td>
                       <td className="px-4 py-3 text-right text-[var(--text-primary)] font-medium">{formatCurrency(c.amount)}</td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => setConfirmAction({ title: 'Delete this cost?', message: `Remove the ${c.category} cost of ${formatCurrency(c.amount)}? This cannot be undone.`, onConfirm: () => { handleDeleteCost(c.id); setConfirmAction(null); } })} className="text-[var(--text-dim)] hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => setConfirmAction({ title: 'Delete this cost?', message: `Remove the ${c.category} cost of ${formatCurrency(c.amount)}? This cannot be undone.`, onConfirm: () => { handleDeleteCost(c.id); setConfirmAction(null); } })} className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}

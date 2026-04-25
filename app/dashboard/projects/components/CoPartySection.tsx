@@ -150,7 +150,7 @@ export function CoPartySection({
                   type="button"
                   onClick={() => removeRow(idx)}
                   aria-label="Remove"
-                  className="text-[var(--text-muted)] hover:text-red-400 p-1"
+                  className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] p-1"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

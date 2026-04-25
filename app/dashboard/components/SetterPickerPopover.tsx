@@ -45,9 +45,9 @@ function roleLabel(repType: Rep['repType']): string {
 
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
-  if (repType === 'closer') return 'text-purple-400';
+  if (repType === 'closer') return 'text-[var(--accent-purple-text)]';
   if (repType === 'setter') return 'text-[var(--accent-emerald-text)]';
-  return 'text-teal-400';
+  return 'text-[var(--accent-teal-text)]';
 }
 
 export function SetterPickerPopover({
@@ -165,7 +165,7 @@ export function SetterPickerPopover({
               {currentSetter.name}
             </span>
             {isTrainee(currentSetter.id) && (
-              <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
+              <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">★ Trainee</span>
             )}
           </>
         ) : (
@@ -229,7 +229,7 @@ export function SetterPickerPopover({
                 <X className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
               </span>
               <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">Self gen (no setter)</span>
-              {!setterId && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+              {!setterId && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
             </button>
 
             {/* Divider */}
@@ -256,9 +256,9 @@ export function SetterPickerPopover({
                     {roleLabel(currentSetter.repType)}
                   </span>
                   {isTrainee(currentSetter.id) && (
-                    <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★</span>
+                    <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">★</span>
                   )}
-                  <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />
                 </button>
                 <div className="mx-3 border-t border-[var(--border)]/60" />
                 <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
@@ -300,7 +300,7 @@ export function SetterPickerPopover({
                   </span>
                   {/* Trainee star */}
                   {isTrainee(rep.id) && (
-                    <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★</span>
+                    <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">★</span>
                   )}
                 </button>
               ))

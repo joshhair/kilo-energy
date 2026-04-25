@@ -867,7 +867,7 @@ function CalculatorPage() {
                       const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                       const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
                       return trainerName ? (
-                        <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">* {trainerName}</span>
+                        <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">* {trainerName}</span>
                       ) : null;
                     }}
                   />
