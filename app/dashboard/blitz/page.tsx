@@ -969,7 +969,7 @@ function BlitzPageInner() {
               )}
 
               {myBlitzes.length === 0 && pendingBlitzes.length === 0 && browseBlitzes.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
                   <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
                   <div className="text-center">
                     <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitzes available</p>
@@ -985,7 +985,7 @@ function BlitzPageInner() {
       {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
               <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
                 <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No requests submitted</p>
@@ -1025,7 +1025,7 @@ function BlitzPageInner() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
               <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
                 <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitz requests</p>

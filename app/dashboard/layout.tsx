@@ -426,7 +426,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-6 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
+          background: 'linear-gradient(135deg, var(--surface-page) 0%, color-mix(in srgb, var(--accent-blue-solid) 8%, var(--surface-page)) 50%, color-mix(in srgb, var(--accent-blue-solid) 14%, var(--surface-page)) 100%)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}

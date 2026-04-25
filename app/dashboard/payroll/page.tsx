@@ -1477,7 +1477,7 @@ function PayrollPageInner() {
                   key={entry.id}
                   className={`table-row-enter row-stagger-${Math.min(i, 24)}`}
                   style={{
-                    background: selectedIds.has(entry.id) ? 'var(--accent-emerald-soft)' : i % 2 === 0 ? 'var(--surface-card)' : '#141820',
+                    background: selectedIds.has(entry.id) ? 'var(--accent-emerald-soft)' : i % 2 === 0 ? 'var(--surface-card)' : 'var(--surface-pressed)',
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
                   }}
