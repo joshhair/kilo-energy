@@ -125,6 +125,12 @@ export default function MobileProjects() {
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);
   const [listFading, setListFading] = useState(false);
+  // Cap initial render at 50 cards to keep iOS Safari from OOM-killing the
+  // tab when admins land on this page with hundreds of active projects.
+  // "Show more" reveals the next 50; resets to 50 whenever the filtered
+  // set changes so a new filter doesn't inherit a huge expanded count.
+  const PAGE_SIZE = 50;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     const delay = search === '' ? 0 : 300;
@@ -227,6 +233,12 @@ export default function MobileProjects() {
     }
     return sorted;
   }, [visibleProjects, phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode]);
+
+  // Reset pagination on filter change so a "Show more"-expanded view
+  // doesn't carry over and re-blow memory after the user narrows.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode, dealScope, qaOnly]);
 
   // "Are any non-default filters active?" — drives the empty-state CTA:
   // if yes, show Clear Filters; otherwise show Submit Deal.
@@ -498,7 +510,7 @@ export default function MobileProjects() {
             )}
           </div>
         ) : (
-          filtered.map((project, index) => {
+          filtered.slice(0, visibleCount).map((project, index) => {
             const showCommission = !isPM && (effectiveRole === 'rep' || effectiveRole === 'sub-dealer');
             const commission = showCommission
               ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries)
@@ -548,6 +560,21 @@ export default function MobileProjects() {
               </MobileCard>
             );
           })
+        )}
+        {filtered.length > visibleCount && (
+          <button
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            className="mt-2 mx-auto block min-h-[44px] px-5 rounded-xl text-sm font-semibold transition-colors"
+            style={{
+              background: 'var(--m-card, var(--surface-mobile-card))',
+              border: '1px solid var(--m-border, var(--border-mobile))',
+              color: 'var(--m-text, #fff)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            Show {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
+            <span className="ml-2 opacity-60">({filtered.length - visibleCount} remaining)</span>
+          </button>
         )}
       </div>
     </div>
