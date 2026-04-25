@@ -17,7 +17,7 @@ re-defining the same token names under `[data-theme="light"]`.
    that to one.
 3. **Refactor safety.** Change one variable, every surface using it shifts.
 
-## Token taxonomy (27 tokens)
+## Token taxonomy (35 tokens: 5 surface + 4 text + 3 border + 21 accent + 2 special)
 
 Names are flat — no nested categories. The prefix is the category; the
 suffix is the variant.
@@ -52,7 +52,7 @@ Lines and dividers.
 | `--border-subtle` | `#1a2840` | `#eef0f5` | Quiet dividers, sub-list separators |
 | `--border-strong` | `#334155` | `#a8b1c2` | Hover/focus rings, emphasized borders |
 
-### Accent (6 colors × 3 variants = 18)
+### Accent (7 colors × 3 variants = 21)
 Solid is the saturated form; soft is a low-alpha tint for backgrounds;
 glow is a softer, larger-radius form for box-shadows.
 
@@ -112,6 +112,17 @@ the pre-sweep baseline:
    that were using the warmer `#00e07a` for non-mark uses (button
    backgrounds, "active" indicators) shift to the cooler emerald —
    visually a ~3-degree hue shift, slightly cooler/more modern.
+6. `#00c4f0` (the old `--accent-cyan`) and `#00b4d8` (the old `--accent-cyan2`)
+   — both were "cyan." Unified to `--accent-cyan-solid = #00b4d8` (the
+   slightly cooler/deeper one) since it pairs better with the unified
+   emerald in gradients.
+7. `#ffb020` (old `--accent-amber`, 2 usages) and `#f5a623` (old
+   `--accent-warning`, 21 usages) — both were "amber/warning." Unified
+   to `--accent-amber-solid = #f5a623` (the more-used pumpkin tone).
+8. `#ff5252` (old `--accent-red`) and `#ff6b6b` (old `--accent-danger`)
+   and `#ef4444` (most common in inline styles) — three reds. Unified
+   to `--accent-red-solid = #ef4444` (the Tailwind red-500 standard,
+   most commonly used in the codebase already).
 
 Total expected dark-mode visual delta: < 1% across surfaces using these
 unified values, with the green shift (#5) being the most visible. Item 5

@@ -2,70 +2,168 @@
 @import "tailwindcss";
 
 :root {
-  /* Tell the browser this app is dark. Without this, native UI (<select>
-     option lists, scrollbars, form autofill, date pickers) renders in the
-     OS default scheme — on Windows that's a light-mode overlay on our dark
-     surfaces, producing unreadable light-on-light dropdowns. */
+  /* Tell the browser this app is dark by default. Native UI (<select>
+     options, scrollbars, autofill) follows this. The [data-theme="light"]
+     block below overrides to light when the user opts in via Settings. */
   color-scheme: dark;
 
-  /* ── Brand ──────────────────────────────────────────────────────────────── */
-  --brand: #00e07a;
-  --brand-light: #00c4f0;
-  --brand-dark: #00b868;
+  /* ═══════════════════════════════════════════════════════════════════════
+     CANONICAL TOKENS — see docs/design-tokens.md
+     The single source of truth. Every styled surface must reference these.
+     Light-mode values appear under [data-theme="light"] at the bottom of
+     this :root group.
+     ═══════════════════════════════════════════════════════════════════════ */
 
-  /* ── Surfaces ───────────────────────────────────────────────────────────── */
-  --surface-base: #0b0d11;
-  --surface-deep: #0f1117;
-  --surface: #161920;
-  --surface-card: #1d2028;
-  --surface-mobile-base: #060b13;
-  --surface-mobile-card: #0d1525;
+  /* ── Surface (5) ────────────────────────────────────────────────────── */
+  --surface-page: #050d18;
+  --surface-card: #161920;
+  --surface-elevated: #1d2028;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-pressed: #0d1525;
 
-  /* ── Text ────────────────────────────────────────────────────────────────── */
+  /* ── Text (4) ───────────────────────────────────────────────────────── */
   --text-primary: #f0f2f7;
   --text-secondary: #c2c8d8;
-  --text-muted: #8891a8;
-  --text-dim: #525c72;
-  --text-mobile-muted: #8899aa;
-  --text-mobile-dim: #445577;
+  --text-muted: #8899aa;       /* unified from #8891a8/#8899aa */
+  --text-dim: #445577;          /* unified from #525c72/#445577 */
 
-  /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --border: #272b35;
-  --border-subtle: #333849;
-  --border-mobile: #1a2840;
+  /* ── Border (3) ─────────────────────────────────────────────────────── */
+  --border-default: #272b35;
+  --border-subtle: #1a2840;
+  --border-strong: #334155;
 
-  /* ── Accents ─────────────────────────────────────────────────────────────── */
-  --accent-green: #00e07a;
-  --accent-emerald: #00e5a0;
-  --accent-cyan: #00c4f0;
-  --accent-cyan2: #00b4d8;
-  --accent-amber: #ffb020;
-  --accent-red: #ff5252;
-  --accent-blue: #4d9fff;
-  --accent-purple: #b47dff;
-  --accent-teal: #00d4c8;
-  --accent-danger: #ff6b6b;
-  --accent-warning: #f5a623;
+  /* ── Accent — 7 colors × 3 variants (21 tokens) ─────────────────────── */
+  --accent-emerald-solid: #00e5a0;
+  --accent-emerald-soft: rgba(0, 229, 160, 0.10);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.30);
 
-  /* ── Legacy aliases (match existing --d-* / --m-* references) ───────────── */
-  --d-surface: var(--surface);
-  --d-card: var(--surface-card);
-  --d-border: var(--border);
+  --accent-cyan-solid: #00b4d8;
+  --accent-cyan-soft: rgba(0, 180, 216, 0.10);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+
+  --accent-blue-solid: #4d9fff;
+  --accent-blue-soft: rgba(77, 159, 255, 0.10);
+  --accent-blue-glow: rgba(77, 159, 255, 0.30);
+
+  --accent-red-solid: #ef4444;
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.30);
+
+  --accent-amber-solid: #f5a623;
+  --accent-amber-soft: rgba(245, 166, 35, 0.10);
+  --accent-amber-glow: rgba(245, 166, 35, 0.30);
+
+  --accent-purple-solid: #b47dff;
+  --accent-purple-soft: rgba(180, 125, 255, 0.10);
+  --accent-purple-glow: rgba(180, 125, 255, 0.30);
+
+  --accent-teal-solid: #00d4c8;
+  --accent-teal-soft: rgba(0, 212, 200, 0.10);
+  --accent-teal-glow: rgba(0, 212, 200, 0.30);
+
+  /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
+  --text-on-accent: #000;       /* black text on solid accent buttons */
+  --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     LEGACY ALIASES — Phase 3 deletes these.
+     Kept here so any code referencing the old names still renders. The
+     sweep migrates references off these one surface at a time.
+     Some legacy names map to their old hex literal (where the old value
+     differs from the canonical), others alias to the canonical token.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  --brand: #00e07a;                       /* literal — brand mark */
+  --brand-light: var(--accent-cyan-solid);
+  --brand-dark: #00b868;                  /* literal brand variant */
+
+  --surface-base: var(--surface-pressed);
+  --surface-deep: var(--surface-pressed);
+  --surface: var(--surface-card);
+  --surface-mobile-base: var(--surface-page);
+  --surface-mobile-card: var(--surface-card);
+
+  --text-mobile-muted: var(--text-muted);
+  --text-mobile-dim: var(--text-dim);
+
+  --border: var(--border-default);
+  --border-mobile: var(--border-subtle);
+
+  --accent-green: #00e07a;                /* literal brand green */
+  --accent-emerald: var(--accent-emerald-solid);
+  --accent-cyan: var(--accent-cyan-solid);
+  --accent-cyan2: var(--accent-cyan-solid);
+  --accent-amber: var(--accent-amber-solid);
+  --accent-warning: var(--accent-amber-solid);
+  --accent-red: var(--accent-red-solid);
+  --accent-danger: var(--accent-red-solid);
+  --accent-blue: var(--accent-blue-solid);
+  --accent-purple: var(--accent-purple-solid);
+  --accent-teal: var(--accent-teal-solid);
+
+  --d-surface: var(--surface-card);
+  --d-card: var(--surface-elevated);
+  --d-border: var(--border-default);
   --d-border2: var(--border-subtle);
   --d-text: var(--text-primary);
   --d-sub: var(--text-secondary);
   --d-muted: var(--text-muted);
   --d-dim: var(--text-dim);
-  --d-green: var(--accent-green);
-  --d-cyan: var(--accent-cyan);
-  --d-amber: var(--accent-amber);
-  --d-red: var(--accent-red);
-  --d-blue: var(--accent-blue);
-  --d-purple: var(--accent-purple);
-  --d-teal: var(--accent-teal);
-  --navy-base: var(--surface-base);
-  --navy-card: var(--surface-deep);
+  --d-green: var(--accent-emerald-solid);
+  --d-cyan: var(--accent-cyan-solid);
+  --d-amber: var(--accent-amber-solid);
+  --d-red: var(--accent-red-solid);
+  --d-blue: var(--accent-blue-solid);
+  --d-purple: var(--accent-purple-solid);
+  --d-teal: var(--accent-teal-solid);
+
+  --navy-base: var(--surface-page);
+  --navy-card: var(--surface-pressed);
   --navy-hover: var(--surface-card);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — activated by <html data-theme="light">
+   Only redefines the canonical tokens. Legacy aliases above resolve via
+   var() so they cascade automatically.
+   ═════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-page: #f7f8fb;
+  --surface-card: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.40);
+  --surface-pressed: #eef0f5;
+
+  --text-primary: #0a0e1a;
+  --text-secondary: #3a4358;
+  --text-muted: #5a6478;
+  --text-dim: #8a93a5;
+
+  --border-default: #dfe3eb;
+  --border-subtle: #eef0f5;
+  --border-strong: #a8b1c2;
+
+  /* Accent solids stay identical across themes — emerald is emerald.
+     Only the soft / glow alpha forms shift to compensate for the
+     higher-contrast light bg. */
+  --accent-emerald-soft: rgba(0, 229, 160, 0.14);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.20);
+  --accent-cyan-soft: rgba(0, 180, 216, 0.14);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.20);
+  --accent-blue-soft: rgba(77, 159, 255, 0.14);
+  --accent-blue-glow: rgba(77, 159, 255, 0.20);
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.20);
+  --accent-amber-soft: rgba(245, 166, 35, 0.14);
+  --accent-amber-glow: rgba(245, 166, 35, 0.20);
+  --accent-purple-soft: rgba(180, 125, 255, 0.14);
+  --accent-purple-glow: rgba(180, 125, 255, 0.20);
+  --accent-teal-soft: rgba(0, 212, 200, 0.14);
+  --accent-teal-glow: rgba(0, 212, 200, 0.20);
+
+  --text-on-accent: #ffffff;
 }
 
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
@@ -202,15 +300,19 @@ body {
 
 @media (max-width: 767px) {
   :root {
-    --m-bg: #060b13;
-    --m-card: #0d1525;
-    --m-border: #1a2840;
-    --m-accent: #00e5a0;
-    --m-accent2: #00b4d8;
-    --m-text-muted: #8899aa;
-    --m-text-dim: #445577;
-    --m-danger: #ff6b6b;
-    --m-warning: #f5a623;
+    /* Mobile-specific aliases — Phase 3 removes these. All but the font
+       vars now resolve to canonical tokens; the prior "mobile palette"
+       was identical-or-near-identical to the canonical palette and is
+       collapsed here so light mode flows through automatically. */
+    --m-bg: var(--surface-page);
+    --m-card: var(--surface-card);
+    --m-border: var(--border-subtle);
+    --m-accent: var(--accent-emerald-solid);
+    --m-accent2: var(--accent-cyan-solid);
+    --m-text-muted: var(--text-muted);
+    --m-text-dim: var(--text-dim);
+    --m-danger: var(--accent-red-solid);
+    --m-warning: var(--accent-amber-solid);
     --m-font-display: 'DM Serif Display', serif;
     --m-font-body: 'DM Sans', sans-serif;
   }
