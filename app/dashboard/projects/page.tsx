@@ -236,7 +236,7 @@ function ProjectsPageInner() {
           <Link
             href="/dashboard/new-deal"
             className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
           >
             + New Deal
           </Link>

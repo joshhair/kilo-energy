@@ -195,8 +195,8 @@ export function AdminDashboard({
     { label: 'Kilo Revenue', value: fmtCompact$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmtCompact$(n), icon: DollarSign, accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: `Total revenue from installer baselines across all deals · ${fmt$(Math.round(totalRevenue))}` },
     { label: 'Gross Profit', value: fmtCompact$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmtCompact$(n), icon: BarChart2, accentHex: 'var(--accent-cyan-solid)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: `Revenue minus Kilo cost basis (closer baseline minus Kilo baseline) · ${fmt$(Math.round(totalProfit))}` },
     { label: 'Paid Out', value: fmtCompact$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmtCompact$(n), icon: CheckCircle, accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: `Commission disbursed to reps via payroll in the selected period · ${fmt$(Math.round(totalPaid))}` },
-    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
-    { label: 'Total Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size from all deals (kW or MW when ≥1 MW)' },
+    { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: 'var(--accent-purple-solid)', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
+    { label: 'Total Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-teal-solid)', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size from all deals (kW or MW when ≥1 MW)' },
     { label: 'Total Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red-solid)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Total system size from Installed, PTO, or Completed projects' },
   ];
 
@@ -303,8 +303,8 @@ export function AdminDashboard({
     'Kilo Revenue':      { color: 'var(--accent-emerald-solid)', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
     'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-solid)', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: 'var(--accent-cyan-solid)', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
     'Paid Out':          { color: 'var(--accent-amber-solid)', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
-    'Total Users':       { color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
-    'Total Sold':     { color: '#00d4c8', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
+    'Total Users':       { color: 'var(--accent-purple-solid)', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
+    'Total Sold':     { color: 'var(--accent-teal-solid)', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
     'Total Installed': { color: 'var(--text-muted)', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
   };
 
@@ -350,7 +350,7 @@ export function AdminDashboard({
       <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
           { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[var(--accent-emerald-solid)]/25', textCls: 'text-[var(--accent-emerald-solid)]', href: '/dashboard/payroll'   },
-          { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[#b47dff]/25', textCls: 'text-[#b47dff]', href: '/dashboard/users'     },
+          { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[var(--accent-purple-solid)]/25', textCls: 'text-[var(--accent-purple-solid)]', href: '/dashboard/users'     },
           { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[var(--accent-cyan-solid)]/25', textCls: 'text-[var(--accent-cyan-solid)]', href: '/dashboard/new-deal'  },
           { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[var(--accent-amber-solid)]/25', textCls: 'text-[var(--accent-amber-solid)]', href: '/dashboard/settings'  },
         ].map(({ label, Icon, bgClass, hoverBg, borderCls, textCls, href }) => (

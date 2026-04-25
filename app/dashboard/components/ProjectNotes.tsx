@@ -144,7 +144,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
             onClick={handleAdd}
             disabled={!draft.trim() || adding}
             className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
           >
             {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post note'}
           </button>

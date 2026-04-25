@@ -1702,7 +1702,7 @@ function NewDealPage() {
               type="button"
               onClick={handleNext}
               className="inline-flex items-center gap-2 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--surface-page)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
@@ -1714,7 +1714,7 @@ function NewDealPage() {
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--surface-page)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>

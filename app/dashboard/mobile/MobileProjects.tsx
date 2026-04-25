@@ -468,8 +468,8 @@ export default function MobileProjects() {
             {/* Simple folder illustration — matches the visual
                 language used in the desktop Projects empty state. */}
             <svg width="72" height="72" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-              <rect x="10" y="24" width="60" height="44" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-              <path d="M10 24 L30 24 L36 18 L70 18 L70 32 L10 32 Z" fill="#0f172a" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+              <rect x="10" y="24" width="60" height="44" rx="6" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
+              <path d="M10 24 L30 24 L36 18 L70 18 L70 32 L10 32 Z" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinejoin="round"/>
             </svg>
             {hasActiveFilters ? (
               <>

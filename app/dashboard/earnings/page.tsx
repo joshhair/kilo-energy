@@ -599,10 +599,10 @@ function RepEarningsView() {
                           {/* Illustration — empty wallet / coin stack */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Wallet body */}
-                            <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
                             <rect x="10" y="30" width="52" height="4" fill="#334155"/>
                             {/* Coin pocket */}
-                            <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                            <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5"/>
                             <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
                             {/* Dashed lines — empty content indicator */}
                             <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
@@ -673,10 +673,10 @@ function RepEarningsView() {
                           {/* Illustration — trophy / award */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Trophy cup */}
-                            <path d="M28 16 L52 16 L52 42 C52 50.8 46.6 56 40 56 C33.4 56 28 50.8 28 42 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            <path d="M28 16 L52 16 L52 42 C52 50.8 46.6 56 40 56 C33.4 56 28 50.8 28 42 Z" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
                             {/* Trophy handles */}
-                            <path d="M28 22 C20 22 16 28 16 34 C16 40 20 42 26 42" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none"/>
-                            <path d="M52 22 C60 22 64 28 64 34 C64 40 60 42 54 42" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                            <path d="M28 22 C20 22 16 28 16 34 C16 40 20 42 26 42" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                            <path d="M52 22 C60 22 64 28 64 34 C64 40 60 42 54 42" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round" fill="none"/>
                             {/* Stem */}
                             <rect x="36" y="56" width="8" height="8" fill="#334155"/>
                             {/* Base */}
@@ -748,11 +748,11 @@ function RepEarningsView() {
                           {/* Illustration — receipt / document */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Receipt body */}
-                            <path d="M18 14 L62 14 L62 66 L54 62 L46 66 L38 62 L30 66 L22 62 L18 66 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            <path d="M18 14 L62 14 L62 66 L54 62 L46 66 L38 62 L30 66 L22 62 L18 66 Z" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
                             {/* Lines on receipt */}
-                            <line x1="26" y1="26" x2="54" y2="26" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
-                            <line x1="26" y1="34" x2="54" y2="34" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
-                            <line x1="26" y1="42" x2="42" y2="42" stroke="#334155" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="26" y1="26" x2="54" y2="26" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="26" y1="34" x2="54" y2="34" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"/>
+                            <line x1="26" y1="42" x2="42" y2="42" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"/>
                             {/* Amount line */}
                             <line x1="26" y1="50" x2="54" y2="50" stroke="var(--surface-card)" strokeWidth="2.5" strokeLinecap="round"/>
                             {/* Dollar badge */}
@@ -1161,7 +1161,7 @@ function AdminFinancialsView() {
                             {/* Illustration — filter funnel with empty list */}
                             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                               {/* Funnel */}
-                              <path d="M14 18 L66 18 L46 42 L46 62 L34 56 L34 42 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+                              <path d="M14 18 L66 18 L46 42 L46 62 L34 56 L34 42 Z" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinejoin="round"/>
                               {/* Empty lines below funnel */}
                               <line x1="20" y1="70" x2="36" y2="70" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                               <line x1="20" y1="76" x2="28" y2="76" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
@@ -1280,11 +1280,11 @@ function AdminFinancialsView() {
                             {/* Illustration — filter funnel with empty receipt */}
                             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                               {/* Funnel */}
-                              <path d="M12 16 L58 16 L40 38 L40 56 L30 50 L30 38 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+                              <path d="M12 16 L58 16 L40 38 L40 56 L30 50 L30 38 Z" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinejoin="round"/>
                               {/* Receipt stub to the right */}
-                              <rect x="52" y="34" width="18" height="24" rx="3" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                              <line x1="56" y1="41" x2="66" y2="41" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
-                              <line x1="56" y1="46" x2="62" y2="46" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                              <rect x="52" y="34" width="18" height="24" rx="3" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5"/>
+                              <line x1="56" y1="41" x2="66" y2="41" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinecap="round"/>
+                              <line x1="56" y1="46" x2="62" y2="46" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinecap="round"/>
                               {/* X on funnel */}
                               <line x1="28" y1="23" x2="36" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
                               <line x1="36" y1="23" x2="28" y2="31" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>

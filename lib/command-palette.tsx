@@ -7,7 +7,7 @@
  * ─────────
  * • Opens on ⌘K (Mac) / Ctrl+K (Windows / Linux); same chord toggles closed.
  * • Backdrop: bg-black/60, backdrop-blur-sm, animate-modal-backdrop.
- * • Panel: animate-modal-panel, rounded-2xl, bg-[#161920].
+ * • Panel: animate-modal-panel, rounded-2xl, bg-[var(--surface-card)].
  * • Auto-focused search input — text-lg, bg-transparent, no border.
  * • Results grouped by category when idle; flat + highlighted when filtering.
  * • Arrow-key navigation (wraps around), Enter navigates, Esc closes.
@@ -64,7 +64,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 /** Styled keyboard hint pill. */
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="font-mono text-[10px] text-[#8891a8] bg-[#1d2028] border border-[#272b35]/80 rounded px-1.5 py-0.5 leading-none">
+    <kbd className="font-mono text-[10px] text-[var(--text-muted)] bg-[var(--surface-elevated)] border border-[var(--border-default)]/80 rounded px-1.5 py-0.5 leading-none">
       {children}
     </kbd>
   );
@@ -117,14 +117,14 @@ function PaletteRow({ item, isActive, query, nodeRef, onMouseEnter, onClick }: P
       onMouseEnter={onMouseEnter}
       className={[
         'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
-        isActive ? 'bg-[#00e07a]/10 text-white' : 'text-[#c2c8d8] hover:text-white',
+        isActive ? 'bg-[#00e07a]/10 text-white' : 'text-[var(--text-secondary)] hover:text-white',
       ].join(' ')}
     >
       {/* Icon badge */}
       <div
         className={[
           'flex-shrink-0 p-1.5 rounded-lg transition-colors',
-          isActive ? 'bg-[#00e07a]/20 text-[#00e07a]' : 'bg-[#1d2028] text-[#c2c8d8]',
+          isActive ? 'bg-[#00e07a]/20 text-[#00e07a]' : 'bg-[var(--surface-elevated)] text-[var(--text-secondary)]',
         ].join(' ')}
       >
         <Icon className="w-3.5 h-3.5" />
@@ -334,25 +334,25 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
     >
       {/* Panel */}
       <div className="w-full max-w-xl animate-modal-panel">
-        <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+        <div className="bg-[var(--surface-card)] border border-[var(--border-default)]/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
 
           {/* Search input ─────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#272b35]/60">
-            <Search className="w-5 h-5 text-[#c2c8d8] flex-shrink-0" aria-hidden />
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-default)]/60">
+            <Search className="w-5 h-5 text-[var(--text-secondary)] flex-shrink-0" aria-hidden />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
               placeholder="Jump to page…"
-              className="flex-1 bg-transparent text-lg text-white placeholder:text-[#8891a8] outline-none border-none"
+              className="flex-1 bg-transparent text-lg text-white placeholder:text-[var(--text-muted)] outline-none border-none"
               autoComplete="off"
               spellCheck={false}
               aria-label="Search pages"
             />
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-[#8891a8] hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028]"
+              className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
               aria-label="Close command palette"
             >
               <X className="w-4 h-4" />
@@ -362,7 +362,7 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
           {/* Results ──────────────────────────────────────────────────────── */}
           <div className="max-h-[360px] overflow-y-auto py-1.5" role="listbox">
             {filteredItems.length === 0 ? (
-              <p className="px-4 py-10 text-center text-[#8891a8] text-sm">
+              <p className="px-4 py-10 text-center text-[var(--text-muted)] text-sm">
                 No pages match &ldquo;{query}&rdquo;
               </p>
             ) : showGrouped ? (
@@ -372,7 +372,7 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
                 return (
                   <div key={category}>
                     <div className="px-3 pt-3 pb-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[#8891a8]">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
                         {category}
                       </span>
                     </div>
@@ -410,14 +410,14 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
           </div>
 
           {/* Footer legend ────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[#272b35]/60 bg-[#0b0d11]/40">
-            <span className="flex items-center gap-1.5 text-[11px] text-[#525c72]">
+          <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[var(--border-default)]/60 bg-[var(--surface-pressed)]/40">
+            <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
               <Kbd>↑↓</Kbd>navigate
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] text-[#525c72]">
+            <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
               <Kbd>↵</Kbd>go
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] text-[#525c72]">
+            <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
               <Kbd>esc</Kbd>close
             </span>
           </div>
@@ -492,15 +492,15 @@ export function ShortcutsOverlay({
       aria-label="Keyboard shortcuts"
     >
       <div className="w-full max-w-md animate-modal-panel">
-        <div className="bg-[#161920] border border-[#272b35]/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+        <div className="bg-[var(--surface-card)] border border-[var(--border-default)]/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
 
           {/* Header ────────────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#272b35]/60">
-            <Keyboard className="w-4 h-4 text-[#c2c8d8] flex-shrink-0" aria-hidden />
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border-default)]/60">
+            <Keyboard className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0" aria-hidden />
             <h2 className="flex-1 text-white text-sm font-semibold">Keyboard Shortcuts</h2>
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-[#8891a8] hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1d2028]"
+              className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
               aria-label="Close keyboard shortcuts"
             >
               <X className="w-4 h-4" />
@@ -511,13 +511,13 @@ export function ShortcutsOverlay({
           <div className="divide-y divide-slate-700/40">
             {SHORTCUT_GROUPS.map((group) => (
               <div key={group.label} className="px-5 py-3.5">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8891a8] mb-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-2.5">
                   {group.label}
                 </p>
                 <ul className="space-y-2">
                   {group.shortcuts.map(({ key, description }) => (
                     <li key={key} className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-[#c2c8d8]">{description}</span>
+                      <span className="text-sm text-[var(--text-secondary)]">{description}</span>
                       <Kbd>{key}</Kbd>
                     </li>
                   ))}
@@ -527,8 +527,8 @@ export function ShortcutsOverlay({
           </div>
 
           {/* Footer ─────────────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-1.5 px-5 py-2.5 border-t border-[#272b35]/60 bg-[#0b0d11]/40">
-            <span className="flex items-center gap-1.5 text-[11px] text-[#525c72]">
+          <div className="flex items-center gap-1.5 px-5 py-2.5 border-t border-[var(--border-default)]/60 bg-[var(--surface-pressed)]/40">
+            <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
               <Kbd>esc</Kbd>close
             </span>
           </div>

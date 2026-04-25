@@ -105,10 +105,10 @@ export default function LoginPage() {
         {/* Loading indicator */}
         <div className="flex flex-col items-center gap-3" style={{ animation: 'splashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both' }}>
           <div className="w-8 h-8 relative">
-            <div className="absolute inset-0 rounded-full border-2 border-[#272b35]/40" />
+            <div className="absolute inset-0 rounded-full border-2 border-[var(--border-default)]/40" />
             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-blue-500/60 animate-spin" />
           </div>
-          <p className="text-[#8891a8] text-sm">Loading...</p>
+          <p className="text-[var(--text-muted)] text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -136,7 +136,7 @@ export default function LoginPage() {
               ENERGY
             </span>
           </div>
-          <p className="text-[#8891a8] text-sm tracking-widest uppercase">Internal Portal</p>
+          <p className="text-[var(--text-muted)] text-sm tracking-widest uppercase">Internal Portal</p>
         </div>
 
         {/* Card */}
@@ -151,7 +151,7 @@ export default function LoginPage() {
               <p className="text-white text-sm font-medium">{error}</p>
               <button
                 onClick={() => signOut({ redirectUrl: '/sign-in' })}
-                className="text-[#c2c8d8] hover:text-white text-xs transition-colors underline underline-offset-2"
+                className="text-[var(--text-secondary)] hover:text-white text-xs transition-colors underline underline-offset-2"
               >
                 Sign out and try a different account
               </button>
@@ -159,7 +159,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-[#525c72] text-xs mt-6 tracking-wide">
+        <p className="text-center text-[var(--text-dim)] text-xs mt-6 tracking-wide">
           &copy; {new Date().getFullYear()} Kilo Energy &middot; Internal Use Only
         </p>
       </div>

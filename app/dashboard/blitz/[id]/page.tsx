@@ -618,7 +618,7 @@ export default function BlitzDetailPage() {
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -841,7 +841,7 @@ export default function BlitzDetailPage() {
               <button
                 onClick={() => setShowAddParticipant(true)}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
               >
                 <UserPlus className="w-4 h-4" /> Add Rep
               </button>
@@ -939,7 +939,7 @@ export default function BlitzDetailPage() {
                     onClick={handleAddParticipant}
                     disabled={!selectedRepId || addingParticipant}
                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
                   >
                     {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {addingParticipant ? 'Adding...' : 'Add'}
@@ -1028,7 +1028,7 @@ export default function BlitzDetailPage() {
             <button
               onClick={() => setShowAddCost(true)}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
             >
               <Plus className="w-4 h-4" /> Add Cost
             </button>
@@ -1050,7 +1050,7 @@ export default function BlitzDetailPage() {
                   onClick={handleAddCost}
                   disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
                 >
                   {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {addingCost ? 'Adding...' : 'Add Cost'}

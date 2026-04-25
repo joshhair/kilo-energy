@@ -41,11 +41,11 @@ export default function RootLayout({
       baseTheme: dark,
       variables: {
         colorPrimary: '#00e5a0',
-        colorTextOnPrimaryBackground: '#050d18',
+        colorTextOnPrimaryBackground: 'var(--surface-page)',
       },
       elements: {
         formButtonPrimary:
-          'bg-gradient-to-r from-[#1de9b6] to-[#00b894] text-[#050d18] font-semibold hover:opacity-90 transition-opacity',
+          'bg-gradient-to-r from-[#1de9b6] to-[#00b894] text-[var(--surface-page)] font-semibold hover:opacity-90 transition-opacity',
       },
     }}>
       <html lang="en" className="h-full">
@@ -55,7 +55,7 @@ export default function RootLayout({
              Windows 1080p displays (Josh flagged blur twice). Default
              subpixel rendering is the right call; the globals.css note at
              line 124 has the longer explanation. */}
-        <body className="min-h-full text-white" style={{ backgroundColor: 'var(--navy-base)' }}>
+        <body className="min-h-full text-white" style={{ backgroundColor: 'var(--surface-page)' }}>
           <AppProvider>
             <ToastProvider>
               {children}

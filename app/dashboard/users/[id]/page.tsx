@@ -451,7 +451,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     const badgeColor =
       resolvedUser.role === 'admin' ? 'var(--accent-amber-solid)'
       : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan-solid)'
-      : '#b47dff'; // sub-dealer purple
+      : 'var(--accent-purple-solid)'; // sub-dealer purple
     const badgeBg =
       resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
       : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'

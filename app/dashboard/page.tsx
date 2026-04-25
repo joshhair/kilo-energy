@@ -1273,7 +1273,7 @@ export default function DashboardPage() {
       accentGradient: 'from-red-500 to-red-400',
       glowClass: 'stat-glow-red',
       sparkData: chargebackSparkData,
-      sparkStroke: '#ef4444',
+      sparkStroke: 'var(--accent-red-solid)',
       pctChange: undefined as number | null | undefined,
       href: '/dashboard/my-pay#pending-chargebacks',
       tooltip: 'Chargebacks still pending — click to see which deals.',
@@ -1348,13 +1348,13 @@ export default function DashboardPage() {
               aria-hidden="true"
             >
               {/* Panel body */}
-              <rect x="4" y="14" width="52" height="32" rx="3" fill="var(--surface-card)" stroke="#334155" strokeWidth="1.5" />
+              <rect x="4" y="14" width="52" height="32" rx="3" fill="var(--surface-card)" stroke="var(--border-strong)" strokeWidth="1.5" />
               {/* Grid lines — horizontal */}
-              <line x1="4" y1="25" x2="56" y2="25" stroke="#334155" strokeWidth="1" />
-              <line x1="4" y1="36" x2="56" y2="36" stroke="#334155" strokeWidth="1" />
+              <line x1="4" y1="25" x2="56" y2="25" stroke="var(--border-strong)" strokeWidth="1" />
+              <line x1="4" y1="36" x2="56" y2="36" stroke="var(--border-strong)" strokeWidth="1" />
               {/* Grid lines — vertical */}
-              <line x1="21" y1="14" x2="21" y2="46" stroke="#334155" strokeWidth="1" />
-              <line x1="38" y1="14" x2="38" y2="46" stroke="#334155" strokeWidth="1" />
+              <line x1="21" y1="14" x2="21" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
+              <line x1="38" y1="14" x2="38" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
               {/* Cell shimmer fills */}
               <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
               <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />

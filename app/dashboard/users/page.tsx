@@ -64,7 +64,7 @@ const ROLE_BADGE_CLS = {
 } as const;
 const ROLE_BADGE_STYLES = {
   closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-solid)', borderColor: 'rgba(77,159,255,0.25)' },
-  setter: { background: 'rgba(180,125,255,0.1)', color: '#b47dff', borderColor: 'rgba(180,125,255,0.25)' },
+  setter: { background: 'rgba(180,125,255,0.1)', color: 'var(--accent-purple-solid)', borderColor: 'rgba(180,125,255,0.25)' },
   both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan-solid)', borderColor: 'rgba(0,196,240,0.25)' },
 } as const;
 const ROLE_BADGE_HOVER = {
@@ -725,7 +725,7 @@ function UsersPageInner() {
               setShowAddModal(true);
             }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -752,7 +752,7 @@ function UsersPageInner() {
               <div
                 key={inv.id}
                 className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg"
-                style={{ background: '#0f1117', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Clock className="w-4 h-4 text-amber-400/60 shrink-0" />
@@ -767,7 +767,7 @@ function UsersPageInner() {
                   onClick={() => handleRevokeInvitation(inv.id, inv.emailAddress)}
                   disabled={revokingInvitationId === inv.id}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-red-500/10 disabled:opacity-50"
-                  style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                  style={{ color: 'var(--accent-red-solid)', border: '1px solid rgba(239,68,68,0.3)' }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -826,7 +826,7 @@ function UsersPageInner() {
 
         const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
           rep:              { label: 'Rep',              color: 'var(--accent-emerald-solid)', bg: 'rgba(0,224,122,0.12)' },
-          'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'var(--accent-purple-soft)' },
+          'sub-dealer':     { label: 'Sub-Dealer',       color: 'var(--accent-purple-solid)', bg: 'var(--accent-purple-soft)' },
           project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-solid)', bg: 'rgba(0,196,240,0.12)' },
           admin:            { label: 'Admin',            color: 'var(--accent-amber-solid)', bg: 'rgba(255,176,32,0.12)' },
         };
@@ -1063,7 +1063,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'var(--accent-purple-soft)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)' }}
+                          style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-solid)', border: '1px solid rgba(180,125,255,0.3)' }}
                         >
                           {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1995,7 +1995,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

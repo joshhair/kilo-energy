@@ -846,10 +846,10 @@ function PayrollPageInner() {
               {/* Illustration — wallet with coins (no earnings yet) */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Wallet body */}
-                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
                 <rect x="10" y="30" width="52" height="4" fill="#334155"/>
                 {/* Coin pocket */}
-                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5"/>
                 <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
                 {/* Dashed lines — empty content indicator */}
                 <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
@@ -959,7 +959,7 @@ function PayrollPageInner() {
               onClick={() => setShowPublishConfirm(true)}
               disabled={pendingCount === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -1391,7 +1391,7 @@ function PayrollPageInner() {
                   setShowPaymentModal(true);
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
               >
                 <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
               </button>

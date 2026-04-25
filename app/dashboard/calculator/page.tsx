@@ -666,8 +666,8 @@ function CalculatorPage() {
   const breakdownSegments = [
     { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-emerald-solid)' },
     ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan-solid)' }] : []),
-    ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
-    ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
+    ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: 'var(--accent-purple-solid)' }] : []),
+    ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: 'var(--accent-purple-solid)' }] : []),
     ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber-solid)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
@@ -1092,7 +1092,7 @@ function CalculatorPage() {
                   {trainerRep && trainerTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -1106,7 +1106,7 @@ function CalculatorPage() {
                   {closerTrainerRep && closerTrainerTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>

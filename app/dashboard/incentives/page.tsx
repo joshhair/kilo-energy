@@ -685,7 +685,7 @@ export default function IncentivesPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 font-medium px-4 py-2.5 rounded-xl text-sm transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}
             >
               <Plus className="w-4 h-4" />
               New Incentive
@@ -1083,7 +1083,7 @@ function IncentiveCard({
           )}
           <div
             className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: incentive.type === 'company' ? 'var(--accent-blue-solid)' : '#b47dff' }}
+            style={{ backgroundColor: incentive.type === 'company' ? 'var(--accent-blue-solid)' : 'var(--accent-purple-solid)' }}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

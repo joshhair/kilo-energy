@@ -265,15 +265,15 @@ export default function ProfileDrawer({
             {isViewingAs && viewAsName && onClearViewAs ? (
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" style={{ color: '#f5a623' }} />
-                  <span className="text-sm" style={{ color: '#f5a623', fontFamily: "'DM Sans', sans-serif" }}>
+                  <Eye className="w-4 h-4" style={{ color: 'var(--accent-amber-solid)' }} />
+                  <span className="text-sm" style={{ color: 'var(--accent-amber-solid)', fontFamily: "'DM Sans', sans-serif" }}>
                     Viewing as <span className="text-white font-semibold">{viewAsName}</span>
                   </span>
                 </div>
                 <button
                   onClick={() => { onClearViewAs(); onClose(); }}
                   className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl min-h-[44px] active:scale-[0.94] active:bg-white/5 transition-[transform,background-color] duration-75"
-                  style={{ color: '#f5a623', WebkitTapHighlightColor: 'transparent' }}
+                  style={{ color: 'var(--accent-amber-solid)', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <XCircle className="w-4 h-4" /> Exit
                 </button>

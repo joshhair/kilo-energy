@@ -720,7 +720,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               onClick={handleSend}
               disabled={!composeText.trim() || sending}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
             >
               <Send className="w-3.5 h-3.5" />
               Send

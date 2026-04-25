@@ -963,7 +963,7 @@ export default function TableView({
                           {/* Illustration — folder with solar panel motif */}
                           <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                             {/* Folder body */}
-                            <path d="M10 28 C10 24.7 12.7 22 16 22 L30 22 L34 27 L64 27 C67.3 27 70 29.7 70 33 L70 58 C70 61.3 67.3 64 64 64 L16 64 C12.7 64 10 61.3 10 58 Z" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+                            <path d="M10 28 C10 24.7 12.7 22 16 22 L30 22 L34 27 L64 27 C67.3 27 70 29.7 70 33 L70 58 C70 61.3 67.3 64 64 64 L16 64 C12.7 64 10 61.3 10 58 Z" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
                             {/* Folder tab */}
                             <path d="M10 22 L30 22 L34 27 L10 27 Z" fill="#334155"/>
                             {/* Solar panel grid inside folder */}
