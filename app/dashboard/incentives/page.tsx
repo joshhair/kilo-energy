@@ -1127,7 +1127,7 @@ function IncentiveCard({
                   style={{
                     width: `${pct}%`,
                     background: pct >= 100
-                      ? 'linear-gradient(90deg, var(--accent-emerald-solid), #00d4c8)'
+                      ? 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-teal-solid))'
                       : 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                   }}
                 />
@@ -1192,7 +1192,7 @@ function IncentiveCard({
                   style={{
                     width: `${pct}%`,
                     background: pct >= 100
-                      ? 'linear-gradient(90deg, var(--accent-emerald-solid), #00d4c8)'
+                      ? 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-teal-solid))'
                       : 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                     animationDelay: `${cardIndex * 120}ms`,
                   }}

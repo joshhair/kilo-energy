@@ -298,14 +298,20 @@ export function AdminDashboard({
     return count;
   })();
 
-  // GradCard color config for the 6 stat cards
+  // GradCard color config for the 6 stat cards. Each gradient tints the
+  // canonical surface-card with the card's accent color via color-mix —
+  // this gives the accent-tinted dark feel in dark mode AND a soft
+  // accent-tinted light feel in light mode, automatically. Pure dark hex
+  // (the prior implementation) couldn't theme.
+  const tintedGrad = (accent: string) =>
+    `linear-gradient(135deg, color-mix(in srgb, ${accent} 10%, var(--surface-card)) 0%, var(--surface-card) 100%)`;
   const gradCardConfig: Record<string, { color: string; grad: string }> = {
-    'Kilo Revenue':      { color: 'var(--accent-emerald-solid)', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
-    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-solid)', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: 'var(--accent-cyan-solid)', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
-    'Paid Out':          { color: 'var(--accent-amber-solid)', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
-    'Total Users':       { color: 'var(--accent-purple-solid)', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
-    'Total Sold':     { color: 'var(--accent-teal-solid)', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
-    'Total Installed': { color: 'var(--text-muted)', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
+    'Kilo Revenue':      { color: 'var(--accent-emerald-solid)', grad: tintedGrad('var(--accent-emerald-solid)') },
+    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-solid)', grad: tintedGrad('var(--accent-red-solid)') } : { color: 'var(--accent-cyan-solid)', grad: tintedGrad('var(--accent-cyan-solid)') },
+    'Paid Out':          { color: 'var(--accent-amber-solid)', grad: tintedGrad('var(--accent-amber-solid)') },
+    'Total Users':       { color: 'var(--accent-purple-solid)', grad: tintedGrad('var(--accent-purple-solid)') },
+    'Total Sold':        { color: 'var(--accent-teal-solid)',   grad: tintedGrad('var(--accent-teal-solid)') },
+    'Total Installed':   { color: 'var(--text-muted)',          grad: tintedGrad('var(--text-muted)') },
   };
 
   return (
@@ -346,19 +352,25 @@ export function AdminDashboard({
         </div>
       </div>
 
-      {/* Quick-action toolbar */}
+      {/* Quick-action toolbar — accent-tinted surface via color-mix so
+           buttons theme correctly in both light and dark. */}
       <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
-          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[var(--accent-emerald-solid)]/25', textCls: 'text-[var(--accent-emerald-solid)]', href: '/dashboard/payroll'   },
-          { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[var(--accent-purple-solid)]/25', textCls: 'text-[var(--accent-purple-solid)]', href: '/dashboard/users'     },
-          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[var(--accent-cyan-solid)]/25', textCls: 'text-[var(--accent-cyan-solid)]', href: '/dashboard/new-deal'  },
-          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[var(--accent-amber-solid)]/25', textCls: 'text-[var(--accent-amber-solid)]', href: '/dashboard/settings'  },
-        ].map(({ label, Icon, bgClass, hoverBg, borderCls, textCls, href }) => (
+          { label: 'Run Payroll', Icon: Banknote,   accent: 'var(--accent-emerald-solid)', href: '/dashboard/payroll'  },
+          { label: 'Add User',    Icon: UserPlus,   accent: 'var(--accent-purple-solid)',  href: '/dashboard/users'    },
+          { label: 'New Deal',    Icon: PlusCircle, accent: 'var(--accent-cyan-solid)',    href: '/dashboard/new-deal' },
+          { label: 'Settings',    Icon: Settings,   accent: 'var(--accent-amber-solid)',   href: '/dashboard/settings' },
+        ].map(({ label, Icon, accent, href }) => (
           <Link
             key={label}
             href={href}
-            className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm ${bgClass} ${hoverBg} ${borderCls} ${textCls}`}
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
+            className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm transition-colors"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              background: `color-mix(in srgb, ${accent} 10%, var(--surface-card))`,
+              borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
+              color: accent,
+            }}
           >
             <Icon className="w-[15px] h-[15px] flex-shrink-0" />
             {label}
@@ -369,7 +381,7 @@ export function AdminDashboard({
       {/* Top 6 GradCard stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
         {topStats.map((stat) => {
-          const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: 'linear-gradient(135deg, #101012, #141416)' };
+          const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: tintedGrad(stat.accentHex) };
           return (
             <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
               <div title={stat.tooltip} style={{

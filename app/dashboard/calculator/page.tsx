@@ -1133,7 +1133,7 @@ function CalculatorPage() {
 
                 {/* Your Commission highlight */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #00160d, #001c10)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)',
                   border: '1px solid #00e07a35',
                   borderRadius: 14,
                   padding: '18px 20px',
