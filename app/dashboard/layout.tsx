@@ -108,7 +108,7 @@ function NavGroup({
         title={sidebarCollapsed ? label : undefined}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[background] w-full ${sidebarCollapsed ? 'justify-center' : ''}`}
         style={isAnyChildActive
-          ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)', fontWeight: 700 }
+          ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
           : { color: 'var(--text-secondary)', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'var(--accent-emerald-soft)' } : {}) }
         }
       >
@@ -143,7 +143,7 @@ function NavGroup({
                       href={href}
                       className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm"
                       style={isActive
-                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)', fontWeight: 700 }
+                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
                         : { color: 'var(--text-secondary)', fontWeight: 500 }
                       }
                     >
@@ -229,12 +229,12 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search reps..."
-              className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-[var(--text-dim)]"
+              className="flex-1 bg-transparent px-3 py-2 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dim)]"
             />
             <button
               onClick={close}
               aria-label="Close View As selector"
-              className="px-2 py-2 text-[var(--text-dim)] hover:text-white transition-colors"
+              className="px-2 py-2 text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -243,7 +243,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
             {self && !search.trim() && (
               <button
                 onClick={() => { onSelect({ id: self.id, name: self.name, role: 'rep' }); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[var(--accent-emerald-solid)] hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between border-b border-[var(--border-subtle)]"
+                className="w-full text-left px-3 py-2 text-xs text-[var(--accent-emerald-text)] hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between border-b border-[var(--border-subtle)]"
               >
                 <span className="font-semibold">My Rep View</span>
                 <span className="text-[10px] text-[var(--text-dim)]">see your own rep page</span>
@@ -255,7 +255,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
               <button
                 key={u.id}
                 onClick={() => { onSelect(u); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors flex items-center justify-between"
+                className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-between"
               >
                 <span>{u.name}</span>
                 <span className="text-[10px] text-[var(--text-dim)] capitalize">{u.role}</span>
@@ -610,7 +610,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+            className="hidden md:flex hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
             style={{ color: 'var(--text-muted)' }}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -619,7 +619,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation menu"
-            className="md:hidden text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+            className="md:hidden text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -675,7 +675,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       title={showCollapsed ? label : undefined}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${showCollapsed ? 'justify-center' : ''}`}
                       style={isActive
-                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)', fontWeight: 700 }
+                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
                         : { color: 'var(--text-secondary)', fontWeight: 500, border: '1px solid transparent' }
                       }
                     >
@@ -686,7 +686,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           const badgeCount = (navBadges[label] ?? 0) + (label === 'Projects' ? unreadMentionCount : 0);
                           if (badgeCount <= 0) return null;
                           return (
-                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-red-500 shadow-sm shadow-red-500/30">
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-[var(--text-primary)] bg-red-500 shadow-sm shadow-red-500/30">
                               {badgeCount > 99 ? '99+' : badgeCount}
                             </span>
                           );
@@ -697,7 +697,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Tooltip popover — only shown when sidebar is collapsed */}
                     {showCollapsed && (
                       <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 nav-tooltip-popover">
-                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[var(--surface-card)]/90 border border-[var(--border)]/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
+                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[var(--surface-card)]/90 border border-[var(--border)]/40 px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] shadow-xl">
                           {label}
                         </span>
                       </div>
@@ -754,7 +754,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="px-3 py-4">
           {!showCollapsed ? (
             <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }}>
                 {initials}
               </div>
               <div className="overflow-hidden">
@@ -766,7 +766,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           ) : (
             <div className="flex justify-center mb-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }} title={currentRepName ?? ''}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }} title={currentRepName ?? ''}>
                 {initials}
               </div>
             </div>
@@ -777,7 +777,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className={`flex items-center gap-2 text-xs transition-colors w-full ${
               showCollapsed ? 'justify-center' : ''
             }`}
-            style={{ color: 'var(--accent-red-solid)' }}
+            style={{ color: 'var(--accent-red-text)' }}
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
             {!showCollapsed && 'Logout'}
@@ -809,11 +809,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-amber-300 text-sm font-medium">
                   {isSelfView
                     ? <>My Rep View <span className="text-amber-400/60">— same as any rep sees</span></>
-                    : <>Viewing as <span className="text-white font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></>
+                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></>
                   }
                 </span>
               </div>
-              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
                 <XCircle className="w-3.5 h-3.5" /> Back to admin
               </button>
             </div>
@@ -834,7 +834,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
+          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
             showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         >

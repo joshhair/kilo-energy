@@ -32,7 +32,7 @@ export function ConfirmDeleteDialog({
           <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-red-400" />
           </div>
-          <h3 className="text-white font-bold">
+          <h3 className="text-[var(--text-primary)] font-bold">
             Delete {confirm.type === 'trainer' ? `Assignment: ${confirm.name}` : confirm.name}?
           </h3>
         </div>
@@ -41,14 +41,14 @@ export function ConfirmDeleteDialog({
         {requiresTypeToConfirm && (
           <div className="mb-5">
             <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
-              Type <span className="text-white font-bold">{confirm.name}</span> to confirm:
+              Type <span className="text-[var(--text-primary)] font-bold">{confirm.name}</span> to confirm:
             </label>
             <input
               type="text"
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               autoFocus
-              className="w-full rounded-xl px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-red-500/50"
+              className="w-full rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-red-500/50"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
               placeholder={confirm.name}
             />
@@ -64,7 +64,7 @@ export function ConfirmDeleteDialog({
           <button
             onClick={onConfirm}
             disabled={!canConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Delete
           </button>

@@ -110,8 +110,8 @@ export function AdminDashboard({
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[var(--text-dim)] inline ml-1" />;
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-[var(--accent-emerald-solid)] inline ml-1" />
-      : <ChevronDown className="w-3 h-3 text-[var(--accent-emerald-solid)] inline ml-1" />;
+      ? <ChevronUp className="w-3 h-3 text-[var(--accent-emerald-text)] inline ml-1" />
+      : <ChevronDown className="w-3 h-3 text-[var(--accent-emerald-text)] inline ml-1" />;
   };
 
   // Sliding pill for admin period tabs
@@ -328,7 +328,7 @@ export function AdminDashboard({
               <button
                 onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
                 className="text-xs font-semibold px-3 py-1 rounded-full border transition-colors whitespace-nowrap"
-                style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)' }}
+                style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)' }}
               >
                 My Rep View
               </button>
@@ -474,10 +474,10 @@ export function AdminDashboard({
       {attentionItemCount === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-emerald-solid)', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid var(--accent-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-emerald-solid)' }} />
+            <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-emerald-text)' }} />
           </div>
           <div>
-            <p style={{ color: 'var(--accent-emerald-solid)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
+            <p style={{ color: 'var(--accent-emerald-text)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
             <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
           </div>
         </div>
@@ -506,15 +506,15 @@ export function AdminDashboard({
             className="flex items-center gap-2 w-full text-left group"
           >
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--accent-emerald-soft)' }}>
-              <Trophy className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <Trophy className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Top Reps</h2>
+            <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Top Reps</h2>
             <span className="text-xs text-[var(--text-muted)] mr-2">
               {period === 'all' ? 'All time' : PERIODS.find((p) => p.value === period)?.label}
             </span>
             {topRepsExpanded
-              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
             }
           </button>
           <div className={`collapsible-panel ${topRepsExpanded ? 'open' : ''}`}>
@@ -531,7 +531,7 @@ export function AdminDashboard({
                     >
                       {r.rank}
                     </span>
-                    <span className="flex-1 text-white text-sm font-medium">{r.name}</span>
+                    <span className="flex-1 text-[var(--text-primary)] text-sm font-medium">{r.name}</span>
                     <span className="text-[var(--text-secondary)] text-sm font-semibold tabular-nums">{r.count} deal{r.count === 1 ? '' : 's'}</span>
                   </div>
                 ))}
@@ -553,10 +553,10 @@ export function AdminDashboard({
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
                 <BarChart2 className="w-4 h-4 text-amber-400" />
               </div>
-              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
+              <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
               {insightsExpanded
-                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${insightsExpanded ? 'open' : ''}`}>
@@ -575,8 +575,8 @@ export function AdminDashboard({
                     <tbody>
                       {periodInstallerRanking.map((inst, i) => (
                         <tr key={inst.name} className="border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors">
-                          <td className="px-4 py-2.5 text-white font-medium flex items-center gap-2">
-                            {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-white`}>#{i + 1}</span>}
+                          <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium flex items-center gap-2">
+                            {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-[var(--text-primary)]`}>#{i + 1}</span>}
                             {inst.name}
                           </td>
                           <td className="px-4 py-2.5 text-[var(--text-secondary)] tabular-nums">{inst.deals}</td>
@@ -623,11 +623,11 @@ export function AdminDashboard({
               <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
                 <AlertCircle className="w-4 h-4 text-red-400" />
               </div>
-              <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons <span className="text-[var(--text-muted)] font-normal text-xs">(all time)</span></h2>
+              <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons <span className="text-[var(--text-muted)] font-normal text-xs">(all time)</span></h2>
               <span className="text-[var(--text-muted)] text-xs mr-2">{cancelledProjects.length} cancelled</span>
               {cancellationExpanded
-                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+                ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
               }
             </button>
             <div className={`collapsible-panel ${cancellationExpanded ? 'open' : ''}`}>
@@ -675,8 +675,8 @@ export function AdminDashboard({
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col
-              ? 'text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/[0.04]'
-              : 'text-[var(--text-secondary)] hover:text-white'
+              ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/[0.04]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`;
 
         return (
@@ -686,10 +686,10 @@ export function AdminDashboard({
             onClick={() => setRecentExpanded(e => !e)}
             className="flex items-center gap-2 text-left group"
           >
-            <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Projects</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Projects</h2>
             {recentExpanded
-              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+              : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
             }
           </button>
           {recentExpanded && <div className="flex items-center gap-2">
@@ -698,7 +698,7 @@ export function AdminDashboard({
               placeholder="Search customer or rep..."
               value={recentSearch}
               onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-              className="bg-[var(--surface-card)] border border-[var(--border)] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] transition-colors"
+              className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] transition-colors"
             />
             {recentSearch.trim() && (
               <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
@@ -735,7 +735,7 @@ export function AdminDashboard({
                       return (
                       <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
-                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors">{proj.customerName}</Link>
+                          <Link href={`/dashboard/projects/${proj.id}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors">{proj.customerName}</Link>
                           {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
                         </td>
                         {/* 2 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[var(--text-dim)]"> / {proj.setterName}</span> : ''}</td>
@@ -745,7 +745,7 @@ export function AdminDashboard({
                         {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
                         {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
                         {/* 8 */}<td className="px-6 py-3">
-                          <span className="text-[var(--accent-emerald-solid)] font-medium">${closerPay.toLocaleString()}</span>
+                          <span className="text-[var(--accent-emerald-text)] font-medium">${closerPay.toLocaleString()}</span>
                           {setterPay > 0 && <span className="block text-[var(--text-dim)] text-xs">+${setterPay.toLocaleString()} setter</span>}
                         </td>
                         {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={isCancelled ? 0 : (proj.m1Amount ?? 0)} /></td>

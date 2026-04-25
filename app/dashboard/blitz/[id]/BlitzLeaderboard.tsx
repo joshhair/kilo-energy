@@ -24,18 +24,18 @@ export function BlitzLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
               isTop3 ? RANK_BG[rank - 1] : 'bg-[var(--surface)]/40 border-[var(--border-subtle)]/40'
             }`}>
               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-white` : 'bg-[var(--surface-card)] text-[var(--text-secondary)]'
+                isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-[var(--text-primary)]` : 'bg-[var(--surface-card)] text-[var(--text-secondary)]'
               }`}>{rank}</span>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-white` : 'bg-[var(--border)] text-[var(--text-secondary)]'
+                isTop3 ? `bg-gradient-to-br ${RANK_GRADIENTS[rank - 1]} text-[var(--text-primary)]` : 'bg-[var(--border)] text-[var(--text-secondary)]'
               }`}>{rep.initials}</div>
-              <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[var(--accent-cyan-solid)] transition-colors ${
+              <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[var(--accent-cyan-text)] transition-colors ${
                 isTop3 ? RANK_TEXT[rank - 1] : 'text-[var(--text-secondary)]'
               }`}>{rep.name}</Link>
               <span className="text-xs text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
               <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{rep.kW.toFixed(1)} kW</span>
               {rep.payout > 0 && (
-                <span className="hidden xl:inline text-xs font-semibold tabular-nums text-[var(--accent-emerald-solid)] whitespace-nowrap">{formatCurrency(rep.payout)}</span>
+                <span className="hidden xl:inline text-xs font-semibold tabular-nums text-[var(--accent-emerald-text)] whitespace-nowrap">{formatCurrency(rep.payout)}</span>
               )}
             </div>
           );

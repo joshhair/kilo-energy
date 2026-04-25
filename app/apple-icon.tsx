@@ -65,7 +65,7 @@ export default function AppleIcon() {
         {/* The K — primary mark, sits above all the glow layers */}
         <span
           style={{
-            color: 'white',
+            color: 'var(--text-primary)',
             fontSize: 110,
             fontWeight: 900,
             fontFamily: 'system-ui, sans-serif',

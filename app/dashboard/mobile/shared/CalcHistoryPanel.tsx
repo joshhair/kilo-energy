@@ -66,7 +66,7 @@ export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handl
                 type="button"
                 onClick={() => { handleLoadHistory(entry); setHistoryOpen(false); }}
                 className="flex-shrink-0 text-xs font-semibold rounded-lg px-3 min-h-[44px] flex items-center"
-                style={{ color: 'var(--accent-blue-solid)', background: 'var(--accent-blue-soft)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ color: 'var(--accent-blue-text)', background: 'var(--accent-blue-soft)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Load
               </button>

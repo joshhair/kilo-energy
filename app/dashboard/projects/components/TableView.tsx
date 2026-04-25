@@ -141,7 +141,7 @@ function SetterPopover({
       <button
         onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
         title={currentSetterId ? `Reassign setter for ${customerName}` : `Assign a setter to ${customerName}`}
-        className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--border)] hover:bg-indigo-600 text-[var(--text-secondary)] hover:text-white text-xs font-medium transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
+        className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--border)] hover:bg-indigo-600 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap"
         aria-label={currentSetterId ? 'Reassign setter' : 'Assign setter'}
         aria-expanded={open}
       >
@@ -183,7 +183,7 @@ function SetterPopover({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -200,14 +200,14 @@ function SetterPopover({
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors min-h-[44px] cursor-default"
                 >
                   {/* Initials avatar */}
-                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(currentSetter.name)}
                   </span>
-                  <span className="flex-1 text-sm text-white font-medium truncate">{currentSetter.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-primary)] font-medium truncate">{currentSetter.name}</span>
                   {/* Role badge */}
                   {isTrainee(currentSetter.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-[var(--accent-emerald-solid)] text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[var(--accent-emerald-text)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                   {/* Green checkmark */}
                   <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
@@ -240,14 +240,14 @@ function SetterPopover({
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
                 >
                   {/* Initials avatar */}
-                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
-                  <span className="flex-1 text-sm text-[var(--text-secondary)] hover:text-white truncate">{rep.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] truncate">{rep.name}</span>
                   {/* Role badge */}
                   {isTrainee(rep.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-[var(--accent-emerald-solid)] text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[var(--accent-emerald-text)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                 </button>
               ))
@@ -606,8 +606,8 @@ export default function TableView({
 
   function thClass(colKey: SortKey) {
     const active = sortKey === colKey;
-    return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white ${
-      active ? 'text-white' : 'text-[var(--text-secondary)]'
+    return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] ${
+      active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
     }`;
   }
 
@@ -631,7 +631,7 @@ export default function TableView({
           {searchInput ? (
             <button
               onClick={() => setSearchInput('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               aria-label="Clear search input"
             >
               <X className="w-4 h-4" />
@@ -674,7 +674,7 @@ export default function TableView({
               ]);
               downloadCSV(`projects-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
             }}
-            className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors"
             title="Download filtered projects as CSV"
           >
             <Download className="w-3.5 h-3.5" /> CSV
@@ -695,7 +695,7 @@ export default function TableView({
           <Link key={proj.id} href={`/dashboard/projects/${proj.id}`}>
             <div className={`card-surface rounded-xl p-3 md:p-4 active:scale-[0.98] transition-transform min-h-[44px] ${proj.flagged ? 'border-l-2 border-l-red-500' : ''}`}>
               <div className="flex justify-between items-start mb-2">
-                <span className="text-white font-medium text-sm flex items-center gap-1.5">
+                <span className="text-[var(--text-primary)] font-medium text-sm flex items-center gap-1.5">
                   {proj.customerName}
                   {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
                 </span>
@@ -811,7 +811,7 @@ export default function TableView({
                   <td className="px-5 py-3">
                     <Link
                       href={`/dashboard/projects/${proj.id}`}
-                      className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors flex items-center gap-1.5"
+                      className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors flex items-center gap-1.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {proj.customerName}
@@ -830,7 +830,7 @@ export default function TableView({
                     >
                       {proj.repName}
                       {(proj.additionalClosers?.length ?? 0) > 0 && (
-                        <span className="ml-1 text-[10px] text-[var(--accent-emerald-solid)] font-semibold">
+                        <span className="ml-1 text-[10px] text-[var(--accent-emerald-text)] font-semibold">
                           +{proj.additionalClosers!.length}
                         </span>
                       )}
@@ -849,14 +849,14 @@ export default function TableView({
                       >
                         {proj.repName}
                         {(proj.additionalClosers?.length ?? 0) > 0 && (
-                          <span className="text-[10px] text-[var(--accent-emerald-solid)] font-semibold">
+                          <span className="text-[10px] text-[var(--accent-emerald-text)] font-semibold">
                             +{proj.additionalClosers!.length}
                           </span>
                         )}
                         {isMyRow && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-[var(--accent-cyan-solid)] border border-[var(--accent-emerald-solid)]/40'
+                              ? 'bg-blue-900/60 text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
                               : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-emerald-solid)]/40'
                           }`}>
                             You · {myRole}
@@ -884,7 +884,7 @@ export default function TableView({
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.installer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.financer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
-                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
+                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
                   <td className="px-5 py-3 text-[var(--text-muted)]">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[var(--text-dim)]">{relativeTime(proj.soldDate)}</div>
@@ -900,7 +900,7 @@ export default function TableView({
                             <button
                               onClick={(e) => { e.stopPropagation(); onPhaseChange(proj.id, nextPhase); }}
                               title={`Advance to ${nextPhase}`}
-                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-[var(--border)] hover:bg-[var(--accent-emerald-solid)] text-[var(--text-secondary)] hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-[var(--border)] hover:bg-[var(--accent-emerald-solid)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                               aria-label={`Advance ${proj.customerName} to ${nextPhase}`}
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -951,7 +951,7 @@ export default function TableView({
                           <p className="text-[var(--text-muted)] text-xs leading-relaxed">Try adjusting your search query or active filters to find what you&apos;re looking for.</p>
                           <button
                             onClick={clearAllFilters}
-                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             Clear Filters
@@ -982,7 +982,7 @@ export default function TableView({
                           <p className="text-[var(--text-muted)] text-xs leading-relaxed">Your pipeline is empty. Create a new deal to start tracking projects and commissions.</p>
                           <a
                             href="/dashboard/new-deal"
-                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             + Submit Deal
@@ -1021,12 +1021,12 @@ export default function TableView({
 
             {/* Selection count badge — blue accent pill with total kW */}
             <span className="flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
-              <span className="text-white font-bold tabular-nums">{selectedProjectIds.size}</span>
-              <span className="text-[var(--accent-emerald-solid)] font-medium">selected</span>
+              <span className="text-[var(--text-primary)] font-bold tabular-nums">{selectedProjectIds.size}</span>
+              <span className="text-[var(--accent-emerald-text)] font-medium">selected</span>
               {selectedTotalKw > 0 && (
                 <>
                   <span className="text-[var(--text-dim)] mx-0.5">&middot;</span>
-                  <span className="text-[var(--accent-emerald-solid)] font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
+                  <span className="text-[var(--accent-emerald-text)] font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
                 </>
               )}
             </span>
@@ -1061,7 +1061,7 @@ export default function TableView({
             {/* Flag / Unflag toggle */}
             <button
               onClick={handleBulkFlag}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-[var(--border)]/60 hover:bg-red-600/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap bg-[var(--border)]/60 hover:bg-red-600/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <Flag className="w-3.5 h-3.5" />
               {bulkFlagLabel}
@@ -1071,7 +1071,7 @@ export default function TableView({
             <button
               onClick={() => setSelectedProjectIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1097,17 +1097,17 @@ export default function TableView({
           onClick={(e) => { if (e.target === e.currentTarget) setBulkCancelReasonModal(null); }}>
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
-              <h2 className="text-white font-bold text-base">Cancel {bulkCancelReasonModal.count} Project{bulkCancelReasonModal.count > 1 ? 's' : ''}</h2>
-              <button onClick={() => setBulkCancelReasonModal(null)} className="text-[var(--text-secondary)] hover:text-white transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
+              <h2 className="text-[var(--text-primary)] font-bold text-base">Cancel {bulkCancelReasonModal.count} Project{bulkCancelReasonModal.count > 1 ? 's' : ''}</h2>
+              <button onClick={() => setBulkCancelReasonModal(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-[var(--text-secondary)] text-sm">Why are <span className="text-white font-medium">{bulkCancelReasonModal.count} project{bulkCancelReasonModal.count > 1 ? 's' : ''}</span> being cancelled?</p>
+              <p className="text-[var(--text-secondary)] text-sm">Why are <span className="text-[var(--text-primary)] font-medium">{bulkCancelReasonModal.count} project{bulkCancelReasonModal.count > 1 ? 's' : ''}</span> being cancelled?</p>
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select value={bulkCancelReason} onChange={(e) => setBulkCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
                   <option value="Credit denied">Credit denied</option>
@@ -1120,13 +1120,13 @@ export default function TableView({
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
                 <textarea rows={2} value={bulkCancelNotes} onChange={(e) => setBulkCancelNotes(e.target.value)} placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setBulkCancelReasonModal(null)}
                   className="flex-1 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
                 <button onClick={confirmBulkCancelWithReason}
-                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Projects</button>
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-[var(--text-primary)] font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Projects</button>
               </div>
             </div>
           </div>

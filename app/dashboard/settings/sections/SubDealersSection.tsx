@@ -39,7 +39,7 @@ export function SubDealersSection() {
 
       {/* Add sub-dealer form */}
       <div className="card-surface rounded-2xl p-5 mb-4">
-        <h2 className="text-white font-semibold mb-3">Add Sub-Dealer</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Add Sub-Dealer</h2>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <input
             type="text" placeholder="First name"
@@ -80,7 +80,7 @@ export function SubDealersSection() {
       {/* Sub-dealer list */}
       <div className="card-surface rounded-2xl">
         <div className="px-5 py-3.5 border-b border-[var(--border-subtle)]">
-          <p className="text-white font-semibold text-sm">{subDealers.length} Sub-Dealer{subDealers.length !== 1 ? 's' : ''}</p>
+          <p className="text-[var(--text-primary)] font-semibold text-sm">{subDealers.length} Sub-Dealer{subDealers.length !== 1 ? 's' : ''}</p>
         </div>
         {subDealers.length === 0 ? (
           <div className="px-5 py-8 text-center">
@@ -94,7 +94,7 @@ export function SubDealersSection() {
               return (
                 <div key={sd.id} className="px-5 py-3 flex items-center justify-between gap-4 hover:bg-[var(--surface-card)]/30 transition-colors">
                   <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-medium truncate">{sd.name}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">{sd.name}</p>
                     <p className="text-[var(--text-muted)] text-xs truncate">{sd.email}{sd.phone ? ` \u00b7 ${sd.phone}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">

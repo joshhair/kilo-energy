@@ -442,7 +442,7 @@ export default function MobileBlitz() {
         <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
+              <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
               <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
               {isAdmin && totalCosts > 0 && (
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -457,14 +457,14 @@ export default function MobileBlitz() {
           {(canJoin || participationLabel || isBlitzOwner) && (
             <div className="mt-3 flex items-center gap-2">
               {isBlitzOwner && (
-                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-solid)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
+                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
               )}
               {canJoin && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
                   disabled={joining}
                   className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
-                  style={{ color: 'var(--accent-emerald-solid)', border: '1px solid var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
                   {joining ? 'Joining...' : 'Join'}
@@ -507,11 +507,11 @@ export default function MobileBlitz() {
       <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Active</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Upcoming</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-solid)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Deals</p>
@@ -524,7 +524,7 @@ export default function MobileBlitz() {
         {isAdmin && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>
-            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-solid)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
+            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
           </div>
         )}
       </div>
@@ -557,7 +557,7 @@ export default function MobileBlitz() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search blitzes…"
-            className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-white focus:outline-none focus:ring-1"
+            className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -569,7 +569,7 @@ export default function MobileBlitz() {
         <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="min-h-[44px] rounded-xl px-3 text-sm text-white focus:outline-none focus:ring-1"
+          className="min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1"
           style={{
             background: 'var(--surface-card)',
             border: '1px solid var(--border-subtle)',
@@ -609,7 +609,7 @@ export default function MobileBlitz() {
           >
             Requests
             {pendingRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full" style={{ background: 'var(--accent-red-solid)' }}>
+              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-[var(--text-primary)] rounded-full" style={{ background: 'var(--accent-red-solid)' }}>
                 {pendingRequests.length}
               </span>
             )}
@@ -683,7 +683,7 @@ export default function MobileBlitz() {
             <div className="space-y-3">
               {requests.map((req) => (
                 <MobileCard key={req.id}>
-                  <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
                   <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
@@ -730,7 +730,7 @@ export default function MobileBlitz() {
             <div className="space-y-3">
               {requests.filter((r) => r.requestedBy.id === effectiveRepId).map((req) => (
                 <MobileCard key={req.id}>
-                  <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
                   <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'}
                   </p>
@@ -753,7 +753,7 @@ export default function MobileBlitz() {
               value={createForm.name}
               onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Austin April Blitz"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -768,7 +768,7 @@ export default function MobileBlitz() {
               value={createForm.location}
               onChange={(e) => setCreateForm((f) => ({ ...f, location: e.target.value }))}
               placeholder="e.g. Austin, TX"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -783,7 +783,7 @@ export default function MobileBlitz() {
               value={createForm.housing}
               onChange={(e) => setCreateForm((f) => ({ ...f, housing: e.target.value }))}
               placeholder="e.g. 123 Main St, Apt 4"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -799,7 +799,7 @@ export default function MobileBlitz() {
                 type="date"
                 value={createForm.startDate}
                 onChange={(e) => setCreateForm((f) => ({ ...f, startDate: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -814,7 +814,7 @@ export default function MobileBlitz() {
                 type="date"
                 value={createForm.endDate}
                 onChange={(e) => setCreateForm((f) => ({ ...f, endDate: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -830,7 +830,7 @@ export default function MobileBlitz() {
               <select
                 value={createForm.ownerId || effectiveRepId || ''}
                 onChange={(e) => setCreateForm((f) => ({ ...f, ownerId: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -851,7 +851,7 @@ export default function MobileBlitz() {
               value={createForm.notes}
               onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
               rows={3}
-              className="w-full rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1 resize-none"
+              className="w-full rounded-xl px-3 py-2 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1 resize-none"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -869,7 +869,7 @@ export default function MobileBlitz() {
                 value={createForm.headcount}
                 onChange={(e) => setCreateForm((f) => ({ ...f, headcount: e.target.value }))}
                 placeholder="e.g. 8"
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',

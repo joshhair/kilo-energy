@@ -62,9 +62,9 @@ export default function ConfirmDialog({
               ? 'bg-red-500/15 border border-red-500/30'
               : 'bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/30'
           }`}>
-            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[var(--accent-emerald-solid)]'}`} />
+            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'}`} />
           </div>
-          <h3 className="text-white font-bold">{title}</h3>
+          <h3 className="text-[var(--text-primary)] font-bold">{title}</h3>
         </div>
         <p className="text-[var(--text-secondary)] text-sm mb-5">{message}</p>
         <div className="flex gap-3">
@@ -77,7 +77,7 @@ export default function ConfirmDialog({
           <button
             ref={confirmRef}
             onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition-colors ${
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-[var(--text-primary)] transition-colors ${
               danger
                 ? 'bg-red-600 hover:bg-red-500'
                 : 'bg-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)]'

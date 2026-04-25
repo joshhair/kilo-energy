@@ -15,7 +15,7 @@ export function DealEntryPage({ onStart, projects, currentRepId }: { onStart: ()
           {/* Icon + heading */}
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <PlusCircle className="w-6 h-6 text-[var(--accent-emerald-solid)]" />
+              <PlusCircle className="w-6 h-6 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
               New Deal
@@ -30,12 +30,12 @@ export function DealEntryPage({ onStart, projects, currentRepId }: { onStart: ()
           {(todayCount > 0 || monthCount > 0) && (
             <div className="flex items-center gap-6 mb-8 ml-[52px]">
               <div>
-                <p className="text-2xl font-black text-white tabular-nums">{todayCount}</p>
+                <p className="text-2xl font-black text-[var(--text-primary)] tabular-nums">{todayCount}</p>
                 <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Today</p>
               </div>
               <div className="w-px h-8 bg-[var(--border)]/70" />
               <div>
-                <p className="text-2xl font-black text-white tabular-nums">{monthCount}</p>
+                <p className="text-2xl font-black text-[var(--text-primary)] tabular-nums">{monthCount}</p>
                 <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">This Month</p>
               </div>
             </div>

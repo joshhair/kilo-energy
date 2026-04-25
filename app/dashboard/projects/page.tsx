@@ -258,7 +258,7 @@ function ProjectsPageInner() {
                     background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                     border: '1px solid rgba(0, 224, 122, 0.45)',
                     boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontWeight: 600,
                   }
                 : { color: 'var(--text-secondary)' }
@@ -282,7 +282,7 @@ function ProjectsPageInner() {
                       background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                       border: '1px solid rgba(0, 224, 122, 0.45)',
                       boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                      color: '#fff',
+                      color: 'var(--text-primary)',
                       fontWeight: 600,
                     }
                   : { color: 'var(--text-secondary)' }
@@ -311,7 +311,7 @@ function ProjectsPageInner() {
               onClick={() => setStatusFilter(s.value)}
               className="relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap"
               style={statusFilter === s.value
-                ? { color: '#fff', fontWeight: 600 }
+                ? { color: 'var(--text-primary)', fontWeight: 600 }
                 : { color: 'var(--text-muted)' }
               }
             >
@@ -343,7 +343,7 @@ function ProjectsPageInner() {
                   background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                   border: '1px solid rgba(0, 224, 122, 0.45)',
                   boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
@@ -362,7 +362,7 @@ function ProjectsPageInner() {
               Status: {STATUS_LABELS[statusFilter]}
               <button
                 onClick={() => setStatusFilter('active')}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear status filter"
               >
                 <X className="w-3 h-3" />
@@ -374,7 +374,7 @@ function ProjectsPageInner() {
               Installer: {installerFilter}
               <button
                 onClick={() => setInstallerFilter('')}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear installer filter"
               >
                 <X className="w-3 h-3" />
@@ -386,7 +386,7 @@ function ProjectsPageInner() {
               Search: &ldquo;{searchInput}&rdquo;
               <button
                 onClick={() => { setSearchInput(''); setDebouncedSearch(''); }}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear search"
               >
                 <X className="w-3 h-3" />
@@ -398,7 +398,7 @@ function ProjectsPageInner() {
               Phase: {phaseFilter}
               <button
                 onClick={() => setPhaseFilter('')}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear phase filter"
               >
                 <X className="w-3 h-3" />
@@ -410,7 +410,7 @@ function ProjectsPageInner() {
               QA only
               <button
                 onClick={() => setQaOnly(false)}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear QA filter"
               >
                 <X className="w-3 h-3" />
@@ -422,7 +422,7 @@ function ProjectsPageInner() {
               My Deals only
               <button
                 onClick={() => setDealScope('all')}
-                className="text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear deal scope filter"
               >
                 <X className="w-3 h-3" />
@@ -431,7 +431,7 @@ function ProjectsPageInner() {
           )}
           <button
             onClick={clearAllFilters}
-            className="text-[var(--text-secondary)] hover:text-white text-xs transition-colors"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-colors"
           >
             Clear all
           </button>
@@ -487,17 +487,17 @@ function ProjectsPageInner() {
           onClick={(e) => { if (e.target === e.currentTarget) setCancelReasonModal(null); }}>
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
-              <h2 className="text-white font-bold text-base">Cancel Project</h2>
-              <button onClick={() => setCancelReasonModal(null)} className="text-[var(--text-secondary)] hover:text-white transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
+              <h2 className="text-[var(--text-primary)] font-bold text-base">Cancel Project</h2>
+              <button onClick={() => setCancelReasonModal(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-[var(--text-secondary)] text-sm">Why is <span className="text-white font-medium">{cancelReasonModal.projectName}</span> being cancelled?</p>
+              <p className="text-[var(--text-secondary)] text-sm">Why is <span className="text-[var(--text-primary)] font-medium">{cancelReasonModal.projectName}</span> being cancelled?</p>
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
                   <option value="Credit denied">Credit denied</option>
@@ -510,13 +510,13 @@ function ProjectsPageInner() {
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
                 <textarea rows={2} value={cancelNotes} onChange={(e) => setCancelNotes(e.target.value)} placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setCancelReasonModal(null)}
                   className="flex-1 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">Go Back</button>
                 <button onClick={confirmCancelWithReason}
-                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Project</button>
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-[var(--text-primary)] font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]">Cancel Project</button>
               </div>
             </div>
           </div>

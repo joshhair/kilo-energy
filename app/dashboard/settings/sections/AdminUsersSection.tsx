@@ -58,15 +58,15 @@ export function AdminUsersSection() {
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">First Name</label>
-          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
+          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-[var(--text-primary)]" placeholder="First" />
         </div>
         <div className="flex-1">
           <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Last Name</label>
-          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
+          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-[var(--text-primary)]" placeholder="Last" />
         </div>
         <div className="flex-[2]">
           <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
-          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
+          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-[var(--text-primary)]" placeholder="email@example.com" />
         </div>
         <button
           onClick={handleAdd}
@@ -86,7 +86,7 @@ export function AdminUsersSection() {
           {admins.map((admin) => (
             <div key={admin.id} className="flex items-center gap-3 px-4 py-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{admin.name}</p>
+                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{admin.name}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">{admin.email}</p>
               </div>
               <button

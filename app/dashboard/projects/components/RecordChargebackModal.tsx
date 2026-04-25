@@ -118,7 +118,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                 <AlertTriangle className="w-5 h-5 text-amber-400" />
               </div>
               <div>
-                <h2 className="text-white font-bold">Record Chargeback</h2>
+                <h2 className="text-[var(--text-primary)] font-bold">Record Chargeback</h2>
                 <p className="text-xs text-[var(--text-muted)]">Creates a linked negative PayrollEntry for admin review.</p>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                 <select
                   value={selectedEntryId}
                   onChange={(e) => setSelectedEntryId(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 >
                   {paidEntries.map((e) => (
                     <option key={e.id} value={e.id}>{e.repName} · {e.paymentStage} · {fmt$(e.amount)} · {e.date}</option>
@@ -151,7 +151,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white font-mono tabular-nums focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] font-mono tabular-nums focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
               </div>
 
@@ -161,7 +161,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
                 <p className="text-[10px] text-[var(--text-dim)] mt-1">Backdate for historical clawbacks (e.g. Glide-era).</p>
               </div>
@@ -172,7 +172,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Optional"
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
               </div>
 

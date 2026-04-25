@@ -42,7 +42,7 @@ export function ExportSection() {
 
       {/* Date range filter */}
       <div className="card-surface rounded-2xl p-5 mb-6">
-        <h2 className="text-white font-semibold mb-3">Date Range Filter</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Date Range Filter</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-[var(--text-secondary)] mb-1">From</label>
@@ -59,7 +59,7 @@ export function ExportSection() {
         </div>
         {(exportDateFrom || exportDateTo) && (
           <button onClick={() => { setExportDateFrom(''); setExportDateTo(''); }}
-            className="text-[var(--text-muted)] hover:text-white text-xs mt-2 transition-colors">Clear dates</button>
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs mt-2 transition-colors">Clear dates</button>
         )}
       </div>
 
@@ -74,13 +74,13 @@ export function ExportSection() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('payments') && (
-              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Payments Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Payments Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">All payroll entries including deal commissions, bonuses, and payment status.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{filteredPayroll.length} of {payrollEntries.length} records</p>
         </button>
@@ -94,13 +94,13 @@ export function ExportSection() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('projects') && (
-              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Projects Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Projects Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Full project pipeline with installers, financers, kW size, PPW, and payment milestones.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{filteredProjects.length} of {projects.length} records</p>
         </button>
@@ -114,13 +114,13 @@ export function ExportSection() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('baselines') && (
-              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Baselines Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Baselines Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Installer baselines, SolarTech tiers, and Product Catalog tiers with closer/kilo rates.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{installerPricingVersions.length + solarTechProducts.length + productCatalogProducts.length} total rows</p>
         </button>
@@ -134,13 +134,13 @@ export function ExportSection() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('trainers') && (
-              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Trainee/trainer pairs with tier breakdowns and completed deal counts.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{trainerAssignments.length} assignments</p>
         </button>
@@ -150,10 +150,10 @@ export function ExportSection() {
           <div className="card-surface rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10">
-                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               </div>
               <div>
-                <p className="text-white text-sm font-semibold">
+                <p className="text-[var(--text-primary)] text-sm font-semibold">
                   {[...exportSelected].map((t) => ({ payments: 'Payments', projects: 'Projects', baselines: 'Baselines', trainers: 'Trainers' }[t])).join(' + ')} Export ready
                 </p>
                 <p className="text-[var(--text-muted)] text-xs">

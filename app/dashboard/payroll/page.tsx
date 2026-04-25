@@ -772,7 +772,7 @@ function PayrollPageInner() {
     persistPayrollEntry(newEntry);
   };
 
-  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
+  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
 
   const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
@@ -801,7 +801,7 @@ function PayrollPageInner() {
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -812,7 +812,7 @@ function PayrollPageInner() {
         <div className="grid grid-cols-3 gap-4 mb-8">
           <StatCard label="Draft" value={myDraft} color="text-[var(--text-secondary)]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
           <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
-          <StatCard label="Paid" value={myPaid} color="text-[var(--accent-emerald-solid)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+          <StatCard label="Paid" value={myPaid} color="text-[var(--accent-emerald-text)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
         </div>
         {/* Type and status filters */}
         <div className="flex flex-wrap gap-3 mb-4">
@@ -820,7 +820,7 @@ function PayrollPageInner() {
             {(['All', 'Deal', 'Bonus'] as const).map((t) => (
               <button key={t} onClick={() => setRepTypeFilter(t)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
-                style={repTypeFilter === t ? { background: '#2563eb', color: '#fff' } : { color: 'var(--text-muted)' }}>
+                style={repTypeFilter === t ? { background: '#2563eb', color: 'var(--text-primary)' } : { color: 'var(--text-muted)' }}>
                 {t}
               </button>
             ))}
@@ -830,10 +830,10 @@ function PayrollPageInner() {
               <button key={s} onClick={() => setRepStatusFilter(s)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                 style={repStatusFilter === s
-                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: 'var(--accent-emerald-solid)' }
-                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: 'var(--accent-amber-solid)' }
-                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: 'var(--accent-blue-solid)' }
-                    : { background: '#2563eb', color: '#fff' }
+                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: 'var(--accent-emerald-text)' }
+                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: 'var(--accent-amber-text)' }
+                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: 'var(--accent-blue-text)' }
+                    : { background: '#2563eb', color: 'var(--text-primary)' }
                   : { color: 'var(--text-muted)' }}>
                 {s}
               </button>
@@ -882,7 +882,7 @@ function PayrollPageInner() {
                   <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {entry.type === 'Deal' && entry.customerName && entry.projectId ? (
-                        <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan-solid)' }}>
+                        <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan-text)' }}>
                           {entry.customerName}
                         </Link>
                       ) : (
@@ -903,10 +903,10 @@ function PayrollPageInner() {
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
-                          ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)' }
+                          ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)' }
                           : entry.status === 'Pending'
-                          ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)' }
-                          : { background: 'var(--surface-card)', color: 'var(--accent-blue-solid)' }
+                          ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)' }
+                          : { background: 'var(--surface-card)', color: 'var(--accent-blue-text)' }
                       }>
                         {entry.status}
                       </span>
@@ -938,7 +938,7 @@ function PayrollPageInner() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -1062,7 +1062,7 @@ function PayrollPageInner() {
                   background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                   border: '1px solid rgba(0, 224, 122, 0.45)',
                   boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-secondary)' }
@@ -1132,7 +1132,7 @@ function PayrollPageInner() {
             {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
               <button
                 onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
-                className="text-xs text-[var(--text-muted)] hover:text-white underline transition-colors"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline transition-colors"
               >
                 Clear
               </button>
@@ -1158,11 +1158,11 @@ function PayrollPageInner() {
                   <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">
                       {r.receiptUrl ? (
-                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan-solid)] hover:underline">
+                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan-text)] hover:underline">
                           {r.receiptName || 'Receipt'}
                         </a>
                       ) : (
@@ -1196,7 +1196,7 @@ function PayrollPageInner() {
                           <div className="flex gap-2 flex-wrap">
                             {r.status === 'Pending' && (
                               <>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-emerald-solid)]`}>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-emerald-text)]`}>
                                   <Check className="w-3 h-3" /> Approve
                                 </button>
                                 <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-red-900/50 hover:bg-red-800/60 text-red-400`}>
@@ -1233,7 +1233,7 @@ function PayrollPageInner() {
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Receipt className="w-10 h-10 text-[var(--text-dim)]" />
-                        <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
                         <p className="text-xs text-[var(--text-muted)]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
                       </div>
                     </td>
@@ -1256,21 +1256,21 @@ function PayrollPageInner() {
         {/* Draft */}
         <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-solid)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'rgba(77,159,255,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
           <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-solid)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'rgba(255,176,32,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
           <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
         </div>
         {/* Total Paid */}
         <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-solid)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
           <p style={{ color: 'rgba(0,224,122,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
           <p style={{ color: 'var(--accent-emerald-glow)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
         </div>
@@ -1290,7 +1290,7 @@ function PayrollPageInner() {
                   background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                   border: '1px solid rgba(0, 224, 122, 0.45)',
                   boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-secondary)' }
@@ -1318,7 +1318,7 @@ function PayrollPageInner() {
                   background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                   border: '1px solid rgba(0, 224, 122, 0.45)',
                   boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-muted)' }
@@ -1354,7 +1354,7 @@ function PayrollPageInner() {
           {statusTab === 'Draft' && (
             <button
               onClick={selectAll}
-              className="text-xs hover:text-white underline transition-colors"
+              className="text-xs hover:text-[var(--text-primary)] underline transition-colors"
               style={{ color: 'var(--text-muted)' }}
             >
               {allPageSelected ? 'Deselect All on Page' : 'Select All on Page'}
@@ -1495,7 +1495,7 @@ function PayrollPageInner() {
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
                         className="hover:underline"
-                        style={{ color: 'var(--accent-cyan-solid)' }}
+                        style={{ color: 'var(--accent-cyan-text)' }}
                         title="Open project"
                       >
                         {entry.customerName}
@@ -1509,10 +1509,10 @@ function PayrollPageInner() {
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
                       entry.status === 'Paid'
-                        ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : entry.status === 'Pending'
-                        ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
-                        : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-solid)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                     }>{entry.status}</span>
                   </td>
                   <td style={{ padding: '12px 14px', fontSize: 12, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' as const, textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
@@ -1533,7 +1533,7 @@ function PayrollPageInner() {
                           disabled={processingEntryIds.has(entry.id)}
                           onClick={() => handleReverseEntry(entry)}
                           className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40"
-                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber-solid)' }}
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber-text)' }}
                           title="Move back to Draft"
                         >
                           Reverse
@@ -1602,10 +1602,10 @@ function PayrollPageInner() {
                 <div className="p-2 rounded-lg bg-yellow-900/30">
                   <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 </div>
-                <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
+                <h2 className="text-[var(--text-primary)] font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[var(--text-secondary)] text-sm mb-3">
-                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-solid)] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
+                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-text)] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
               {filterRepId && (() => {
                 const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
@@ -1639,16 +1639,16 @@ function PayrollPageInner() {
                     {repSummary.map((rep) => (
                       <div key={rep.id} className="flex items-center justify-between px-4 py-2.5">
                         <div>
-                          <p className="text-white text-sm font-medium">{rep.name}</p>
+                          <p className="text-[var(--text-primary)] text-sm font-medium">{rep.name}</p>
                           <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className={`${rep.total < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-solid)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
+                        <span className={`${rep.total < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-text)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
                   <div className="px-4 py-2.5 border-t border-[var(--border)]/60 flex items-center justify-between bg-[var(--surface-card)]/40">
                     <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Total</span>
-                    <span className="text-white font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
+                    <span className="text-[var(--text-primary)] font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -1664,7 +1664,7 @@ function PayrollPageInner() {
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -1691,8 +1691,8 @@ function PayrollPageInner() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add {titleFor}</h2>
-              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Add {titleFor}</h2>
+              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1708,7 +1708,7 @@ function PayrollPageInner() {
                       key={t}
                       type="button"
                       onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
-                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-white' : 'text-black') : 'text-[var(--text-secondary)]'}`}
+                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-[var(--text-primary)]' : 'text-black') : 'text-[var(--text-secondary)]'}`}
                       style={{ background: paymentForm.type === t ? (t === 'Chargeback' ? 'var(--accent-red, #ef4444)' : 'var(--brand)') : 'transparent' }}
                     >
                       {t}
@@ -1794,12 +1794,12 @@ function PayrollPageInner() {
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-white' : 'btn-primary text-black'}`}
+                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-[var(--text-primary)]' : 'btn-primary text-black'}`}
                   style={{ backgroundColor: isChargeback ? 'var(--accent-red, #ef4444)' : 'var(--brand)' }}>
                   Add {titleFor}
                 </button>
                 <button type="button" onClick={closeAndReset}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1816,8 +1816,8 @@ function PayrollPageInner() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={editEntryPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
-              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
+              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1850,7 +1850,7 @@ function PayrollPageInner() {
                   Save Changes
                 </button>
                 <button type="button" onClick={() => setEditingEntry(null)}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1880,12 +1880,12 @@ function PayrollPageInner() {
 
             {/* Selection count badge — blue accent pill */}
             <span className="flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
-              <span key={selectedIds.size} className="text-white font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
-              <span className="text-[var(--accent-emerald-solid)] font-medium">selected</span>
+              <span key={selectedIds.size} className="text-[var(--text-primary)] font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
+              <span className="text-[var(--accent-emerald-text)] font-medium">selected</span>
               {selectedTotal > 0 && (
                 <>
                   <span className="text-[var(--text-dim)] mx-0.5">·</span>
-                  <span key={selectedTotal} className="text-[var(--accent-emerald-solid)] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
+                  <span key={selectedTotal} className="text-[var(--accent-emerald-text)] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
                 </>
               )}
             </span>
@@ -1909,7 +1909,7 @@ function PayrollPageInner() {
             <button
               onClick={() => setSelectedIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

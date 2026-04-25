@@ -742,13 +742,13 @@ function TrainingPageInner() {
           <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
             <GraduationCap className="w-8 h-8 text-amber-400" />
           </div>
-          <h2 className="text-white text-lg font-bold mb-2">No Trainees Assigned</h2>
+          <h2 className="text-[var(--text-primary)] text-lg font-bold mb-2">No Trainees Assigned</h2>
           <p className="text-[var(--text-secondary)] text-sm max-w-md mx-auto mb-4">
             You don&apos;t have any trainees assigned. Contact your admin to set up trainer assignments.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
             style={{ backgroundColor: 'var(--brand)' }}
           >
             <Home className="w-4 h-4" />
@@ -824,12 +824,12 @@ function TrainingPageInner() {
                 </div>
                 <div className="card-surface rounded-xl p-3">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Active</p>
-                  <p className="text-xl font-bold text-white tabular-nums mt-1">{activeTrainingCount}</p>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums mt-1">{activeTrainingCount}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">of {totalAssignments} assignment{totalAssignments === 1 ? '' : 's'}</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Trainers</p>
-                  <p className="text-xl font-bold text-white tabular-nums mt-1">{uniqueTrainerCount}</p>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums mt-1">{uniqueTrainerCount}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">avg ${avgRate.toFixed(2)}/W</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
@@ -839,7 +839,7 @@ function TrainingPageInner() {
                       <button
                         type="button"
                         onClick={() => setAdminTrainerFilter(topTrainer.id)}
-                        className="text-sm font-bold text-white mt-1 hover:text-[var(--accent-cyan-solid)] transition-colors text-left truncate max-w-full"
+                        className="text-sm font-bold text-[var(--text-primary)] mt-1 hover:text-[var(--accent-cyan-text)] transition-colors text-left truncate max-w-full"
                         title="Filter to this trainer"
                       >
                         {topTrainer.name}
@@ -874,7 +874,7 @@ function TrainingPageInner() {
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') { (e.target as HTMLInputElement).blur(); } }}
-              className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+              className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
             />
           </div>
           <select
@@ -916,7 +916,7 @@ function TrainingPageInner() {
                 setAdminRepFilter('');
                 setAdminSearch('');
               }}
-              className="text-xs text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
             >
               <X className="w-3 h-3" /> Clear
             </button>
@@ -949,13 +949,13 @@ function TrainingPageInner() {
                 </div>
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-white font-bold text-lg hover:text-[var(--accent-cyan-solid)] transition-colors">
+                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-[var(--text-primary)] font-bold text-lg hover:text-[var(--accent-cyan-text)] transition-colors">
                       {trainerRep.name}
                     </Link>
                     <span className="text-xs text-[var(--text-muted)] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">Trainer</span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
-                    <span><span className="text-white font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
+                    <span><span className="text-[var(--text-primary)] font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
                     {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-amber-400 font-semibold">{active}</span> training</span></>}
                     {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-cyan-400 font-semibold">{residuals}</span> residuals</span></>}
                     {paused > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-slate-400 font-semibold">{paused}</span> paused</span></>}
@@ -1039,7 +1039,7 @@ function TrainingPageInner() {
                           <Link
                             href={`/dashboard/users/${group.trainerId}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-white truncate hover:text-[var(--accent-cyan-solid)] transition-colors font-semibold"
+                            className="text-[var(--text-primary)] truncate hover:text-[var(--accent-cyan-text)] transition-colors font-semibold"
                           >
                             {trainerName}
                           </Link>
@@ -1103,10 +1103,10 @@ function TrainingPageInner() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             {getInitials(traineeName)}
                           </div>
-                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
+                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan-text)] transition-colors">
                             {traineeName}
                           </Link>
                         </div>
@@ -1165,7 +1165,7 @@ function TrainingPageInner() {
                             e.stopPropagation();
                             setOpenMenuId(openMenuId === a.id ? null : a.id);
                           }}
-                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--border)]/60 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors"
                           aria-label="Row actions"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -1179,41 +1179,41 @@ function TrainingPageInner() {
                             <Link
                               href={`/dashboard/users/${a.traineeId}`}
                               onClick={() => setOpenMenuId(null)}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <User className="w-3.5 h-3.5" /> View trainee profile
                             </Link>
                             {a.isActiveTraining === false ? (
                               <button
                                 onClick={() => { setOpenMenuId(null); resumeTraining(a.id); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                               >
                                 <Play className="w-3.5 h-3.5" /> Resume Training
                               </button>
                             ) : (
                               <button
                                 onClick={() => { setOpenMenuId(null); markGraduated(a.id); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                               >
                                 <ShieldCheck className="w-3.5 h-3.5" /> Mark Graduated
                               </button>
                             )}
                             <button
                               onClick={() => { setOpenMenuId(null); toast(row.status === 'paused' ? 'Resume handled via rep activation (coming soon)' : 'Pause handled via rep deactivation (coming soon)', 'info'); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <Pause className="w-3.5 h-3.5" /> {row.status === 'paused' ? 'Resume' : 'Pause'}
                             </button>
                             <button
                               onClick={() => { setOpenMenuId(null); toast('Archive coming soon', 'info'); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <Archive className="w-3.5 h-3.5" /> Archive
                             </button>
                             <div className="border-t border-[var(--border-subtle)] my-1" />
                             <button
                               onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
                             </button>
@@ -1311,7 +1311,7 @@ function TrainingPageInner() {
             ref={(el) => { tabRefs.current[i] = el; }}
             onClick={() => setActiveTab(t.key)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-              activeTab === t.key ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'
+              activeTab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {t.label}
@@ -1332,13 +1332,13 @@ function TrainingPageInner() {
             <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-amber-400" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-amber-400/50" />} />
             <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-orange-400" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-orange-400/50" />} />
             <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-yellow-400" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-yellow-400/50" />} />
-            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-solid)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-solid)]/50" />} />
+            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
           </div>
 
           <div className="card-surface rounded-2xl p-6">
-            <h3 className="text-white font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
+            <h3 className="text-[var(--text-primary)] font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-emerald-solid)]" value={fmt$(totalEarned)} />
+              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-emerald-text)]" value={fmt$(totalEarned)} />
               <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-yellow-400" value={fmt$(pendingAmount)} />
               <BreakdownRow color="bg-[var(--text-muted)]" label="Draft" textColor="text-[var(--text-secondary)]" value={fmt$(draftAmount)} />
             </div>
@@ -1426,7 +1426,7 @@ function TrainingPageInner() {
                 placeholder="Search by customer or trainee..."
                 value={paymentSearch}
                 onChange={(e) => setPaymentSearch(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
               />
             </div>
             {paymentSearch && (
@@ -1438,7 +1438,7 @@ function TrainingPageInner() {
                   key={s}
                   onClick={() => setPaymentStatusFilter(s)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    paymentStatusFilter === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-white'
+                    paymentStatusFilter === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {s === 'all' ? 'All' : s}
@@ -1472,8 +1472,8 @@ function TrainingPageInner() {
                         key={entry.id}
                         className={`table-row-enter row-stagger-${Math.min(idx, 24)} hover:bg-[var(--surface-card)]/30 transition-colors`}
                       >
-                        <td className="px-4 py-3 text-white text-sm">{entry.customerName || '—'}</td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan-solid)] transition-colors">{t.name}</Link> : '—'; })()}</td>
+                        <td className="px-4 py-3 text-[var(--text-primary)] text-sm">{entry.customerName || '—'}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan-text)] transition-colors">{t.name}</Link> : '—'; })()}</td>
                         <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">{fmt$(entry.amount)}</td>
                         <td className="px-4 py-3 text-center"><StatusBadge status={entry.status} /></td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
@@ -1498,13 +1498,13 @@ function TrainingPageInner() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold"
                     style={{ backgroundColor: 'var(--surface-pressed)' }}
                   >
                     {getInitials(t.traineeName)}
                   </div>
                 </div>
-                <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[var(--accent-cyan-solid)] transition-colors">{t.traineeName}</Link>
+                <Link href={`/dashboard/users/${t.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm hover:text-[var(--accent-cyan-text)] transition-colors">{t.traineeName}</Link>
                 <StatusPillBadge status={t.status} />
               </div>
 
@@ -1545,7 +1545,7 @@ function TrainingPageInner() {
                               )}
                             </div>
                           </td>
-                          <td className={`px-3 py-2.5 text-sm ${isActive ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+                          <td className={`px-3 py-2.5 text-sm ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {rangeLabel}
                           </td>
                           <td className={`px-3 py-2.5 text-right text-sm font-bold tabular-nums ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
@@ -1649,7 +1649,7 @@ function TraineeSearch({
           placeholder="Search trainees..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+          className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
         />
       </div>
       {value && (
@@ -1661,7 +1661,7 @@ function TraineeSearch({
             key={s}
             onClick={() => onSort(s)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              sort === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-white'
+              sort === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1695,7 +1695,7 @@ function ActiveTraineeCard({
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
   const roleBadgeColor =
-    traineeRole === 'closer' ? 'text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
+    traineeRole === 'closer' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
     : traineeRole === 'setter' ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
     : 'text-teal-400 bg-teal-500/10 border-teal-500/20';
 
@@ -1705,13 +1705,13 @@ function ActiveTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4">
         <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-primary)] text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm truncate hover:text-[var(--accent-cyan-text)] transition-colors">
               {traineeName}
             </Link>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${roleBadgeColor}`}>
@@ -1734,7 +1734,7 @@ function ActiveTraineeCard({
           </button>
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--surface-card)]/60 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]/60 transition-colors"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
@@ -1776,7 +1776,7 @@ function ActiveTraineeCard({
                   onClick={() => onOpenProject(p.id)}
                   className={`w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-[var(--surface-card)]/60 transition-colors group table-row-enter row-stagger-${Math.min(pIdx, 12)}`}
                 >
-                  <span className="flex-1 min-w-0 text-sm text-white truncate group-hover:text-[var(--accent-cyan-solid)] transition-colors">{p.customerName}</span>
+                  <span className="flex-1 min-w-0 text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{p.customerName}</span>
                   <PhasePill phase={p.phase} />
                   <span className="text-[10px] text-[var(--text-muted)] tabular-nums whitespace-nowrap">{formatDate(p.soldDate)}</span>
                   <span className="text-[10px] text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{p.kWSize.toFixed(1)} kW</span>
@@ -1813,13 +1813,13 @@ function ResidualTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4 mb-4">
         <div className="bg-gradient-to-br from-slate-500 to-slate-700 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-primary)] text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm truncate hover:text-[var(--accent-cyan-text)] transition-colors">
               {traineeName}
             </Link>
             <StatusPillBadge status={status} />
@@ -1848,7 +1848,7 @@ function ResidualTraineeCard({
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Total Earned</p>
-          <p className="text-[var(--accent-emerald-solid)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
+          <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Tier Progress</p>
@@ -1948,9 +1948,9 @@ function ProjectSlideOver({
         <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Coaching view · Read-only</p>
-            <h3 className="text-white text-lg font-semibold mt-0.5 truncate">{project.customerName}</h3>
+            <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5 truncate">{project.customerName}</h3>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1971,21 +1971,21 @@ function ProjectSlideOver({
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Installer</p>
-                <p className="text-sm text-white mt-0.5">{project.installer}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{project.installer}</p>
               </div>
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Closer</p>
-                <p className="text-sm text-white mt-0.5">{closerName}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{closerName}</p>
               </div>
               {setterName && (
                 <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Setter</p>
-                  <p className="text-sm text-white mt-0.5">{setterName}</p>
+                  <p className="text-sm text-[var(--text-primary)] mt-0.5">{setterName}</p>
                 </div>
               )}
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Financer</p>
-                <p className="text-sm text-white mt-0.5">{project.financer}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{project.financer}</p>
               </div>
             </div>
           </div>
@@ -2011,7 +2011,7 @@ function ProjectSlideOver({
                   <li key={ev.id} className="flex items-start gap-3 text-sm">
                     <span className="w-1.5 h-1.5 mt-[9px] rounded-full bg-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white truncate">{ev.detail}</p>
+                      <p className="text-[var(--text-primary)] truncate">{ev.detail}</p>
                       <p className="text-[10px] text-[var(--text-muted)] tabular-nums">
                         {new Date(ev.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </p>
@@ -2215,11 +2215,11 @@ function NewAssignmentModal({
               <GraduationCap className="w-6 h-6 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-white font-semibold text-lg">New Assignment</h2>
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">New Assignment</h2>
               <p className="text-sm text-[var(--text-muted)]">Create a trainer-trainee relationship</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -2276,7 +2276,7 @@ function NewAssignmentModal({
                         max={MAX_TRAINER_RATE_PER_W}
                         value={tier.ratePerW}
                         onChange={(e) => updateTier(idx, 'ratePerW', e.target.value)}
-                        className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                     <div>
@@ -2301,7 +2301,7 @@ function NewAssignmentModal({
                         onChange={(e) => updateTier(idx, 'upToDeal', e.target.value)}
                         placeholder={tier.perpetuity ? 'n/a' : ''}
                         className={`w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
-                          tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-white'
+                          tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
                         }`}
                       />
                     </div>
@@ -2331,7 +2331,7 @@ function NewAssignmentModal({
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-[var(--text-secondary)]">
               {firstTier.cap ? (
                 <>
-                  Next {firstTier.cap} deals by <span className="text-white font-medium">{traineeName}</span> will pay{' '}
+                  Next {firstTier.cap} deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
                   <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W.
                   {secondTier && (
                     <> After cap, falls back to ${secondTier.rate.toFixed(2)}/W{secondTier.cap === null ? ' perpetuity' : ` for ${secondTier.cap} deals`}.</>
@@ -2339,7 +2339,7 @@ function NewAssignmentModal({
                 </>
               ) : (
                 <>
-                  All deals by <span className="text-white font-medium">{traineeName}</span> will pay{' '}
+                  All deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
                   <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W perpetuity.
                 </>
               )}
@@ -2359,7 +2359,7 @@ function NewAssignmentModal({
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
+              className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
             >
               Cancel
             </button>
@@ -2600,11 +2600,11 @@ function BackfillWizard({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Backfill Trainer Overrides</p>
-              <h3 className="text-white text-lg font-semibold mt-0.5">
+              <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5">
                 {trainerName} on {traineeName}&apos;s deals
               </h3>
             </div>
-            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors p-1">
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -2643,7 +2643,7 @@ function BackfillWizard({
                     key={key}
                     onClick={() => setStatusFilter(key)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      statusFilter === key ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-white'
+                      statusFilter === key ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {label}
@@ -2689,7 +2689,7 @@ function BackfillWizard({
                                 className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
                               />
                             </td>
-                            <td className="px-3 py-2 text-white truncate max-w-[160px]">{p.customerName}</td>
+                            <td className="px-3 py-2 text-[var(--text-primary)] truncate max-w-[160px]">{p.customerName}</td>
                             <td className="px-3 py-2 text-[var(--text-secondary)] text-xs tabular-nums">{p.soldDate}</td>
                             <td className="px-3 py-2 text-right text-[var(--text-secondary)] tabular-nums">{p.kWSize.toFixed(1)}</td>
                             <td className="px-3 py-2 text-center"><PhasePill phase={p.phase} /></td>
@@ -2734,26 +2734,26 @@ function BackfillWizard({
             <div className="space-y-4">
               <button
                 onClick={() => setStep('select')}
-                className="text-xs text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
               >
                 <ChevronDown className="w-3 h-3 rotate-90" /> Back to selection
               </button>
 
               <div className="card-surface rounded-xl p-4 space-y-3">
-                <h4 className="text-white font-semibold text-sm">Preview</h4>
+                <h4 className="text-[var(--text-primary)] font-semibold text-sm">Preview</h4>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Will create <span className="text-white font-medium">{preview.entries.length}</span> Trainer PayrollEntries totaling{' '}
+                  Will create <span className="text-[var(--text-primary)] font-medium">{preview.entries.length}</span> Trainer PayrollEntries totaling{' '}
                   <span className="text-amber-400 font-medium">${(preview.m2Total + preview.m3Total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M2 Paid</p>
-                    <p className="text-white font-bold tabular-nums">{preview.m2Count} entries</p>
+                    <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m2Count} entries</p>
                     <p className="text-amber-400 text-sm tabular-nums">${preview.m2Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M3 Paid</p>
-                    <p className="text-white font-bold tabular-nums">{preview.m3Count} entries</p>
+                    <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m3Count} entries</p>
                     <p className="text-amber-400 text-sm tabular-nums">${preview.m3Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
@@ -2793,7 +2793,7 @@ function BackfillWizard({
               </div>
 
               <div className="flex items-center justify-between">
-                <p className="text-xs text-[var(--text-muted)]">Entries will be created as <span className="text-white font-medium">Paid</span> status (historical backfill).</p>
+                <p className="text-xs text-[var(--text-muted)]">Entries will be created as <span className="text-[var(--text-primary)] font-medium">Paid</span> status (historical backfill).</p>
                 <button
                   onClick={handleCommit}
                   disabled={committing || preview.entries.length === 0}
@@ -2813,9 +2813,9 @@ function BackfillWizard({
               <div className="inline-flex p-4 rounded-2xl bg-emerald-500/10">
                 <CheckCircle className="w-12 h-12 text-emerald-400" />
               </div>
-              <h3 className="text-white text-lg font-bold">Backfill Complete</h3>
+              <h3 className="text-[var(--text-primary)] text-lg font-bold">Backfill Complete</h3>
               <p className="text-[var(--text-secondary)] text-sm">
-                Created <span className="text-white font-medium">{commitResult.created}</span> trainer entries
+                Created <span className="text-[var(--text-primary)] font-medium">{commitResult.created}</span> trainer entries
                 {commitResult.skipped.length > 0 && (
                   <>, skipped <span className="text-amber-400 font-medium">{commitResult.skipped.length}</span></>
                 )}

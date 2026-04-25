@@ -157,14 +157,14 @@ export default function MobileSettings() {
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
-          style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" />
           Settings
         </button>
 
         {/* Section title */}
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {NAV.flatMap((g) => g.items).find((i) => i.id === activeSection)?.label ?? activeSection}
         </h1>
 
@@ -287,7 +287,7 @@ function InstallersSection() {
             <MobileCard key={inst.name}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
                   <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{installPct}%</span></p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -331,7 +331,7 @@ function FinancersSection() {
           <MobileCard key={fin.name}>
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{fin.name}</p>
+                <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{fin.name}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span
@@ -427,7 +427,7 @@ function AdminUsersSection() {
             autoComplete="name"
             autoCapitalize="words"
             inputMode="text"
-            className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+            className="w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -445,7 +445,7 @@ function AdminUsersSection() {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+            className="w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -478,7 +478,7 @@ function AdminUsersSection() {
               {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.name}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.name}</p>
                   <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{admin.email}</p>
                 </div>
                 <button
@@ -564,7 +564,7 @@ function ProjectManagersSection() {
           <MobileCard key={pm.id}>
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
-                <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.firstName} {pm.lastName}</p>
+                <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.firstName} {pm.lastName}</p>
                 <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{pm.email}</p>
               </div>
               <button
@@ -655,7 +655,7 @@ function BlitzPermissionsSection() {
           const perms = permissions[rep.id] ?? { canRequestBlitz: false, canCreateBlitz: false };
           return (
             <MobileCard key={rep.id}>
-              <p className="text-base font-semibold text-white mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+              <p className="text-base font-semibold text-[var(--text-primary)] mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
               <p className="text-base mb-3" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
@@ -700,7 +700,7 @@ function SubDealersSection() {
               {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
               <div className="flex items-center gap-3 min-h-[48px] py-3 px-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {sd.firstName ?? ''} {sd.lastName ?? ''}
                   </p>
                   {sd.email && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
@@ -840,7 +840,7 @@ function CustomizationSection() {
                 value={thresholds[phase] ?? THRESHOLD_DEFAULTS[phase]}
                 onChange={(e) => setThresholds((prev) => ({ ...prev, [phase]: Math.max(1, parseInt(e.target.value) || 1) }))}
                 inputMode="numeric"
-                className="w-20 rounded-xl px-3 py-2 text-base text-white text-center focus:outline-none focus:ring-1"
+                className="w-20 rounded-xl px-3 py-2 text-base text-[var(--text-primary)] text-center focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -980,7 +980,7 @@ function StandardBaselines() {
     border: '1px solid var(--border-subtle)',
     '--tw-ring-color': 'var(--accent-emerald-solid)',
   } as React.CSSProperties;
-  const inputClass = 'flex-1 rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1';
+  const inputClass = 'flex-1 rounded-xl px-3 py-2 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1';
 
   if (entries.length === 0) return <MobileEmptyState icon={BookOpen} title="No baselines configured" />;
 
@@ -992,7 +992,7 @@ function StandardBaselines() {
         return (
           <MobileCard key={installer}>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {installer}
               </p>
               {!isEditing && (
@@ -1000,7 +1000,7 @@ function StandardBaselines() {
                   <button
                     onClick={() => openNewVersion(installer)}
                     className="p-2 active:opacity-70 transition-colors"
-                    style={{ color: 'var(--accent-emerald-solid)' }}
+                    style={{ color: 'var(--accent-emerald-text)' }}
                     title="New version"
                   >
                     <Plus className="w-4 h-4" />
@@ -1067,7 +1067,7 @@ function StandardBaselines() {
                 ] as [string, string][]).map(([label, value]) => (
                   <div key={label} className="flex items-baseline gap-1">
                     <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}:</span>
-                    <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
+                    <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -1096,7 +1096,7 @@ function StandardBaselines() {
                 : 'bs-up 360ms cubic-bezier(0.16,1,0.3,1) both',
             }}
           >
-            <h2 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               New Version — {newVersionFor}
             </h2>
             {([
@@ -1113,7 +1113,7 @@ function StandardBaselines() {
                   inputMode={type === 'number' ? 'decimal' : undefined}
                   value={value}
                   onChange={(e) => set(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none focus:ring-1"
+                  className="w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                   style={inputStyle}
                 />
               </div>
@@ -1162,7 +1162,7 @@ function SolarTechBaselines() {
       ) : (
         familyProducts.map((product) => (
           <MobileCard key={product.id}>
-            <p className="text-base font-semibold text-white mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <p className="text-base font-semibold text-[var(--text-primary)] mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               {product.name}
             </p>
             <div className="space-y-1">
@@ -1171,7 +1171,7 @@ function SolarTechBaselines() {
                   <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {tier.minKW}–{tier.maxKW ?? '∞'} kW
                   </span>
-                  <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
                   </span>
                 </div>
@@ -1223,7 +1223,7 @@ function ProductCatalogBaselines() {
       ) : (
         familyProducts.map((product) => (
           <MobileCard key={product.id}>
-            <p className="text-base font-semibold text-white mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <p className="text-base font-semibold text-[var(--text-primary)] mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               {product.name}
             </p>
             <div className="space-y-1">
@@ -1232,7 +1232,7 @@ function ProductCatalogBaselines() {
                   <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {tier.minKW}–{tier.maxKW ?? '∞'} kW
                   </span>
-                  <span className="text-sm text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
                   </span>
                 </div>

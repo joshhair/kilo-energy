@@ -70,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <h2 className="text-white text-lg font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h2 className="text-[var(--text-primary)] text-lg font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Something went wrong
           </h2>
           <p className="text-[var(--text-muted)] text-sm max-w-sm">
@@ -83,7 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
               className="px-5 py-2.5 rounded-xl text-sm font-medium transition-colors"
               style={{
                 background: 'rgba(0,229,160,0.12)',
-                color: 'var(--accent-emerald-solid)',
+                color: 'var(--accent-emerald-text)',
                 border: '1px solid rgba(0,229,160,0.25)',
               }}
             >
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 {shortId}…
               </button>
-              {copied && <span className="text-[var(--accent-emerald-solid)]">Copied</span>}
+              {copied && <span className="text-[var(--accent-emerald-text)]">Copied</span>}
             </div>
           )}
 

@@ -188,7 +188,7 @@ export default function MobileEarnings() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Next Payout</p>
-              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -198,7 +198,7 @@ export default function MobileEarnings() {
                 {nextPayoutCount} pending {nextPayoutCount === 1 ? 'entry' : 'entries'}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-emerald-solid)' }}>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-emerald-text)' }}>
               <Clock className="w-3 h-3" />
               {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
             </span>
@@ -209,7 +209,7 @@ export default function MobileEarnings() {
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
         <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
-        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
@@ -330,14 +330,14 @@ export default function MobileEarnings() {
                   style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <StatusDot status={entry.status} />
                       <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimb.</span>
                       <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(entry.amount)}
                   </span>
                 </div>
@@ -355,7 +355,7 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedDeals.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
@@ -364,7 +364,7 @@ export default function MobileEarnings() {
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -421,13 +421,13 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedBonuses.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -464,13 +464,13 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -589,7 +589,7 @@ export function MobileAdminEarnings() {
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
                     <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <StatusDot status={r.status} />
@@ -597,7 +597,7 @@ export function MobileAdminEarnings() {
                       {r.receiptName && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>· 📎 receipt</span>}
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(r.amount)}
                   </span>
                 </div>
@@ -607,7 +607,7 @@ export function MobileAdminEarnings() {
                       <button
                         onClick={() => setReimbStatus(r.id, 'Approved')}
                         className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)' }}
+                        style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                       </button>
@@ -626,7 +626,7 @@ export function MobileAdminEarnings() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-solid)' }}
+                      style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
                     >
                       View receipt
                     </a>

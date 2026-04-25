@@ -272,7 +272,7 @@ export default function MobileTraining() {
                              active:bg-white/[0.03]"
                 >
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
                     <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span> &middot; {td.traineeRole === 'both' ? 'Closer/Setter' : td.traineeRole.charAt(0).toUpperCase() + td.traineeRole.slice(1)}
                     </p>
@@ -316,7 +316,7 @@ export default function MobileTraining() {
                       })()}
                       <div className="flex justify-between items-center mb-2 text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '80ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <span className="font-semibold uppercase tracking-widest text-[11px]" style={{ color: 'var(--text-dim)' }}>Earned from Trainee</span>
-                        <span className="font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
+                        <span className="font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
                       </div>
                       <table className="w-full text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '140ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <thead>
@@ -338,7 +338,7 @@ export default function MobileTraining() {
                                 {i === td.activeTierIndex && (
                                   <span
                                     className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide leading-none"
-                                    style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', color: 'var(--accent-emerald-solid)' }}
+                                    style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', color: 'var(--accent-emerald-text)' }}
                                   >ACTIVE</span>
                                 )}
                               </td>
@@ -372,12 +372,12 @@ export default function MobileTraining() {
                 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
                   <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>

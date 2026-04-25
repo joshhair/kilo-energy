@@ -90,8 +90,8 @@ export default function IncentiveCard({
     : null;
 
   const typeBadgeStyle: React.CSSProperties = incentive.type === 'company'
-    ? { background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-solid)' }
-    : { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)' };
+    ? { background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }
+    : { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' };
 
   const barFill = expired
     ? 'var(--text-dim)'
@@ -172,9 +172,9 @@ export default function IncentiveCard({
                   }}
                 >
                   {ms.achieved ? (
-                    <Gift className="w-3 h-3" style={{ color: 'var(--accent-emerald-solid)' }} />
+                    <Gift className="w-3 h-3" style={{ color: 'var(--accent-emerald-text)' }} />
                   ) : reached ? (
-                    <Target className="w-3 h-3" style={{ color: 'var(--accent-amber-solid)' }} />
+                    <Target className="w-3 h-3" style={{ color: 'var(--accent-amber-text)' }} />
                   ) : (
                     <Target className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
                   )}
@@ -204,14 +204,14 @@ export default function IncentiveCard({
           <button
             onClick={onEdit}
             className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
-            style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-solid)' }}
+            style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
           >
             <Pencil className="w-3.5 h-3.5" /> Edit
           </button>
           <button
             onClick={onDuplicate}
             className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
-            style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-solid)' }}
+            style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)' }}
           >
             <Copy className="w-3.5 h-3.5" /> Duplicate
           </button>
@@ -219,15 +219,15 @@ export default function IncentiveCard({
             onClick={onToggleActive}
             className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
             style={incentive.active
-              ? { background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-solid)' }
-              : { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)' }}
+              ? { background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)' }
+              : { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
           >
             {incentive.active ? 'Deactivate' : 'Activate'}
           </button>
           <button
             onClick={onDelete}
             className="w-9 min-h-[36px] rounded-lg flex items-center justify-center shrink-0 active:scale-[0.97] transition-transform"
-            style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-solid)' }}
+            style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)' }}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

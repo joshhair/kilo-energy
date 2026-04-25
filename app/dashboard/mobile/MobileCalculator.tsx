@@ -448,8 +448,8 @@ export default function MobileCalculator() {
     border: '1px solid var(--border-subtle)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
-  const selectCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
-  const inputCls  = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 transition-transform duration-75 active:scale-[0.985]';
+  const selectCls = 'w-full min-h-[48px] text-[var(--text-primary)] rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
+  const inputCls  = 'w-full min-h-[48px] text-[var(--text-primary)] rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 transition-transform duration-75 active:scale-[0.985]';
   const labelStyle: React.CSSProperties = {
     color: 'var(--text-dim)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
@@ -465,8 +465,8 @@ export default function MobileCalculator() {
       {recentDeals.length > 0 && (
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-1.5 mb-3">
-            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-solid)' }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
           </div>
           <div className="flex items-center gap-2">
             <select
@@ -715,10 +715,10 @@ export default function MobileCalculator() {
             />
             <div className="text-right min-w-[90px]">
               {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                <p style={{ color: 'var(--accent-amber-solid)', fontSize: 12 }}>Baseline unknown</p>
+                <p style={{ color: 'var(--accent-amber-text)', fontSize: 12 }}>Baseline unknown</p>
               ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                 <>
-                  <p style={{ color: 'var(--accent-blue-solid)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
+                  <p style={{ color: 'var(--accent-blue-text)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
                   <p style={{ color: 'var(--text-dim)', fontSize: 11 }}>required PPW</p>
                 </>
               ) : (
@@ -734,7 +734,7 @@ export default function MobileCalculator() {
         <div ref={resultRef}>
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
+          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 
@@ -742,21 +742,21 @@ export default function MobileCalculator() {
             {/* Closer row + M1/M2/M3 breakdown */}
             <div className="calc-row-1 flex items-center justify-between">
               <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
-              <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
+              <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             <div className="flex gap-2 ml-2">
               <div className="calc-ms-1 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                 <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M1</p>
-                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM1)}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM1)}</p>
               </div>
               <div className="calc-ms-2 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                 <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M2</p>
-                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM2)}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM2)}</p>
               </div>
               {hasM3Split && (
                 <div className="calc-ms-3 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                   <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M3</p>
-                  <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM3)}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM3)}</p>
                 </div>
               )}
             </div>
@@ -766,21 +766,21 @@ export default function MobileCalculator() {
               <>
                 <div className="calc-row-2 flex items-center justify-between">
                   <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                  <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displaySetter)}</span>
+                  <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displaySetter)}</span>
                 </div>
                 <div className="flex gap-2 ml-2">
                   <div className="calc-ms-4 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                     <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M1</p>
-                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM1)}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM1)}</p>
                   </div>
                   <div className="calc-ms-5 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                     <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M2</p>
-                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM2)}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM2)}</p>
                   </div>
                   {hasM3Split && (
                     <div className="calc-ms-6 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                       <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M3</p>
-                      <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM3)}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM3)}</p>
                     </div>
                   )}
                 </div>
@@ -793,7 +793,7 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{trainerRep ? `: ${trainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
               </div>
             )}
 
@@ -803,14 +803,14 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{closerTrainerRep ? `: ${closerTrainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
               </div>
             )}
 
             {effectiveRole === 'admin' && (
               <div className="calc-row-5 flex items-center justify-between">
                 <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal))}</span>
+                <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal))}</span>
               </div>
             )}
           </div>

@@ -21,7 +21,7 @@ export function CustomizationSection() {
 
       {/* Pipeline Alert Thresholds */}
       <div className="card-surface rounded-2xl p-5 mb-6">
-        <h2 className="text-white font-semibold mb-1">Pipeline Alert Thresholds</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-1">Pipeline Alert Thresholds</h2>
         <p className="text-[var(--text-muted)] text-xs mb-4">Days from sold date before a project is flagged as &ldquo;stuck&rdquo; in each phase.</p>
         <div className="space-y-3">
           {['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'].map((phase) => (
@@ -57,7 +57,7 @@ export function CustomizationSection() {
               setThresholdsSaved(true);
               setTimeout(() => setThresholdsSaved(false), 2000);
             }}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] border border-[var(--border-subtle)] transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] transition-colors"
           >
             Reset to Defaults
           </button>

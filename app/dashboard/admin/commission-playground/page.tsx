@@ -71,7 +71,7 @@ export default function CommissionPlaygroundPage() {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6">
-        <Link href="/dashboard/admin" className="text-xs text-[var(--text-muted)] hover:text-white inline-flex items-center gap-1.5">
+        <Link href="/dashboard/admin" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] inline-flex items-center gap-1.5">
           <ArrowLeft className="w-3 h-3" /> Back to Admin
         </Link>
       </div>
@@ -79,7 +79,7 @@ export default function CommissionPlaygroundPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg bg-[var(--accent-cyan-solid)]/15">
-            <Calculator className="w-5 h-5 text-[var(--accent-cyan-solid)]" />
+            <Calculator className="w-5 h-5 text-[var(--accent-cyan-text)]" />
           </div>
           <h1 className="text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Commission Playground
@@ -96,7 +96,7 @@ export default function CommissionPlaygroundPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Inputs */}
         <div className="card-surface rounded-2xl p-6 space-y-4">
-          <h2 className="text-white font-semibold">Inputs</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold">Inputs</h2>
 
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">Deal type</label>
@@ -107,7 +107,7 @@ export default function CommissionPlaygroundPage() {
                   type="button"
                   onClick={() => setDealType(t)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    dealType === t ? 'bg-[var(--accent-cyan-solid)]/15 text-[var(--accent-cyan-solid)]' : 'text-[var(--text-secondary)] hover:text-white'
+                    dealType === t ? 'bg-[var(--accent-cyan-solid)]/15 text-[var(--accent-cyan-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {t === 'paired' ? 'Paired (closer + setter)' : 'Self-gen (closer only)'}
@@ -141,7 +141,7 @@ export default function CommissionPlaygroundPage() {
           ) : (
             <>
               <div className="card-surface rounded-2xl p-6">
-                <h2 className="text-white font-semibold mb-4">Output</h2>
+                <h2 className="text-[var(--text-primary)] font-semibold mb-4">Output</h2>
 
                 <div className="grid grid-cols-2 gap-4 mb-5">
                   <TotalCard label="Closer total" value={result.closerTotal} tint="emerald" />
@@ -156,14 +156,14 @@ export default function CommissionPlaygroundPage() {
 
                 <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
                   <span className="text-[var(--text-muted)]">Total paid out to reps</span>
-                  <span className="text-white font-bold tabular-nums">
+                  <span className="text-[var(--text-primary)] font-bold tabular-nums">
                     {fmt$(result.closerTotal + result.setterTotal)}
                   </span>
                 </div>
               </div>
 
               <div className="card-surface rounded-2xl p-5">
-                <h3 className="text-white font-semibold text-sm mb-3">Revenue context</h3>
+                <h3 className="text-[var(--text-primary)] font-semibold text-sm mb-3">Revenue context</h3>
                 <dl className="space-y-1.5 text-xs">
                   <Row label="Gross revenue" value={fmt$(grossRevenue)} />
                   <Row label="Closer payout" value={fmt$(result.closerTotal)} />
@@ -171,7 +171,7 @@ export default function CommissionPlaygroundPage() {
                   <Row label="Trainer override" value={fmt$(inputs.trainerRate * inputs.kW * 1000)} />
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-[var(--border-subtle)]">
                     <span className="text-[var(--text-muted)]">Residual (gross − comms)</span>
-                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-cyan-solid)]'}`}>
+                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-cyan-text)]'}`}>
                       {fmt$(kiloMargin)}
                     </span>
                   </div>
@@ -209,7 +209,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50 disabled:opacity-40 disabled:cursor-not-allowed font-mono tabular-nums"
+        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50 disabled:opacity-40 disabled:cursor-not-allowed font-mono tabular-nums"
       />
       {helper && <p className="text-[10px] text-[var(--text-dim)] mt-1">{helper}</p>}
     </div>
@@ -235,7 +235,7 @@ function MilestoneRow({ label, closer, setter }: { label: string; closer: number
     <div className="flex items-center gap-3 text-sm">
       <span className="text-[var(--text-muted)] text-xs font-mono w-8">{label}</span>
       <div className="flex-1 grid grid-cols-2 gap-3">
-        <span className="text-[var(--accent-emerald-solid)] tabular-nums">{fmt$(closer)}</span>
+        <span className="text-[var(--accent-emerald-text)] tabular-nums">{fmt$(closer)}</span>
         <span className="text-violet-300 tabular-nums">{fmt$(setter)}</span>
       </div>
     </div>

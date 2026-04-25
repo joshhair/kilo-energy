@@ -225,7 +225,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       </button>
 
       <div>
-        <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{blitz.name}</h1>
         <div className="mt-1.5">
           <MobileBadge value={statusLabel} variant="status" />
         </div>
@@ -244,7 +244,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 onClick={() => setShowEdit(true)}
                 className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
                 style={{
-                  color: 'var(--accent-emerald-solid)',
+                  color: 'var(--accent-emerald-text)',
                   border: '1px solid var(--accent-emerald-solid)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
@@ -270,7 +270,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 onClick={() => setShowDelete(true)}
                 className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
                 style={{
-                  color: 'var(--accent-red-solid)',
+                  color: 'var(--accent-red-text)',
                   border: '1px solid var(--accent-red-solid)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
@@ -315,15 +315,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                   <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Blitz Summary</p>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="blitz-stat-0">
-                      <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{visibleProjects.length}</p>
+                      <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{visibleProjects.length}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                     </div>
                     <div className="blitz-stat-1">
-                      <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(myKW)}</p>
+                      <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(myKW)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW Sold</p>
                     </div>
                     <div className="blitz-stat-2">
-                      <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
+                      <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>My Pay</p>
                     </div>
                   </div>
@@ -348,22 +348,22 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leader</span>
-                      <span className="font-medium text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+                      <span className="font-medium text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Duration</span>
-                      <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{totalDays} days</span>
+                      <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{totalDays} days</span>
                     </div>
                     {blitz.location && (
                       <div className="flex justify-between">
                         <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</span>
-                        <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</span>
+                        <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</span>
                       </div>
                     )}
                     {blitz.housing && (
                       <div className="flex justify-between">
                         <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing</span>
-                        <span className="text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</span>
+                        <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</span>
                       </div>
                     )}
                   </div>
@@ -376,15 +376,15 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               <div className="rounded-xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Team</p>
-                  <button onClick={() => handleTabChange('participants')} className="text-xs font-medium" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>View all</button>
+                  <button onClick={() => handleTabChange('participants')} className="text-xs font-medium" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>View all</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {approvedParticipants.slice(0, 8).map((p: any) => (
                     <div key={p.user.id} className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }}>
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.2)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.2)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(16,185,129,0.3)' }}>
                         {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
                       </div>
-                      <span className="text-xs text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.user.firstName}</span>
+                      <span className="text-xs text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.user.firstName}</span>
                     </div>
                   ))}
                   {approvedParticipants.length > 8 && (
@@ -456,7 +456,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <button
             onClick={handleDelete}
             disabled={submittingAction}
-            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-white rounded-lg transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-[var(--text-primary)] rounded-lg transition-colors disabled:opacity-40"
             style={{ background: 'var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             {submittingAction ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -475,7 +475,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
             onChange={(e) => setCancelReason(e.target.value)}
             rows={3}
             placeholder="Reason for cancellation"
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[80px] resize-none focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[80px] resize-none focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -487,7 +487,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
             onClick={handleCancelRequest}
             disabled={submittingAction}
             className="w-full min-h-[48px] text-base font-semibold rounded-lg transition-colors disabled:opacity-40"
-            style={{ color: 'var(--accent-red-solid)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ color: 'var(--accent-red-text)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             {submittingAction ? 'Submitting...' : 'Submit request'}
           </button>

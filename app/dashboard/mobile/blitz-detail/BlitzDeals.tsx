@@ -113,7 +113,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
                 </div>
                 <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   {closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W{role ? ` · ${role}` : ''}
@@ -125,7 +125,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
               {showPayout && payout > 0 && (
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Payout</p>
-                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
+                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
                 </div>
               )}
             </button>

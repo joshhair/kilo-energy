@@ -39,7 +39,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
     <div key="financers" className="animate-tab-enter max-w-xl">
       <SectionHeader title="Financers" subtitle="Manage active and archived financing partners" />
       <div className="card-surface rounded-2xl p-5 mb-4">
-        <h2 className="text-white font-semibold mb-3">Add Financer</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Add Financer</h2>
         {(() => {
           const financerDup = newFinancer.trim().length > 0 && (newFinancer.trim().toLowerCase() === 'cash' || financers.some((f) => f.name.toLowerCase() === newFinancer.trim().toLowerCase()));
           return (<>
@@ -52,7 +52,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); }
               }}
-              className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
+              className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
             />
             {financerDup && <p className="text-red-400 text-[10px] mt-1">Already exists</p>}
           </div>
@@ -72,10 +72,10 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
         <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
-              <Landmark className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <Landmark className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
             <div>
-              <p className="text-white font-medium text-sm mb-1">No financers yet</p>
+              <p className="text-[var(--text-primary)] font-medium text-sm mb-1">No financers yet</p>
               <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 Financers are the lending partners that fund solar installations. Add your first financer above to make it available in the deal form.
               </p>
@@ -98,8 +98,8 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               onClick={() => { setFinancerSelectMode((v) => !v); setSelectedFinancers(new Set()); }}
               className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                 financerSelectMode
-                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)]'
-                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-white'
+                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]'
+                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <ListChecks className="w-3 h-3" /> {financerSelectMode ? 'Done' : 'Select'}
@@ -112,10 +112,10 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                   if (filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))) setSelectedFinancers(prev => { const next = new Set(prev); filteredActiveFinancers.forEach(f => next.delete(f.name)); return next; });
                   else setSelectedFinancers(prev => { const next = new Set(prev); filteredActiveFinancers.forEach(f => next.add(f.name)); return next; });
                 }}
-                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </button>
@@ -144,19 +144,19 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       className="flex-shrink-0"
                     >
                       {selectedFinancers.has(fin.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-medium">{fin.name}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium">{fin.name}</p>
                       {(() => {
                         const dealCount = projects.filter((p) => p.financer === fin.name).length;
                         return (
                           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                             dealCount > 0
-                              ? 'bg-[var(--accent-emerald-solid)]/10 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20'
+                              ? 'bg-[var(--accent-emerald-solid)]/10 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20'
                               : 'bg-[var(--surface-card)] text-[var(--text-dim)] border border-[var(--border)]/50'
                           }`}>
                             {dealCount} deal{dealCount !== 1 ? 's' : ''}
@@ -243,10 +243,10 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                     return next;
                   });
                 }}
-                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors ml-auto"
+                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-auto"
               >
                 {archivedFinancers.every((f) => selectedFinancers.has(f.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </span>
@@ -275,7 +275,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       className="flex-shrink-0"
                     >
                       {selectedFinancers.has(fin.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
@@ -286,7 +286,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                   <button
                     onClick={() => setFinancerActive(fin.name, true)}
                     title="Restore financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>

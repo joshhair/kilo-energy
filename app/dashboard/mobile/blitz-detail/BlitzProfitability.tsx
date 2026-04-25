@@ -137,7 +137,7 @@ export default function BlitzProfitability({
                   style={{ background: 'rgba(0,0,0,0.15)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
                     <p className="text-[11px] truncate" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{closerName} · {p.kWSize?.toFixed(1)} kW</p>
                   </div>
                   <div className="text-right shrink-0">
@@ -169,11 +169,11 @@ export default function BlitzProfitability({
                       >
                         {idx + 1}
                       </div>
-                      <span className="text-sm font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.user.firstName} {rep.user.lastName}</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.user.firstName} {rep.user.lastName}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums">
                       <span style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.deals}d · {rep.kw.toFixed(1)} kW</span>
-                      <span className="font-semibold" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(rep.payout)}</span>
+                      <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(rep.payout)}</span>
                     </div>
                   </div>
                   <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>

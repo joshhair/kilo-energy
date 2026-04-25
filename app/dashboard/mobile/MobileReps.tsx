@@ -53,10 +53,10 @@ const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_mana
 };
 
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  rep:              { label: 'Rep',      color: 'var(--accent-emerald-solid)', bg: 'var(--accent-emerald-soft)' },
-  'sub-dealer':     { label: 'SD',       color: 'var(--accent-purple-solid)', bg: 'var(--accent-purple-soft)' },
-  project_manager:  { label: 'PM',       color: 'var(--accent-cyan-solid)', bg: 'rgba(0,196,240,0.12)' },
-  admin:            { label: 'Admin',    color: 'var(--accent-amber-solid)', bg: 'var(--accent-amber-soft)' },
+  rep:              { label: 'Rep',      color: 'var(--accent-emerald-text)', bg: 'var(--accent-emerald-soft)' },
+  'sub-dealer':     { label: 'SD',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
+  project_manager:  { label: 'PM',       color: 'var(--accent-cyan-text)', bg: 'rgba(0,196,240,0.12)' },
+  admin:            { label: 'Admin',    color: 'var(--accent-amber-text)', bg: 'var(--accent-amber-soft)' },
 };
 
 export default function MobileReps() {
@@ -390,7 +390,7 @@ export default function MobileReps() {
           placeholder={roleFilter === 'rep' ? 'Search reps...' : 'Search users...'}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-white focus:outline-none focus:ring-1 transition-colors"
+          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors"
           style={{
             background: 'var(--surface-card)',
             border: '1px solid var(--border-subtle)',
@@ -429,7 +429,7 @@ export default function MobileReps() {
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,176,32,0.25)' }}>
           <div className="flex items-center gap-2 mb-2">
             <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
+            <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">{pendingInvitations.length}</span>
           </div>
           <div className="space-y-2">
@@ -437,7 +437,7 @@ export default function MobileReps() {
               <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }}>
                 <Clock className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
+                  <p className="text-sm text-[var(--text-primary)] font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
@@ -467,7 +467,7 @@ export default function MobileReps() {
                     });
                   }}
                   className="shrink-0 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                  style={{ color: 'var(--accent-red-solid)', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ color: 'var(--accent-red-text)', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -516,7 +516,7 @@ export default function MobileReps() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
                       {u.email && (
                         <p className="text-sm truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
                       )}
@@ -594,7 +594,7 @@ export default function MobileReps() {
         return (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
               {ranges.prev && <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>vs {ranges.prev.label}</span>}
             </div>
             <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
@@ -617,11 +617,11 @@ export default function MobileReps() {
             {comparePeriod === 'custom' && (
               <div className="flex items-center gap-2 mb-3">
                 <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
                   style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>to</span>
                 <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
                   style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }} />
               </div>
             )}
@@ -650,12 +650,12 @@ export default function MobileReps() {
                       style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}>
                       {getInitials(rep.name)}
                     </div>
-                    <p className="text-sm font-semibold text-white truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     <p className="text-[10px] mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{ranges.current.label}</p>
                     <div className="space-y-1.5 text-xs text-left">
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>Deals</span>
-                        <span className="font-semibold text-white flex items-center gap-1">
+                        <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
                             <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald-solid)' : '#f87171', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
@@ -664,15 +664,15 @@ export default function MobileReps() {
                       </div>
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>kW</span>
-                        <span className="font-semibold text-white">{formatCompactKW(kwSold)}</span>
+                        <span className="font-semibold text-[var(--text-primary)]">{formatCompactKW(kwSold)}</span>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>Avg</span>
-                        <span className="font-semibold text-white">{avgDealSize.toFixed(1)} kW</span>
+                        <span className="font-semibold text-[var(--text-primary)]">{avgDealSize.toFixed(1)} kW</span>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>Paid</span>
-                        <span className="font-semibold" style={{ color: 'var(--accent-emerald-solid)' }}>${commissionEarned.toLocaleString()}</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)' }}>${commissionEarned.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>Cancel</span>
@@ -718,7 +718,7 @@ export default function MobileReps() {
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     {rep.email && (
                       <p className="text-base truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}
@@ -804,7 +804,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -856,7 +856,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-solid)', border: '1px solid rgba(180,125,255,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid rgba(180,125,255,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -910,7 +910,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-solid)', border: '1px solid rgba(0,196,240,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -964,7 +964,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-solid)', border: '1px solid rgba(255,176,32,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -1105,7 +1105,7 @@ export default function MobileReps() {
               value={addForm.firstName}
               onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
               placeholder="First name"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -1122,7 +1122,7 @@ export default function MobileReps() {
               value={addForm.lastName}
               onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
               placeholder="Last name"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -1138,7 +1138,7 @@ export default function MobileReps() {
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -1176,7 +1176,7 @@ export default function MobileReps() {
               <select
                 value={addForm.trainerId}
                 onChange={(e) => setAddForm((f) => ({ ...f, trainerId: e.target.value }))}
-                className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',

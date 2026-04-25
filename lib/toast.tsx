@@ -151,7 +151,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       ].join(' ')}
     >
       {config.icon}
-      <span className="text-white text-sm flex-1 leading-snug">{toast.message}</span>
+      <span className="text-[var(--text-primary)] text-sm flex-1 leading-snug">{toast.message}</span>
       {toast.action && (
         <button
           onClick={() => {
@@ -165,7 +165,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       )}
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-[var(--text-muted)] hover:text-white transition-colors ml-1 flex-shrink-0"
+        className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-1 flex-shrink-0"
       >
         <X className="w-3.5 h-3.5" />
       </button>

@@ -23,13 +23,13 @@ export function CollapsibleSection({ title, icon, badge, actions, isOpen, onTogg
       >
         <div className="flex items-center gap-2">
           {icon}
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
           {badge}
         </div>
         <div className="flex items-center gap-3">
           {actions}
           <ChevronDown
-            className="w-4 h-4 text-white/40 motion-reduce:transition-none"
+            className="w-4 h-4 text-[var(--text-primary)]/40 motion-reduce:transition-none"
             style={{
               transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)',

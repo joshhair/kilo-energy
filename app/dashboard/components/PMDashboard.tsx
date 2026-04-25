@@ -34,16 +34,16 @@ export function PMDashboard({
       {/* Period filter */}
       <div className="flex items-center gap-2">
         {PERIODS.map((p) => (
-          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'}`}>{p.label}</button>
+          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'}`}>{p.label}</button>
         ))}
       </div>
 
       {/* Summary cards — NO dollar amounts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Active Projects', value: activeProjects.length, color: 'text-[var(--accent-emerald-solid)]' },
+          { label: 'Active Projects', value: activeProjects.length, color: 'text-[var(--accent-emerald-text)]' },
           { label: 'Total Projects', value: projects.length, color: 'text-[var(--text-secondary)]' },
-          { label: 'Total kW', value: formatCompactKW(totalKW), color: 'text-[var(--accent-emerald-solid)]' },
+          { label: 'Total kW', value: formatCompactKW(totalKW), color: 'text-[var(--accent-emerald-text)]' },
           { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-red-400' : 'text-[var(--text-muted)]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card-surface rounded-2xl p-5">
@@ -55,7 +55,7 @@ export function PMDashboard({
 
       {/* Pipeline breakdown */}
       <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><FolderKanban className="w-4 h-4 text-[var(--accent-emerald-solid)]" /> Pipeline</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-4 flex items-center gap-2"><FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" /> Pipeline</h2>
         <div className="space-y-2">
           {ACTIVE_PHASES.map((phase) => {
             const count = phaseCounts[phase] || 0;
@@ -75,7 +75,7 @@ export function PMDashboard({
 
       {/* Team overview */}
       <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4 text-[var(--accent-emerald-solid)]" /> Team</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4 text-[var(--accent-emerald-text)]" /> Team</h2>
         <p className="text-[var(--text-secondary)] text-sm">{totalReps} active reps</p>
       </div>
     </div>

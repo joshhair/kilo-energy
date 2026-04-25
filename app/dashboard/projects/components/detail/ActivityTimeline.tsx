@@ -84,7 +84,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
     <div className="card-surface rounded-2xl p-6 mt-5">
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-4 h-4 text-[var(--text-secondary)]" />
-        <h2 className="text-white font-semibold">Activity</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold">Activity</h2>
         <span className="text-[var(--text-muted)] text-xs">({total})</span>
       </div>
 
@@ -121,7 +121,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="mt-3 text-xs text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] transition-colors disabled:opacity-50"
+          className="mt-3 text-xs text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>

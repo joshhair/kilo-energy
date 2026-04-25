@@ -34,8 +34,8 @@ export function StatCard({ label, value, color: _color, accentGradient, classNam
 
 export function ReimBadge({ status }: { status: string }) {
   const st =
-    status === 'Approved' ? { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)' }
-    : status === 'Pending'  ? { background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-solid)' }
-    : { background: 'var(--accent-red-soft)', color: 'var(--accent-red-solid)' };
+    status === 'Approved' ? { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }
+    : status === 'Pending'  ? { background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)' }
+    : { background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)' };
   return <span className="px-2 py-0.5 rounded text-xs font-medium" style={st}>{status}</span>;
 }

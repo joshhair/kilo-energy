@@ -195,7 +195,7 @@ export default function BottomNav({
                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
                     <span className="text-2xl font-light text-black leading-none">+</span>
                   </div>
-                  <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                  <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
                 </Link>
               );
             }
@@ -222,7 +222,7 @@ export default function BottomNav({
                     <X
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: 'var(--accent-emerald-solid)',
+                        color: 'var(--accent-emerald-text)',
                         opacity: active ? 1 : 0,
                         transform: active ? 'scale(1) rotate(0deg)' : 'scale(0.5) rotate(30deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',

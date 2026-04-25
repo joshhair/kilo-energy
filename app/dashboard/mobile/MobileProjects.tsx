@@ -277,7 +277,7 @@ export default function MobileProjects() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-white outline-none transition-colors"
+          className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-[var(--text-primary)] outline-none transition-colors"
           style={{
             background: 'var(--surface-card)',
             border: '1px solid var(--border-subtle)',
@@ -290,7 +290,7 @@ export default function MobileProjects() {
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-        className="w-full min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+        className="w-full min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
         style={{
           background: 'var(--surface-card)',
           border: '1px solid var(--border-subtle)',
@@ -314,7 +314,7 @@ export default function MobileProjects() {
           <select
             value={installerFilter}
             onChange={(e) => setInstallerFilter(e.target.value)}
-            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -328,7 +328,7 @@ export default function MobileProjects() {
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
           style={{
             background: 'var(--surface-card)',
             border: '1px solid var(--border-subtle)',
@@ -348,7 +348,7 @@ export default function MobileProjects() {
             ? {
                 background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                 border: '1px solid rgba(0, 224, 122, 0.45)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }
             : {
@@ -375,7 +375,7 @@ export default function MobileProjects() {
                 ? {
                     background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                     border: '1px solid rgba(0, 224, 122, 0.45)',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }
                 : {
@@ -473,13 +473,13 @@ export default function MobileProjects() {
             </svg>
             {hasActiveFilters ? (
               <>
-                <p className="text-base font-semibold text-white">No projects match your filters</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]">No projects match your filters</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   Try a different phase, installer, or clear your search.
                 </p>
                 <button
                   onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); setStatusFilter('active'); setDealScope(isRep ? 'mine' : 'all'); setQaOnly(false); }}
-                  className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-white"
+                  className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-[var(--text-primary)]"
                   style={{ background: 'var(--border-subtle)' }}
                 >
                   Clear filters
@@ -487,7 +487,7 @@ export default function MobileProjects() {
               </>
             ) : (
               <>
-                <p className="text-base font-semibold text-white">No projects yet</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]">No projects yet</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   {effectiveRole === 'admin' || effectiveRole === 'project_manager'
                     ? 'Projects will appear here once deals are submitted.'
@@ -526,7 +526,7 @@ export default function MobileProjects() {
               >
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
+                    <span className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
                     {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
                   </div>
                   <MobileBadge value={project.phase} />

@@ -481,7 +481,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           signals tappability. Rep/SD/vendor-PM still see a plain pill. */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">{project.customerName}</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]">{project.customerName}</h1>
           <div className="flex items-center gap-2 mt-1">
             {(isAdmin || isPM) ? (
               <button
@@ -614,7 +614,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {infoRows.map(([label, value], index) => (
           <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--border-subtle)', animationDelay: `${index * 35}ms` }}>
             <span className="text-base" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-            <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
+            <span className="text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
         ))}
       </div>
@@ -676,14 +676,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
         return (
           <MobileCard>
-            <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
+            <h2 className="text-base font-semibold text-[var(--text-primary)] mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
 
             {/* Total-expected summary row — rep/SD see own total; admin sees
                 closer (and setter, if applicable) totals. */}
             {isMeView && myTotalExpected > 0 && (
               <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total expected</span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
               </div>
             )}
             {showSetterTotalToCloser && (
@@ -699,7 +699,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.repName} (closer)</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>Total expected</p>
                   </div>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
                 </div>
                 {project.setterId && setterTotalExpected > 0 && (
                   <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
@@ -707,7 +707,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.setterName} (setter)</p>
                       <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>Total expected</p>
                     </div>
-                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
                   </div>
                 )}
                 {/* Co-closers — desktop renders these as full cards with
@@ -726,7 +726,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
                     </div>
                   );
                 })}
@@ -742,7 +742,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
                     </div>
                   );
                 })}
@@ -768,7 +768,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                         {fmt$(effTrainerRate * (project.kWSize ?? 0) * 1000)}
                       </span>
                     </div>
@@ -812,11 +812,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           type="number"
                           value={stage.key === 'M1' ? m1Val : m2Val}
                           onChange={(e) => stage.key === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
-                          className="w-20 text-xs text-center rounded px-1 py-0.5 text-white"
+                          className="w-20 text-xs text-center rounded px-1 py-0.5 text-[var(--text-primary)]"
                           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                         />
                         <div className="flex gap-1.5">
-                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald-solid)' }}>Save</button>
+                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald-text)' }}>Save</button>
                           <button onClick={() => stage.key === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Cancel</button>
                         </div>
                       </div>
@@ -915,7 +915,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] text-white text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
+            className="flex-1 min-h-[48px] text-[var(--text-primary)] text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
               boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
@@ -1009,7 +1009,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               value={editDraft.setterId}
               onChange={(e) => setEditDraft((d) => ({ ...d, setterId: e.target.value }))}
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px', color: '#fff', fontSize: '1rem' }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >
               <option value="">— None —</option>
               {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== project.repId).map((r) => (
@@ -1028,7 +1028,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               value={editDraft.notes}
               onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
               className="w-full outline-none resize-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px', color: '#fff', fontSize: '1rem' }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px', color: 'var(--text-primary)', fontSize: '1rem' }}
             />
           </div>
 
@@ -1078,7 +1078,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 value={editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value }))}
                 className="w-full mb-2"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
               >
                 <option value="">— no trainer override —</option>
                 {reps.filter((r) => r.active && r.id !== project.repId && r.id !== editDraft.setterId).map((r) => (
@@ -1095,7 +1095,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 disabled={!editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerRate: e.target.value }))}
                 className="w-full"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff', opacity: editDraft.trainerId ? 1 : 0.45 }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)', opacity: editDraft.trainerId ? 1 : 0.45 }}
               />
             </div>
           )}
@@ -1105,7 +1105,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={saveEditSheet}
               className="flex-1 font-semibold"
-              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Save
             </button>
@@ -1113,7 +1113,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={() => setEditSheetOpen(false)}
               className="flex-1"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Cancel
             </button>
@@ -1129,17 +1129,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         >
           <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <span className="text-white font-bold text-base">Cancel Project</span>
+              <span className="text-[var(--text-primary)] font-bold text-base">Cancel Project</span>
               <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 p-1"><XIcon className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-[var(--text-primary)] font-medium">{project.customerName}</span>.</p>
               <div>
                 <label className="block text-xs uppercase tracking-wider mb-1.5 text-slate-400">Reason</label>
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-white outline-none"
+                  className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
                 >
                   <option value="">Select a reason...</option>
@@ -1158,7 +1158,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none resize-none placeholder-slate-500"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none resize-none placeholder-slate-500"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
                 />
               </div>
@@ -1172,7 +1172,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 </button>
                 <button
                   onClick={confirmCancelWithReason}
-                  className="flex-1 font-semibold text-sm rounded-xl py-3 bg-red-600 active:bg-red-500 text-white"
+                  className="flex-1 font-semibold text-sm rounded-xl py-3 bg-red-600 active:bg-red-500 text-[var(--text-primary)]"
                 >
                   Cancel Project
                 </button>

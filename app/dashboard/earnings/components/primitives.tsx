@@ -67,7 +67,7 @@ export function SparklineWithTooltip({ data, stroke }: { data: number[]; stroke:
     >
       <Sparkline data={data} stroke={stroke} />
       {hovered && lastVal !== null && (
-        <div className="absolute -top-7 right-0 bg-[var(--surface-card)] border border-[var(--border)] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10">
+        <div className="absolute -top-7 right-0 bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10">
           ${lastVal.toLocaleString()}
         </div>
       )}

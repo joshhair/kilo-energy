@@ -296,7 +296,7 @@ function RepEarningsView() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <DollarSign className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+              <DollarSign className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Earnings</h1>
@@ -329,14 +329,14 @@ function RepEarningsView() {
                 }
               }}
               disabled={tab === 'bonus' ? sortedBonuses.length === 0 : tab === 'reimbursements' ? filteredReimbs.length === 0 : sortedDeals.length === 0}
-              className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download earnings as CSV"
             >
               <Download className="w-3.5 h-3.5" /> CSV{tab !== 'bonus' && tab !== 'reimbursements' && dealRoleFilter ? ` (${dealRoleFilter})` : ''}
             </button>
             <button
               onClick={() => setShowReimbModal(true)}
-              className="flex items-center gap-2 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+              className="flex items-center gap-2 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0"
             >
               <Receipt className="w-4 h-4 text-violet-400" />
               Request Reimbursement
@@ -358,7 +358,7 @@ function RepEarningsView() {
             {/* Left — amount + labels */}
             <div>
               <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-widest mb-2">Next Payout</p>
-              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-solid)' }}>
+              <p className="stat-value stat-value-glow stat-glow-emerald text-4xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)' }}>
                 ${nextPayoutTotal.toLocaleString()}
               </p>
               <p className="text-[var(--text-secondary)] text-sm mt-2.5">
@@ -372,7 +372,7 @@ function RepEarningsView() {
 
             {/* Right — countdown badge */}
             <div className="sm:pb-1">
-              <span className="inline-flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
+              <span className="inline-flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap">
                 <Clock className="w-3.5 h-3.5 shrink-0" />
                 {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
               </span>
@@ -403,7 +403,7 @@ function RepEarningsView() {
             </p>
             <Link
               href="/dashboard/new-deal"
-              className="inline-flex items-center gap-1.5 text-[var(--accent-emerald-solid)] hover:text-emerald-300 text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[var(--accent-emerald-text)] hover:text-emerald-300 text-sm font-semibold transition-colors"
             >
               Close a deal <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -422,9 +422,9 @@ function RepEarningsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total Earned</span>
-            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)] shrink-0" />
+            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-solid)] animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-text)] animate-count-up">
             ${totalPaid.toLocaleString()}
           </p>
           <SparklineWithTooltip data={earnedMonthlyData} stroke="var(--accent-emerald-solid)" />
@@ -454,9 +454,9 @@ function RepEarningsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ?? 'This Month'}</span>
-            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)] shrink-0" />
+            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-solid)] animate-count-up">
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-text)] animate-count-up">
             ${thisMonthEarned.toLocaleString()}
           </p>
           <SparklineWithTooltip data={thisMonthPaidData} stroke="var(--accent-cyan-solid)" />
@@ -492,7 +492,7 @@ function RepEarningsView() {
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
         {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
             <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
           </button>
         ))}
@@ -506,7 +506,7 @@ function RepEarningsView() {
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full font-medium">
             {monthFilterLabel}
-            <button onClick={() => setMonthFilter(null)} className="ml-0.5 hover:text-white transition-colors" aria-label="Clear month filter">
+            <button onClick={() => setMonthFilter(null)} className="ml-0.5 hover:text-[var(--text-primary)] transition-colors" aria-label="Clear month filter">
               <X className="w-3 h-3" />
             </button>
           </span>
@@ -535,7 +535,7 @@ function RepEarningsView() {
                 <button key={key ?? 'all'} onClick={() => { setDealRoleFilter(key); setDealPage(1); }}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
                     dealRoleFilter === key
-                      ? 'bg-[var(--border)] text-white border border-[var(--border-subtle)]'
+                      ? 'bg-[var(--border)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] border border-transparent'
                   }`}>
                   {label}
@@ -555,7 +555,7 @@ function RepEarningsView() {
                       { key: 'date'         as DealSortKey, label: 'Date' },
                     ] as { key: DealSortKey; label: string }[]).map(({ key, label }) => (
                       <th key={key} onClick={() => handleDealSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${dealSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${dealSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={dealSortKey} sortDir={dealSortDir} />
                       </th>
                     ))}
@@ -576,17 +576,17 @@ function RepEarningsView() {
                         style={!isReim ? ({ '--row-accent': getPayrollRowAccent(status) } as React.CSSProperties) : undefined}
                         className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-violet-900/5' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
                       >
-                        <td className="px-5 py-3 text-white">{name}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)]">{name}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
                         <td className="px-5 py-3 text-xs">
                           {isReim ? <span className="text-violet-400">Reimb.</span>
                             : role.startsWith('Co-setter') ? <span className="text-sky-400">Co-setter</span>
-                            : role === 'Setter' ? <span className="text-[var(--accent-emerald-solid)]">Setter</span>
+                            : role === 'Setter' ? <span className="text-[var(--accent-emerald-text)]">Setter</span>
                             : role.startsWith('Co-closer') ? <span className="text-sky-400">Co-closer</span>
                             : role.startsWith('Trainer override') ? <span className="text-amber-400">Trainer</span>
-                            : <span className="text-[var(--accent-emerald-solid)]">Closer</span>}
+                            : <span className="text-[var(--accent-emerald-text)]">Closer</span>}
                         </td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
                         <td className="px-5 py-3">{isReim ? <ReimbStatusBadge status={status} /> : <PayrollStatusBadge status={status} />}</td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap">{formatDate(date)}</td>
                       </tr>
@@ -615,7 +615,7 @@ function RepEarningsView() {
                           <p className="text-[var(--text-muted)] text-xs leading-relaxed">Earnings will appear here once deals are processed and commissions are recorded.</p>
                           <Link
                             href="/dashboard/projects"
-                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -651,7 +651,7 @@ function RepEarningsView() {
                       { key: 'date'   as BonusSortKey, label: 'Date' },
                     ] as { key: BonusSortKey; label: string }[]).map(({ key, label }) => (
                       <th key={key} onClick={() => handleBonusSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${bonusSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${bonusSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={bonusSortKey} sortDir={bonusSortDir} />
                       </th>
                     ))}
@@ -660,8 +660,8 @@ function RepEarningsView() {
                 <tbody>
                   {pagedBonuses.map((b, i) => (
                     <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
-                      <td className="px-5 py-3 text-white">{b.notes || '—'}</td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
+                      <td className="px-5 py-3 text-[var(--text-primary)]">{b.notes || '—'}</td>
+                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
                       <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={b.date} /></td>
                     </tr>
@@ -688,7 +688,7 @@ function RepEarningsView() {
                           <p className="text-[var(--text-muted)] text-xs leading-relaxed">Bonus payments will appear here once deals are processed and your admin awards them.</p>
                           <Link
                             href="/dashboard/projects"
-                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -713,9 +713,9 @@ function RepEarningsView() {
         {tab === 'reimbursements' && (
           <div key="reimbursements" className="animate-tab-enter card-surface rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-              <h2 className="text-white font-bold tracking-tight text-base">Submission History</h2>
+              <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Submission History</h2>
               <button onClick={() => setShowReimbModal(true)}
-                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors">
+                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition-colors">
                 <Receipt className="w-3.5 h-3.5 text-violet-400" />
                 New Request
               </button>
@@ -734,8 +734,8 @@ function RepEarningsView() {
                 <tbody>
                   {pagedReimbs.map((r, i) => (
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
-                      <td className="px-5 py-3 text-white">{r.description}</td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-[var(--text-primary)]">{r.description}</td>
+                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                       <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                       <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
@@ -763,7 +763,7 @@ function RepEarningsView() {
                           <p className="text-[var(--text-muted)] text-xs leading-relaxed">Submit a reimbursement request and it will appear here for tracking once processed.</p>
                           <button
                             onClick={() => setShowReimbModal(true)}
-                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                            className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             Submit Request
@@ -1026,7 +1026,7 @@ function AdminFinancialsView() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Building2 className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+            <Building2 className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Financials</h1>
         </div>
@@ -1039,9 +1039,9 @@ function AdminFinancialsView() {
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Total Paid</span>
-            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]" />
           </div>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-solid)]">${totalPaid.toLocaleString()}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-text)]">${totalPaid.toLocaleString()}</p>
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'rgba(234,179,8,0.12)' } as React.CSSProperties}>
@@ -1080,7 +1080,7 @@ function AdminFinancialsView() {
         {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
         {(['payroll', 'reimbursements', 'by-rep'] as const).map((t, i) => (
           <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
             {t === 'payroll' ? `Payroll (${filteredPayroll.length})` : t === 'reimbursements' ? `Reimbursements (${filteredReimbs.length})` : 'By Rep'}
           </button>
         ))}
@@ -1127,7 +1127,7 @@ function AdminFinancialsView() {
                         { key: 'date' as const,         label: 'Date' },
                       ]).map(({ key, label }) => (
                         <th key={key} onClick={() => handlePayrollSort(key)}
-                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-white whitespace-nowrap ${payrollSortKey === key ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${payrollSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                           {label}<SortIcon colKey={key} sortKey={payrollSortKey} sortDir={payrollSortDir} />
                         </th>
                       ))}
@@ -1137,16 +1137,16 @@ function AdminFinancialsView() {
                   <tbody>
                     {pagedPayroll.map((e, i) => (
                       <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
-                        <td className="px-5 py-3 text-white font-medium">{e.repName}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{e.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)]">{e.customerName || '—'}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
+                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
                         <td className="px-5 py-3"><PayrollStatusBadge status={e.status} /></td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={e.date} /></td>
                         <td className="px-5 py-3">
                           {e.status === 'Pending' && (
                             <button onClick={() => markPaid(e.id)}
-                              className="flex items-center gap-1 text-xs text-[var(--accent-emerald-solid)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
+                              className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Mark Paid
                             </button>
@@ -1230,9 +1230,9 @@ function AdminFinancialsView() {
                   <tbody>
                     {pagedReimbs.map((r, i) => (
                       <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150`}>
-                        <td className="px-5 py-3 text-white font-medium">{r.repName}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{r.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)]">{r.description}</td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                         <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                         <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
@@ -1241,7 +1241,7 @@ function AdminFinancialsView() {
                             {r.status === 'Pending' && (
                               <>
                                 <button onClick={() => approveReim(r.id)}
-                                  className="flex items-center gap-1 text-xs text-[var(--accent-emerald-solid)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
+                                  className="flex items-center gap-1 text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/30 px-2 py-1 rounded-lg transition-colors">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Approve
                                 </button>
@@ -1254,13 +1254,13 @@ function AdminFinancialsView() {
                             )}
                             {r.archivedAt ? (
                               <button onClick={() => unarchiveReim(r.id)}
-                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
+                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-[var(--text-primary)] bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
                                 Restore
                               </button>
                             ) : (
                               <button onClick={() => archiveReim(r.id)}
                                 title="Hide from default list; can be restored"
-                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-white bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
+                                className="flex items-center gap-1 text-xs text-slate-300 hover:text-[var(--text-primary)] bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/40 px-2 py-1 rounded-lg transition-colors">
                                 Archive
                               </button>
                             )}
@@ -1343,22 +1343,22 @@ function AdminFinancialsView() {
                     <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
                       <td className="px-5 py-3">
                         <div>
-                          <p className="text-white font-medium">{s.rep.name}</p>
+                          <p className="text-[var(--text-primary)] font-medium">{s.rep.name}</p>
                           <p className="text-[var(--text-muted)] text-xs capitalize">{s.rep.repType}</p>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-solid)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
+                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
                       <td className="px-5 py-3 text-yellow-400 font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
                       <td className="px-5 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmt$(s.draft)}</td>
                       <td className="px-5 py-3 text-violet-400 whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
-                      <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
+                      <td className="px-5 py-3 text-[var(--text-primary)] font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
                     </tr>
                   ))}
                   {repSummary.length === 0 && (
                     <tr><td colSpan={6} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Users className="w-10 h-10 text-[var(--text-dim)]" />
-                        <p className="text-sm font-semibold text-white">No reps found</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">No reps found</p>
                         <p className="text-xs text-[var(--text-muted)]">Rep earnings will appear here once deals are submitted and payroll is processed</p>
                       </div>
                     </td></tr>

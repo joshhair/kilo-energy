@@ -50,7 +50,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase() ? (
-          <span key={i} className="bg-[#00e07a]/30 text-white rounded-sm px-0.5">
+          <span key={i} className="bg-[#00e07a]/30 text-[var(--text-primary)] rounded-sm px-0.5">
             {part}
           </span>
         ) : (
@@ -117,7 +117,7 @@ function PaletteRow({ item, isActive, query, nodeRef, onMouseEnter, onClick }: P
       onMouseEnter={onMouseEnter}
       className={[
         'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
-        isActive ? 'bg-[#00e07a]/10 text-white' : 'text-[var(--text-secondary)] hover:text-white',
+        isActive ? 'bg-[#00e07a]/10 text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
       ].join(' ')}
     >
       {/* Icon badge */}
@@ -345,14 +345,14 @@ export function CommandPalette({ open, onOpen, onClose, role }: CommandPalettePr
               value={query}
               onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
               placeholder="Jump to page…"
-              className="flex-1 bg-transparent text-lg text-white placeholder:text-[var(--text-muted)] outline-none border-none"
+              className="flex-1 bg-transparent text-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border-none"
               autoComplete="off"
               spellCheck={false}
               aria-label="Search pages"
             />
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
+              className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
               aria-label="Close command palette"
             >
               <X className="w-4 h-4" />
@@ -497,10 +497,10 @@ export function ShortcutsOverlay({
           {/* Header ────────────────────────────────────────────────────────── */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border-default)]/60">
             <Keyboard className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0" aria-hidden />
-            <h2 className="flex-1 text-white text-sm font-semibold">Keyboard Shortcuts</h2>
+            <h2 className="flex-1 text-[var(--text-primary)] text-sm font-semibold">Keyboard Shortcuts</h2>
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
+              className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-elevated)]"
               aria-label="Close keyboard shortcuts"
             >
               <X className="w-4 h-4" />

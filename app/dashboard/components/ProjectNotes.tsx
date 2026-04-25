@@ -130,7 +130,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
           rows={2}
           maxLength={5000}
           placeholder="Add a note…"
-          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500 resize-none"
+          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500 resize-none"
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
               e.preventDefault();
@@ -167,12 +167,12 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
                 style={{ opacity: deleting ? 0.5 : 1 }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan-solid)]/20 text-[var(--accent-cyan-solid)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan-solid)]/20 text-[var(--accent-cyan-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                     {getInitials(note.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-white text-sm font-semibold">{note.authorName}</span>
+                      <span className="text-[var(--text-primary)] text-sm font-semibold">{note.authorName}</span>
                       <span className="text-[11px] text-[var(--text-muted)]">{relativeTime(note.createdAt)}</span>
                     </div>
                     <p className="text-[var(--text-secondary)] text-sm leading-relaxed mt-0.5 whitespace-pre-wrap break-words">

@@ -101,7 +101,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
             style={SELECT_STYLE}
           />
         </Field>
@@ -109,7 +109,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           <input
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
             style={SELECT_STYLE}
           />
         </Field>
@@ -118,7 +118,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
             value={form.housing}
             onChange={(e) => setForm({ ...form, housing: e.target.value })}
             placeholder="Optional"
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
             style={SELECT_STYLE}
           />
         </Field>
@@ -128,7 +128,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
               type="date"
               value={form.startDate}
               onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={SELECT_STYLE}
             />
           </Field>
@@ -137,7 +137,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
               type="date"
               value={form.endDate}
               onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={SELECT_STYLE}
             />
           </Field>
@@ -148,7 +148,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
                 style={SELECT_STYLE}
               >
                 {STATUS_OPTIONS.map((s) => (
@@ -160,7 +160,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
               <select
                 value={form.ownerId}
                 onChange={(e) => setForm({ ...form, ownerId: e.target.value })}
-                className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+                className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
                 style={SELECT_STYLE}
               >
                 <option value="">Unassigned</option>
@@ -176,7 +176,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             rows={3}
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[80px] resize-none focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[80px] resize-none focus:outline-none focus:ring-1"
             style={SELECT_STYLE}
           />
         </Field>

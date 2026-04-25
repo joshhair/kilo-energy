@@ -84,8 +84,8 @@ export function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase
       title={`${days} days since sold`}
       className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
       style={isRed
-        ? { background: 'rgba(255,82,82,0.15)', color: 'var(--accent-red-solid)', border: '1px solid rgba(255,82,82,0.3)' }
-        : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-solid)', border: '1px solid rgba(255,176,32,0.3)' }
+        ? { background: 'rgba(255,82,82,0.15)', color: 'var(--accent-red-text)', border: '1px solid rgba(255,82,82,0.3)' }
+        : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }
       }
     >
       {days}d

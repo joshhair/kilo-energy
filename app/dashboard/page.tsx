@@ -202,10 +202,10 @@ export function NeedsAttentionSection({
           <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-emerald-solid)]/15'}`}>
             {totalCount > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
-              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
+              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             }
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             {totalCount > 0 ? 'Needs Attention' : 'All Clear'}
           </h2>
           {totalCount > 0 && (
@@ -215,8 +215,8 @@ export function NeedsAttentionSection({
           )}
         </div>
         {open
-          ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-          : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+          ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+          : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
         }
       </button>
 
@@ -228,7 +228,7 @@ export function NeedsAttentionSection({
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
-                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
+                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
               </div>
               <p className="text-[var(--text-secondary)] text-sm">All clear! No items need attention right now.</p>
             </div>
@@ -284,7 +284,7 @@ export function NeedsAttentionSection({
 
                     {/* Text */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium truncate">{item.customerName}</p>
                       <p className={`text-xs ${
                         (() => {
                           if (item.kind !== 'stuck') return 'text-[var(--text-muted)]';
@@ -313,7 +313,7 @@ export function NeedsAttentionSection({
                             e.stopPropagation();
                             onUnflag(item.projectId);
                           }}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           Unflag
                         </button>
@@ -321,7 +321,7 @@ export function NeedsAttentionSection({
                       {item.kind === 'on-hold' && (
                         <Link
                           href={`/dashboard/projects/${item.projectId}?action=resume`}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           Resume
                         </Link>
@@ -341,7 +341,7 @@ export function NeedsAttentionSection({
                   <span className="text-[var(--text-muted)] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
                   <Link
                     href="/dashboard/projects"
-                    className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors"
+                    className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors"
                   >
                     View all projects →
                   </Link>
@@ -358,7 +358,7 @@ export function NeedsAttentionSection({
                     <DollarSign className="w-4 h-4 text-amber-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">Payroll needs review</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">Payroll needs review</p>
                     <p className="text-xs text-[var(--text-muted)]">{payrollAttentionCount} entr{payrollAttentionCount !== 1 ? 'ies' : 'y'} in Draft or Pending</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
@@ -436,10 +436,10 @@ export function MyTasksSection({
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
         <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-          <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+          <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
         </div>
-        <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
-        <span className="bg-[var(--accent-emerald-solid)]/20 border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)] text-xs font-bold px-2 py-0.5 rounded-full">
+        <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">My Tasks</h2>
+        <span className="bg-[var(--accent-emerald-solid)]/20 border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] text-xs font-bold px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -476,7 +476,7 @@ export function MyTasksSection({
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-emerald-solid)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-emerald-solid)] flex-shrink-0"
+                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-emerald-text)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-emerald-solid)] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[var(--text-secondary)]'}`}>
@@ -485,7 +485,7 @@ export function MyTasksSection({
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Link
                     href={`/dashboard/projects/${task.projectId}#chatter`}
-                    className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors truncate max-w-[140px]"
+                    className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors truncate max-w-[140px]"
                   >
                     {task.projectName}
                   </Link>
@@ -546,7 +546,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
     return (
       <div className="border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
         <FolderKanban className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-3" />
-        <p className="text-white font-bold text-sm mb-1">No active projects — submit your first deal</p>
+        <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No active projects — submit your first deal</p>
         <p className="text-[var(--text-muted)] text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
       </div>
     );
@@ -582,7 +582,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
         {/* Floating tooltip — rendered outside overflow-hidden bar, relative to wrapper */}
         {tooltip && (
           <div
-            className="pointer-events-none absolute -top-8 bg-[var(--surface-card)] border border-[var(--border)] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
+            className="pointer-events-none absolute -top-8 bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
             style={{ left: tooltip.x }}
           >
             {tooltip.phase}: {phaseCounts[tooltip.phase]} project{phaseCounts[tooltip.phase] !== 1 ? 's' : ''}
@@ -640,7 +640,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -649,7 +649,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 
 export function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)]">{label}</span>;
-  const color = paid ? 'text-[var(--accent-emerald-solid)]' : 'text-yellow-400';
+  const color = paid ? 'text-[var(--accent-emerald-text)]' : 'text-yellow-400';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -1209,7 +1209,7 @@ export default function DashboardPage() {
       value: fmt$(totalPaid),
       sub: 'Deposited to you',
       icon: CheckCircle,
-      color: 'text-[var(--accent-emerald-solid)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: paidSparkData,
@@ -1223,7 +1223,7 @@ export default function DashboardPage() {
       value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
-      color: 'text-[var(--accent-emerald-solid)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
@@ -1251,7 +1251,7 @@ export default function DashboardPage() {
       value: `${totalKWInstalled.toFixed(1)} kW`,
       sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
       icon: Zap,
-      color: 'text-[var(--accent-emerald-solid)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: installedSparkData,
@@ -1289,11 +1289,11 @@ export default function DashboardPage() {
           <div>
             <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-emerald-solid)' }}>${pendingPayrollTotal.toLocaleString()}</span>
+              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-emerald-text)' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
             <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
                 {paydayCountdownLabel}
               </span>
             </p>
@@ -1323,8 +1323,8 @@ export default function DashboardPage() {
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  ? 'text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.label}
@@ -1378,7 +1378,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-2 max-w-sm">
-            <h2 className="text-2xl font-black text-white tracking-tight">Submit your first deal</h2>
+            <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Submit your first deal</h2>
             <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
               Once you close a deal, your pipeline, commissions, and earnings will appear here.
             </p>
@@ -1492,11 +1492,11 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
                 <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-                  <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                 </div>
-                <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
+                <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Pipeline Overview</h2>
               </div>
-              <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
+              <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
                 View All →
               </Link>
             </div>
@@ -1535,11 +1535,11 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
               <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-                <Target className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                <Target className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               </div>
-              <h2 className="text-white font-bold tracking-tight text-base">Active Incentives</h2>
+              <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Active Incentives</h2>
             </div>
-            <Link href="/dashboard/incentives" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
+            <Link href="/dashboard/incentives" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1556,12 +1556,12 @@ export default function DashboardPage() {
                 <div key={incentive.id} className="bg-[var(--surface-card)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-white text-sm font-medium">{incentive.title}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium">{incentive.title}</p>
                       {incentive.type === 'personal' && (
                         <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
-                    <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="text-[var(--accent-emerald-text)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
                   <div className="w-full bg-[var(--border)] rounded-full h-1.5 mb-1.5">
                     <div
@@ -1590,15 +1590,15 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
             <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-              <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
           </div>
           <div className="flex items-center gap-3">
             {thisWeekTotal > 0 && (
-              <span className="text-[var(--accent-emerald-solid)] font-bold">${thisWeekTotal.toLocaleString()}</span>
+              <span className="text-[var(--accent-emerald-text)] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/my-pay" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
+            <Link href="/dashboard/my-pay" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1610,7 +1610,7 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                 <DollarSign className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No payments this week</p>
+              <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No payments this week</p>
               <p className="text-[var(--text-muted)] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
                 href="/dashboard/my-pay"
@@ -1641,7 +1641,7 @@ export default function DashboardPage() {
                       {entry.paymentStage}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-[var(--accent-emerald-solid)] font-semibold">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3 text-[var(--accent-emerald-text)] font-semibold">${entry.amount.toLocaleString()}</td>
                   <td className="px-6 py-3 text-[var(--text-muted)] text-xs">{entry.date}</td>
                 </tr>
               ))}
@@ -1657,11 +1657,11 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
             <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-              <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
             View All →
           </Link>
         </div>
@@ -1672,7 +1672,7 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                 <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No projects yet</p>
+              <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No projects yet</p>
               <p className="text-[var(--text-muted)] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
@@ -1722,7 +1722,7 @@ export default function DashboardPage() {
                     {/* Row 1: Customer + Phase + Date */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan-solid)] transition-colors">{proj.customerName}</span>
+                        <span className="text-[var(--text-primary)] font-medium text-sm truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
                       <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
@@ -1731,7 +1731,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
                       <span className="text-[var(--text-dim)]">·</span>
-                      <span className="text-[var(--accent-emerald-solid)] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-text)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === effectiveRepId ? (
                           <>
@@ -1783,7 +1783,7 @@ export default function DashboardPage() {
           className="fixed bottom-6 right-6 z-40 md:hidden flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 shadow-lg active:scale-95 transition-transform"
           aria-label="Submit a Deal"
         >
-          <PlusCircle className="w-7 h-7 text-white" />
+          <PlusCircle className="w-7 h-7 text-[var(--text-primary)]" />
         </Link>
       )}
     </div>

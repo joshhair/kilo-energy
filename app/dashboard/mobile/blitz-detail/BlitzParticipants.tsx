@@ -112,7 +112,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-          style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <Plus className="w-4 h-4" /> Add Participant
         </button>
@@ -137,9 +137,9 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                 <div className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
                       {isOwner && (
-                        <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-solid)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
+                        <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
                       )}
                     </div>
                     {stats && p.joinStatus === 'approved' && (stats.deals > 0 || stats.kW > 0) && (
@@ -165,7 +165,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                       disabled={processing.has(p.user.id)}
                       onClick={() => handleDecision(p.user.id, 'declined')}
                       className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 text-sm font-semibold rounded-lg disabled:opacity-40"
-                      style={{ color: 'var(--accent-red-solid)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                      style={{ color: 'var(--accent-red-text)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                     >
                       <X className="w-3.5 h-3.5" /> Decline
                     </button>
@@ -216,7 +216,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
           <select
             value={selectedRepId}
             onChange={(e) => setSelectedRepId(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -250,7 +250,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
           <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This will remove them from the blitz. Deals where their co-participant is also no longer in the blitz will be unlinked.</p>
           <button
             onClick={() => removeTarget && handleRemove(removeTarget.id)}
-            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-white rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-[var(--text-primary)] rounded-lg transition-colors"
             style={{ background: 'var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Trash2 className="w-4 h-4" /> Remove

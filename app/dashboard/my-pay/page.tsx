@@ -65,7 +65,7 @@ interface PayPeriod {
 // ── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-solid)]', dot: 'bg-emerald-400' },
+  Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
   Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
   Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
@@ -83,7 +83,7 @@ function StatusBadge({ status }: { status: string }) {
 // ── Stage badge ──────────────────────────────────────────────────────────────
 
 function StageBadge({ stage }: { stage: string }) {
-  const color = stage === 'M1' ? 'text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
+  const color = stage === 'M1' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
     : stage === 'M2' ? 'text-violet-400 bg-violet-500/10 border-violet-500/20'
     : stage === 'M3' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20'
     : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
@@ -487,7 +487,7 @@ function MyPayPageInner() {
         <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-              <PayIcon className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+              <PayIcon className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
@@ -496,12 +496,12 @@ function MyPayPageInner() {
             <div>
               <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
               <p className="font-black tabular-nums tracking-tight leading-none break-words"
-                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-solid)', textShadow: '0 0 32px rgba(16,185,129,0.30)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
+                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)', textShadow: '0 0 32px rgba(16,185,129,0.30)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-[var(--text-muted)] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
+            <span className="inline-flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
               <Clock className="w-3 h-3 shrink-0" />
               {daysUntilFriday === 0 ? 'Today!' : daysUntilFriday === 1 ? 'Tomorrow' : `${daysUntilFriday} days away`}
             </span>
@@ -531,7 +531,7 @@ function MyPayPageInner() {
               {pendingEntries.map((e) => (
                 <div key={e.id} className="card-surface rounded-xl p-3 flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
                     <p className="text-[var(--text-dim)] text-[11px]">
                       {e.paymentStage} · {e.status} · <RelativeDate date={e.date} />
                       {e.notes && <span className="ml-2 text-[var(--text-muted)]">· {e.notes}</span>}
@@ -552,9 +552,9 @@ function MyPayPageInner() {
              style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
-            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)]/50" />
+            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-emerald-solid)] stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
              style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {pendingChargebackCount > 0 && (
             <p className="text-amber-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
@@ -586,9 +586,9 @@ function MyPayPageInner() {
              style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
-            <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-solid)]/50" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-emerald-solid)] stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
              style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
@@ -600,7 +600,7 @@ function MyPayPageInner() {
         {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
           <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-6">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <Calendar className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Projected Pipeline</p>
             </div>
             <p className="text-[var(--text-muted)] text-xs mb-4">Expected if deals progress through milestones</p>
@@ -609,14 +609,14 @@ function MyPayPageInner() {
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--accent-emerald-solid)]/15 flex items-center justify-center">
-                      <span className="text-[var(--accent-emerald-solid)] text-xs font-bold">M1</span>
+                      <span className="text-[var(--accent-emerald-text)] text-xs font-bold">M1</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M1</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M1</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Acceptance</p>
                     </div>
                   </div>
-                  <p className="text-[var(--accent-emerald-solid)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
+                  <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
                     {fmt$(projectedM1)}
                   </p>
                 </div>
@@ -628,7 +628,7 @@ function MyPayPageInner() {
                       <span className="text-violet-400 text-xs font-bold">M2</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M2</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M2</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
@@ -644,7 +644,7 @@ function MyPayPageInner() {
                       <span className="text-teal-400 text-xs font-bold">M3</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M3</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M3</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
                     </div>
                   </div>
@@ -663,7 +663,7 @@ function MyPayPageInner() {
         <div className="flex items-center gap-3">
           <Receipt className="w-4 h-4 text-violet-400" />
           <div>
-            <p className="text-white text-sm font-medium">Reimbursements</p>
+            <p className="text-[var(--text-primary)] text-sm font-medium">Reimbursements</p>
             <p className="text-[var(--text-muted)] text-xs">
               {pendingReimbs.length > 0 || approvedReimbTotal > 0
                 ? `${pendingReimbs.length} pending${approvedReimbTotal > 0 ? ` · ${fmt$(approvedReimbTotal)} approved` : ''}`
@@ -688,7 +688,7 @@ function MyPayPageInner() {
             onChange={(e) => { setSearchQuery(e.target.value); setPeriodPage(1); }}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
+            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
           />
           {!searchQuery && !searchFocused && (
             <kbd
@@ -725,7 +725,7 @@ function MyPayPageInner() {
         {(payFilterFrom || payFilterTo) && (
           <button
             onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); setPeriodPage(1); }}
-            className="text-xs text-[var(--accent-emerald-solid)] hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
+            className="text-xs text-[var(--accent-emerald-text)] hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
           >
             Clear
           </button>
@@ -762,7 +762,7 @@ function MyPayPageInner() {
             {myProjects.length > 0 ? (
               <>
                 <p className="text-[var(--text-secondary)] text-sm font-medium">
-                  You have <span className="text-[var(--accent-emerald-solid)] font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-[var(--accent-emerald-solid)] font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
+                  You have <span className="text-[var(--accent-emerald-text)] font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-[var(--accent-emerald-text)] font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
                 </p>
                 <p className="text-[var(--text-muted)] text-xs mt-1">
                   Payroll entries will appear here as your deals hit milestones.
@@ -772,8 +772,8 @@ function MyPayPageInner() {
                     const preAccCount = myProjects.filter((p) => ['New'].includes(p.phase)).length;
                     return preAccCount > 0 ? (
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20">
-                        <Clock className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
-                        <span className="text-[var(--accent-emerald-solid)] text-xs font-medium">{preAccCount} awaiting M1</span>
+                        <Clock className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
+                        <span className="text-[var(--accent-emerald-text)] text-xs font-medium">{preAccCount} awaiting M1</span>
                       </div>
                     ) : null;
                   })()}
@@ -793,7 +793,7 @@ function MyPayPageInner() {
                 <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                   <Banknote className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
                 </div>
-                <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
+                <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No earnings yet</p>
                 <p className="text-[var(--text-muted)] text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
                 <Link
                   href="/dashboard/new-deal"
@@ -830,25 +830,25 @@ function MyPayPageInner() {
                   period.isUpcoming ? 'bg-[var(--accent-emerald-solid)]/15' : period.isPast ? 'bg-[var(--surface-card)]' : 'bg-[var(--accent-emerald-solid)]/10'
                 }`}>
                   {period.isUpcoming ? (
-                    <Clock className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                    <Clock className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                   ) : (
-                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-[var(--text-muted)]' : 'text-[var(--accent-emerald-solid)]'}`} />
+                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-[var(--text-muted)]' : 'text-[var(--accent-emerald-text)]'}`} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-white text-sm font-semibold">
+                    <p className="text-[var(--text-primary)] text-sm font-semibold">
                       {period.isUpcoming ? 'Upcoming Pay Period' : 'Pay Period'} — {formatFridayLabel(period.friday)}
                     </p>
                     {period.isUpcoming && (
-                      <span className="text-[10px] font-semibold text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-1.5 py-0.5 rounded-full">
                         Next
                       </span>
                     )}
                   </div>
                   <p className="text-[var(--text-muted)] text-xs mt-0.5">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</p>
                 </div>
-                <p className={`text-lg font-bold tabular-nums shrink-0 break-words ${period.isUpcoming ? 'text-[var(--accent-emerald-solid)]' : period.isPast ? 'text-[var(--text-secondary)]' : 'text-white'}`}>
+                <p className={`text-lg font-bold tabular-nums shrink-0 break-words ${period.isUpcoming ? 'text-[var(--accent-emerald-text)]' : period.isPast ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
                   {fmt$(period.total)}
                 </p>
                 <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] shrink-0 nav-chevron-spring ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
@@ -878,7 +878,7 @@ function MyPayPageInner() {
                             <tr key={entry.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--surface-card)]/20 transition-colors min-h-[44px]">
                               <td className="px-5 py-3">
                                 {entry.projectId ? (
-                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors font-medium text-xs">
+                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors font-medium text-xs">
                                     {entry.customerName || '—'}
                                   </Link>
                                 ) : (
@@ -888,7 +888,7 @@ function MyPayPageInner() {
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
-                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-emerald-solid)]' : 'text-white')}`}>
+                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-primary)]')}`}>
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>
@@ -913,7 +913,7 @@ function MyPayPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.max(1, p - 1))}
             disabled={safePeriodPage <= 1}
-            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -925,7 +925,7 @@ function MyPayPageInner() {
                 key={page}
                 onClick={() => setPeriodPage(page)}
                 className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'
+                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
                 }`}
               >
                 {page}
@@ -935,7 +935,7 @@ function MyPayPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.min(totalPeriodPages, p + 1))}
             disabled={safePeriodPage >= totalPeriodPages}
-            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

@@ -46,7 +46,7 @@ function roleLabel(repType: Rep['repType']): string {
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
   if (repType === 'closer') return 'text-purple-400';
-  if (repType === 'setter') return 'text-[var(--accent-emerald-solid)]';
+  if (repType === 'setter') return 'text-[var(--accent-emerald-text)]';
   return 'text-teal-400';
 }
 
@@ -158,10 +158,10 @@ export function SetterPickerPopover({
         {currentSetter ? (
           <>
             {/* Avatar initials */}
-            <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+            <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[10px] font-bold flex-shrink-0 select-none">
               {getInitials(currentSetter.name)}
             </span>
-            <span className="flex-1 text-sm text-white font-medium truncate">
+            <span className="flex-1 text-sm text-[var(--text-primary)] font-medium truncate">
               {currentSetter.name}
             </span>
             {isTrainee(currentSetter.id) && (
@@ -207,7 +207,7 @@ export function SetterPickerPopover({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -248,10 +248,10 @@ export function SetterPickerPopover({
                   onClick={() => handleSelect(currentSetter.id)}
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
                 >
-                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(currentSetter.name)}
                   </span>
-                  <span className="flex-1 text-sm text-white font-medium truncate">{currentSetter.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-primary)] font-medium truncate">{currentSetter.name}</span>
                   <span className={`${roleBadgeClass(currentSetter.repType)} text-[10px] font-medium flex-shrink-0`}>
                     {roleLabel(currentSetter.repType)}
                   </span>
@@ -290,10 +290,10 @@ export function SetterPickerPopover({
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-600/20 transition-colors min-h-[44px]"
                 >
                   {/* Initials avatar */}
-                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 select-none">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[10px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
-                  <span className="flex-1 text-sm text-[var(--text-secondary)] hover:text-white truncate">{rep.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] truncate">{rep.name}</span>
                   {/* Role badge */}
                   <span className={`${roleBadgeClass(rep.repType)} text-[10px] font-medium flex-shrink-0`}>
                     {roleLabel(rep.repType)}

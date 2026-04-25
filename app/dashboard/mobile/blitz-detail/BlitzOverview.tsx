@@ -29,7 +29,7 @@ export default function BlitzOverview({ participantCount, totalDeals, totalKW, n
             }}
           >
             <p
-              className="text-xl font-bold text-white leading-none whitespace-nowrap"
+              className="text-xl font-bold text-[var(--text-primary)] leading-none whitespace-nowrap"
               style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
             >
               {stat.value}

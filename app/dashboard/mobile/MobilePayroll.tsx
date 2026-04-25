@@ -416,7 +416,7 @@ export default function MobilePayroll() {
   }
 
   const inputCls =
-    'w-full rounded-xl px-3 py-2.5 text-base text-white focus:outline-none transition-colors';
+    'w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none transition-colors';
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-4">
@@ -501,7 +501,7 @@ export default function MobilePayroll() {
           {filteredReimbursements.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12">
               <Receipt className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
-              <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <p className="text-sm font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match filters'}
               </p>
             </div>
@@ -516,22 +516,22 @@ export default function MobilePayroll() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
                       <p className="text-sm truncate mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.description}</p>
                       {r.archivedAt && (
                         <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>archived</p>
                       )}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
+                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
                       <span
                         className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={
                           r.status === 'Approved'
-                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-emerald-solid)' }
+                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-emerald-text)' }
                             : r.status === 'Denied'
-                            ? { background: 'rgba(239,68,68,0.15)', color: 'var(--accent-red-solid)' }
-                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-solid)' }
+                            ? { background: 'rgba(239,68,68,0.15)', color: 'var(--accent-red-text)' }
+                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-text)' }
                         }
                       >
                         {r.status}
@@ -763,8 +763,8 @@ export default function MobilePayroll() {
             <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
-                <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
-                <p className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(group.total)}</p>
+                <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
+                <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(group.total)}</p>
               </div>
 
               {/* Entries */}
@@ -776,7 +776,7 @@ export default function MobilePayroll() {
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   >
-                    <span className="text-base text-white truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <span className="text-base text-[var(--text-primary)] truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
                     </span>
                     <div className="flex items-center gap-3 shrink-0">

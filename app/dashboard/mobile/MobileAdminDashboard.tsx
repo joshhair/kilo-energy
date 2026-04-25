@@ -330,7 +330,7 @@ export default function MobileAdminDashboard() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <div className="flex items-start justify-between gap-3">
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
         {/* "My Rep View" toggle — only offered when the admin also sells
             (has repType). Flips into rep-view for themselves, replacing
             Glide's two-account hack. The layout's "Viewing as …" banner
@@ -339,7 +339,7 @@ export default function MobileAdminDashboard() {
           <button
             onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
             className="text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap"
-            style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)' }}
+            style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)' }}
           >
             My Rep View
           </button>
@@ -391,12 +391,12 @@ export default function MobileAdminDashboard() {
         <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedProfit)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
           <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedPaid)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
           </div>
         </div>
@@ -415,7 +415,7 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5" style={{ color: WARNING }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
             <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{needsAttention}</span>
           </div>
 
@@ -427,7 +427,7 @@ export default function MobileAdminDashboard() {
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
-                <span style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
+                <span style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
               </div>
               <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
@@ -492,10 +492,10 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)' }}>
-              <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
+              <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             </div>
             <div>
-              <p className="font-bold" style={{ color: 'var(--accent-emerald-solid)', fontFamily: FONT_BODY, fontSize: '0.9rem', margin: 0 }}>All Clear</p>
+              <p className="font-bold" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.9rem', margin: 0 }}>All Clear</p>
               <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', margin: 0 }}>No items need attention right now.</p>
             </div>
           </div>
@@ -515,7 +515,7 @@ export default function MobileAdminDashboard() {
                 <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: ACCENT }} />
                 </div>
-                <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
+                <span className="w-8 text-right tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
               </div>
             );
           })}
@@ -542,7 +542,7 @@ export default function MobileAdminDashboard() {
                 >
                   {r.rank}
                 </span>
-                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
+                <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
                 <span className="font-bold tabular-nums" style={{ color: MUTED, fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{r.count} deals</span>
               </div>
             ))}
@@ -555,17 +555,17 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <BarChart2 className="w-4 h-4" style={{ color: WARNING }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Installer Insights</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Installer Insights</p>
           </div>
           <div className="space-y-2">
             {installerRanking.map((inst) => (
               <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
+                <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
                 <span className="tabular-nums text-sm" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
                 <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
                   <div className="h-full rounded-full" style={{ width: `${(inst.deals / maxInstallerDeals) * 100}%`, background: WARNING }} />
                 </div>
-                <span className="tabular-nums font-semibold" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
+                <span className="tabular-nums font-semibold" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
                 {inst.cancelled > 0 && (
                   <span className="tabular-nums text-xs font-medium" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
                 )}
@@ -580,7 +580,7 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4" style={{ color: DANGER }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Cancellation Reasons</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Cancellation Reasons</p>
             <span className="ml-auto text-xs" style={{ color: MUTED }}>{cancelledProjects.length} cancelled</span>
           </div>
           <div className="space-y-2">
@@ -626,7 +626,7 @@ export default function MobileAdminDashboard() {
           placeholder="Search customer or rep..."
           value={recentSearch}
           onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none"
+          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none"
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)' }}
         />
         {(() => {
@@ -664,7 +664,7 @@ export default function MobileAdminDashboard() {
                         style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-white truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                          <p className="text-[var(--text-primary)] truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
                           <span className="font-semibold tabular-nums shrink-0" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
                             {fmt$(closerPay)}
                             {setterPay > 0 && <span style={{ color: MUTED, fontSize: '0.75rem' }}> +{fmt$(setterPay)}</span>}

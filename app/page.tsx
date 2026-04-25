@@ -92,11 +92,11 @@ export default function LoginPage() {
             style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
           />
           <div className="flex items-baseline gap-1">
-            <span className="text-white font-black tracking-tight leading-none"
+            <span className="text-[var(--text-primary)] font-black tracking-tight leading-none"
                   style={{ fontSize: '2.25rem', letterSpacing: '-0.04em' }}>
               kilo
             </span>
-            <span className="text-white font-light tracking-[0.25em] uppercase"
+            <span className="text-[var(--text-primary)] font-light tracking-[0.25em] uppercase"
                   style={{ fontSize: '0.85rem' }}>
               ENERGY
             </span>
@@ -127,11 +127,11 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-baseline gap-1 mb-3">
-            <span className="text-white font-black tracking-tight leading-none"
+            <span className="text-[var(--text-primary)] font-black tracking-tight leading-none"
                   style={{ fontSize: '3rem', letterSpacing: '-0.04em' }}>
               kilo
             </span>
-            <span className="text-white font-light tracking-[0.25em] uppercase"
+            <span className="text-[var(--text-primary)] font-light tracking-[0.25em] uppercase"
                   style={{ fontSize: '1.1rem' }}>
               ENERGY
             </span>
@@ -148,10 +148,10 @@ export default function LoginPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p className="text-white text-sm font-medium">{error}</p>
+              <p className="text-[var(--text-primary)] text-sm font-medium">{error}</p>
               <button
                 onClick={() => signOut({ redirectUrl: '/sign-in' })}
-                className="text-[var(--text-secondary)] hover:text-white text-xs transition-colors underline underline-offset-2"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-colors underline underline-offset-2"
               >
                 Sign out and try a different account
               </button>

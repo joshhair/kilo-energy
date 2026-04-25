@@ -27,7 +27,7 @@ export default function MobileSection({
     <div className="flex items-center gap-2">
       <h2 className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 500 }}>{title}</h2>
       {count !== undefined && (
-        <span className="px-2 py-0.5 rounded-full text-base" style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-solid)', fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>
+        <span className="px-2 py-0.5 rounded-full text-base" style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>
       )}
     </div>
   );

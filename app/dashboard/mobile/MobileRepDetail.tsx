@@ -247,7 +247,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-white truncate" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              <h1 className="text-xl font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                 {resolvedUser.firstName} {resolvedUser.lastName}
               </h1>
               <div className="mt-1.5">
@@ -292,7 +292,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               style={{
                 background: 'var(--navy-base, #0a1628)',
                 border: '1px solid var(--border-subtle)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -557,7 +557,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
           <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <MobileBadge value={repType} variant="status" />
             {isSubDealer && <MobileBadge value="Sub-Dealer" variant="status" />}
@@ -579,7 +579,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
-              color: 'var(--accent-emerald-solid)',
+              color: 'var(--accent-emerald-text)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
             aria-label="Manage user"
@@ -592,13 +592,13 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
       {/* Inline stats */}
       <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
+        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
         {' \u00B7 '}
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
+        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
+            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
@@ -609,13 +609,13 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4" style={{ color: 'var(--accent-amber, #f5a623)' }} />
-              <span className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Assignment</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Assignment</span>
             </div>
             {!trainerAssignment && !showTrainerPicker && (
               <button
                 onClick={() => setShowTrainerPicker(true)}
                 className="text-sm font-medium min-h-[36px] px-2"
-                style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 + Assign
               </button>
@@ -629,7 +629,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-sm font-medium text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {trainerRep ? trainerRep.name : 'Unknown trainer'}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -669,7 +669,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           {!trainerAssignment && showTrainerPicker && (
             <div className="mt-1 space-y-2">
               <select
-                className="w-full min-h-[44px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[44px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
                   background: 'var(--navy-base, #0a1628)',
                   border: '1px solid var(--border-subtle)',
@@ -713,7 +713,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               </select>
               <button
                 onClick={() => setShowTrainerPicker(false)}
-                className="w-full min-h-[44px] rounded-xl text-sm font-semibold text-white"
+                className="w-full min-h-[44px] rounded-xl text-sm font-semibold text-[var(--text-primary)]"
                 style={{ background: 'var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Cancel
@@ -759,7 +759,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   style={{ borderBottom: '1px solid var(--border-subtle)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-base font-medium text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
                     <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -883,7 +883,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   type="text"
                   value={editFirst}
                   onChange={(e) => setEditFirst(e.target.value)}
-                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                   style={{
                     background: 'var(--surface-card)',
                     border: '1px solid var(--border-subtle)',
@@ -896,7 +896,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   type="text"
                   value={editLast}
                   onChange={(e) => setEditLast(e.target.value)}
-                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                   style={{
                     background: 'var(--surface-card)',
                     border: '1px solid var(--border-subtle)',
@@ -910,7 +910,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -923,7 +923,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 type="tel"
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
                   background: 'var(--surface-card)',
                   border: '1px solid var(--border-subtle)',
@@ -945,7 +945,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               </button>
               <button
                 onClick={() => setEditMode(false)}
-                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold text-white"
+                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold text-[var(--text-primary)]"
                 style={{ background: 'var(--border-subtle)' }}
               >
                 Cancel

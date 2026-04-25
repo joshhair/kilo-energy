@@ -252,7 +252,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="p-8 text-[var(--text-muted)] text-center">
         User not found.{' '}
-        <Link href="/dashboard/users" className="text-[var(--accent-emerald-solid)] hover:underline">
+        <Link href="/dashboard/users" className="text-[var(--accent-emerald-text)] hover:underline">
           Back to Users
         </Link>
       </div>
@@ -485,7 +485,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     onChange={(e) => setEditFirstName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                     className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
-                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', maxWidth: 180 }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', maxWidth: 180 }}
                     autoFocus
                   />
                   <input
@@ -494,9 +494,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     onChange={(e) => setEditLastName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                     className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
-                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', maxWidth: 180 }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', maxWidth: 180 }}
                   />
-                  <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-sm transition-colors disabled:opacity-50">
+                  <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
                     <Check className="w-4 h-4" /> Save
                   </button>
                   <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
@@ -505,7 +505,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               ) : (
                 <div className="flex items-center gap-3 flex-wrap mb-2">
-                  <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
                     {resolvedUser.firstName} {resolvedUser.lastName}
                   </h1>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
@@ -537,10 +537,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       onChange={(e) => setEditEmail(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                       className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
-                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', minWidth: 280 }}
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', minWidth: 280 }}
                       autoFocus
                     />
-                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-sm transition-colors disabled:opacity-50">
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
                       <Check className="w-3.5 h-3.5" /> Save
                     </button>
                     <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
@@ -570,10 +570,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
                       placeholder="(555) 000-0000"
                       className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 placeholder-slate-500"
-                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff', minWidth: 200 }}
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', minWidth: 200 }}
                       autoFocus
                     />
-                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-sm transition-colors disabled:opacity-50">
+                    <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
                       <Check className="w-3.5 h-3.5" /> Save
                     </button>
                     <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
@@ -601,7 +601,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             don't have this (PMs) or already have it by default (reps). */}
         {resolvedUser.role === 'admin' && effectiveRole === 'admin' && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <h2 className="text-white font-bold text-base mb-2">Sales</h2>
+            <h2 className="text-[var(--text-primary)] font-bold text-base mb-2">Sales</h2>
             <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
               Set this if {resolvedUser.id === currentRepId ? 'you' : 'this admin'} also sells deals. Once set, {resolvedUser.id === currentRepId ? 'you' : 'they'} appear in closer/setter pickers on new deals and get a My Pay tab with {resolvedUser.id === currentRepId ? 'your' : 'their'} own earnings.
             </p>
@@ -645,7 +645,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   }
                 }}
                 className="rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               >
                 <option value="">Not a seller (admin-only)</option>
                 <option value="closer">Closer</option>
@@ -664,7 +664,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         {/* Permissions card (PM only) */}
         {resolvedUser.role === 'project_manager' && effectiveRole === 'admin' && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <h2 className="text-white font-bold text-base mb-4">Permissions</h2>
+            <h2 className="text-[var(--text-primary)] font-bold text-base mb-4">Permissions</h2>
             <div className="space-y-3 text-sm">
               {([
                 { field: 'canCreateDeals' as const, label: 'Can create deals' },
@@ -688,7 +688,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                         toast('Failed to update permission', 'error');
                       }
                     }}
-                    className={`font-semibold px-3 py-1 rounded-lg border transition-colors ${resolvedUser[field] ? 'text-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)]/30 bg-[var(--accent-emerald-solid)]/10' : 'text-[var(--text-dim)] border-[var(--border)] bg-transparent'}`}
+                    className={`font-semibold px-3 py-1 rounded-lg border transition-colors ${resolvedUser[field] ? 'text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30 bg-[var(--accent-emerald-solid)]/10' : 'text-[var(--text-dim)] border-[var(--border)] bg-transparent'}`}
                   >
                     {resolvedUser[field] ? 'Yes' : 'No'}
                   </button>
@@ -707,7 +707,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 value={scopedInstallerId ?? ''}
                 onChange={(e) => saveScope(e.target.value)}
                 disabled={scopeSaving}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40 disabled:opacity-50"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500/40 disabled:opacity-50"
               >
                 <option value="">— Full access (internal PM) —</option>
                 {installerList.map((i) => (
@@ -731,7 +731,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             Delete permanently. Visible only to admins. */}
         {isAdminViewer && (
           <div className="card-surface rounded-2xl p-6 mb-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
+            <h2 className="text-[var(--text-primary)] font-bold text-base mb-4">Account actions</h2>
             <div className="flex flex-wrap gap-3">
               {/* Deactivate / Reactivate */}
               {isInactive ? (
@@ -739,7 +739,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleReactivate}
                   disabled={isReactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
+                  style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
                 >
                   {isReactivating ? 'Reactivating…' : 'Reactivate'}
                 </button>
@@ -748,7 +748,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={() => setConfirmDeactivate(true)}
                   disabled={isDeactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)', border: '1px solid rgba(255,176,32,0.3)' }}
+                  style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
                 >
                   {isDeactivating ? 'Deactivating…' : 'Deactivate'}
                 </button>
@@ -771,7 +771,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleSendInvite}
                   disabled={isSendingInvite}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-solid)', border: '1px solid rgba(0,196,240,0.3)' }}
+                  style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
                 >
                   {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
                 </button>
@@ -948,7 +948,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <div
-          className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+          className="w-14 h-14 rounded-full flex items-center justify-center text-[var(--text-primary)] font-bold text-lg flex-shrink-0"
           style={{ backgroundColor: 'var(--brand-dark)' }}
         >
           {initials}
@@ -957,7 +957,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-              <UserCheck className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
+              <UserCheck className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </span>
             <h1 className="text-3xl font-black tracking-tight text-gradient-brand">{rep.name}</h1>
           </div>
@@ -968,10 +968,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-4 mb-8">
         {[
-          { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-solid)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-solid)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
           { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-yellow-400',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-solid)]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
+          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-text)]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
         ].map((s) => (
           <div
             key={s.label}
@@ -983,7 +983,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <div className="flex items-center gap-2">
               <p className={`stat-value stat-value-glow ${s.glowClass} text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
               {s.trend !== null && s.trend > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-solid)]">
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)]">
                   <TrendingUp className="w-2.5 h-2.5" /> +{s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
                 </span>
               )}
@@ -1004,20 +1004,20 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-amber-400" />
-              <h2 className="text-white font-semibold text-sm">Trainer Assignment</h2>
+              <h2 className="text-[var(--text-primary)] font-semibold text-sm">Trainer Assignment</h2>
             </div>
             {!assignment && !showTrainerPicker && (
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowTrainerPicker(true)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-medium text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
                   title="Quick: picks a trainer, assigns at a single $0.05/W perpetual tier"
                 >
                   <Plus className="w-3.5 h-3.5" /> Assign Trainer
                 </button>
                 <Link
                   href={`/dashboard/training?newAssignment=1&traineeId=${encodeURIComponent(id)}`}
-                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-cyan-solid)] transition-colors"
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-cyan-text)] transition-colors"
                   title="Full picker with multi-tier configuration"
                 >
                   Advanced →
@@ -1032,11 +1032,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center gap-3">
                 {trainerRep ? (
                   <>
-                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-[var(--text-primary)] text-xs font-bold flex-shrink-0">
                       {trainerRep.name.split(' ').map((n: string) => n[0]).join('')}
                     </span>
                     <div>
-                      <p className="text-white text-sm font-medium">{trainerRep.name}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium">{trainerRep.name}</p>
                       <p className="text-[var(--text-muted)] text-xs">Trainer &middot; ${currentOverrideRate.toFixed(2)}/W</p>
                     </div>
                   </>
@@ -1187,11 +1187,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           setDrillEntries(entries);
           setDrillTotal(total);
         };
-        const amountCls = `py-2.5 text-[var(--accent-emerald-solid)] font-semibold${isAdminViewer ? ' cursor-pointer hover:underline decoration-dotted underline-offset-4' : ''}`;
+        const amountCls = `py-2.5 text-[var(--accent-emerald-text)] font-semibold${isAdminViewer ? ' cursor-pointer hover:underline decoration-dotted underline-offset-4' : ''}`;
 
         return (
           <div className="card-surface rounded-2xl p-5 mb-6">
-            <h2 className="text-white font-semibold mb-4">Commission by Role</h2>
+            <h2 className="text-[var(--text-primary)] font-semibold mb-4">Commission by Role</h2>
             <table className="w-full text-sm">
               <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                 <tr className="border-b border-[var(--border-subtle)]">
@@ -1202,30 +1202,30 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               </thead>
               <tbody>
                 <tr className="table-row-enter row-stagger-0 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                  <td className="py-2.5 text-white">Closer</td>
+                  <td className="py-2.5 text-[var(--text-primary)]">Closer</td>
                   <td className="py-2.5 text-[var(--text-secondary)]">{closerDealCount}</td>
                   <td className={amountCls} onClick={() => openDrill('Closer', closerEntries, closerPay)}>${closerPay.toLocaleString()}</td>
                 </tr>
                 {coCloserPay > 0 && (
                   <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                    <td className="py-2.5 text-white">Co-closer</td>
+                    <td className="py-2.5 text-[var(--text-primary)]">Co-closer</td>
                     <td className="py-2.5 text-[var(--text-secondary)]">{new Set(coCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
                     <td className={amountCls} onClick={() => openDrill('Co-closer', coCloserEntries, coCloserPay)}>${coCloserPay.toLocaleString()}</td>
                   </tr>
                 )}
                 <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                  <td className="py-2.5 text-white">Setter</td>
+                  <td className="py-2.5 text-[var(--text-primary)]">Setter</td>
                   <td className="py-2.5 text-[var(--text-secondary)]">{setterDealCount}</td>
                   <td className={amountCls} onClick={() => openDrill('Setter', setterEntries, setterPay)}>${setterPay.toLocaleString()}</td>
                 </tr>
                 <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                  <td className="py-2.5 text-white">Trainer</td>
+                  <td className="py-2.5 text-[var(--text-primary)]">Trainer</td>
                   <td className="py-2.5 text-[var(--text-secondary)]">{trainerDealCount}</td>
                   <td className={amountCls} onClick={() => openDrill('Trainer', trainerEntries, trainerPay)}>${trainerPay.toLocaleString()}</td>
                 </tr>
                 {bonusPay > 0 && (
                   <tr className="table-row-enter row-stagger-3 relative even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
-                    <td className="py-2.5 text-white">Bonus / Other</td>
+                    <td className="py-2.5 text-[var(--text-primary)]">Bonus / Other</td>
                     <td className="py-2.5 text-[var(--text-secondary)]">—</td>
                     <td className={amountCls} onClick={() => openDrill('Bonus', bonusEntries, bonusPay)}>${bonusPay.toLocaleString()}</td>
                   </tr>
@@ -1250,9 +1250,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Payment history */}
       {!isPM && <div className="card-surface rounded-2xl overflow-clip mb-6">
         <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-          <h2 className="text-white font-semibold">Payment History</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold">Payment History</h2>
           <div className="flex gap-4 text-sm">
-            <span className="text-[var(--accent-emerald-solid)]">Paid: ${totalPaid.toLocaleString()}</span>
+            <span className="text-[var(--accent-emerald-text)]">Paid: ${totalPaid.toLocaleString()}</span>
             <span className="text-yellow-400">Pending: ${totalPending.toLocaleString()}</span>
           </div>
         </div>
@@ -1271,17 +1271,17 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Type</th>
               <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Stage</th>
               <th className="text-right px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('amount')} className={`flex items-center justify-end gap-1 w-full transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('amount')} className={`flex items-center justify-end gap-1 w-full transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Amount <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'amount' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
               <th className="text-left px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Status <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'status' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
               <th className="text-left px-5 py-3 font-medium">
-                <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)] hover:text-white'}`}>
+                <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Date <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'date' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
@@ -1290,12 +1290,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <tbody>
             {pagedPayroll.map((entry, i) => (
               <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                <td className="px-5 py-3 text-white">
+                <td className="px-5 py-3 text-[var(--text-primary)]">
                   {entry.customerName || entry.notes || '—'}
                 </td>
                 <td className="px-5 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    entry.type === 'Bonus' ? 'bg-blue-900/50 text-[var(--accent-emerald-solid)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'
+                    entry.type === 'Bonus' ? 'bg-blue-900/50 text-[var(--accent-emerald-text)]' : 'bg-[var(--border)] text-[var(--text-secondary)]'
                   }`}>
                     {entry.type}
                   </span>
@@ -1305,7 +1305,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     {entry.paymentStage}
                   </span>
                 </td>
-                <td className={`px-5 py-3 text-right text-[var(--accent-emerald-solid)] font-semibold tabular-nums${paySortCol === 'amount' ? ' bg-[var(--accent-emerald-solid)]/[0.015]' : ''}`}>
+                <td className={`px-5 py-3 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums${paySortCol === 'amount' ? ' bg-[var(--accent-emerald-solid)]/[0.015]' : ''}`}>
                   ${entry.amount.toLocaleString()}
                 </td>
                 <td className={`px-5 py-3${paySortCol === 'status' ? ' bg-[var(--accent-emerald-solid)]/[0.015]' : ''}`}>
@@ -1333,7 +1333,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Projects table */}
       <div className="card-surface rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
-          <h2 className="text-white font-semibold">All Projects</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold">All Projects</h2>
         </div>
         <table className="w-full text-sm">
           <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
@@ -1351,7 +1351,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             {pagedProjects.map((proj, i) => (
               <tr key={proj.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                 <td className="px-5 py-3">
-                  <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors">
+                  <Link href={`/dashboard/projects/${proj.id}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors">
                     {proj.customerName}
                   </Link>
                 </td>
@@ -1388,7 +1388,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <td className="hidden xl:table-cell text-right px-5 py-3 text-[var(--text-muted)] tabular-nums">{formatDate(proj.soldDate)}</td>
                 <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
                 {!isPM && (
-                  <td className="px-5 py-3 text-right text-[var(--accent-emerald-solid)] font-semibold tabular-nums">
+                  <td className="px-5 py-3 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums">
                     {(proj.phase === 'Cancelled' || proj.phase === 'On Hold') ? '$0' : `$${(proj.repId === id
                         ? (proj.setterId === id ? (proj.m1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : proj.setterId === id
@@ -1433,14 +1433,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Same three-button footer as the admin/PM/SD shell — admin only. */}
       {isAdminViewer && (
         <div className="card-surface rounded-2xl p-6 mt-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="text-white font-bold text-base mb-4">Account actions</h2>
+          <h2 className="text-[var(--text-primary)] font-bold text-base mb-4">Account actions</h2>
           <div className="flex flex-wrap gap-3">
             {isInactive ? (
               <button
                 onClick={handleReactivate}
                 disabled={isReactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
+                style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
               >
                 {isReactivating ? 'Reactivating…' : 'Reactivate'}
               </button>
@@ -1449,7 +1449,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={() => setConfirmDeactivate(true)}
                 disabled={isDeactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)', border: '1px solid rgba(255,176,32,0.3)' }}
+                style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
               >
                 {isDeactivating ? 'Deactivating…' : 'Deactivate'}
               </button>
@@ -1459,7 +1459,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={handleSendInvite}
                 disabled={isSendingInvite}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-solid)', border: '1px solid rgba(0,196,240,0.3)' }}
+                style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
               >
                 {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
               </button>
@@ -1526,9 +1526,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
               <div>
                 <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{drillRole} commission breakdown</p>
-                <h3 className="text-white text-lg font-semibold mt-0.5">${drillTotal.toLocaleString()} <span className="text-[var(--text-muted)] text-sm font-normal">across {drillEntries.length} {drillEntries.length === 1 ? 'entry' : 'entries'}</span></h3>
+                <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5">${drillTotal.toLocaleString()} <span className="text-[var(--text-muted)] text-sm font-normal">across {drillEntries.length} {drillEntries.length === 1 ? 'entry' : 'entries'}</span></h3>
               </div>
-              <button onClick={() => setDrillRole(null)} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white transition-colors">
+              <button onClick={() => setDrillRole(null)} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1549,9 +1549,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <tbody>
                     {[...drillEntries].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((e, i) => (
                       <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150`}>
-                        <td className="py-2.5 text-white">
+                        <td className="py-2.5 text-[var(--text-primary)]">
                           {e.projectId ? (
-                            <Link href={`/dashboard/projects/${e.projectId}`} className="hover:text-[var(--accent-emerald-solid)] transition-colors">
+                            <Link href={`/dashboard/projects/${e.projectId}`} className="hover:text-[var(--accent-emerald-text)] transition-colors">
                               {e.customerName || e.notes || '—'}
                             </Link>
                           ) : (
@@ -1561,9 +1561,9 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                         <td className="py-2.5">
                           <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage}</span>
                         </td>
-                        <td className="py-2.5 text-right text-[var(--accent-emerald-solid)] font-semibold tabular-nums">${e.amount.toLocaleString()}</td>
+                        <td className="py-2.5 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums">${e.amount.toLocaleString()}</td>
                         <td className="py-2.5 pl-3">
-                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${e.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' : e.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{e.status}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${e.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]' : e.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-[var(--border)] text-[var(--text-secondary)]'}`}>{e.status}</span>
                         </td>
                         <td className="py-2.5 pl-3 text-[var(--text-muted)] tabular-nums">{formatDate(e.date)}</td>
                       </tr>
@@ -1670,7 +1670,7 @@ function TrainerOverrideCard({
     <div className="bg-[var(--surface)] border border-amber-500/30 rounded-2xl p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-white font-semibold">Trainer Override</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold">Trainer Override</h2>
           <p className="text-[var(--text-secondary)] text-sm mt-0.5">
             Trainer: <span className="text-amber-400">{trainerName}</span>
             <span className="text-[var(--text-dim)] mx-2">·</span>
@@ -1682,7 +1682,7 @@ function TrainerOverrideCard({
         {isAdmin && !editing && (
           <button
             onClick={() => { setDraftTiers([...assignment.tiers]); setEditing(true); }}
-            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-white text-sm transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -1690,7 +1690,7 @@ function TrainerOverrideCard({
         )}
         {editing && (
           <div className="flex gap-2">
-            <button onClick={save} disabled={saving} className="flex items-center gap-1 text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={save} disabled={saving} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <Check className="w-3.5 h-3.5" />
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -1747,7 +1747,7 @@ function TrainerOverrideCard({
                       value={tier.upToDeal ?? ''}
                       onChange={(e) => updateTier(i, 'upToDeal', e.target.value)}
                       disabled={i === draftTiers.length - 1}
-                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
+                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-40"
                     />
                     {i === draftTiers.length - 1 && (
                       <span className="text-[var(--text-muted)] text-xs">(perpetual)</span>
@@ -1761,7 +1761,7 @@ function TrainerOverrideCard({
                       min="0"
                       value={tier.ratePerW}
                       onChange={(e) => updateTier(i, 'ratePerW', e.target.value)}
-                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                     <span className="text-[var(--text-muted)] text-xs">/W</span>
                   </div>
@@ -1781,7 +1781,7 @@ function TrainerOverrideCard({
         {editing && (
           <button
             onClick={addTier}
-            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-white text-xs mt-2 transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs mt-2 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add tier
@@ -1910,7 +1910,7 @@ function PhaseBadge({ phase }: { phase: string }) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-solid)]', dot: 'bg-emerald-400' },
+  Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
   Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
   Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };

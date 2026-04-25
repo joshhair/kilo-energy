@@ -132,9 +132,9 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
           <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={1.5} />
         </div>
         <div className="success-up-1">
-          <h2 className="text-xl font-black text-white mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
+          <h2 className="text-xl font-black text-[var(--text-primary)] mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
           <p className="text-base" style={{ color: 'var(--text-muted)' }}>
-            <span className="text-white font-semibold">{deal.customerName}</span> has been added to your pipeline.
+            <span className="text-[var(--text-primary)] font-semibold">{deal.customerName}</span> has been added to your pipeline.
           </p>
         </div>
       </div>
@@ -144,19 +144,19 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
         <div className="space-y-2 text-base">
           <div className="flex justify-between">
             <span className="text-base" style={{ color: 'var(--text-muted)' }}>Installer</span>
-            <span className="text-white font-medium">{deal.installer}</span>
+            <span className="text-[var(--text-primary)] font-medium">{deal.installer}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-base" style={{ color: 'var(--text-muted)' }}>Financer</span>
-            <span className="text-white font-medium">{deal.financer || '---'}</span>
+            <span className="text-[var(--text-primary)] font-medium">{deal.financer || '---'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-base" style={{ color: 'var(--text-muted)' }}>Product Type</span>
-            <span className="text-white font-medium">{deal.productType}</span>
+            <span className="text-[var(--text-primary)] font-medium">{deal.productType}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-base" style={{ color: 'var(--text-muted)' }}>System</span>
-            <span className="text-white font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
+            <span className="text-[var(--text-primary)] font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
           </div>
         </div>
       </MobileCard>
@@ -172,7 +172,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
             </div>
-            <p className="text-xl font-black" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
+            <p className="text-xl font-black" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
           </div>
         ) : (
           <p className="text-base" style={{ color: 'var(--text-muted)' }}>Commission will be calculated once pricing is confirmed.</p>
@@ -925,10 +925,10 @@ export default function MobileNewDeal() {
   const v0FocusCss = 'focus:!border-[rgba(29,233,182,0.3)] focus:shadow-[0_0_0_3px_rgba(29,233,182,0.08)]';
 
   const inputCls = (_field: string) =>
-    `w-full text-white focus:outline-none transition-colors placeholder-[rgba(255,255,255,0.25)] ${v0FocusCss}`;
+    `w-full text-[var(--text-primary)] focus:outline-none transition-colors placeholder-[rgba(255,255,255,0.25)] ${v0FocusCss}`;
 
   const selectCls = (_field: string) =>
-    `w-full text-white focus:outline-none transition-colors appearance-none ${v0FocusCss}`;
+    `w-full text-[var(--text-primary)] focus:outline-none transition-colors appearance-none ${v0FocusCss}`;
 
   const labelCls = 'mb-1.5 block uppercase';
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
@@ -990,7 +990,7 @@ export default function MobileNewDeal() {
       <div className="mb-6">
         <p style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>NEW DEAL</p>
         <span key={currentStep} style={{ display: 'block', animation: 'deal-title-enter 200ms cubic-bezier(0.16,1,0.3,1) both' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#fff', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
         </span>
       </div>
 
@@ -1137,7 +1137,7 @@ export default function MobileNewDeal() {
                   borderRadius: 16,
                   padding: 18,
                   fontSize: 16,
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
@@ -1569,7 +1569,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${displayedTotal.toLocaleString()}</span>
                     </div>
                   </div>
@@ -1590,7 +1590,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${displayedTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-base" style={{ color: 'var(--text-muted)' }}>
@@ -1660,7 +1660,7 @@ export default function MobileNewDeal() {
                     borderRadius: 16,
                     padding: 18,
                     fontSize: 16,
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -1691,22 +1691,22 @@ export default function MobileNewDeal() {
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Customer</span>
-                    <span className="text-white font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Sold Date</span>
-                    <span className="text-white font-medium">{form.soldDate || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{form.soldDate || '---'}</span>
                   </div>
                   {effectiveRole === 'admin' && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--text-muted)' }}>Closer</span>
-                      <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
+                      <span className="text-[var(--text-primary)] font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
                     </div>
                   )}
                   {form.setterId && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--text-muted)' }}>Setter</span>
-                      <span className="text-white font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
+                      <span className="text-[var(--text-primary)] font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
                     </div>
                   )}
                 </div>
@@ -1725,19 +1725,19 @@ export default function MobileNewDeal() {
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Installer</span>
-                    <span className="text-white font-medium">{form.installer || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{form.installer || '---'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Financer</span>
-                    <span className="text-white font-medium">{form.financer || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{form.financer || '---'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Product Type</span>
-                    <span className="text-white font-medium">{form.productType || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{form.productType || '---'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>System</span>
-                    <span className="text-white font-medium">
+                    <span className="text-[var(--text-primary)] font-medium">
                       {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
                       {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
                     </span>
@@ -1745,7 +1745,7 @@ export default function MobileNewDeal() {
                   {form.prepaidSubType && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--text-muted)' }}>Prepaid Type</span>
-                      <span className="text-white font-medium">{form.prepaidSubType}</span>
+                      <span className="text-[var(--text-primary)] font-medium">{form.prepaidSubType}</span>
                     </div>
                   )}
                 </div>
@@ -1763,7 +1763,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
@@ -1774,7 +1774,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="text-base" style={{ color: 'var(--text-muted)' }}>
@@ -1916,7 +1916,7 @@ export default function MobileNewDeal() {
                   borderRadius: 16,
                   padding: 18,
                   fontSize: 16,
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
@@ -1947,7 +1947,7 @@ export default function MobileNewDeal() {
           <span
             key={commFlash ? 'flash' : 'idle'}
             className={`text-xl font-black${commFlash ? ' commission-val-flash' : ''}`}
-            style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
           >${displayedTotal.toLocaleString()}</span>
         </div>
       )}

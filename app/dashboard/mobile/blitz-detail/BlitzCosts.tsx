@@ -74,7 +74,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
       <button
         onClick={() => setShowAdd(true)}
         className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-        style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <Plus className="w-4 h-4" /> Add Cost
       </button>
@@ -99,7 +99,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
                 <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatDate(c.date)}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-3">
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
+                <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
                 <button
                   onClick={() => setConfirmDeleteId(c.id)}
                   className="p-2 active:opacity-70 min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -112,7 +112,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
           ))}
           <div className="flex items-center justify-between pt-3">
             <span className="text-base font-semibold" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total</span>
-            <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(total)}</span>
+            <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(total)}</span>
           </div>
         </div>
       )}
@@ -134,7 +134,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -154,7 +154,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -169,7 +169,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="Optional"
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
@@ -184,7 +184,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',

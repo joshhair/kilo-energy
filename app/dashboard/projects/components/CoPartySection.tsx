@@ -81,7 +81,7 @@ export function CoPartySection({
           className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors ${
             disabled
               ? 'border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed'
-              : 'border-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)]/10'
+              : 'border-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-emerald-solid)]/10'
           }`}
         >
           <Plus className="w-3 h-3" /> Add {label.replace(/s$/, '').toLowerCase()}
@@ -115,7 +115,7 @@ export function CoPartySection({
                 <select
                   value={row.userId}
                   onChange={(e) => updateRow(idx, { userId: e.target.value })}
-                  className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
+                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 >
                   <option value="">— Select person —</option>
                   {available.map((r) => (
@@ -128,7 +128,7 @@ export function CoPartySection({
                   value={row.m1Amount}
                   onChange={(e) => updateRow(idx, { m1Amount: e.target.value })}
                   placeholder="M1"
-                  className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
+                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 />
                 <input
                   type="number"
@@ -136,7 +136,7 @@ export function CoPartySection({
                   value={row.m2Amount}
                   onChange={(e) => updateRow(idx, { m2Amount: e.target.value })}
                   placeholder="M2"
-                  className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
+                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 />
                 <input
                   type="number"
@@ -144,7 +144,7 @@ export function CoPartySection({
                   value={row.m3Amount}
                   onChange={(e) => updateRow(idx, { m3Amount: e.target.value })}
                   placeholder="M3"
-                  className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
+                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 />
                 <button
                   type="button"

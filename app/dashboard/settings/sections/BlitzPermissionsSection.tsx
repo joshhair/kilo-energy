@@ -123,7 +123,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
   const roleBadge = (repType: string) => {
     const rt = repType?.toLowerCase() ?? '';
     if (rt === 'closer') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Closer</span>;
-    if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-solid)]">Setter</span>;
+    if (rt === 'setter') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-text)]">Setter</span>;
     if (rt === 'both') return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300">Both</span>;
     return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--text-muted)]/20 text-[var(--text-secondary)]">{repType || 'N/A'}</span>;
   };
@@ -132,7 +132,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
 
   return (
     <div key="blitz-permissions" className="animate-tab-enter max-w-3xl">
-      <h2 className="text-lg font-bold text-white mb-1">Blitz Permissions</h2>
+      <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">Blitz Permissions</h2>
       <p className="text-sm text-[var(--text-muted)] mb-5">Control which reps can request or create blitzes.</p>
 
       {/* Search bar */}
@@ -162,7 +162,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                   background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                   border: '1px solid rgba(0, 224, 122, 0.45)',
                   boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
@@ -176,14 +176,14 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
       {/* Summary stats + bulk actions */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
-          <span><strong className="text-[var(--accent-emerald-solid)]">{canRequestCount}</strong> can request</span>
-          <span><strong className="text-[var(--accent-emerald-solid)]">{canCreateCount}</strong> can create</span>
+          <span><strong className="text-[var(--accent-emerald-text)]">{canRequestCount}</strong> can request</span>
+          <span><strong className="text-[var(--accent-emerald-text)]">{canCreateCount}</strong> can create</span>
           <span><strong className="text-[var(--text-secondary)]">{filteredReps.length}</strong> total reps</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setConfirmDialog({ open: true, action: 'grant' })}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)]/30 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-emerald-solid)]/30 transition-colors"
           >
             Grant All
           </button>
@@ -215,11 +215,11 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                 <tr key={rep.id} className="last:border-0 transition-colors" style={{ borderBottom: '1px solid rgba(39,43,53,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.background='rgba(29,32,40,0.4)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${avatarColor(rep.repType)}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold ${avatarColor(rep.repType)}`}>
                         {getInitials(rep.name)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-white font-medium text-sm">{rep.name}</span>
+                        <span className="text-[var(--text-primary)] font-medium text-sm">{rep.name}</span>
                         <span className="mt-0.5">{roleBadge(rep.repType)}</span>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
-                      <span className={`text-[10px] font-medium ${perms.canRequestBlitz ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-muted)]'}`}>
+                      <span className={`text-[10px] font-medium ${perms.canRequestBlitz ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>
                         {perms.canRequestBlitz ? 'On' : 'Off'}
                       </span>
                     </div>
@@ -245,7 +245,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
-                      <span className={`text-[10px] font-medium ${perms.canCreateBlitz ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-muted)]'}`}>
+                      <span className={`text-[10px] font-medium ${perms.canCreateBlitz ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>
                         {perms.canCreateBlitz ? 'On' : 'Off'}
                       </span>
                     </div>

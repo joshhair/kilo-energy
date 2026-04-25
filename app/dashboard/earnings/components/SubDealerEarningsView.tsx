@@ -32,7 +32,7 @@ export function SubDealerEarningsView() {
         <div className="card-surface rounded-2xl p-5">
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider mb-1">Total Earned</p>
-          <p className="text-3xl font-black text-[var(--accent-emerald-solid)] tabular-nums">{fmt$(totalEarned)}</p>
+          <p className="text-3xl font-black text-[var(--accent-emerald-text)] tabular-nums">{fmt$(totalEarned)}</p>
           <p className="text-[var(--text-muted)] text-xs mt-1">{myPayroll.filter((p) => p.status === 'Paid').length} paid entries</p>
         </div>
         <div className="card-surface rounded-2xl p-5">
@@ -46,12 +46,12 @@ export function SubDealerEarningsView() {
       {/* Earnings table */}
       <div className="card-surface rounded-2xl">
         <div className="px-6 py-4 border-b border-[var(--border-subtle)]">
-          <h2 className="text-white font-bold tracking-tight text-base">Payment History</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Payment History</h2>
         </div>
         {sorted.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <DollarSign className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-3" />
-            <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
+            <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No earnings yet</p>
             <p className="text-[var(--text-muted)] text-xs">Earnings will appear once your deals reach the Installed phase.</p>
           </div>
         ) : (
@@ -69,11 +69,11 @@ export function SubDealerEarningsView() {
               <tbody>
                 {sorted.map((entry) => (
                   <tr key={entry.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
-                    <td className="px-6 py-3 text-white">{entry.customerName || '\u2014'}</td>
+                    <td className="px-6 py-3 text-[var(--text-primary)]">{entry.customerName || '\u2014'}</td>
                     <td className="px-6 py-3">
                       <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>
                     </td>
-                    <td className="px-6 py-3 text-[var(--accent-emerald-solid)] font-semibold">{fmt$(entry.amount)}</td>
+                    <td className="px-6 py-3 text-[var(--accent-emerald-text)] font-semibold">{fmt$(entry.amount)}</td>
                     <td className="px-6 py-3">
                       <PayrollStatusBadge status={entry.status} />
                     </td>

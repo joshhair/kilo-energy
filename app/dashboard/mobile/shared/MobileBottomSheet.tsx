@@ -28,7 +28,7 @@ function SheetItem({
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" aria-hidden="true" />}
       <span className="text-base flex-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald-solid)' }} aria-hidden="true" />}
+      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald-text)' }} aria-hidden="true" />}
     </button>
   );
 }

@@ -96,7 +96,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
   };
 
   const inputCls = (field: string) =>
-    `w-full bg-[var(--surface-card)] border ${errors[field] ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
+    `w-full bg-[var(--surface-card)] border ${errors[field] ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-4 py-2.5 focus:outline-none transition-all duration-200 input-focus-glow placeholder-slate-500 text-sm`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,9 +131,9 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4 text-violet-400" />
-            <h2 className="text-white font-bold text-base">Request Reimbursement</h2>
+            <h2 className="text-[var(--text-primary)] font-bold text-base">Request Reimbursement</h2>
           </div>
-          <button onClick={onClose} aria-label="Close reimbursement modal" className="text-[var(--text-secondary)] hover:text-white transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
+          <button onClick={onClose} aria-label="Close reimbursement modal" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
             <X className="w-5 h-5" />
           </button>
         </div>

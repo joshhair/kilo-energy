@@ -22,7 +22,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   if (entries.length === 0) return (
     <div className="rounded-2xl p-5 text-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#fbbf24', opacity: 0.2 }} />
-      <p className="text-sm font-semibold text-white">No deals yet</p>
+      <p className="text-sm font-semibold text-[var(--text-primary)]">No deals yet</p>
       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Rankings appear once reps start closing.</p>
     </div>
   );
@@ -69,7 +69,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
                 {rep.deals}d · {rep.kW.toFixed(1)}kW
               </span>
               {showPayout && rep.payout > 0 && (
-                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {formatCurrency(Math.round(rep.payout))}
                 </span>
               )}

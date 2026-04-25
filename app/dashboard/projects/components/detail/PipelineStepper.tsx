@@ -92,8 +92,8 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
                 {/* Label */}
                 <span
                   className={`mt-1.5 text-[9px] leading-tight text-center font-medium w-full ${
-                    isCurrent   ? 'text-[var(--accent-emerald-solid)]'
-                    : isCompleted ? 'text-[var(--accent-emerald-solid)]'
+                    isCurrent   ? 'text-[var(--accent-emerald-text)]'
+                    : isCompleted ? 'text-[var(--accent-emerald-text)]'
                     : 'text-[var(--text-dim)]'
                   }`}
                 >
@@ -124,7 +124,7 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
               ? daysSinceSold > 60
                 ? 'bg-red-900/40 border border-red-500/20 text-red-300'
                 : 'bg-amber-900/40 border border-amber-500/20 text-amber-300'
-              : 'bg-blue-900/40 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-solid)]'
+              : 'bg-blue-900/40 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-text)]'
           }`}>
             <Clock className="w-3 h-3" />
             {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
@@ -155,7 +155,7 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
 
         {/* Completion message */}
         {isComplete && (
-          <p className="text-xs text-[var(--accent-emerald-solid)] font-medium">
+          <p className="text-xs text-[var(--accent-emerald-text)] font-medium">
             Project complete!
           </p>
         )}
@@ -175,7 +175,7 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
               ? daysSinceSold > 60
                 ? 'text-red-300'
                 : 'text-amber-300'
-              : 'text-white'
+              : 'text-[var(--text-primary)]'
           }`}>
             Currently in: {phase}
           </span>
@@ -202,9 +202,9 @@ export function PhaseBadge({ phase }: { phase: Phase }) {
     : completed
     ? 'bg-green-900/50 text-green-400 ring-1 ring-green-500/30'
     : pto
-    ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]'
+    ? 'bg-emerald-900/50 text-[var(--accent-emerald-text)]'
     : onHold
     ? 'bg-yellow-900/50 text-yellow-400'
-    : 'bg-blue-900/50 text-[var(--accent-emerald-solid)]';
+    : 'bg-blue-900/50 text-[var(--accent-emerald-text)]';
   return <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${cls}`}>{phase}{completed && ' ✓'}</span>;
 }

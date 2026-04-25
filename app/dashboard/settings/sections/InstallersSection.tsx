@@ -65,7 +65,7 @@ export function InstallersSection({
     <div key="installers" className="animate-tab-enter max-w-xl">
       <SectionHeader title="Installers" subtitle="Manage active and archived installation companies" />
       <div className="card-surface rounded-2xl p-5 mb-4">
-        <h2 className="text-white font-semibold mb-3">Add Installer</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Add Installer</h2>
         {(() => {
           const installerDup = newInstaller.trim().length > 0 && installers.some((i) => i.name.toLowerCase() === newInstaller.trim().toLowerCase());
           return (<>
@@ -73,7 +73,7 @@ export function InstallersSection({
           type="text" placeholder="Installer name"
           value={newInstaller}
           onChange={(e) => setNewInstaller(e.target.value)}
-          className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
+          className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
         />
         {installerDup && <p className="text-red-400 text-[10px] mb-2">Already exists</p>}
         {/* Pricing structure selector */}
@@ -84,8 +84,8 @@ export function InstallersSection({
               onClick={() => setNewInstallerStructure(s)}
               className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${
                 newInstallerStructure === s
-                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)] text-[var(--accent-cyan-solid)]'
-                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-white'
+                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)] text-[var(--accent-cyan-text)]'
+                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {s === 'standard' ? 'Standard (Flat Rate)' : 'Product Catalog'}
@@ -129,7 +129,7 @@ export function InstallersSection({
             ))}
             <button
               onClick={() => setNewPcFamilies((prev) => [...prev, ''])}
-              className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-white text-xs transition-colors"
+              className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-colors"
             >
               <Plus className="w-3 h-3" /> Add family
             </button>
@@ -158,7 +158,7 @@ export function InstallersSection({
             setNewInstallerStructure('standard');
             setNewPcFamilies(['']);
           }}
-          className="w-full flex items-center justify-center gap-2 text-white text-sm font-medium py-2 rounded-xl active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 text-[var(--text-primary)] text-sm font-medium py-2 rounded-xl active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ backgroundColor: 'var(--brand)' }}
         >
           <Plus className="w-4 h-4" /> Add Installer
@@ -171,10 +171,10 @@ export function InstallersSection({
         <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
-              <Building2 className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+              <Building2 className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
             <div>
-              <p className="text-white font-medium text-sm mb-1">No installers yet</p>
+              <p className="text-[var(--text-primary)] font-medium text-sm mb-1">No installers yet</p>
               <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 Installers are the companies that handle solar panel installation. Add your first installer above to start configuring pricing baselines and creating deals.
               </p>
@@ -197,8 +197,8 @@ export function InstallersSection({
               onClick={() => { setInstallerSelectMode((v) => !v); setSelectedInstallers(new Set()); }}
               className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                 installerSelectMode
-                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)]'
-                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-white'
+                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]'
+                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <ListChecks className="w-3 h-3" /> {installerSelectMode ? 'Done' : 'Select'}
@@ -211,10 +211,10 @@ export function InstallersSection({
                   if (filteredActive.every((i) => selectedInstallers.has(i.name))) setSelectedInstallers(prev => { const next = new Set(prev); filteredActive.forEach(i => next.delete(i.name)); return next; });
                   else setSelectedInstallers(prev => { const next = new Set(prev); filteredActive.forEach(i => next.add(i.name)); return next; });
                 }}
-                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {filteredActive.every((i) => selectedInstallers.has(i.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </button>
@@ -247,15 +247,15 @@ export function InstallersSection({
                           className="flex-shrink-0"
                         >
                           {selectedInstallers.has(inst.name)
-                            ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                            ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                             : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                         </button>
                       )}
                       <div>
-                        <p className="text-white text-sm font-medium">{inst.name}</p>
+                        <p className="text-[var(--text-primary)] text-sm font-medium">{inst.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {productCatalogInstallerConfigs[inst.name] && (
-                            <span className="text-[10px] text-[var(--accent-emerald-solid)]/70">Product Catalog</span>
+                            <span className="text-[10px] text-[var(--accent-emerald-text)]/70">Product Catalog</span>
                           )}
                           {instPrepaid.length > 0 && (
                             <span className="text-[10px] text-violet-400/70">Prepaid: {instPrepaid.join(', ')}</span>
@@ -286,7 +286,7 @@ export function InstallersSection({
                           }
                         }}
                         title="Configure pay schedule"
-                        className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] opacity-0 group-hover:opacity-100'}`}
+                        className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] opacity-0 group-hover:opacity-100'}`}
                       >
                         <DollarSign className="w-3.5 h-3.5" />
                       </button>
@@ -352,19 +352,19 @@ export function InstallersSection({
                                       if (e.key === 'Escape') setEditingPrepaid(null);
                                     }}
                                     autoFocus
-                                    className="flex-1 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
+                                    className="flex-1 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                                   />
                                   <button onClick={() => { if (editPrepaidVal.trim()) { updateInstallerPrepaidOption(inst.name, opt, editPrepaidVal.trim()); setEditingPrepaid(null); } }}
-                                    className="text-[var(--accent-emerald-solid)] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
+                                    className="text-[var(--accent-emerald-text)] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => setEditingPrepaid(null)}
                                     className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"><X className="w-3.5 h-3.5" /></button>
                                 </div>
                               ) : (
                                 <>
-                                  <span className="text-white text-xs font-medium">{opt}</span>
+                                  <span className="text-[var(--text-primary)] text-xs font-medium">{opt}</span>
                                   <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                     <button onClick={() => { setEditingPrepaid(`${inst.name}::${opt}`); setEditPrepaidVal(opt); }}
-                                      className="text-[var(--text-muted)] hover:text-[var(--accent-emerald-solid)] transition-colors"><Pencil className="w-3 h-3" /></button>
+                                      className="text-[var(--text-muted)] hover:text-[var(--accent-emerald-text)] transition-colors"><Pencil className="w-3 h-3" /></button>
                                     <button onClick={() => removeInstallerPrepaidOption(inst.name, opt)}
                                       className="text-[var(--text-muted)] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                                   </div>
@@ -404,7 +404,7 @@ export function InstallersSection({
                     const remainder = 100 - previewPct;
                     return (
                       <div className="px-4 pb-4 pt-1 border-t border-[var(--border-subtle)]/50">
-                        <p className="text-xs font-semibold text-[var(--accent-emerald-solid)]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
+                        <p className="text-xs font-semibold text-[var(--accent-emerald-text)]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
                         <div className="space-y-3">
                           <div>
                             <label className="block text-xs text-[var(--text-secondary)] mb-1">Install payment %</label>
@@ -427,9 +427,9 @@ export function InstallersSection({
                           </div>
                           <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                             <p className="text-xs text-[var(--text-secondary)] font-medium">
-                              M2: <span className="text-[var(--accent-emerald-solid)]">{previewPct}%</span> at Install
+                              M2: <span className="text-[var(--accent-emerald-text)]">{previewPct}%</span> at Install
                               <span className="text-[var(--text-dim)] mx-1.5">&middot;</span>
-                              M3: <span className="text-[var(--accent-emerald-solid)]">{remainder}%</span> at PTO
+                              M3: <span className="text-[var(--accent-emerald-text)]">{remainder}%</span> at PTO
                             </p>
                             {remainder === 0 && (
                               <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Full payment at install — no M3 created.</p>
@@ -474,10 +474,10 @@ export function InstallersSection({
                     return next;
                   });
                 }}
-                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors ml-auto"
+                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-auto"
               >
                 {archivedInstallers.every((i) => selectedInstallers.has(i.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </span>
@@ -498,7 +498,7 @@ export function InstallersSection({
                       className="flex-shrink-0"
                     >
                       {selectedInstallers.has(inst.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
@@ -509,7 +509,7 @@ export function InstallersSection({
                   <button
                     onClick={() => setInstallerActive(inst.name, true)}
                     title="Restore installer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>
