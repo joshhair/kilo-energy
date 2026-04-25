@@ -64,62 +64,6 @@
   /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
   --text-on-accent: #000;       /* black text on solid accent buttons */
   --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
-
-  /* ═══════════════════════════════════════════════════════════════════════
-     LEGACY ALIASES — Phase 3 deletes these.
-     Kept here so any code referencing the old names still renders. The
-     sweep migrates references off these one surface at a time.
-     Some legacy names map to their old hex literal (where the old value
-     differs from the canonical), others alias to the canonical token.
-     ═══════════════════════════════════════════════════════════════════════ */
-
-  --brand: #00e07a;                       /* literal — brand mark */
-  --brand-light: var(--accent-cyan-solid);
-  --brand-dark: #00b868;                  /* literal brand variant */
-
-  --surface-base: var(--surface-pressed);
-  --surface-deep: var(--surface-pressed);
-  --surface: var(--surface-card);
-  --surface-mobile-base: var(--surface-page);
-  --surface-mobile-card: var(--surface-card);
-
-  --text-mobile-muted: var(--text-muted);
-  --text-mobile-dim: var(--text-dim);
-
-  --border: var(--border-default);
-  --border-mobile: var(--border-subtle);
-
-  --accent-green: #00e07a;                /* literal brand green */
-  --accent-emerald: var(--accent-emerald-solid);
-  --accent-cyan: var(--accent-cyan-solid);
-  --accent-cyan2: var(--accent-cyan-solid);
-  --accent-amber: var(--accent-amber-solid);
-  --accent-warning: var(--accent-amber-solid);
-  --accent-red: var(--accent-red-solid);
-  --accent-danger: var(--accent-red-solid);
-  --accent-blue: var(--accent-blue-solid);
-  --accent-purple: var(--accent-purple-solid);
-  --accent-teal: var(--accent-teal-solid);
-
-  --d-surface: var(--surface-card);
-  --d-card: var(--surface-elevated);
-  --d-border: var(--border-default);
-  --d-border2: var(--border-subtle);
-  --d-text: var(--text-primary);
-  --d-sub: var(--text-secondary);
-  --d-muted: var(--text-muted);
-  --d-dim: var(--text-dim);
-  --d-green: var(--accent-emerald-solid);
-  --d-cyan: var(--accent-cyan-solid);
-  --d-amber: var(--accent-amber-solid);
-  --d-red: var(--accent-red-solid);
-  --d-blue: var(--accent-blue-solid);
-  --d-purple: var(--accent-purple-solid);
-  --d-teal: var(--accent-teal-solid);
-
-  --navy-base: var(--surface-page);
-  --navy-card: var(--surface-pressed);
-  --navy-hover: var(--surface-card);
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -228,13 +172,13 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px var(--navy-base),
+    0 0 0 2px var(--surface-page),
     0 0 0 4px rgba(0, 224, 122, 0.3); /* green accent focus ring */
 }
 
 body {
-  background-color: var(--navy-base);
-  color: var(--d-text, #f0f2f7);
+  background-color: var(--surface-page);
+  color: var(--text-primary);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* No font-smoothing override: let the browser + OS pick. Chrome on
      Windows 1080p gets its default subpixel (sharp). Chrome/Safari on
@@ -300,19 +244,9 @@ body {
 
 @media (max-width: 767px) {
   :root {
-    /* Mobile-specific aliases — Phase 3 removes these. All but the font
-       vars now resolve to canonical tokens; the prior "mobile palette"
-       was identical-or-near-identical to the canonical palette and is
-       collapsed here so light mode flows through automatically. */
-    --m-bg: var(--surface-page);
-    --m-card: var(--surface-card);
-    --m-border: var(--border-subtle);
-    --m-accent: var(--accent-emerald-solid);
-    --m-accent2: var(--accent-cyan-solid);
-    --m-text-muted: var(--text-muted);
-    --m-text-dim: var(--text-dim);
-    --m-danger: var(--accent-red-solid);
-    --m-warning: var(--accent-amber-solid);
+    /* Typography aliases — kept because every mobile component references
+       these inline via fontFamily: "var(--m-font-body, ...)". Color
+       aliases were deleted in Phase 3 of the design-token sweep. */
     --m-font-display: 'DM Serif Display', serif;
     --m-font-body: 'DM Sans', sans-serif;
   }
@@ -558,9 +492,9 @@ body {
 .calc-skeleton {
   background: linear-gradient(
     90deg,
-    var(--m-card, var(--surface-mobile-card)) 25%,
+    var(--surface-card) 25%,
     rgba(255,255,255,0.045) 50%,
-    var(--m-card, var(--surface-mobile-card)) 75%
+    var(--surface-card) 75%
   );
   background-size: 200% 100%;
   animation: calcSkeletonSweep 1.4s ease infinite;
@@ -665,22 +599,22 @@ body {
 /* Glass-morphism card surface with gradient wash + glow borders */
 .card-surface {
   position: relative;
-  background: var(--d-surface, #161920);
-  border: 1px solid var(--d-border, #272b35);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
 .card-surface:hover {
   transform: translateY(-1px);
-  border-color: var(--d-border2, #333849);
+  border-color: var(--border-subtle);
   box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Stat card variant — radial accent glow + bounce-scale on the number */
 .card-surface-stat {
   background: radial-gradient(ellipse at 90% 10%, var(--card-accent, transparent) 0%, transparent 60%),
-              var(--d-surface, #161920);
+              var(--surface-card);
 }
 
 .card-surface-stat .stat-value {
