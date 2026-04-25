@@ -14,11 +14,11 @@ export default function DashboardError({
     <div className="flex items-center justify-center min-h-[60vh] p-6">
       <div className="card-surface rounded-2xl p-8 max-w-md w-full text-center space-y-5">
         <div className="mx-auto w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center">
-          <AlertTriangle className="w-6 h-6 text-red-400" />
+          <AlertTriangle className="w-6 h-6 text-[var(--accent-red-text)]" />
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-white text-lg font-bold">Something went wrong</h2>
+          <h2 className="text-[var(--text-primary)] text-lg font-bold">Something went wrong</h2>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             {error.message || 'An unexpected error occurred.'}
           </p>
@@ -36,7 +36,7 @@ export default function DashboardError({
           </button>
           <Link
             href="/dashboard"
-            className="py-2.5 px-6 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-white border border-[var(--border)]/40 hover:border-[var(--border)] transition-all"
+            className="py-2.5 px-6 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]/40 hover:border-[var(--border)] transition-all"
           >
             Back to Dashboard
           </Link>

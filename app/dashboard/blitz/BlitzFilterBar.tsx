@@ -140,7 +140,7 @@ export function BlitzFilterBar({
             ref={(el) => { sortTabRefs.current[i] = el; }}
             onClick={() => onSort(opt.key)}
             className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-            style={sortBy === opt.key ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
+            style={sortBy === opt.key ? { color: 'var(--text-primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
           >
             {opt.label}
           </button>
@@ -174,7 +174,7 @@ export function BlitzFilterBar({
               ref={(el) => { statusTabRefs.current[i] = el; }}
               onClick={() => onStatusFilter(s)}
               className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={isActive ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
+              style={isActive ? { color: 'var(--text-primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
             >
               {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
               {count > 0 && (

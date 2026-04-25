@@ -241,9 +241,9 @@ export default function MobileBlitz() {
       <div className="px-5 pt-4 pb-24 space-y-4">
         <MobilePageHeader title="Blitz" />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <AlertCircle className="w-10 h-10" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
-          <p className="text-base font-medium" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Access Denied</p>
-          <p className="text-base text-center max-w-[240px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <AlertCircle className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
+          <p className="text-base font-medium" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Access Denied</p>
+          <p className="text-base text-center max-w-[240px]" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             You don&apos;t have permission to access Blitz. Contact an admin to request access.
           </p>
         </div>
@@ -371,7 +371,7 @@ export default function MobileBlitz() {
     <button
       onClick={() => setShowCreate(true)}
       className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
-      style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', boxShadow: '0 0 20px rgba(0,229,160,0.3)' }}
+      style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
       aria-label="Create blitz"
     >
       <Plus className="w-5 h-5" />
@@ -381,9 +381,9 @@ export default function MobileBlitz() {
       onClick={() => setShowCreate(true)}
       className="flex items-center justify-center min-h-[48px] px-4 rounded-2xl text-base font-semibold active:opacity-80 transition-colors"
       style={{
-        background: 'var(--m-card, var(--surface-mobile-card))',
-        border: '1px solid var(--m-border, var(--border-mobile))',
-        color: 'var(--m-text-muted, var(--text-mobile-muted))',
+        background: 'var(--surface-card)',
+        border: '1px solid var(--border-subtle)',
+        color: 'var(--text-muted)',
         fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
       }}
     >
@@ -442,10 +442,10 @@ export default function MobileBlitz() {
         <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
-              <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+              <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
+              <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
               {isAdmin && totalCosts > 0 && (
-                <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
                   {' \u00B7 '}
                   Cost/kW: ${totalKW > 0 ? (totalCosts / totalKW).toFixed(2) : '--'}
@@ -457,14 +457,14 @@ export default function MobileBlitz() {
           {(canJoin || participationLabel || isBlitzOwner) && (
             <div className="mt-3 flex items-center gap-2">
               {isBlitzOwner && (
-                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald)', background: 'rgba(0,229,160,0.12)' }}>Leader</span>
+                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
               )}
               {canJoin && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
                   disabled={joining}
                   className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
-                  style={{ color: 'var(--accent-emerald)', border: '1px solid var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
                   {joining ? 'Joining...' : 'Join'}
@@ -472,8 +472,8 @@ export default function MobileBlitz() {
               )}
               {participationLabel && !canJoin && !isBlitzOwner && (
                 <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
-                  color: participationLabel === 'Joined' ? 'var(--accent-emerald)' : participationLabel === 'Declined' ? 'var(--m-danger, var(--accent-danger))' : '#f59e0b',
-                  background: participationLabel === 'Joined' ? 'rgba(0,229,160,0.12)' : participationLabel === 'Declined' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                  color: participationLabel === 'Joined' ? 'var(--accent-emerald-solid)' : participationLabel === 'Declined' ? 'var(--accent-red-solid)' : '#f59e0b',
+                  background: participationLabel === 'Joined' ? 'var(--accent-emerald-soft)' : participationLabel === 'Declined' ? 'var(--accent-red-soft)' : 'var(--accent-amber-soft)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}>
                   <UserCheck className="w-3 h-3" /> {participationLabel}
@@ -492,7 +492,7 @@ export default function MobileBlitz() {
         <MobilePageHeader title="Blitz" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
+            <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: 'var(--surface-card)' }} />
           ))}
         </div>
       </div>
@@ -505,26 +505,26 @@ export default function MobileBlitz() {
 
       {/* Summary stat cards */}
       <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Active</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Active</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
         </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Upcoming</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Upcoming</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
         </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Deals</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Deals</p>
           <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{summaryTotalDeals}</p>
         </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total kW</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Total kW</p>
           <p className="text-2xl font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{formatCompactKWValue(summaryTotalKW)}</p>
         </div>
         {isAdmin && (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Costs</p>
-            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>
+            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
           </div>
         )}
       </div>
@@ -537,8 +537,8 @@ export default function MobileBlitz() {
             onClick={() => setStatusFilter(s.value)}
             className="min-h-[48px] px-4 py-2 text-base font-semibold rounded-full whitespace-nowrap active:scale-[0.91]"
             style={{
-              background: statusFilter === s.value ? 'var(--accent-emerald)' : 'transparent',
-              color: statusFilter === s.value ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              background: statusFilter === s.value ? 'var(--accent-emerald-solid)' : 'transparent',
+              color: statusFilter === s.value ? '#000' : 'var(--text-muted)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               transform: statusFilter === s.value ? 'scale(1.05)' : 'scale(1)',
               transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms ease, color 150ms ease',
@@ -552,29 +552,29 @@ export default function MobileBlitz() {
       {/* Search + Sort */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search blitzes…"
-            className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-white focus:outline-none focus:ring-1"
+            className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': 'var(--accent-emerald)',
+              '--tw-ring-color': 'var(--accent-emerald-solid)',
             } as React.CSSProperties}
           />
         </div>
         <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="min-h-[44px] rounded-xl px-3 text-sm text-white focus:outline-none focus:ring-1"
+          className="min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            '--tw-ring-color': 'var(--accent-emerald)',
+            '--tw-ring-color': 'var(--accent-emerald-solid)',
           } as React.CSSProperties}
         >
           {SORT_OPTIONS.map((o) => (
@@ -585,31 +585,31 @@ export default function MobileBlitz() {
 
       {/* Admin tabs: Blitzes / Requests */}
       {(isAdmin || userPerms.canRequestBlitz) && (
-        <div className="relative flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="relative flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div
             className="blitz-tab-indicator absolute top-1 bottom-1 rounded-xl pointer-events-none"
             style={{
               left: 4,
               width: 'calc(50% - 6px)',
-              background: 'var(--accent-emerald)',
+              background: 'var(--accent-emerald-solid)',
               transform: tab === 'requests' ? 'translateX(calc(100% + 4px))' : 'translateX(0)',
             }}
           />
           <button
             onClick={() => setTab('blitzes')}
             className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
-            style={{ background: 'transparent', color: tab === 'blitzes' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'transparent', color: tab === 'blitzes' ? '#000' : 'var(--text-muted)', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             Blitzes
           </button>
           <button
             onClick={() => setTab('requests')}
             className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
-            style={{ background: 'transparent', color: tab === 'requests' ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            style={{ background: 'transparent', color: tab === 'requests' ? '#000' : 'var(--text-muted)', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             Requests
             {pendingRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-full" style={{ background: 'var(--m-danger, var(--accent-danger))' }}>
+              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-[var(--text-primary)] rounded-full" style={{ background: 'var(--accent-red-solid)' }}>
                 {pendingRequests.length}
               </span>
             )}
@@ -630,7 +630,7 @@ export default function MobileBlitz() {
               const pendingFiltered = filteredBlitzes.filter((b) => pendingBlitzes.some((p) => p.id === b.id));
               const browseFiltered = filteredBlitzes.filter((b) => !myIds.has(b.id));
               const sectionLabelStyle = {
-                color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                color: 'var(--text-muted)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               };
               return (
@@ -683,8 +683,8 @@ export default function MobileBlitz() {
             <div className="space-y-3">
               {requests.map((req) => (
                 <MobileCard key={req.id}>
-                  <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
-                  <p className="text-base mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
+                  <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <div className="flex items-center gap-2 mt-3">
@@ -694,7 +694,7 @@ export default function MobileBlitz() {
                           onClick={() => handleApproveRequest(req.id)}
                           disabled={processingRequest.has(req.id)}
                           className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                         >
                           {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                         </button>
@@ -708,7 +708,7 @@ export default function MobileBlitz() {
                         </button>
                       </>
                     ) : (
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`} style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20'}`} style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                         {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>
@@ -730,8 +730,8 @@ export default function MobileBlitz() {
             <div className="space-y-3">
               {requests.filter((r) => r.requestedBy.id === effectiveRepId).map((req) => (
                 <MobileCard key={req.id}>
-                  <p className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'}
                   </p>
                   <MobileBadge
@@ -748,94 +748,94 @@ export default function MobileBlitz() {
       <MobileBottomSheet open={showCreate} onClose={() => setShowCreate(false)} title={canRequest && !canCreate ? 'Request Blitz' : 'Create Blitz'}>
         <form onSubmit={handleCreateBlitz} className="px-5 space-y-4 pb-2">
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Name</label>
             <input
               value={createForm.name}
               onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Austin April Blitz"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</label>
             <input
               value={createForm.location}
               onChange={(e) => setCreateForm((f) => ({ ...f, location: e.target.value }))}
               placeholder="e.g. Austin, TX"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing / Address</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing / Address</label>
             <input
               value={createForm.housing}
               onChange={(e) => setCreateForm((f) => ({ ...f, housing: e.target.value }))}
               placeholder="e.g. 123 Main St, Apt 4"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Start</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Start</label>
               <input
                 type="date"
                 value={createForm.startDate}
                 onChange={(e) => setCreateForm((f) => ({ ...f, startDate: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  '--tw-ring-color': 'var(--accent-emerald)',
+                  '--tw-ring-color': 'var(--accent-emerald-solid)',
                 } as React.CSSProperties}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>End</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>End</label>
               <input
                 type="date"
                 value={createForm.endDate}
                 onChange={(e) => setCreateForm((f) => ({ ...f, endDate: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  '--tw-ring-color': 'var(--accent-emerald)',
+                  '--tw-ring-color': 'var(--accent-emerald-solid)',
                 } as React.CSSProperties}
               />
             </div>
           </div>
           {isAdmin && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Blitz Leader</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Blitz Leader</label>
               <select
                 value={createForm.ownerId || effectiveRepId || ''}
                 onChange={(e) => setCreateForm((f) => ({ ...f, ownerId: e.target.value }))}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  '--tw-ring-color': 'var(--accent-emerald)',
+                  '--tw-ring-color': 'var(--accent-emerald-solid)',
                 } as React.CSSProperties}
               >
                 <option value={effectiveRepId || ''}>Me</option>
@@ -846,35 +846,35 @@ export default function MobileBlitz() {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Notes</label>
             <textarea
               value={createForm.notes}
               onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
               rows={3}
-              className="w-full rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-1 resize-none"
+              className="w-full rounded-xl px-3 py-2 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1 resize-none"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           {canRequest && !canCreate && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Expected Headcount</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Expected Headcount</label>
               <input
                 type="number"
                 min="1"
                 value={createForm.headcount}
                 onChange={(e) => setCreateForm((f) => ({ ...f, headcount: e.target.value }))}
                 placeholder="e.g. 8"
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  '--tw-ring-color': 'var(--accent-emerald)',
+                  '--tw-ring-color': 'var(--accent-emerald-solid)',
                 } as React.CSSProperties}
               />
             </div>
@@ -884,8 +884,8 @@ export default function MobileBlitz() {
             disabled={submittingCreate || !createForm.name.trim() || !createForm.startDate || !createForm.endDate}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 0 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

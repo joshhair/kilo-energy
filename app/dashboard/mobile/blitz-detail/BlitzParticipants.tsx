@@ -112,7 +112,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-          style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <Plus className="w-4 h-4" /> Add Participant
         </button>
@@ -121,7 +121,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
       {participants.length === 0 ? (
         <MobileEmptyState icon={Users} title="No participants yet" subtitle="Add reps to this blitz" />
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           {participants.map((p: any, i: number) => {
             const name = `${p.user.firstName} ${p.user.lastName}`;
             const stats = statsByUserId.get(p.user.id);
@@ -132,18 +132,18 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
               <div
                 key={p.id}
                 className="px-4 py-3 min-h-[56px]"
-                style={{ borderTop: i > 0 ? '1px solid var(--m-border, var(--border-mobile))' : undefined }}
+                style={{ borderTop: i > 0 ? '1px solid var(--border-subtle)' : undefined }}
               >
                 <div className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
                       {isOwner && (
-                        <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald)', background: 'rgba(0,229,160,0.12)' }}>Leader</span>
+                        <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
                       )}
                     </div>
                     {stats && p.joinStatus === 'approved' && (stats.deals > 0 || stats.kW > 0) && (
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         {stats.deals} deal{stats.deals !== 1 ? 's' : ''} · {stats.kW.toFixed(1)} kW
                       </p>
                     )}
@@ -157,7 +157,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                       disabled={processing.has(p.user.id)}
                       onClick={() => handleDecision(p.user.id, 'approved')}
                       className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 text-sm font-semibold text-black rounded-lg disabled:opacity-40"
-                      style={{ background: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                      style={{ background: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                     >
                       <Check className="w-3.5 h-3.5" /> Approve
                     </button>
@@ -165,7 +165,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                       disabled={processing.has(p.user.id)}
                       onClick={() => handleDecision(p.user.id, 'declined')}
                       className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 text-sm font-semibold rounded-lg disabled:opacity-40"
-                      style={{ color: 'var(--m-danger, var(--accent-danger))', border: '1px solid var(--m-danger, var(--accent-danger))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                      style={{ color: 'var(--accent-red-text)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                     >
                       <X className="w-3.5 h-3.5" /> Decline
                     </button>
@@ -183,9 +183,9 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                           onClick={() => handleAttendance(p.user.id, active ? null : s)}
                           className="flex-1 min-h-[36px] text-xs font-semibold rounded-lg transition-colors disabled:opacity-40 px-2"
                           style={{
-                            color: active ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                            background: active ? 'var(--accent-emerald)' : 'transparent',
-                            border: `1px solid ${active ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
+                            color: active ? '#000' : 'var(--text-muted)',
+                            background: active ? 'var(--accent-emerald-solid)' : 'transparent',
+                            border: `1px solid ${active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                           }}
                         >
@@ -200,7 +200,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                   <button
                     onClick={() => setRemoveTarget({ id: p.user.id, name })}
                     className="mt-3 text-xs font-semibold flex items-center gap-1 min-h-[32px]"
-                    style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     <Trash2 className="w-3 h-3" /> Remove
                   </button>
@@ -216,12 +216,12 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
           <select
             value={selectedRepId}
             onChange={(e) => setSelectedRepId(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              '--tw-ring-color': 'var(--accent-emerald)',
+              '--tw-ring-color': 'var(--accent-emerald-solid)',
             } as React.CSSProperties}
           >
             <option value="">Select a rep...</option>
@@ -234,8 +234,8 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
             disabled={!selectedRepId || adding}
             className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 0 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -247,11 +247,11 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
 
       <MobileBottomSheet open={!!removeTarget} onClose={() => setRemoveTarget(null)} title={removeTarget ? `Remove ${removeTarget.name}?` : undefined}>
         <div className="px-5 space-y-4">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This will remove them from the blitz. Deals where their co-participant is also no longer in the blitz will be unlinked.</p>
+          <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This will remove them from the blitz. Deals where their co-participant is also no longer in the blitz will be unlinked.</p>
           <button
             onClick={() => removeTarget && handleRemove(removeTarget.id)}
-            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-white rounded-lg transition-colors"
-            style={{ background: 'var(--m-danger, var(--accent-danger))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-[var(--text-primary)] rounded-lg transition-colors"
+            style={{ background: 'var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             <Trash2 className="w-4 h-4" /> Remove
           </button>

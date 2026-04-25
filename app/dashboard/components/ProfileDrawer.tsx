@@ -191,7 +191,7 @@ export default function ProfileDrawer({
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan2) 100%)',
+                background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1.2rem',
                 fontWeight: 700,
@@ -201,12 +201,12 @@ export default function ProfileDrawer({
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-lg font-bold text-white truncate" style={{ fontFamily: "'DM Sans', sans-serif" }}>{userName}</p>
+              <p className="text-lg font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: "'DM Sans', sans-serif" }}>{userName}</p>
               <span
                 className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold mt-1"
                 style={{
                   background: 'rgba(0,229,160,0.15)',
-                  color: 'var(--accent-emerald)',
+                  color: 'var(--accent-emerald-text)',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
@@ -243,7 +243,7 @@ export default function ProfileDrawer({
                 onClick={onClose}
                 className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
                 style={{
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: '1rem',
                   WebkitTapHighlightColor: 'transparent',
@@ -265,15 +265,15 @@ export default function ProfileDrawer({
             {isViewingAs && viewAsName && onClearViewAs ? (
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" style={{ color: '#f5a623' }} />
-                  <span className="text-sm" style={{ color: '#f5a623', fontFamily: "'DM Sans', sans-serif" }}>
-                    Viewing as <span className="text-white font-semibold">{viewAsName}</span>
+                  <Eye className="w-4 h-4" style={{ color: 'var(--accent-amber-text)' }} />
+                  <span className="text-sm" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Sans', sans-serif" }}>
+                    Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsName}</span>
                   </span>
                 </div>
                 <button
                   onClick={() => { onClearViewAs(); onClose(); }}
                   className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl min-h-[44px] active:scale-[0.94] active:bg-white/5 transition-[transform,background-color] duration-75"
-                  style={{ color: '#f5a623', WebkitTapHighlightColor: 'transparent' }}
+                  style={{ color: 'var(--accent-amber-text)', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <XCircle className="w-4 h-4" /> Exit
                 </button>
@@ -297,7 +297,7 @@ export default function ProfileDrawer({
                         value={viewAsSearch}
                         onChange={(e) => setViewAsSearch(e.target.value)}
                         placeholder="Search reps..."
-                        className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-white outline-none"
+                        className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] outline-none"
                         style={{ borderBottom: '1px solid var(--border-mobile)', fontFamily: "'DM Sans', sans-serif" }}
                       />
                     </div>
@@ -308,7 +308,7 @@ export default function ProfileDrawer({
                           <button
                             key={u.id}
                             onClick={() => { onViewAs(u); setViewAsOpen(false); setViewAsSearch(''); onClose(); }}
-                            className="w-full text-left px-4 py-3 text-sm text-white active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
+                            className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
                             style={{ borderBottom: '1px solid var(--border-mobile)', fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: 'transparent' }}
                           >
                             <span>{u.name}</span>
@@ -330,7 +330,7 @@ export default function ProfileDrawer({
               onClick={() => { onClose(); onLogout(); }}
               className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
               style={{
-                color: 'var(--accent-danger)',
+                color: 'var(--accent-red-text)',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '1rem',
                 WebkitTapHighlightColor: 'transparent',

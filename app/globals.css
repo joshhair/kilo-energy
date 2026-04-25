@@ -2,70 +2,160 @@
 @import "tailwindcss";
 
 :root {
-  /* Tell the browser this app is dark. Without this, native UI (<select>
-     option lists, scrollbars, form autofill, date pickers) renders in the
-     OS default scheme — on Windows that's a light-mode overlay on our dark
-     surfaces, producing unreadable light-on-light dropdowns. */
+  /* Tell the browser this app is dark by default. Native UI (<select>
+     options, scrollbars, autofill) follows this. The [data-theme="light"]
+     block below overrides to light when the user opts in via Settings. */
   color-scheme: dark;
 
-  /* ── Brand ──────────────────────────────────────────────────────────────── */
-  --brand: #00e07a;
-  --brand-light: #00c4f0;
-  --brand-dark: #00b868;
+  /* ═══════════════════════════════════════════════════════════════════════
+     CANONICAL TOKENS — see docs/design-tokens.md
+     The single source of truth. Every styled surface must reference these.
+     Light-mode values appear under [data-theme="light"] at the bottom of
+     this :root group.
+     ═══════════════════════════════════════════════════════════════════════ */
 
-  /* ── Surfaces ───────────────────────────────────────────────────────────── */
-  --surface-base: #0b0d11;
-  --surface-deep: #0f1117;
-  --surface: #161920;
-  --surface-card: #1d2028;
-  --surface-mobile-base: #060b13;
-  --surface-mobile-card: #0d1525;
+  /* ── Surface (5) ────────────────────────────────────────────────────── */
+  --surface-page: #050d18;
+  --surface-card: #161920;
+  --surface-elevated: #1d2028;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-pressed: #0d1525;
 
-  /* ── Text ────────────────────────────────────────────────────────────────── */
+  /* ── Text (4) ───────────────────────────────────────────────────────── */
   --text-primary: #f0f2f7;
   --text-secondary: #c2c8d8;
-  --text-muted: #8891a8;
-  --text-dim: #525c72;
-  --text-mobile-muted: #8899aa;
-  --text-mobile-dim: #445577;
+  --text-muted: #8899aa;       /* unified from #8891a8/#8899aa */
+  --text-dim: #445577;          /* unified from #525c72/#445577 */
 
-  /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --border: #272b35;
-  --border-subtle: #333849;
-  --border-mobile: #1a2840;
+  /* ── Border (3) ─────────────────────────────────────────────────────── */
+  --border-default: #272b35;
+  --border-subtle: #1a2840;
+  --border-strong: #334155;
 
-  /* ── Accents ─────────────────────────────────────────────────────────────── */
-  --accent-green: #00e07a;
-  --accent-emerald: #00e5a0;
-  --accent-cyan: #00c4f0;
-  --accent-cyan2: #00b4d8;
-  --accent-amber: #ffb020;
-  --accent-red: #ff5252;
-  --accent-blue: #4d9fff;
-  --accent-purple: #b47dff;
-  --accent-teal: #00d4c8;
-  --accent-danger: #ff6b6b;
-  --accent-warning: #f5a623;
+  /* ── Accent — 7 colors × 4 variants (28 tokens) ─────────────────────── */
+  /* solid: button bg / glow source. soft: tinted bg fill. glow: shadow.
+     text: foreground readable on a soft-tinted surface. In dark mode
+     -text equals -solid (same color reads fine on dark). In light mode
+     -text shifts to a darker, more saturated variant so contrast on
+     near-white backgrounds clears WCAG. */
+  --accent-emerald-solid: #00e5a0;
+  --accent-emerald-soft: rgba(0, 229, 160, 0.10);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.30);
+  --accent-emerald-text: #00e5a0;
 
-  /* ── Legacy aliases (match existing --d-* / --m-* references) ───────────── */
-  --d-surface: var(--surface);
-  --d-card: var(--surface-card);
-  --d-border: var(--border);
-  --d-border2: var(--border-subtle);
-  --d-text: var(--text-primary);
-  --d-sub: var(--text-secondary);
-  --d-muted: var(--text-muted);
-  --d-dim: var(--text-dim);
-  --d-green: var(--accent-green);
-  --d-cyan: var(--accent-cyan);
-  --d-amber: var(--accent-amber);
-  --d-red: var(--accent-red);
-  --d-blue: var(--accent-blue);
-  --d-purple: var(--accent-purple);
-  --d-teal: var(--accent-teal);
-  --navy-base: var(--surface-base);
-  --navy-card: var(--surface-deep);
-  --navy-hover: var(--surface-card);
+  --accent-cyan-solid: #00b4d8;
+  --accent-cyan-soft: rgba(0, 180, 216, 0.10);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+  --accent-cyan-text: #00b4d8;
+
+  --accent-blue-solid: #4d9fff;
+  --accent-blue-soft: rgba(77, 159, 255, 0.10);
+  --accent-blue-glow: rgba(77, 159, 255, 0.30);
+  --accent-blue-text: #4d9fff;
+
+  --accent-red-solid: #ef4444;
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.30);
+  --accent-red-text: #ef4444;
+
+  --accent-amber-solid: #f5a623;
+  --accent-amber-soft: rgba(245, 166, 35, 0.10);
+  --accent-amber-glow: rgba(245, 166, 35, 0.30);
+  --accent-amber-text: #f5a623;
+
+  --accent-purple-solid: #b47dff;
+  --accent-purple-soft: rgba(180, 125, 255, 0.10);
+  --accent-purple-glow: rgba(180, 125, 255, 0.30);
+  --accent-purple-text: #b47dff;
+
+  --accent-teal-solid: #00d4c8;
+  --accent-teal-soft: rgba(0, 212, 200, 0.10);
+  --accent-teal-glow: rgba(0, 212, 200, 0.30);
+  --accent-teal-text: #00d4c8;
+
+  /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
+  --text-on-accent: #000;       /* black text on solid accent buttons */
+  --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — activated by <html data-theme="light">
+   Only redefines the canonical tokens. Legacy aliases above resolve via
+   var() so they cascade automatically.
+   ═════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-page: #f7f8fb;
+  --surface-card: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.40);
+  --surface-pressed: #eef0f5;
+
+  --text-primary: #0a0e1a;
+  --text-secondary: #3a4358;
+  --text-muted: #5a6478;
+  --text-dim: #8a93a5;
+
+  --border-default: #dfe3eb;
+  --border-subtle: #eef0f5;
+  --border-strong: #a8b1c2;
+
+  /* Accent solids stay identical across themes — emerald is emerald.
+     Only the soft / glow alpha forms shift to compensate for the
+     higher-contrast light bg. */
+  --accent-emerald-soft: rgba(0, 229, 160, 0.14);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.20);
+  --accent-cyan-soft: rgba(0, 180, 216, 0.14);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.20);
+  --accent-blue-soft: rgba(77, 159, 255, 0.14);
+  --accent-blue-glow: rgba(77, 159, 255, 0.20);
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.20);
+  --accent-amber-soft: rgba(245, 166, 35, 0.14);
+  --accent-amber-glow: rgba(245, 166, 35, 0.20);
+  --accent-purple-soft: rgba(180, 125, 255, 0.14);
+  --accent-purple-glow: rgba(180, 125, 255, 0.20);
+  --accent-teal-soft: rgba(0, 212, 200, 0.14);
+  --accent-teal-glow: rgba(0, 212, 200, 0.20);
+
+  /* Light-mode text variants — darker, more saturated so they read on
+     light backgrounds. Solid/soft/glow stay identical across themes
+     (the cool brand emerald is intentional). */
+  --accent-emerald-text: #008866;
+  --accent-cyan-text: #007999;
+  --accent-blue-text: #1d6fe5;
+  --accent-red-text: #c0312f;
+  --accent-amber-text: #b87012;
+  --accent-purple-text: #7c4cd6;
+  --accent-teal-text: #018a83;
+
+  --text-on-accent: #ffffff;
+}
+
+/* ── Light-mode overrides for legacy class-based surfaces ───────────────────
+   A handful of utility classes (.card-surface, .table-header-frost,
+   .card-surface-interactive) bake hardcoded rgba(0,0,0,*) shadows or
+   navy gradient backgrounds that pre-date the token system. They look
+   correct in dark mode but render as muddy/dark blocks on light bg.
+   The overrides below swap those to soft, theme-correct equivalents.  */
+[data-theme="light"] .card-surface {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+[data-theme="light"] .card-surface:hover {
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+[data-theme="light"] .table-header-frost {
+  background: rgba(247, 248, 251, 0.92);
+}
+[data-theme="light"] .card-surface-interactive {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(247, 248, 251, 0.6) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+[data-theme="light"] .card-surface-interactive:hover {
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
@@ -130,13 +220,13 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px var(--navy-base),
+    0 0 0 2px var(--surface-page),
     0 0 0 4px rgba(0, 224, 122, 0.3); /* green accent focus ring */
 }
 
 body {
-  background-color: var(--navy-base);
-  color: var(--d-text, #f0f2f7);
+  background-color: var(--surface-page);
+  color: var(--text-primary);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* No font-smoothing override: let the browser + OS pick. Chrome on
      Windows 1080p gets its default subpixel (sharp). Chrome/Safari on
@@ -202,15 +292,9 @@ body {
 
 @media (max-width: 767px) {
   :root {
-    --m-bg: #060b13;
-    --m-card: #0d1525;
-    --m-border: #1a2840;
-    --m-accent: #00e5a0;
-    --m-accent2: #00b4d8;
-    --m-text-muted: #8899aa;
-    --m-text-dim: #445577;
-    --m-danger: #ff6b6b;
-    --m-warning: #f5a623;
+    /* Typography aliases — kept because every mobile component references
+       these inline via fontFamily: "var(--m-font-body, ...)". Color
+       aliases were deleted in Phase 3 of the design-token sweep. */
     --m-font-display: 'DM Serif Display', serif;
     --m-font-body: 'DM Sans', sans-serif;
   }
@@ -456,9 +540,9 @@ body {
 .calc-skeleton {
   background: linear-gradient(
     90deg,
-    var(--m-card, var(--surface-mobile-card)) 25%,
+    var(--surface-card) 25%,
     rgba(255,255,255,0.045) 50%,
-    var(--m-card, var(--surface-mobile-card)) 75%
+    var(--surface-card) 75%
   );
   background-size: 200% 100%;
   animation: calcSkeletonSweep 1.4s ease infinite;
@@ -563,22 +647,22 @@ body {
 /* Glass-morphism card surface with gradient wash + glow borders */
 .card-surface {
   position: relative;
-  background: var(--d-surface, #161920);
-  border: 1px solid var(--d-border, #272b35);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
 .card-surface:hover {
   transform: translateY(-1px);
-  border-color: var(--d-border2, #333849);
+  border-color: var(--border-subtle);
   box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Stat card variant — radial accent glow + bounce-scale on the number */
 .card-surface-stat {
   background: radial-gradient(ellipse at 90% 10%, var(--card-accent, transparent) 0%, transparent 60%),
-              var(--d-surface, #161920);
+              var(--surface-card);
 }
 
 .card-surface-stat .stat-value {

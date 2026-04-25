@@ -15,8 +15,8 @@ import { myCommissionOnProject, type CommissionStatus } from '../../../lib/commi
 
 // Color per commission status — aligns with hero colors used elsewhere.
 const COMMISSION_COLORS: Record<CommissionStatus, { fg: string; bg: string; label: string }> = {
-  paid:      { fg: 'var(--accent-emerald)', bg: 'rgba(0,229,160,0.12)',  label: 'Paid' },
-  partial:   { fg: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)', label: 'Partial' },
+  paid:      { fg: 'var(--accent-emerald-solid)', bg: 'var(--accent-emerald-soft)',  label: 'Paid' },
+  partial:   { fg: 'var(--accent-amber-solid)', bg: 'var(--accent-amber-soft)', label: 'Partial' },
   projected: { fg: 'var(--text-secondary)', bg: 'rgba(194,200,216,0.08)', label: 'Projected' },
 };
 
@@ -271,16 +271,16 @@ export default function MobileProjects() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search customers..."
-          className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-white outline-none transition-colors"
+          className="w-full min-h-[48px] rounded-2xl px-4 pl-10 text-base text-[var(--text-primary)] outline-none transition-colors"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         />
@@ -290,10 +290,10 @@ export default function MobileProjects() {
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-        className="w-full min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+        className="w-full min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
         style={{
-          background: 'var(--m-card, var(--surface-mobile-card))',
-          border: '1px solid var(--m-border, var(--border-mobile))',
+          background: 'var(--surface-card)',
+          border: '1px solid var(--border-subtle)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
         }}
       >
@@ -314,10 +314,10 @@ export default function MobileProjects() {
           <select
             value={installerFilter}
             onChange={(e) => setInstallerFilter(e.target.value)}
-            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -328,10 +328,10 @@ export default function MobileProjects() {
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-white outline-none appearance-none"
+          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -348,13 +348,13 @@ export default function MobileProjects() {
             ? {
                 background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                 border: '1px solid rgba(0, 224, 122, 0.45)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }
             : {
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
-                color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-muted)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
           title="Show only agent-generated test deals ([QA] prefix)"
@@ -365,7 +365,7 @@ export default function MobileProjects() {
 
       {/* My Deals / All Deals toggle — admin/PM only */}
       {!isRep && (
-        <div className="flex gap-0.5 rounded-xl p-1 self-start" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="flex gap-0.5 rounded-xl p-1 self-start" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           {(['all', 'mine'] as const).map((scope) => (
             <button
               key={scope}
@@ -375,12 +375,12 @@ export default function MobileProjects() {
                 ? {
                     background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
                     border: '1px solid rgba(0, 224, 122, 0.45)',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }
                 : {
                     border: '1px solid transparent',
-                    color: 'var(--m-text-muted, var(--text-mobile-muted))',
+                    color: 'var(--text-muted)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }
               }
@@ -406,7 +406,7 @@ export default function MobileProjects() {
               // the wrong button.
               left: 0,
               height: 36,
-              background: 'var(--accent-emerald)',
+              background: 'var(--accent-emerald-solid)',
               transform: `translateX(${spotlight.left}px)`,
               width: spotlight.width,
               transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), width 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -424,8 +424,8 @@ export default function MobileProjects() {
               className="relative z-10 shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-medium active:scale-[0.92]"
               style={{
                 background: 'transparent',
-                color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: isActive ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                color: isActive ? '#000' : 'var(--text-muted)',
+                border: isActive ? 'none' : '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 transition: 'color 200ms ease, transform 75ms cubic-bezier(0.34,1.56,0.64,1)',
               }}
@@ -433,8 +433,8 @@ export default function MobileProjects() {
               {phase}
               {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
                 <span style={{
-                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--m-border, var(--border-mobile))',
-                  color: isActive ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--border-subtle)',
+                  color: isActive ? '#000' : 'var(--text-muted)',
                   borderRadius: 999,
                   fontSize: '0.68rem',
                   fontWeight: 700,
@@ -468,27 +468,27 @@ export default function MobileProjects() {
             {/* Simple folder illustration — matches the visual
                 language used in the desktop Projects empty state. */}
             <svg width="72" height="72" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
-              <rect x="10" y="24" width="60" height="44" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-              <path d="M10 24 L30 24 L36 18 L70 18 L70 32 L10 32 Z" fill="#0f172a" stroke="#334155" strokeWidth="1.5" strokeLinejoin="round"/>
+              <rect x="10" y="24" width="60" height="44" rx="6" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
+              <path d="M10 24 L30 24 L36 18 L70 18 L70 32 L10 32 Z" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5" strokeLinejoin="round"/>
             </svg>
             {hasActiveFilters ? (
               <>
-                <p className="text-base font-semibold text-white">No projects match your filters</p>
-                <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <p className="text-base font-semibold text-[var(--text-primary)]">No projects match your filters</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   Try a different phase, installer, or clear your search.
                 </p>
                 <button
                   onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); setStatusFilter('active'); setDealScope(isRep ? 'mine' : 'all'); setQaOnly(false); }}
-                  className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-white"
-                  style={{ background: 'var(--m-border, var(--border-mobile))' }}
+                  className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-[var(--text-primary)]"
+                  style={{ background: 'var(--border-subtle)' }}
                 >
                   Clear filters
                 </button>
               </>
             ) : (
               <>
-                <p className="text-base font-semibold text-white">No projects yet</p>
-                <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <p className="text-base font-semibold text-[var(--text-primary)]">No projects yet</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   {effectiveRole === 'admin' || effectiveRole === 'project_manager'
                     ? 'Projects will appear here once deals are submitted.'
                     : 'Submit your first deal to get started.'}
@@ -498,8 +498,8 @@ export default function MobileProjects() {
                     href="/dashboard/new-deal"
                     className="mt-2 inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold"
                     style={{
-                      background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))',
-                      color: '#050d18',
+                      background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                      color: 'var(--surface-page)',
                     }}
                   >
                     <Plus className="w-4 h-4" />
@@ -526,13 +526,13 @@ export default function MobileProjects() {
               >
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
+                    <span className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
                     {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
                   </div>
                   <MobileBadge value={project.phase} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-base min-w-0 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base min-w-0 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {project.installer} &middot; {project.kWSize} kW &middot; {relativeTime(project.soldDate)}
                   </p>
                   {pill && (
@@ -553,7 +553,7 @@ export default function MobileProjects() {
                   )}
                 </div>
                 {phaseAvgDays[project.phase] !== undefined && (
-                  <p style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
+                  <p style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.85rem', marginTop: 2 }}>
                     Phase avg: {phaseAvgDays[project.phase]}d
                   </p>
                 )}
@@ -566,8 +566,8 @@ export default function MobileProjects() {
             onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
             className="mt-2 mx-auto block min-h-[44px] px-5 rounded-xl text-sm font-semibold transition-colors"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               color: 'var(--m-text, #fff)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}

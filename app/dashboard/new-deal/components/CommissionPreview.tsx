@@ -80,7 +80,7 @@ export function CommissionPreview({
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--text-secondary)]">M2 commission</span>
-              <span className="text-[var(--accent-green)] font-semibold">
+              <span className="text-[var(--accent-emerald-text)] font-semibold">
                 <TickerAmount amount={subDealerCommission} />
               </span>
             </div>
@@ -100,7 +100,7 @@ export function CommissionPreview({
             )}
             <div className="flex justify-between">
               <span style={{ color: 'var(--text-muted)' }}>Closer commission</span>
-              <span className="font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
+              <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
                 <TickerAmount amount={closerTotal} />
                 <span className="text-[var(--text-muted)] font-normal">
                   {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})
@@ -109,13 +109,13 @@ export function CommissionPreview({
             </div>
             {setterId && setterBaselinePerW === 0 && (
               <div className="flex justify-between items-center rounded-lg px-3 py-2" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)' }}>
-                <span className="text-amber-400 text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
+                <span className="text-[var(--accent-amber-text)] text-xs">Setter baseline unavailable — verify system size and product selection. Setter commission cannot be calculated.</span>
               </div>
             )}
             {setterId && setterTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Setter commission</span>
-                <span className="text-[var(--accent-green)] font-semibold">
+                <span className="text-[var(--accent-emerald-text)] font-semibold">
                   <TickerAmount amount={setterTotal} />
                   <span className="text-[var(--text-muted)] font-normal">
                     {' '}(M1: <TickerAmount amount={setterM1} className="tabular-nums" /> · M2: <TickerAmount amount={setterM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={setterM3} className="tabular-nums" /></>})
@@ -126,7 +126,7 @@ export function CommissionPreview({
             {trainerRep && trainerTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Trainer override ({trainerRep.name})</span>
-                <span className="text-amber-400 font-semibold">
+                <span className="text-[var(--accent-amber-text)] font-semibold">
                   <TickerAmount amount={trainerTotal} />
                   <span className="text-[var(--text-muted)] font-normal"> (${trainerOverrideRate.toFixed(2)}/W)</span>
                 </span>
@@ -135,7 +135,7 @@ export function CommissionPreview({
             {closerTrainerRep && closerTrainerTotal > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--text-secondary)]">Trainer override ({closerTrainerRep.name})</span>
-                <span className="text-amber-400 font-semibold">
+                <span className="text-[var(--accent-amber-text)] font-semibold">
                   <TickerAmount amount={closerTrainerTotal} />
                   <span className="text-[var(--text-muted)] font-normal"> (${closerTrainerOverrideRate.toFixed(2)}/W)</span>
                 </span>

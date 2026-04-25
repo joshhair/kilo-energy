@@ -7,12 +7,12 @@ const LAST_UPDATED = '2026-04-15';
 export default function PrivacyPage() {
   return (
     <>
-      <h1 className="text-3xl font-black text-white mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
+      <h1 className="text-3xl font-black text-[var(--text-primary)] mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
         Privacy Policy
       </h1>
-      <p className="text-sm text-white/50 mb-8">Last updated {LAST_UPDATED}</p>
+      <p className="text-sm text-[var(--text-primary)]/50 mb-8">Last updated {LAST_UPDATED}</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">What we collect</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">What we collect</h2>
       <p>
         Kilo Energy is a workspace tool for solar sales teams. To make it work, we store the following about you when your
         admin invites you:
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
       </ul>
       <p>We do <strong>not</strong> collect: Social Security numbers, dates of birth, payment card data, banking information, or location data.</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">How we use it</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">How we use it</h2>
       <ul className="list-disc pl-6 space-y-1 my-3">
         <li>Show you your pipeline, pay, and trainer overrides.</li>
         <li>Compute commission and route payments to the correct rep at the correct milestone.</li>
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       </ul>
       <p>We do not sell your data, share it with advertisers, or use it to train AI models.</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Where it lives (subprocessors)</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Where it lives (subprocessors)</h2>
       <p>
         We use the following third parties to run Kilo Energy. Each is bound by their own DPA; click through for their
         privacy policies.
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
       </ul>
       <p>We do not send your records to any other third party.</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">How long we keep it</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">How long we keep it</h2>
       <p>
         Your records persist while you are an active member of a workspace. When your admin deactivates you, your record
         is retained but inactive. On verified erasure request (see below), personal identifiers are anonymized — your
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
         erasure.
       </p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Your rights</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Your rights</h2>
       <ul className="list-disc pl-6 space-y-1 my-3">
         <li>
           <strong>Access / Portability</strong>: fetch a full JSON export of your own records via{' '}
@@ -77,23 +77,23 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Security</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Security</h2>
       <p>
         All connections use TLS. Auth tokens are httpOnly and managed by Clerk. Role-based access controls are enforced
         server-side; admins, reps, sub-dealers, and project managers only see the records and fields appropriate to their
         role. Financial mutations are recorded to an audit log.
       </p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Children</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Children</h2>
       <p>Kilo Energy is not directed at anyone under 18 and we do not knowingly collect data from children.</p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Changes</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Changes</h2>
       <p>
         If we make material changes to this policy, we will post the updated version here and update the &ldquo;Last updated&rdquo; date.
         Continued use after changes constitutes acceptance.
       </p>
 
-      <h2 className="text-xl font-bold text-white mt-8 mb-3">Contact</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-8 mb-3">Contact</h2>
       <p>
         Privacy questions: <a href="mailto:privacy@kiloenergies.com" className="text-emerald-400 hover:underline">privacy@kiloenergies.com</a>
       </p>

@@ -8,13 +8,13 @@ import { formatCurrency } from '../../../../lib/utils';
 import { getBlitzProjectBaselines } from '../../../../lib/blitzComputed';
 
 const COST_BAR: Record<string, string> = {
-  housing: 'var(--accent-emerald)',
+  housing: 'var(--accent-emerald-solid)',
   travel: '#a78bfa',
   gas: '#f59e0b',
-  meals: 'var(--accent-emerald)',
+  meals: 'var(--accent-emerald-solid)',
   incentives: '#ec4899',
   swag: '#fb923c',
-  other: 'var(--m-text-dim, #445577)',
+  other: 'var(--text-dim)',
 };
 
 interface Props {
@@ -71,7 +71,7 @@ export default function BlitzProfitability({
   ];
 
   const toneColor = (t: 'emerald' | 'amber' | 'red') =>
-    t === 'emerald' ? 'var(--accent-emerald)' : t === 'amber' ? '#f59e0b' : '#f87171';
+    t === 'emerald' ? 'var(--accent-emerald-solid)' : t === 'amber' ? '#f59e0b' : '#f87171';
 
   return (
     <div className="space-y-4">
@@ -81,25 +81,25 @@ export default function BlitzProfitability({
             key={k.label}
             className="rounded-xl p-3"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
               animation: 'fadeUpIn 350ms cubic-bezier(0.16, 1, 0.3, 1) both',
               animationDelay: `${i * 70}ms`,
             }}
           >
-            <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.label}</p>
+            <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.label}</p>
             <p className="text-xl font-bold mt-1 flex items-center gap-1.5 leading-none" style={{ color: toneColor(k.tone), fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               {k.value}
               {k.icon !== undefined && (k.icon ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />)}
             </p>
-            {k.sub && <p className="text-[10px] mt-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.sub}</p>}
+            {k.sub && <p className="text-[10px] mt-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{k.sub}</p>}
           </div>
         ))}
       </div>
 
       {categories.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Cost Breakdown</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Cost Breakdown</p>
           <div className="space-y-2.5">
             {categories.map(([cat, amt], idx) => {
               const pct = totalCosts > 0 ? (amt / totalCosts) * 100 : 0;
@@ -107,10 +107,10 @@ export default function BlitzProfitability({
               return (
                 <div key={cat} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs capitalize font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{cat}</span>
-                    <span className="text-xs tabular-nums" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(amt)} · {pct.toFixed(0)}%</span>
+                    <span className="text-xs capitalize font-semibold" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{cat}</span>
+                    <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(amt)} · {pct.toFixed(0)}%</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
                     <div
                       className="h-full rounded-full bar-grow-anim"
                       style={{ background: color, '--bar-w': `${pct}%`, '--bar-delay': `${80 + idx * 70}ms` } as React.CSSProperties}
@@ -124,8 +124,8 @@ export default function BlitzProfitability({
       )}
 
       {perProject.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Projects by margin</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Projects by margin</p>
           <div className="space-y-2">
             {perProject.map(({ p, margin }) => {
               const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
@@ -137,12 +137,12 @@ export default function BlitzProfitability({
                   style={{ background: 'rgba(0,0,0,0.15)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
-                    <p className="text-[11px] truncate" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{closerName} · {p.kWSize?.toFixed(1)} kW</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                    <p className="text-[11px] truncate" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{closerName} · {p.kWSize?.toFixed(1)} kW</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--m-text-dim, #445577)' }}>Margin</p>
-                    <p className="text-sm font-bold tabular-nums" style={{ color: margin >= 0 ? 'var(--accent-emerald)' : '#f87171', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(margin))}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>Margin</p>
+                    <p className="text-sm font-bold tabular-nums" style={{ color: margin >= 0 ? 'var(--accent-emerald-solid)' : '#f87171', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(margin))}</p>
                   </div>
                 </button>
               );
@@ -154,10 +154,10 @@ export default function BlitzProfitability({
       {approvedParticipants.length > 0 && leaderboard.length > 0 && (() => {
         const repStats = leaderboard.map((r) => ({ user: r.user, deals: r.deals, kw: r.kW, payout: r.payout }));
         const maxKW = Math.max(...repStats.map((r) => r.kw), 1);
-        const barColors = ['#f59e0b', 'var(--m-text-dim, #445577)', '#ea580c', 'var(--m-text-dim, #445577)'];
+        const barColors = ['#f59e0b', 'var(--text-dim)', '#ea580c', 'var(--text-dim)'];
         return (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Performance</p>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Performance</p>
             <div className="space-y-3">
               {repStats.map((rep, idx) => (
                 <div key={rep.user.id} className="space-y-1">
@@ -165,18 +165,18 @@ export default function BlitzProfitability({
                     <div className="flex items-center gap-2 min-w-0">
                       <div
                         className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                        style={{ background: idx === 0 ? 'rgba(245,158,11,0.2)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--m-text-muted, var(--text-mobile-muted))', border: `1px solid ${idx === 0 ? 'rgba(245,158,11,0.3)' : 'var(--m-border, var(--border-mobile))'}` }}
+                        style={{ background: idx === 0 ? 'rgba(245,158,11,0.2)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--text-muted)', border: `1px solid ${idx === 0 ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'}` }}
                       >
                         {idx + 1}
                       </div>
-                      <span className="text-sm font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.user.firstName} {rep.user.lastName}</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.user.firstName} {rep.user.lastName}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums">
-                      <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.deals}d · {rep.kw.toFixed(1)} kW</span>
-                      <span className="font-semibold" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(rep.payout)}</span>
+                      <span style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.deals}d · {rep.kw.toFixed(1)} kW</span>
+                      <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatCurrency(rep.payout)}</span>
                     </div>
                   </div>
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--m-border, var(--border-mobile))' }}>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
                     <div
                       className="h-full rounded-full bar-grow-anim"
                       style={{ background: barColors[Math.min(idx, barColors.length - 1)], '--bar-w': `${(rep.kw / maxKW) * 100}%`, '--bar-delay': `${idx * 60}ms` } as React.CSSProperties}

@@ -44,14 +44,14 @@ export const ACCENT_COLOR_MAP: Record<string, string> = {
 
 /** Pipeline phase color palette — mirrors PHASE_PILL in projects/page.tsx */
 const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: string; chipBg: string; chipBorder: string }> = {
-  'New':             { bar: 'bg-sky-500',      text: 'text-sky-300',     dot: 'bg-sky-400',     chipBg: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         chipBorder: 'border-sky-700/30'      },
-  'Acceptance':      { bar: 'bg-indigo-500',   text: 'text-indigo-300',  dot: 'bg-indigo-400',  chipBg: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    chipBorder: 'border-indigo-700/30'   },
-  'Site Survey':     { bar: 'bg-violet-500',   text: 'text-violet-300',  dot: 'bg-violet-400',  chipBg: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    chipBorder: 'border-violet-700/30'   },
-  'Design':          { bar: 'bg-fuchsia-500',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400', chipBg: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  chipBorder: 'border-fuchsia-700/30'  },
-  'Permitting':      { bar: 'bg-amber-500',    text: 'text-amber-300',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
-  'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
-  'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
-  'PTO':             { bar: 'bg-[var(--accent-green)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'New':             { bar: 'bg-sky-500',      text: 'text-[var(--accent-cyan-text)]',     dot: 'bg-sky-400',     chipBg: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         chipBorder: 'border-sky-700/30'      },
+  'Acceptance':      { bar: 'bg-indigo-500',   text: 'text-[var(--accent-blue-text)]',  dot: 'bg-indigo-400',  chipBg: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    chipBorder: 'border-indigo-700/30'   },
+  'Site Survey':     { bar: 'bg-violet-500',   text: 'text-[var(--accent-purple-text)]',  dot: 'bg-violet-400',  chipBg: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    chipBorder: 'border-violet-700/30'   },
+  'Design':          { bar: 'bg-fuchsia-500',  text: 'text-[var(--accent-purple-text)]', dot: 'bg-fuchsia-400', chipBg: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  chipBorder: 'border-fuchsia-700/30'  },
+  'Permitting':      { bar: 'bg-amber-500',    text: 'text-[var(--accent-amber-text)]',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
+  'Pending Install': { bar: 'bg-orange-500',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
+  'Installed':       { bar: 'bg-teal-500',     text: 'text-[var(--accent-teal-text)]',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
+  'PTO':             { bar: 'bg-[var(--accent-emerald-solid)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
   'Completed':       { bar: 'bg-slate-500',     text: 'text-slate-300',   dot: 'bg-slate-400',   chipBg: 'bg-gradient-to-r from-slate-900/40 to-slate-800/20',       chipBorder: 'border-slate-700/30'    },
 };
 
@@ -189,7 +189,7 @@ export function NeedsAttentionSection({
     <div
       ref={sectionRef}
       className={`card-surface rounded-2xl mb-6 ${sectionVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
-      style={totalCount === 0 ? { borderLeft: '3px solid var(--accent-green)' } : undefined}
+      style={totalCount === 0 ? { borderLeft: '3px solid var(--accent-emerald-solid)' } : undefined}
     >
       {/* Collapsible header */}
       <button
@@ -199,24 +199,24 @@ export function NeedsAttentionSection({
       >
         <div className="flex items-center gap-3">
           <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${totalCount > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
-          <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-green)]/15'}`}>
+          <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-emerald-solid)]/15'}`}>
             {totalCount > 0
-              ? <AlertCircle className="w-4 h-4 text-amber-400" />
-              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+              ? <AlertCircle className="w-4 h-4 text-[var(--accent-amber-text)]" />
+              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             }
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             {totalCount > 0 ? 'Needs Attention' : 'All Clear'}
           </h2>
           {totalCount > 0 && (
-            <span className="bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-amber-500/20 border border-amber-500/30 text-[var(--accent-amber-text)] text-xs font-bold px-2 py-0.5 rounded-full">
               {totalCount}
             </span>
           )}
         </div>
         {open
-          ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
-          : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+          ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+          : <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
         }
       </button>
 
@@ -228,7 +228,7 @@ export function NeedsAttentionSection({
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
-                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
               </div>
               <p className="text-[var(--text-secondary)] text-sm">All clear! No items need attention right now.</p>
             </div>
@@ -264,35 +264,35 @@ export function NeedsAttentionSection({
                               : 'bg-amber-500/15'
                           }`}
                         >
-                          {item.kind === 'flagged' && <Flag className="w-4 h-4 text-red-400" />}
+                          {item.kind === 'flagged' && <Flag className="w-4 h-4 text-[var(--accent-red-text)]" />}
                           {item.kind === 'stuck' && isCritical && (
                             <span className="relative flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-red-400" />
+                              <Clock className="w-4 h-4 text-[var(--accent-red-text)]" />
                               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                             </span>
                           )}
                           {item.kind === 'stuck' && isBehind && !isCritical && (
-                            <Clock className="w-4 h-4 text-orange-400" />
+                            <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" />
                           )}
                           {item.kind === 'stuck' && !isBehind && (
-                            <Clock className="w-4 h-4 text-amber-400" />
+                            <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" />
                           )}
-                          {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-yellow-400" />}
+                          {item.kind === 'on-hold' && <PauseCircle className="w-4 h-4 text-[var(--accent-amber-text)]" />}
                         </div>
                       );
                     })()}
 
                     {/* Text */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{item.customerName}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium truncate">{item.customerName}</p>
                       <p className={`text-xs ${
                         (() => {
                           if (item.kind !== 'stuck') return 'text-[var(--text-muted)]';
                           const threshold = item.stuckPhase ? (PHASE_STUCK_THRESHOLDS[item.stuckPhase] ?? 14) : 14;
                           const ratio = (item.staleDays ?? 0) / threshold;
-                          if (ratio >= 2) return 'text-red-400';
-                          if (ratio >= 1.5) return 'text-orange-400';
-                          return 'text-amber-400';
+                          if (ratio >= 2) return 'text-[var(--accent-red-text)]';
+                          if (ratio >= 1.5) return 'text-[var(--accent-amber-text)]';
+                          return 'text-[var(--accent-amber-text)]';
                         })()
                       }`}>
                         {item.kind === 'flagged' && 'Flagged for review'}
@@ -313,7 +313,7 @@ export function NeedsAttentionSection({
                             e.stopPropagation();
                             onUnflag(item.projectId);
                           }}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           Unflag
                         </button>
@@ -321,7 +321,7 @@ export function NeedsAttentionSection({
                       {item.kind === 'on-hold' && (
                         <Link
                           href={`/dashboard/projects/${item.projectId}?action=resume`}
-                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-white transition-colors"
+                          className="px-2 py-0.5 text-xs rounded-md bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           Resume
                         </Link>
@@ -341,7 +341,7 @@ export function NeedsAttentionSection({
                   <span className="text-[var(--text-muted)] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
                   <Link
                     href="/dashboard/projects"
-                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors"
+                    className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors"
                   >
                     View all projects →
                   </Link>
@@ -355,10 +355,10 @@ export function NeedsAttentionSection({
                   className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-500/15">
-                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">Payroll needs review</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">Payroll needs review</p>
                     <p className="text-xs text-[var(--text-muted)]">{payrollAttentionCount} entr{payrollAttentionCount !== 1 ? 'ies' : 'y'} in Draft or Pending</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
@@ -435,11 +435,11 @@ export function MyTasksSection({
     <div className="card-surface rounded-2xl mb-6">
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-        <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-          <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+        <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+          <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-text)]" />
         </div>
-        <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
-        <span className="bg-[var(--accent-green)]/20 border border-[var(--accent-green)]/30 text-[var(--accent-green)] text-xs font-bold px-2 py-0.5 rounded-full">
+        <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">My Tasks</h2>
+        <span className="bg-[var(--accent-emerald-solid)]/20 border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] text-xs font-bold px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -476,16 +476,16 @@ export function MyTasksSection({
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-green)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-green)] flex-shrink-0"
+                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-emerald-text)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-emerald-solid)] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[var(--text-secondary)]'}`}>
+                <p className={`text-sm font-medium truncate ${overdue ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-secondary)]'}`}>
                   {task.text}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Link
                     href={`/dashboard/projects/${task.projectId}#chatter`}
-                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors truncate max-w-[140px]"
+                    className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors truncate max-w-[140px]"
                   >
                     {task.projectName}
                   </Link>
@@ -495,7 +495,7 @@ export function MyTasksSection({
                     <span
                       className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                         overdue
-                          ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                          ? 'bg-red-500/15 text-[var(--accent-red-text)] border border-red-500/20'
                           : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'
                       }`}
                     >
@@ -546,7 +546,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
     return (
       <div className="border border-dashed border-[var(--border-subtle)] rounded-2xl px-5 py-12 text-center">
         <FolderKanban className="w-8 h-8 text-[var(--text-dim)] mx-auto mb-3" />
-        <p className="text-white font-bold text-sm mb-1">No active projects — submit your first deal</p>
+        <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No active projects — submit your first deal</p>
         <p className="text-[var(--text-muted)] text-xs mt-1">Your pipeline will appear here once you close a deal.</p>
       </div>
     );
@@ -582,7 +582,7 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
         {/* Floating tooltip — rendered outside overflow-hidden bar, relative to wrapper */}
         {tooltip && (
           <div
-            className="pointer-events-none absolute -top-8 bg-[var(--surface-card)] border border-[var(--border)] text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
+            className="pointer-events-none absolute -top-8 bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] text-xs px-2 py-1 rounded-lg whitespace-nowrap z-20 -translate-x-1/2"
             style={{ left: tooltip.x }}
           >
             {tooltip.phase}: {phaseCounts[tooltip.phase]} project{phaseCounts[tooltip.phase] !== 1 ? 's' : ''}
@@ -613,24 +613,31 @@ export function PipelineOverview({ activeProjects }: { activeProjects: Array<{ p
 
 // ─── Phase Color Constants ───────────────────────────────────────────────────
 
-const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400'     },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400'  },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400'  },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400'   },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400'    },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400'     },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+const PHASE_HEX: Record<string, { solid: string; text: string }> = {
+  'New':             { solid: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)'    },
+  'Acceptance':      { solid: 'var(--accent-blue-solid)',    text: 'var(--accent-blue-text)'    },
+  'Site Survey':     { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Design':          { solid: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)'  },
+  'Permitting':      { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Pending Install': { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
+  'Installed':       { solid: 'var(--accent-teal-solid)',    text: 'var(--accent-teal-text)'    },
+  'PTO':             { solid: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)' },
+  'Cancelled':       { solid: 'var(--accent-red-solid)',     text: 'var(--accent-red-text)'     },
+  'On Hold':         { solid: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)'   },
 };
 
 export function PhaseBadge({ phase }: { phase: string }) {
-  const s = PHASE_PILL[phase] ?? { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
+  const s = PHASE_HEX[phase] ?? { solid: 'var(--text-muted)', text: 'var(--text-secondary)' };
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${s.gradient} ${s.border} ${s.shadow} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={{
+        background: `color-mix(in srgb, ${s.solid} 14%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${s.solid} 30%, transparent)`,
+        color: s.text,
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.solid }} />
       {phase}
     </span>
   );
@@ -640,7 +647,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -649,7 +656,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 
 export function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)]">{label}</span>;
-  const color = paid ? 'text-[var(--accent-green)]' : 'text-yellow-400';
+  const color = paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -1209,11 +1216,11 @@ export default function DashboardPage() {
       value: fmt$(totalPaid),
       sub: 'Deposited to you',
       icon: CheckCircle,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: paidSparkData,
-      sparkStroke: 'var(--accent-green)',
+      sparkStroke: 'var(--accent-emerald-solid)',
       pctChange: computePctChange(totalPaid, prevTotalPaid),
       href: '/dashboard/my-pay',
       tooltip: 'Total commission disbursed to you across all payment stages',
@@ -1223,11 +1230,11 @@ export default function DashboardPage() {
       value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
-      sparkStroke: 'var(--accent-cyan)',
+      sparkStroke: 'var(--accent-cyan-solid)',
       pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
@@ -1237,7 +1244,7 @@ export default function DashboardPage() {
       value: formatCompactKW(totalKWSold),
       sub: `${myProjects.length} projects this period`,
       icon: Zap,
-      color: 'text-yellow-400',
+      color: 'text-[var(--accent-amber-text)]',
       accentGradient: 'from-yellow-500 to-yellow-400',
       glowClass: 'stat-glow-yellow',
       sparkData: systemSizeSparkData,
@@ -1251,11 +1258,11 @@ export default function DashboardPage() {
       value: `${totalKWInstalled.toFixed(1)} kW`,
       sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
       icon: Zap,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-text)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: installedSparkData,
-      sparkStroke: 'var(--accent-green)',
+      sparkStroke: 'var(--accent-emerald-solid)',
       pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
       href: '/dashboard/projects',
       tooltip: 'Total kilowatts from projects that have been physically installed',
@@ -1269,11 +1276,11 @@ export default function DashboardPage() {
       value: fmt$(totalChargebacks),
       sub: `${chargebackCount} chargeback${chargebackCount === 1 ? '' : 's'}`,
       icon: AlertCircle,
-      color: 'text-red-400',
+      color: 'text-[var(--accent-red-text)]',
       accentGradient: 'from-red-500 to-red-400',
       glowClass: 'stat-glow-red',
       sparkData: chargebackSparkData,
-      sparkStroke: '#ef4444',
+      sparkStroke: 'var(--accent-red-solid)',
       pctChange: undefined as number | null | undefined,
       href: '/dashboard/my-pay#pending-chargebacks',
       tooltip: 'Chargebacks still pending — click to see which deals.',
@@ -1289,11 +1296,11 @@ export default function DashboardPage() {
           <div>
             <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-green)' }}>${pendingPayrollTotal.toLocaleString()}</span>
+              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-emerald-text)' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
             <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
                 {paydayCountdownLabel}
               </span>
             </p>
@@ -1323,8 +1330,8 @@ export default function DashboardPage() {
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
                 period === p.value
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  ? 'text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.label}
@@ -1348,22 +1355,22 @@ export default function DashboardPage() {
               aria-hidden="true"
             >
               {/* Panel body */}
-              <rect x="4" y="14" width="52" height="32" rx="3" fill="var(--surface-card)" stroke="#334155" strokeWidth="1.5" />
+              <rect x="4" y="14" width="52" height="32" rx="3" fill="var(--surface-card)" stroke="var(--border-strong)" strokeWidth="1.5" />
               {/* Grid lines — horizontal */}
-              <line x1="4" y1="25" x2="56" y2="25" stroke="#334155" strokeWidth="1" />
-              <line x1="4" y1="36" x2="56" y2="36" stroke="#334155" strokeWidth="1" />
+              <line x1="4" y1="25" x2="56" y2="25" stroke="var(--border-strong)" strokeWidth="1" />
+              <line x1="4" y1="36" x2="56" y2="36" stroke="var(--border-strong)" strokeWidth="1" />
               {/* Grid lines — vertical */}
-              <line x1="21" y1="14" x2="21" y2="46" stroke="#334155" strokeWidth="1" />
-              <line x1="38" y1="14" x2="38" y2="46" stroke="#334155" strokeWidth="1" />
+              <line x1="21" y1="14" x2="21" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
+              <line x1="38" y1="14" x2="38" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
               {/* Cell shimmer fills */}
               <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="39" y="15" width="16" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
-              <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan)" fillOpacity="0.45" />
-              <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
+              <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan-solid)" fillOpacity="0.45" />
+              <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="5" y="37" width="15" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="39" y="37" width="16" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
               {/* Mount legs */}
               <line x1="20" y1="46" x2="16" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
@@ -1371,14 +1378,14 @@ export default function DashboardPage() {
               <line x1="13" y1="55" x2="47" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge — top-right corner */}
               <circle cx="49" cy="15" r="9" fill="#0f172a" />
-              <circle cx="49" cy="15" r="8" fill="var(--accent-green)" />
+              <circle cx="49" cy="15" r="8" fill="var(--accent-emerald-solid)" />
               <line x1="49" y1="10" x2="49" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="44" y1="15" x2="54" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
           </div>
 
           <div className="space-y-2 max-w-sm">
-            <h2 className="text-2xl font-black text-white tracking-tight">Submit your first deal</h2>
+            <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Submit your first deal</h2>
             <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
               Once you close a deal, your pipeline, commissions, and earnings will appear here.
             </p>
@@ -1412,7 +1419,7 @@ export default function DashboardPage() {
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[var(--accent-green)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[var(--accent-emerald-solid)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider flex items-center gap-1">
@@ -1491,12 +1498,12 @@ export default function DashboardPage() {
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-                <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-                  <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+                <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                 </div>
-                <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
+                <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Pipeline Overview</h2>
               </div>
-              <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+              <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
                 View All →
               </Link>
             </div>
@@ -1534,12 +1541,12 @@ export default function DashboardPage() {
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-                <Target className="w-4 h-4 text-[var(--accent-green)]" />
+              <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                <Target className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               </div>
-              <h2 className="text-white font-bold tracking-tight text-base">Active Incentives</h2>
+              <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Active Incentives</h2>
             </div>
-            <Link href="/dashboard/incentives" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+            <Link href="/dashboard/incentives" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1556,19 +1563,19 @@ export default function DashboardPage() {
                 <div key={incentive.id} className="bg-[var(--surface-card)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-white text-sm font-medium">{incentive.title}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-medium">{incentive.title}</p>
                       {incentive.type === 'personal' && (
-                        <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
+                        <span className="text-xs text-[var(--accent-purple-text)] bg-[var(--accent-purple-soft)] px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
-                    <p className="text-[var(--accent-green)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="text-[var(--accent-emerald-text)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
                   <div className="w-full bg-[var(--border)] rounded-full h-1.5 mb-1.5">
                     <div
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))',
+                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
                       }}
                     />
                   </div>
@@ -1589,16 +1596,16 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-              <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+              <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
           </div>
           <div className="flex items-center gap-3">
             {thisWeekTotal > 0 && (
-              <span className="text-[var(--accent-green)] font-bold">${thisWeekTotal.toLocaleString()}</span>
+              <span className="text-[var(--accent-emerald-text)] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/my-pay" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+            <Link href="/dashboard/my-pay" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1610,7 +1617,7 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                 <DollarSign className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No payments this week</p>
+              <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No payments this week</p>
               <p className="text-[var(--text-muted)] text-xs mb-4">Payments will appear here once marked for payroll.</p>
               <Link
                 href="/dashboard/my-pay"
@@ -1634,14 +1641,14 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {thisWeekPayroll.map((entry) => (
-                <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="px-6 py-3 text-[var(--text-secondary)]">{entry.customerName || '—'}</td>
                   <td className="px-6 py-3">
                     <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">
                       {entry.paymentStage}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-[var(--accent-green)] font-semibold">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3 text-[var(--accent-emerald-text)] font-semibold">${entry.amount.toLocaleString()}</td>
                   <td className="px-6 py-3 text-[var(--text-muted)] text-xs">{entry.date}</td>
                 </tr>
               ))}
@@ -1656,12 +1663,12 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-              <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+              <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
             View All →
           </Link>
         </div>
@@ -1672,7 +1679,7 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                 <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No projects yet</p>
+              <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No projects yet</p>
               <p className="text-[var(--text-muted)] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
@@ -1718,11 +1725,11 @@ export default function DashboardPage() {
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[var(--accent-green)]/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
                     {/* Row 1: Customer + Phase + Date */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan)] transition-colors">{proj.customerName}</span>
+                        <span className="text-[var(--text-primary)] font-medium text-sm truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
                       <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
@@ -1731,7 +1738,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
                       <span className="text-[var(--text-dim)]">·</span>
-                      <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-text)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === effectiveRepId ? (
                           <>
@@ -1783,7 +1790,7 @@ export default function DashboardPage() {
           className="fixed bottom-6 right-6 z-40 md:hidden flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 shadow-lg active:scale-95 transition-transform"
           aria-label="Submit a Deal"
         >
-          <PlusCircle className="w-7 h-7 text-white" />
+          <PlusCircle className="w-7 h-7 text-[var(--text-primary)]" />
         </Link>
       )}
     </div>

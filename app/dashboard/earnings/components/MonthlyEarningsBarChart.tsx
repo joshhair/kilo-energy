@@ -80,7 +80,7 @@ export function MonthlyEarningsBarChart({
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="h-[2px] w-10 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-2" />
-          <h3 className="text-white font-bold text-sm tracking-wide">Monthly Earnings</h3>
+          <h3 className="text-[var(--text-primary)] font-bold text-sm tracking-wide">Monthly Earnings</h3>
         </div>
         <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" />Paid</span>
@@ -112,7 +112,7 @@ export function MonthlyEarningsBarChart({
             const startX = groupX + (groupW - groupBarW) / 2;
 
             const bars = [
-              { value: d.paid, color: 'var(--accent-green)', hoverColor: 'var(--accent-cyan)' },
+              { value: d.paid, color: 'var(--accent-emerald-text)', hoverColor: 'var(--accent-cyan-solid)' },
               { value: d.pending, color: '#eab308', hoverColor: '#facc15' },
               ...(hasReimb ? [{ value: d.reimbursement, color: '#8b5cf6', hoverColor: '#a78bfa' }] : []),
             ];
@@ -178,10 +178,10 @@ export function MonthlyEarningsBarChart({
             }}
           >
             <p className="text-[var(--text-secondary)] font-semibold mb-1">{tooltip.datum.label}</p>
-            <p className="text-[var(--accent-green)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
-            <p className="text-yellow-400">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
+            <p className="text-[var(--accent-emerald-text)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
+            <p className="text-[var(--accent-amber-text)]">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
             {tooltip.datum.reimbursement > 0 && (
-              <p className="text-violet-400">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
+              <p className="text-[var(--accent-purple-text)]">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>
             )}
           </div>
         )}

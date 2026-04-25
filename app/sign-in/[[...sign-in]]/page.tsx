@@ -69,7 +69,7 @@ export default function SignInPage() {
         <div className="flex flex-col items-center gap-3">
           <div className="inline-flex items-baseline gap-1.5">
             <span
-              className="text-white font-black tracking-tight leading-none"
+              className="text-[var(--text-primary)] font-black tracking-tight leading-none"
               style={{
                 fontSize: 'clamp(2.75rem, 9vw, 4rem)',
                 letterSpacing: '-0.05em',
@@ -78,7 +78,7 @@ export default function SignInPage() {
               kilo
             </span>
             <span
-              className="text-white font-light tracking-[0.32em] uppercase"
+              className="text-[var(--text-primary)] font-light tracking-[0.32em] uppercase"
               style={{ fontSize: 'clamp(0.85rem, 2.4vw, 1rem)' }}
             >
               ENERGY
@@ -112,9 +112,9 @@ export default function SignInPage() {
           className="w-full rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
-              'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, rgba(0,180,216,0.10) 50%, rgba(255,255,255,0.04) 100%)',
+              'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, rgba(255,255,255,0.04) 100%)',
             boxShadow:
-              '0 0 60px rgba(0,229,160,0.10), 0 20px 50px -20px rgba(0,0,0,0.6)',
+              '0 0 60px var(--accent-emerald-soft), 0 20px 50px -20px rgba(0,0,0,0.6)',
           }}
         >
           <div
@@ -131,7 +131,7 @@ export default function SignInPage() {
             Track commission · pipeline · payouts
           </p>
           <p className="text-[10px] sm:text-[11px]" style={{ color: '#3a4358' }}>
-            © {year} Kilo Energy · <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Privacy</a> · <a href="/legal/terms" className="hover:text-white/70 transition-colors">Terms</a>
+            © {year} Kilo Energy · <a href="/legal/privacy" className="hover:text-[var(--text-primary)]/70 transition-colors">Privacy</a> · <a href="/legal/terms" className="hover:text-[var(--text-primary)]/70 transition-colors">Terms</a>
           </p>
         </div>
       </div>

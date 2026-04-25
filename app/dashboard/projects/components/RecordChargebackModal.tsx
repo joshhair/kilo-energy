@@ -115,10 +115,10 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-500/15">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <AlertTriangle className="w-5 h-5 text-[var(--accent-amber-text)]" />
               </div>
               <div>
-                <h2 className="text-white font-bold">Record Chargeback</h2>
+                <h2 className="text-[var(--text-primary)] font-bold">Record Chargeback</h2>
                 <p className="text-xs text-[var(--text-muted)]">Creates a linked negative PayrollEntry for admin review.</p>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                 <select
                   value={selectedEntryId}
                   onChange={(e) => setSelectedEntryId(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 >
                   {paidEntries.map((e) => (
                     <option key={e.id} value={e.id}>{e.repName} · {e.paymentStage} · {fmt$(e.amount)} · {e.date}</option>
@@ -151,7 +151,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white font-mono tabular-nums focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] font-mono tabular-nums focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
               </div>
 
@@ -161,7 +161,7 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
                 <p className="text-[10px] text-[var(--text-dim)] mt-1">Backdate for historical clawbacks (e.g. Glide-era).</p>
               </div>
@@ -172,14 +172,14 @@ export default function RecordChargebackModal({ open, onClose, onSaved, projectI
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Optional"
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 />
               </div>
 
               <button
                 onClick={handleSubmit}
                 disabled={saving || !selected}
-                className="w-full flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold rounded-lg disabled:opacity-40 transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30"
+                className="w-full flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold rounded-lg disabled:opacity-40 transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/30"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
                 {saving ? 'Recording…' : 'Record chargeback (Draft)'}

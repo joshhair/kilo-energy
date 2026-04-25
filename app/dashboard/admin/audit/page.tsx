@@ -132,14 +132,14 @@ export default function AdminAuditPage() {
     <div className="px-6 py-6 max-w-[1400px] mx-auto">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-white mb-3"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-3"
       >
         <ArrowLeft className="w-4 h-4" /> Dashboard
       </Link>
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Audit Log</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "'DM Serif Display', serif" }}>Audit Log</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Every mutation on money-sensitive tables. Filter to investigate specific changes.
           </p>
@@ -167,7 +167,7 @@ export default function AdminAuditPage() {
               id="audit-entityType"
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
             >
               {ENTITY_TYPES.map((t) => <option key={t || 'all'} value={t}>{t || 'All types'}</option>)}
             </select>
@@ -180,7 +180,7 @@ export default function AdminAuditPage() {
               value={action}
               onChange={(e) => setAction(e.target.value)}
               placeholder="phase_change, etc."
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"
             />
           </div>
           <div>
@@ -191,7 +191,7 @@ export default function AdminAuditPage() {
               value={actorEmail}
               onChange={(e) => setActorEmail(e.target.value)}
               placeholder="admin@…"
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"
             />
           </div>
           <div>
@@ -201,7 +201,7 @@ export default function AdminAuditPage() {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
             />
           </div>
           <div>
@@ -211,14 +211,14 @@ export default function AdminAuditPage() {
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
             />
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] text-sm">
           {error}
         </div>
       )}
@@ -267,13 +267,13 @@ export default function AdminAuditPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">Old</p>
-                            <pre className="text-xs text-red-300/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-red-text)]/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.oldValue ? JSON.stringify(tryParseJson(log.oldValue), null, 2) : '(none)'}
                             </pre>
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">New</p>
-                            <pre className="text-xs text-emerald-300/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-emerald-text)]/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.newValue ? JSON.stringify(tryParseJson(log.newValue), null, 2) : '(none)'}
                             </pre>
                           </div>

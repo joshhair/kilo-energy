@@ -22,13 +22,13 @@ function SheetItem({
       onClick={onTap}
       className="w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:opacity-70 transition-opacity"
       style={{
-        color: active ? 'var(--accent-emerald)' : danger ? 'var(--m-danger, var(--accent-danger))' : '#fff',
-        background: active ? 'rgba(0,229,160,0.06)' : undefined,
+        color: active ? 'var(--accent-emerald-solid)' : danger ? 'var(--accent-red-solid)' : 'var(--text-primary)',
+        background: active ? 'var(--accent-emerald-soft)' : undefined,
       }}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" aria-hidden="true" />}
       <span className="text-base flex-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald)' }} aria-hidden="true" />}
+      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald-text)' }} aria-hidden="true" />}
     </button>
   );
 }
@@ -118,7 +118,7 @@ export default function MobileBottomSheet({
 
   const sheet = (
     <>
-      <div className="fixed inset-0 bg-black/50 z-[60] animate-modal-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[60] animate-modal-backdrop" style={{ background: 'var(--surface-overlay)' }} onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
@@ -126,8 +126,8 @@ export default function MobileBottomSheet({
         aria-labelledby={titleId}
         className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl animate-modal-panel flex flex-col"
         style={{
-          background: 'var(--m-card, var(--surface-mobile-card))',
-          borderTop: '1px solid var(--m-border, var(--border-mobile))',
+          background: 'var(--surface-card)',
+          borderTop: '1px solid var(--border-subtle)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           // Cap height so tall sheets (edit forms with many fields) don't push
           // their own chrome up under the status bar. Header + scroll body.
@@ -135,16 +135,16 @@ export default function MobileBottomSheet({
         }}
       >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} aria-hidden="true" />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-subtle)' }} aria-hidden="true" />
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2 shrink-0">
-            <p id={titleId} className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+            <p id={titleId} className="text-base font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
             <button
               onClick={onClose}
               aria-label="Close"
               className="p-2 active:opacity-50"
-              style={{ color: 'var(--m-text-dim, #445577)' }}
+              style={{ color: 'var(--text-dim)' }}
             ><X className="w-5 h-5" aria-hidden="true" /></button>
           </div>
         )}

@@ -63,9 +63,9 @@ const ROLE_BADGE_CLS = {
   both:   'border',
 } as const;
 const ROLE_BADGE_STYLES = {
-  closer: { background: 'rgba(77,159,255,0.1)', color: 'var(--accent-blue)', borderColor: 'rgba(77,159,255,0.25)' },
-  setter: { background: 'rgba(180,125,255,0.1)', color: '#b47dff', borderColor: 'rgba(180,125,255,0.25)' },
-  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan)', borderColor: 'rgba(0,196,240,0.25)' },
+  closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', borderColor: 'rgba(77,159,255,0.25)' },
+  setter: { background: 'rgba(180,125,255,0.1)', color: 'var(--accent-purple-text)', borderColor: 'rgba(180,125,255,0.25)' },
+  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan-text)', borderColor: 'rgba(0,196,240,0.25)' },
 } as const;
 const ROLE_BADGE_HOVER = {
   closer: 'hover:brightness-125',
@@ -699,7 +699,7 @@ function UsersPageInner() {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Users className="w-5 h-5 text-[var(--accent-green)]" />
+              <Users className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Users</h1>
           </div>
@@ -725,7 +725,7 @@ function UsersPageInner() {
               setShowAddModal(true);
             }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -737,10 +737,10 @@ function UsersPageInner() {
         <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
-              <Mail className="w-4 h-4 text-amber-400" />
+              <Mail className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
-            <h2 className="text-white font-bold text-base tracking-tight">Pending Invitations</h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+            <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Pending Invitations</h2>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-[var(--accent-amber-text)] border border-amber-400/20">
               {pendingInvitations.length}
             </span>
           </div>
@@ -752,12 +752,12 @@ function UsersPageInner() {
               <div
                 key={inv.id}
                 className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg"
-                style={{ background: '#0f1117', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <Clock className="w-4 h-4 text-amber-400/60 shrink-0" />
+                  <Clock className="w-4 h-4 text-[var(--accent-amber-text)]/60 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-white font-medium truncate">{inv.emailAddress}</p>
+                    <p className="text-sm text-[var(--text-primary)] font-medium truncate">{inv.emailAddress}</p>
                     <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
                       Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
@@ -767,7 +767,7 @@ function UsersPageInner() {
                   onClick={() => handleRevokeInvitation(inv.id, inv.emailAddress)}
                   disabled={revokingInvitationId === inv.id}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-red-500/10 disabled:opacity-50"
-                  style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                  style={{ color: 'var(--accent-red-text)', border: '1px solid rgba(239,68,68,0.3)' }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -791,7 +791,7 @@ function UsersPageInner() {
               onClick={() => setRoleFilter(rf.value)}
               className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
                 active
-                  ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                  ? 'border-[var(--accent-emerald-solid)] text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10'
                   : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
               }`}
             >
@@ -825,10 +825,10 @@ function UsersPageInner() {
           : pool;
 
         const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-          rep:              { label: 'Rep',              color: 'var(--accent-green)', bg: 'rgba(0,224,122,0.12)' },
-          'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
-          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan)', bg: 'rgba(0,196,240,0.12)' },
-          admin:            { label: 'Admin',            color: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)' },
+          rep:              { label: 'Rep',              color: 'var(--accent-emerald-text)', bg: 'rgba(0,224,122,0.12)' },
+          'sub-dealer':     { label: 'Sub-Dealer',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
+          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-text)', bg: 'rgba(0,196,240,0.12)' },
+          admin:            { label: 'Admin',            color: 'var(--accent-amber-text)', bg: 'rgba(255,176,32,0.12)' },
         };
 
         return (
@@ -841,7 +841,7 @@ function UsersPageInner() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${roleFilter === 'all' ? 'all users' : roleBadge[roleFilter]?.label.toLowerCase() + 's'}…`}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 placeholder-[var(--text-dim)]"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 placeholder-[var(--text-dim)]"
               />
             </div>
 
@@ -892,7 +892,7 @@ function UsersPageInner() {
                         {initials}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{u.firstName} {u.lastName}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{u.firstName} {u.lastName}</p>
                         {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>}
                       </div>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0" style={{ background: badge.bg, color: badge.color }}>
@@ -902,7 +902,7 @@ function UsersPageInner() {
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Convert to Rep"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-green)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
                         >
                           <UserCog className="w-3.5 h-3.5" />
                         </button>
@@ -911,7 +911,7 @@ function UsersPageInner() {
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Deactivate sub-dealer"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -988,7 +988,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
                         >
                           {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1063,7 +1063,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(180,125,255,0.12)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)' }}
+                          style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid rgba(180,125,255,0.3)' }}
                         >
                           {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1140,7 +1140,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)' }}
+                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
                         >
                           {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1217,7 +1217,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }}
+                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
                         >
                           {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1249,7 +1249,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
           borderColor="rgba(77,159,255,0.3)"
-          valueColor="var(--accent-blue)"
+          valueColor="var(--accent-blue-solid)"
           delay={0}
         />
         <GradCard
@@ -1258,7 +1258,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))"
           borderColor="rgba(0,196,240,0.3)"
-          valueColor="var(--accent-cyan)"
+          valueColor="var(--accent-cyan-solid)"
           delay={80}
         />
         <GradCard
@@ -1267,7 +1267,7 @@ function UsersPageInner() {
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
           borderColor="rgba(255,176,32,0.3)"
-          valueColor="var(--accent-amber)"
+          valueColor="var(--accent-amber-solid)"
           delay={160}
         />
         {!isPM && (
@@ -1275,9 +1275,9 @@ function UsersPageInner() {
             label="Total Paid"
             rawValue={payrollEntries.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0)}
             formatter={(v) => '$' + Math.round(v).toLocaleString()}
-            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))"
+            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), var(--accent-emerald-soft))"
             borderColor="rgba(0,224,122,0.3)"
-            valueColor="var(--accent-green)"
+            valueColor="var(--accent-emerald-solid)"
             delay={240}
           />
         )}
@@ -1285,7 +1285,7 @@ function UsersPageInner() {
 
       {/* ── Role filter tabs ──────────────────────────────────────────────── */}
       <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-green)' }} />}
+        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-emerald-solid)' }} />}
         {FILTER_TABS.map((t, i) => (
           <button
             key={t.value}
@@ -1309,14 +1309,14 @@ function UsersPageInner() {
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
-          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500"
+          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         {/* Clear button — shown when there is a search query */}
         {search ? (
           <button
             onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             aria-label="Clear search input"
           >
             <X className="w-4 h-4" />
@@ -1342,7 +1342,7 @@ function UsersPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white border border-[var(--border)]'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}`}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
@@ -1367,7 +1367,7 @@ function UsersPageInner() {
               }
             }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              sortBy === val ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/30' : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] hover:text-white'
+              sortBy === val ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/30' : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] hover:text-[var(--text-primary)]'
             }`}
           >
             {label}
@@ -1395,13 +1395,13 @@ function UsersPageInner() {
           <div className="card-surface rounded-2xl p-5 mb-6 animate-slide-in-scale">
             <div className="flex flex-col gap-3 mb-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold text-base">Rep Comparison</h3>
+                <h3 className="text-[var(--text-primary)] font-bold text-base">Rep Comparison</h3>
                 {ranges.prev && <span className="text-xs text-[var(--text-muted)]">vs {ranges.prev.label}</span>}
               </div>
               <div className="flex flex-wrap gap-1">
                 {PERIOD_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -1409,10 +1409,10 @@ function UsersPageInner() {
               {comparePeriod === 'custom' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                   <span className="text-[var(--text-muted)] text-xs">to</span>
                   <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                 </div>
               )}
             </div>
@@ -1442,29 +1442,29 @@ function UsersPageInner() {
                   <div key={rep.id} className="bg-[var(--surface-card)]/40 rounded-xl p-4 text-center">
                     <div className="flex justify-center mb-2">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-[2px]">
-                        <div className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: 'var(--brand-dark)' }}>
+                        <div className="w-full h-full rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold" style={{ backgroundColor: 'var(--brand-dark)' }}>
                           {rep.name.split(' ').map((n) => n[0]).join('')}
                         </div>
                       </div>
                     </div>
-                    <p className="text-white font-semibold text-sm mb-1">{rep.name}</p>
+                    <p className="text-[var(--text-primary)] font-semibold text-sm mb-1">{rep.name}</p>
                     <p className="text-[var(--text-muted)] text-[10px] mb-3">{ranges.current.label}</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-[var(--text-secondary)]">Deals Closed</span>
-                        <span className="text-white font-semibold flex items-center gap-1">
+                        <span className="text-[var(--text-primary)] font-semibold flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
                               {deltaDeals > 0 ? '+' : ''}{deltaDeals}
                             </span>
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-green)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-[var(--text-primary)] font-semibold">{formatCompactKW(kwSold)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-[var(--text-primary)] font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-emerald-text)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
                 );
@@ -1504,13 +1504,13 @@ function UsersPageInner() {
                     checked={compareIds.has(rep.id)}
                     onChange={() => toggleCompareId(rep.id)}
                     disabled={!compareIds.has(rep.id) && compareIds.size >= 3}
-                    className="w-4 h-4 accent-[var(--accent-green)] rounded cursor-pointer"
+                    className="w-4 h-4 accent-[var(--accent-emerald-solid)] rounded cursor-pointer"
                   />
                 </div>
               )}
             <Link href={`/dashboard/users/${rep.id}`}>
               <div
-                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[var(--accent-green)]/40' : ''}`}
+                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[var(--accent-emerald-solid)]/40' : ''}`}
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
@@ -1538,7 +1538,7 @@ function UsersPageInner() {
                           id={`repRingGrad-${rep.id}`}
                           x1="0%" y1="0%" x2="100%" y2="0%"
                         >
-                          <stop offset="0%"   stopColor="var(--accent-cyan)" />
+                          <stop offset="0%"   stopColor="var(--accent-cyan-solid)" />
                           <stop offset="100%" stopColor="#60a5fa" />
                         </linearGradient>
                       </defs>
@@ -1565,9 +1565,9 @@ function UsersPageInner() {
                     </svg>
 
                     {/* Avatar circle — inset so it sits inside the ring */}
-                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }}>
+                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }}>
                       <div
-                        className="w-full h-full rounded-full flex items-center justify-center text-white text-sm font-bold"
+                        className="w-full h-full rounded-full flex items-center justify-center text-[var(--text-primary)] text-sm font-bold"
                         style={{ backgroundColor: 'var(--surface)' }}
                       >
                         {initials}
@@ -1577,7 +1577,7 @@ function UsersPageInner() {
                     {/* Rank badge — top-3 only */}
                     {rank <= 3 && (
                       <div
-                        className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white z-10 shadow-md bg-gradient-to-br overflow-hidden animate-rank-shimmer ${RANK_GRADIENTS[rank - 1]}`}
+                        className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-[var(--text-primary)] z-10 shadow-md bg-gradient-to-br overflow-hidden animate-rank-shimmer ${RANK_GRADIENTS[rank - 1]}`}
                       >
                         #{rank}
                       </div>
@@ -1587,7 +1587,7 @@ function UsersPageInner() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-semibold group-hover:text-[var(--accent-green)] transition-colors">
+                      <p className="text-[var(--text-primary)] font-semibold group-hover:text-[var(--accent-emerald-text)] transition-colors">
                         {rep.name}
                       </p>
                       {canManageReps ? (
@@ -1611,7 +1611,7 @@ function UsersPageInner() {
                       )}
                       {/* Active deals badge */}
                       {(activeDealsByRep.get(rep.id) ?? 0) > 0 && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-emerald-solid)]/10 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
                           {activeDealsByRep.get(rep.id)} active
                         </span>
                       )}
@@ -1640,7 +1640,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>
@@ -1651,7 +1651,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total kW</p>
                   </div>
@@ -1684,7 +1684,7 @@ function UsersPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Paid Out</p>
                     </div>
@@ -1695,7 +1695,7 @@ function UsersPageInner() {
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${rep.name} to Sub-Dealer?`, message: `${rep.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(rep.id, 'sub-dealer'); toast(`${rep.name} converted to Sub-Dealer`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                       title="Convert to Sub-Dealer"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple)] hover:bg-[rgba(180,125,255,0.12)] transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple-text)] hover:bg-[var(--accent-purple-soft)] transition-colors"
                     >
                       <UserCog className="w-3.5 h-3.5" />
                     </button>
@@ -1704,7 +1704,7 @@ function UsersPageInner() {
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                       title="Deactivate rep"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1722,11 +1722,11 @@ function UsersPageInner() {
               {/* Illustration — magnifying glass with question mark */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Outer lens ring */}
-                <circle cx="34" cy="34" r="20" stroke="var(--accent-cyan)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                <circle cx="34" cy="34" r="20" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
                 {/* Inner lens ring */}
-                <circle cx="34" cy="34" r="13" stroke="var(--accent-cyan)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                <circle cx="34" cy="34" r="13" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
                 {/* Handle */}
-                <line x1="49" y1="49" x2="70" y2="70" stroke="var(--accent-cyan)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                <line x1="49" y1="49" x2="70" y2="70" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                 {/* Question mark stem */}
                 <path d="M31 38 Q31 35 34 35 Q37 35 37 32 Q37 29 34 29 Q31 29 31 32" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" strokeOpacity="0.7"/>
                 {/* Question mark dot */}
@@ -1740,7 +1740,7 @@ function UsersPageInner() {
               </p>
               <button
                 onClick={() => { setSearch(''); setFilterTab('all'); }}
-                className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+                className="mt-1 text-xs font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Clear filters
@@ -1816,7 +1816,7 @@ function UsersPageInner() {
                         }
                       }}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
                     >
                       {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                     </button>
@@ -1838,8 +1838,8 @@ function UsersPageInner() {
         >
           <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-bold text-lg">Add New User</h3>
-              <button onClick={resetAddModal} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h3 className="text-[var(--text-primary)] font-bold text-lg">Add New User</h3>
+              <button onClick={resetAddModal} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1855,7 +1855,7 @@ function UsersPageInner() {
                     onClick={() => { setNewUserRole(r); setSendInvite(false); }}
                     className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
                       newUserRole === r
-                        ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                        ? 'border-[var(--accent-emerald-solid)] text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10'
                         : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
                     }`}
                   >
@@ -1879,7 +1879,7 @@ function UsersPageInner() {
                   placeholder="First name"
                   value={newFirstName}
                   onChange={(e) => setNewFirstName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                   autoFocus
                 />
               </div>
@@ -1890,7 +1890,7 @@ function UsersPageInner() {
                   placeholder="Last name"
                   value={newLastName}
                   onChange={(e) => setNewLastName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
@@ -1903,7 +1903,7 @@ function UsersPageInner() {
                 placeholder="rep@kiloenergy.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -1915,7 +1915,7 @@ function UsersPageInner() {
                 placeholder="(555) 000-0000"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -1969,10 +1969,10 @@ function UsersPageInner() {
                   checked={sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager'}
                   onChange={(e) => setSendInvite(e.target.checked)}
                   disabled={newUserRole === 'admin' || newUserRole === 'project_manager'}
-                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-green)] cursor-pointer disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-emerald-solid)] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-white">Send invitation email</div>
+                  <div className="text-sm font-medium text-[var(--text-primary)]">Send invitation email</div>
                   <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     {(newUserRole === 'admin' || newUserRole === 'project_manager')
                       ? 'Required for this role — admin and project manager accounts must receive an invite to access the app.'
@@ -1995,7 +1995,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

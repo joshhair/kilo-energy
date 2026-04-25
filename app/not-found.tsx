@@ -20,13 +20,13 @@ export default function NotFound() {
         {/* Logo */}
         <div className="inline-flex items-baseline gap-1">
           <span
-            className="text-white font-black tracking-tight leading-none"
+            className="text-[var(--text-primary)] font-black tracking-tight leading-none"
             style={{ fontSize: '2.25rem', letterSpacing: '-0.04em' }}
           >
             kilo
           </span>
           <span
-            className="text-white font-light tracking-[0.25em] uppercase"
+            className="text-[var(--text-primary)] font-light tracking-[0.25em] uppercase"
             style={{ fontSize: '0.85rem' }}
           >
             ENERGY
@@ -42,7 +42,7 @@ export default function NotFound() {
         </p>
 
         <div className="space-y-2">
-          <h1 className="text-white text-xl font-bold">Page Not Found</h1>
+          <h1 className="text-[var(--text-primary)] text-xl font-bold">Page Not Found</h1>
           <p className="text-[#8891a8] text-sm max-w-xs mx-auto">
             The page you&apos;re looking for doesn&apos;t exist or has been moved.
           </p>

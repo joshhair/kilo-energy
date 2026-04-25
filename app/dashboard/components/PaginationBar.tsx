@@ -32,7 +32,7 @@ export function PaginationBar({ totalResults, startIdx, endIdx, currentPage, tot
       </span>
       <div className="flex items-center gap-1">
         <button onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
-          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
           <ChevronLeft className="w-4 h-4" />
         </button>
         {buildPageRange(currentPage, totalPages).map((page, idx) =>
@@ -40,7 +40,7 @@ export function PaginationBar({ totalResults, startIdx, endIdx, currentPage, tot
             <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-[var(--text-dim)] text-sm select-none">&hellip;</span>
           ) : (
             <button key={page} onClick={() => onPageChange(page)}
-              className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${page === currentPage ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'}`}
+              className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${page === currentPage ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'}`}
               style={page === currentPage ? { backgroundColor: 'var(--brand)' } : {}}
               aria-label={`Page ${page}`} aria-current={page === currentPage ? 'page' : undefined}>
               {page}
@@ -48,7 +48,7 @@ export function PaginationBar({ totalResults, startIdx, endIdx, currentPage, tot
           )
         )}
         <button onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

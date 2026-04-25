@@ -19,12 +19,12 @@ export default function MobileListItem({
     <>
       {icon}
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
-        {subtitle && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{subtitle}</p>}
+        <p className="text-base font-medium truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+        {subtitle && <p className="text-base mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {right}
-        {onTap && <ChevronRight className="w-4 h-4" style={{ color: 'var(--m-text-dim, #445577)' }} />}
+        {onTap && <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />}
       </div>
     </>
   );

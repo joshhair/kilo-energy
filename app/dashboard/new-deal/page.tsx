@@ -247,7 +247,7 @@ function NewDealPage() {
   const fieldCheck = (field: string, value?: string) => {
     const v = value ?? form[field as keyof typeof form] ?? '';
     if (!touched.has(field) || errors[field] || !v) return null;
-    return <Check className="w-3.5 h-3.5 text-[var(--accent-green)] shrink-0" />;
+    return <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] shrink-0" />;
   };
 
   const handleInstallerChange = (value: string) => {
@@ -793,17 +793,17 @@ function NewDealPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const inputFieldStyle = (field: string): React.CSSProperties => ({
     background: 'var(--surface-card)',
-    border: `1px solid ${errors[field] ? 'var(--accent-red)' : 'var(--border-subtle)'}`,
+    border: `1px solid ${errors[field] ? 'var(--accent-red-solid)' : 'var(--border-subtle)'}`,
     color: 'var(--text-primary)',
     fontFamily: "'DM Sans', sans-serif",
   });
 
   const _selectCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: React.CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
@@ -868,15 +868,15 @@ function NewDealPage() {
                 <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: done ? 'var(--accent-green)' : active ? 'rgba(0,224,122,0.1)' : 'var(--surface-card)',
-                    border: `1.5px solid ${done || active ? 'var(--accent-green)' : 'var(--border-subtle)'}`,
+                    background: done ? 'var(--accent-emerald-solid)' : active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    border: `1.5px solid ${done || active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-green)' : 'var(--text-muted)',
-                    boxShadow: active ? '0 0 20px rgba(0,224,122,0.25)' : 'none',
+                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                    boxShadow: active ? '0 0 20px var(--accent-emerald-glow)' : 'none',
                   }}>
                     {done ? '\u2713' : n}
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
+                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
                 </div>
               );
             })}
@@ -896,9 +896,9 @@ function NewDealPage() {
 
       {/* Duplicate info badge */}
       {duplicateCustomerName && (
-        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 rounded-xl px-4 py-2.5">
-          <RotateCcw className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" />
-          <p className="text-[var(--accent-cyan)] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
+        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 rounded-xl px-4 py-2.5">
+          <RotateCcw className="w-4 h-4 text-[var(--accent-emerald-text)] flex-shrink-0" />
+          <p className="text-[var(--accent-cyan-text)] text-sm">Duplicating from <span className="font-semibold text-[var(--text-primary)]">{duplicateCustomerName}</span></p>
         </div>
       )}
 
@@ -913,8 +913,8 @@ function NewDealPage() {
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-green)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
-                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-emerald-solid)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
+                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
                 </div>
                 {i < DEAL_STEPS.length - 1 && <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{'\u203A'}</span>}
               </div>
@@ -968,7 +968,7 @@ function NewDealPage() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-xs text-amber-400 mt-1.5">
+                  <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
                     ★ Trainer: {trainerRep.name} — override{' '}
                     <span className="font-semibold">${trainerOverrideRate.toFixed(2)}/W</span>
                     {currentTier?.upToDeal !== null && nextTier
@@ -1069,7 +1069,7 @@ function NewDealPage() {
         {/* ── Section 2: Deal Details ── */}
         {currentStep === 1 && (
         <div id="section-deal" className="overflow-visible">
-          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan-text)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
 
           <div className="space-y-4">
             {/* ── Card 1: Installer / Financer / Product selects ── */}
@@ -1118,8 +1118,8 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                       }`}
                     >
                       {pt}
@@ -1133,7 +1133,7 @@ function NewDealPage() {
             {/* Cash product type — no financer needed indicator */}
             {form.installer && form.productType === 'Cash' && (
               <div className="flex items-center gap-2 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)]">
-                <Check className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                 Cash deal — no financer required
               </div>
             )}
@@ -1163,11 +1163,11 @@ function NewDealPage() {
                               disabled
                                 ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                 : selected
-                                  ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
-                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>
+                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>
                               {isPrepaid ? 'Prepaid' : family}
                             </span>
                           </button>
@@ -1194,8 +1194,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1232,7 +1232,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1287,11 +1287,11 @@ function NewDealPage() {
                                 disabled
                                   ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                   : selected
-                                    ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                    : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                    ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                    : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                               }`}
                             >
-                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
+                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
                             </button>
                           );
                         });
@@ -1317,8 +1317,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1355,7 +1355,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{mappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1416,8 +1416,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1446,7 +1446,7 @@ function NewDealPage() {
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
                     {kW > 0 && !errors.kWSize && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-text)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1463,7 +1463,7 @@ function NewDealPage() {
                       className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} style={inputFieldStyle('netPPW')} />
                     {soldPPW > 0 && !errors.netPPW && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-text)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1521,16 +1521,16 @@ function NewDealPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Customer</p>
-                  <p className="text-white font-medium truncate">{form.customerName || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.customerName || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Sold Date</p>
-                  <p className="text-white font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 {effectiveRole === 'admin' && (
                   <div>
                     <p className="text-[var(--text-muted)] text-xs mb-0.5">Closer</p>
-                    <p className="text-white font-medium truncate">
+                    <p className="text-[var(--text-primary)] font-medium truncate">
                       {reps.find((r) => r.id === form.repId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
@@ -1538,26 +1538,26 @@ function NewDealPage() {
                 {form.setterId && (
                   <div>
                     <p className="text-[var(--text-muted)] text-xs mb-0.5">Setter</p>
-                    <p className="text-white font-medium truncate">
+                    <p className="text-[var(--text-primary)] font-medium truncate">
                       {reps.find((r) => r.id === form.setterId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
                 )}
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Installer</p>
-                  <p className="text-white font-medium truncate">{form.installer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.installer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Financer</p>
-                  <p className="text-white font-medium truncate">{form.financer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.financer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Product Type</p>
-                  <p className="text-white font-medium">{form.productType || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium">{form.productType || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
-                  <p className="text-white font-medium">
+                  <p className="text-[var(--text-primary)] font-medium">
                     {kW > 0 ? `${kW.toFixed(1)} kW` : <span className="text-[var(--text-dim)] italic">—</span>}
                     {kW > 0 && soldPPW > 0 && <span className="text-[var(--text-secondary)]"> @ ${soldPPW.toFixed(2)}/W</span>}
                   </p>
@@ -1587,8 +1587,8 @@ function NewDealPage() {
               <div className="flex items-center justify-between mt-1 mb-4">
                 <p className="text-xs italic text-[var(--text-dim)]">Internal notes only — not visible to customer</p>
                 <p className={`text-xs transition-colors duration-200 ${
-                  form.notes.length >= 500 ? 'text-red-400' :
-                  form.notes.length >= 400 ? 'text-amber-400' :
+                  form.notes.length >= 500 ? 'text-[var(--accent-red-text)]' :
+                  form.notes.length >= 400 ? 'text-[var(--accent-amber-text)]' :
                   'text-[var(--text-muted)]'
                 }`}>
                   {form.notes.length}/500
@@ -1625,8 +1625,8 @@ function NewDealPage() {
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                       form.leadSource === value
-                        ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
-                        : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                        ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_var(--accent-emerald-glow)]'
+                        : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {label}
@@ -1702,7 +1702,7 @@ function NewDealPage() {
               type="button"
               onClick={handleNext}
               className="inline-flex items-center gap-2 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--surface-page)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
@@ -1714,7 +1714,7 @@ function NewDealPage() {
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--surface-page)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1752,7 +1752,7 @@ function NewDealPage() {
               <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
                 {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
               </span>
-              <span className="text-lg font-black text-[var(--accent-green)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <span className="text-lg font-black text-[var(--accent-emerald-text)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 Est. Commission: ${(isSubDealer ? subDealerCommission : closerTotal).toLocaleString()}
               </span>
             </div>
