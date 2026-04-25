@@ -46,7 +46,7 @@ function roleLabel(repType: Rep['repType']): string {
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
   if (repType === 'closer') return 'text-purple-400';
-  if (repType === 'setter') return 'text-[var(--accent-green)]';
+  if (repType === 'setter') return 'text-[var(--accent-emerald-solid)]';
   return 'text-teal-400';
 }
 

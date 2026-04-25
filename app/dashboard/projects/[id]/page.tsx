@@ -159,7 +159,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)]">
         Project not found.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -178,7 +178,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -190,7 +190,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -558,7 +558,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <span className="text-[var(--text-dim)] mx-1">/</span>
           <Link href="/dashboard/projects" className="hover:bg-[var(--surface-card)]/50 hover:text-[var(--text-secondary)] transition-colors px-2 py-1 rounded-lg">Projects</Link>
           <span className="text-[var(--text-dim)] mx-1">/</span>
-          <span className="text-white font-medium bg-[var(--accent-green)]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
+          <span className="text-white font-medium bg-[var(--accent-emerald-solid)]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
         </nav>
 
         {/* Prev / Next project buttons */}
@@ -615,7 +615,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {nextStep && (
               <button
                 onClick={() => handlePhaseChange(nextStep)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--accent-green)]/50 transition-colors ml-auto"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--accent-emerald-solid)]/50 transition-colors ml-auto"
               >
                 {nextStep} →
               </button>
@@ -648,7 +648,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={openEditModal}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-green)]/30 text-[var(--accent-green)] hover:bg-blue-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)] hover:bg-blue-900/20 transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
@@ -750,7 +750,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <select
               value={project.phase}
               onChange={(e) => handlePhaseChange(e.target.value as Phase)}
-              className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+              className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
             >
               {PHASES.map((ph) => (
                 <option key={ph} value={ph}>{ph}</option>
@@ -790,11 +790,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const myTotal = trainerEntries.length > 0 ? (paidTotal + pendingTotal) : projected;
               return myTotal > 0 ? (
                 <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                     style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
                   <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
                        style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
-                  <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                  <p className="text-[var(--accent-emerald-solid)] text-4xl font-black tabular-nums">
                     ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-[var(--text-secondary)] text-sm mt-1">
@@ -811,11 +811,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0);
             return myTotal > 0 ? (
               <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                   style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                   style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
                      style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
                 <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
-                <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                <p className="text-[var(--accent-emerald-solid)] text-4xl font-black tabular-nums">
                   ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[var(--text-secondary)] text-sm mt-1">Projected earnings on this deal</p>
@@ -836,11 +836,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                        entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                        entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                         entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                         'bg-[var(--border)] text-[var(--text-secondary)]'
                       }`}>{entry.status}</span>
-                      <span className="text-[var(--accent-green)] font-bold">${entry.amount.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-solid)] font-bold">${entry.amount.toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -863,13 +863,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                       entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                       'bg-[var(--border)] text-[var(--text-secondary)]'
                     }`}>
                       {entry.status}
                     </span>
-                    <span className="text-[var(--accent-green)] font-bold">${entry.amount.toLocaleString()}</span>
+                    <span className="text-[var(--accent-emerald-solid)] font-bold">${entry.amount.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -891,11 +891,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[var(--accent-green)] font-bold">${expM1.toLocaleString()}</p>
+                  <p className="text-[var(--accent-emerald-solid)] font-bold">${expM1.toLocaleString()}</p>
                 </div>
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[var(--accent-green)] font-bold">${expM2.toLocaleString()}</p>
+                  <p className="text-[var(--accent-emerald-solid)] font-bold">${expM2.toLocaleString()}</p>
                 </div>
                 {expM3 > 0 && (
                   <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
@@ -928,11 +928,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           {/* Baseline rates summary */}
           <div className="flex flex-wrap gap-3 mb-4 mt-2">
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Closer baseline: <span className="text-[var(--accent-cyan)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
+              Closer baseline: <span className="text-[var(--accent-cyan-solid)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
             </span>
             {project.setterId && (
               <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-                Setter baseline: <span className="text-[var(--accent-cyan)] font-semibold">${setterPerW.toFixed(3)}/W</span>
+                Setter baseline: <span className="text-[var(--accent-cyan-solid)] font-semibold">${setterPerW.toFixed(3)}/W</span>
               </span>
             )}
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
@@ -992,13 +992,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div className="text-right space-y-0.5">
                       {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
                       )}
                       {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
                       )}
                       {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
                       )}
                     </div>
                   </div>
@@ -1009,11 +1009,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                               entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            <span className="text-[var(--accent-emerald-solid)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -1033,13 +1033,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div className="text-right space-y-0.5">
                       {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
                       )}
                       {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
                       )}
                       {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
                       )}
                     </div>
                   </div>
@@ -1050,11 +1050,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                               entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            <span className="text-[var(--accent-emerald-solid)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -1076,7 +1076,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <p className="text-white text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
                     <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
                     {trainerTotalExpected > 0 && (
-                      <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                      <p className="text-[var(--accent-emerald-solid)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     )}
                   </div>
                 </div>
@@ -1091,11 +1091,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                             entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                             'bg-[var(--border)] text-[var(--text-secondary)]'
                           }`}>{entry.status}</span>
-                          <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          <span className="text-[var(--accent-emerald-solid)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                         </div>
                       </div>
                     ))}
@@ -1121,11 +1121,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
+                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' :
                           entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
                           'bg-[var(--border)] text-[var(--text-secondary)]'
                         }`}>{entry.status}</span>
-                        <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        <span className="text-[var(--accent-emerald-solid)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
@@ -1179,13 +1179,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={toggle}
                       className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
                         paid
-                          ? 'bg-emerald-900/30 text-[var(--accent-green)] border-[var(--accent-green)]/30 hover:bg-emerald-900/40'
+                          ? 'bg-emerald-900/30 text-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)]/30 hover:bg-emerald-900/40'
                           : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
                       }`}
                       title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
                     >
                       <span>{stage}</span>
-                      <span className={paid ? 'text-[var(--accent-green)]' : 'text-yellow-400'}>
+                      <span className={paid ? 'text-[var(--accent-emerald-solid)]' : 'text-yellow-400'}>
                         {paid ? 'Paid' : 'Pending'}
                       </span>
                     </button>
@@ -1198,7 +1198,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             onChange={(e) => stage === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
                             className="w-24 text-xs rounded px-2 py-1 text-white bg-[var(--surface-card)] border border-[var(--border)]"
                           />
-                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-green)] font-medium">Save</button>
+                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-emerald-solid)] font-medium">Save</button>
                           <button onClick={() => stage === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-xs text-[var(--text-muted)]">Cancel</button>
                         </div>
                       ) : (
@@ -1269,7 +1269,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-900/30">
-                  <Pencil className="w-5 h-5 text-[var(--accent-green)]" />
+                  <Pencil className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
                 </div>
                 <h2 className="text-white font-semibold">Edit Project</h2>
               </div>
@@ -1299,7 +1299,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <select
                     value={editVals.solarTechProductId}
                     onChange={(e) => { setEditVals((v) => ({ ...v, solarTechProductId: e.target.value })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}
                   >
                     <option value="">— Select product —</option>
                     {solarTechProducts.map((p) => (
@@ -1331,7 +1331,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                       }`}
                     >
@@ -1347,14 +1347,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">System Size (kW)</label>
                   <input type="number" step="0.1" value={editVals.kWSize}
                     onChange={(e) => { setEditVals((v) => ({ ...v, kWSize: e.target.value })); setEditErrors((prev) => ({ ...prev, kWSize: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.kWSize ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.kWSize ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                   {editErrors.kWSize && <p className="text-red-400 text-xs mt-1">{editErrors.kWSize}</p>}
                 </div>
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
                   <input type="number" step="0.01" value={editVals.netPPW}
                     onChange={(e) => { setEditVals((v) => ({ ...v, netPPW: e.target.value })); setEditErrors((prev) => ({ ...prev, netPPW: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.netPPW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.netPPW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                   {editErrors.netPPW && <p className="text-red-400 text-xs mt-1">{editErrors.netPPW}</p>}
                 </div>
               </div>
@@ -1363,7 +1363,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">— None —</option>
                   {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== project.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -1433,7 +1433,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <select
                       value={editVals.trainerId}
                       onChange={(e) => setEditVals((v) => ({ ...v, trainerId: e.target.value }))}
-                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                     >
                       <option value="">— none —</option>
                       {reps
@@ -1452,7 +1452,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       value={editVals.trainerRate}
                       onChange={(e) => setEditVals((v) => ({ ...v, trainerRate: e.target.value }))}
                       disabled={!editVals.trainerId}
-                      className={`w-full bg-[var(--surface-card)] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] disabled:opacity-50 ${
+                      className={`w-full bg-[var(--surface-card)] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] disabled:opacity-50 ${
                         editVals.trainerId && editVals.trainerRate.trim() === ''
                           ? 'border-amber-500/60'
                           : 'border-[var(--border)]'
@@ -1474,7 +1474,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Sold Date</label>
                 <input type="date" value={editVals.soldDate}
                   onChange={(e) => { setEditVals((v) => ({ ...v, soldDate: e.target.value })); setEditErrors((prev) => ({ ...prev, soldDate: '' })); }}
-                  className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
+                  className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                 {editErrors.soldDate && <p className="text-red-400 text-xs mt-1">{editErrors.soldDate}</p>}
               </div>
 
@@ -1482,7 +1482,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Notes</label>
                 <textarea rows={2} value={editVals.notes} onChange={(e) => setEditVals((v) => ({ ...v, notes: e.target.value }))}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none" />
               </div>
 
               {/* Baseline Override */}
@@ -1490,7 +1490,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input type="checkbox" checked={editVals.useBaselineOverride}
                     onChange={(e) => setEditVals((v) => ({ ...v, useBaselineOverride: e.target.checked }))}
-                    className="w-4 h-4 rounded accent-[var(--accent-green)]" />
+                    className="w-4 h-4 rounded accent-[var(--accent-emerald-solid)]" />
                   <span className="text-[var(--text-secondary)] text-sm font-medium">Override baseline for this project</span>
                 </label>
                 {editVals.useBaselineOverride && (
@@ -1500,7 +1500,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <input type="number" step="0.01" value={editVals.overrideCloserPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideCloserPerW: '' })); }}
-                        className={`w-full bg-[var(--border)] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
+                        className={`w-full bg-[var(--border)] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                       {editErrors.overrideCloserPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
                     </div>
                     <div>
@@ -1510,14 +1510,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           ? String(Math.round((parseFloat(editVals.overrideCloserPerW) + 0.10) * 100) / 100)
                           : String(Math.round(((installerBaselines[editVals.installer]?.closerPerW ?? 2.90) + 0.10) * 100) / 100)}
                         onChange={(e) => setEditVals((v) => ({ ...v, overrideSetterPerW: e.target.value }))}
-                        className="w-full bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]" />
+                        className="w-full bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]" />
                     </div>
                     <div>
                       <label className="text-[var(--text-muted)] text-xs block mb-1">Kilo $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideKiloPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideKiloPerW: '' })); }}
-                        className={`w-full bg-[var(--border)] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
+                        className={`w-full bg-[var(--border)] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                       {editErrors.overrideKiloPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
                     </div>
                   </div>
@@ -1598,31 +1598,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <div className={`grid ${previewHasM3 ? 'grid-cols-6' : 'grid-cols-4'} gap-3 text-center`}>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM1.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${setterM1.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${setterM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${setterM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${closerM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${closerM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-solid)]'}`}>${kiloMargin.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : (
@@ -1633,17 +1633,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${closerM2.toLocaleString()}</p>
                     </div>
                     {previewHasM3 && (
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-emerald-solid)]'}`}>${closerM3.toLocaleString()}</p>
                       </div>
                     )}
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-emerald-solid)]'}`}>${kiloMargin.toLocaleString()}</p>
                     </div>
                   </div>
                   )}
@@ -1764,7 +1764,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
@@ -1782,7 +1782,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none placeholder-slate-500"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500"
                 />
               </div>
               <div className="flex gap-3 pt-1">

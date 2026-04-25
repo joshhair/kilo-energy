@@ -33,7 +33,7 @@ export function CustomizationSection() {
                 max={365}
                 value={customThresholds[phase] ?? CUSTOMIZATION_DEFAULT_THRESHOLDS[phase]}
                 onChange={(e) => setCustomThresholds((prev) => ({ ...prev, [phase]: Math.max(1, parseInt(e.target.value) || 1) }))}
-                className="w-20 bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                className="w-20 bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
               />
             </div>
           ))}

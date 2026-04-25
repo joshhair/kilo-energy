@@ -45,13 +45,13 @@ export function SubDealersSection() {
             type="text" placeholder="First name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
           />
           <input
             type="text" placeholder="Last name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
           />
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -59,13 +59,13 @@ export function SubDealersSection() {
             type="email" placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
           />
           <input
             type="tel" placeholder="Phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+            className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
           />
         </div>
         <button

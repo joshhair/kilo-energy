@@ -739,7 +739,7 @@ function TrainingPageInner() {
       <div className="p-4 md:p-8 max-w-5xl animate-fade-in-up">
         <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
         <div className="card-surface rounded-2xl p-8 text-center">
-          <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+          <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
             <GraduationCap className="w-8 h-8 text-amber-400" />
           </div>
           <h2 className="text-white text-lg font-bold mb-2">No Trainees Assigned</h2>
@@ -777,7 +777,7 @@ function TrainingPageInner() {
         <div className="mb-6">
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
               <GraduationCap className="w-5 h-5 text-amber-400" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
@@ -839,7 +839,7 @@ function TrainingPageInner() {
                       <button
                         type="button"
                         onClick={() => setAdminTrainerFilter(topTrainer.id)}
-                        className="text-sm font-bold text-white mt-1 hover:text-[var(--accent-cyan)] transition-colors text-left truncate max-w-full"
+                        className="text-sm font-bold text-white mt-1 hover:text-[var(--accent-cyan-solid)] transition-colors text-left truncate max-w-full"
                         title="Filter to this trainer"
                       >
                         {topTrainer.name}
@@ -949,7 +949,7 @@ function TrainingPageInner() {
                 </div>
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-white font-bold text-lg hover:text-[var(--accent-cyan)] transition-colors">
+                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-white font-bold text-lg hover:text-[var(--accent-cyan-solid)] transition-colors">
                       {trainerRep.name}
                     </Link>
                     <span className="text-xs text-[var(--text-muted)] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">Trainer</span>
@@ -973,7 +973,7 @@ function TrainingPageInner() {
                   <Link
                     href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-                    style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}
+                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}
                   >
                     View payments
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -1039,7 +1039,7 @@ function TrainingPageInner() {
                           <Link
                             href={`/dashboard/users/${group.trainerId}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-white truncate hover:text-[var(--accent-cyan)] transition-colors font-semibold"
+                            className="text-white truncate hover:text-[var(--accent-cyan-solid)] transition-colors font-semibold"
                           >
                             {trainerName}
                           </Link>
@@ -1103,10 +1103,10 @@ function TrainingPageInner() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-[var(--accent-green)]/20 text-[var(--accent-green)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             {getInitials(traineeName)}
                           </div>
-                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan)] transition-colors">
+                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
                             {traineeName}
                           </Link>
                         </div>
@@ -1293,7 +1293,7 @@ function TrainingPageInner() {
       <div className="mb-6">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+          <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
             <GraduationCap className="w-5 h-5 text-amber-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
@@ -1332,13 +1332,13 @@ function TrainingPageInner() {
             <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-amber-400" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-amber-400/50" />} />
             <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-orange-400" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-orange-400/50" />} />
             <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-yellow-400" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-yellow-400/50" />} />
-            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-green)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-green)]/50" />} />
+            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-solid)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-solid)]/50" />} />
           </div>
 
           <div className="card-surface rounded-2xl p-6">
             <h3 className="text-white font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-green)]" value={fmt$(totalEarned)} />
+              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-emerald-solid)]" value={fmt$(totalEarned)} />
               <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-yellow-400" value={fmt$(pendingAmount)} />
               <BreakdownRow color="bg-[var(--text-muted)]" label="Draft" textColor="text-[var(--text-secondary)]" value={fmt$(draftAmount)} />
             </div>
@@ -1473,7 +1473,7 @@ function TrainingPageInner() {
                         className={`table-row-enter row-stagger-${Math.min(idx, 24)} hover:bg-[var(--surface-card)]/30 transition-colors`}
                       >
                         <td className="px-4 py-3 text-white text-sm">{entry.customerName || '—'}</td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{t.name}</Link> : '—'; })()}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan-solid)] transition-colors">{t.name}</Link> : '—'; })()}</td>
                         <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">{fmt$(entry.amount)}</td>
                         <td className="px-4 py-3 text-center"><StatusBadge status={entry.status} /></td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
@@ -1499,12 +1499,12 @@ function TrainingPageInner() {
                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                    style={{ backgroundColor: 'var(--navy-card)' }}
+                    style={{ backgroundColor: 'var(--surface-pressed)' }}
                   >
                     {getInitials(t.traineeName)}
                   </div>
                 </div>
-                <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[var(--accent-cyan)] transition-colors">{t.traineeName}</Link>
+                <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[var(--accent-cyan-solid)] transition-colors">{t.traineeName}</Link>
                 <StatusPillBadge status={t.status} />
               </div>
 
@@ -1695,7 +1695,7 @@ function ActiveTraineeCard({
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
   const roleBadgeColor =
-    traineeRole === 'closer' ? 'text-[var(--accent-green)] bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20'
+    traineeRole === 'closer' ? 'text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
     : traineeRole === 'setter' ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
     : 'text-teal-400 bg-teal-500/10 border-teal-500/20';
 
@@ -1705,13 +1705,13 @@ function ActiveTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4">
         <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--navy-card)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
               {traineeName}
             </Link>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${roleBadgeColor}`}>
@@ -1776,7 +1776,7 @@ function ActiveTraineeCard({
                   onClick={() => onOpenProject(p.id)}
                   className={`w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-[var(--surface-card)]/60 transition-colors group table-row-enter row-stagger-${Math.min(pIdx, 12)}`}
                 >
-                  <span className="flex-1 min-w-0 text-sm text-white truncate group-hover:text-[var(--accent-cyan)] transition-colors">{p.customerName}</span>
+                  <span className="flex-1 min-w-0 text-sm text-white truncate group-hover:text-[var(--accent-cyan-solid)] transition-colors">{p.customerName}</span>
                   <PhasePill phase={p.phase} />
                   <span className="text-[10px] text-[var(--text-muted)] tabular-nums whitespace-nowrap">{formatDate(p.soldDate)}</span>
                   <span className="text-[10px] text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{p.kWSize.toFixed(1)} kW</span>
@@ -1813,13 +1813,13 @@ function ResidualTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4 mb-4">
         <div className="bg-gradient-to-br from-slate-500 to-slate-700 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--navy-card)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan-solid)] transition-colors">
               {traineeName}
             </Link>
             <StatusPillBadge status={status} />
@@ -1848,7 +1848,7 @@ function ResidualTraineeCard({
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Total Earned</p>
-          <p className="text-[var(--accent-green)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
+          <p className="text-[var(--accent-emerald-solid)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Tier Progress</p>

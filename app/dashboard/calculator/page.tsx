@@ -167,8 +167,8 @@ function CommissionBar({
   const pct = (v: number) => `${(v / total) * 100}%`;
 
   const segments = [
-    { key: 'closer',  value: closer,  colorClass: 'bg-[var(--accent-green)]',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-[var(--accent-cyan)]', label: 'Setter'   },
+    { key: 'closer',  value: closer,  colorClass: 'bg-[var(--accent-emerald-solid)]',    label: 'Closer'   },
+    { key: 'setter',  value: setter,  colorClass: 'bg-[var(--accent-cyan-solid)]', label: 'Setter'   },
     { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
     ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[var(--text-muted)]', label: 'Kilo Rev' }] : []),
   ].filter((s) => s.value > 0);
@@ -633,7 +633,7 @@ function CalculatorPage() {
 
   const inputCls = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all duration-200 placeholder-slate-500';
   const inputStyle: CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" };
-  const inputFocusRing = 'focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)]';
+  const inputFocusRing = 'focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)]';
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
 
@@ -664,11 +664,11 @@ function CalculatorPage() {
 
   // Bar segment data for the stacked breakdown bar
   const breakdownSegments = [
-    { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-green)' },
-    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan)' }] : []),
+    { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-emerald-solid)' },
+    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan-solid)' }] : []),
     ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
     ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
-    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber)' }] : []),
+    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber-solid)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
 
@@ -679,7 +679,7 @@ function CalculatorPage() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Calculator className="w-5 h-5 text-[var(--accent-green)]" />
+            <Calculator className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
@@ -693,8 +693,8 @@ function CalculatorPage() {
           {recentDeals.length > 0 && (
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
+                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-solid)' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan-solid)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
               </div>
               <div className="flex items-center gap-2">
                 <SearchableSelect
@@ -843,7 +843,7 @@ function CalculatorPage() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-green)]' : 'bg-[var(--border)]'}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--border)]'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
@@ -893,10 +893,10 @@ function CalculatorPage() {
                     </div>
                     <div className="text-right min-w-[100px]">
                       {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                        <p style={{ color: 'var(--accent-amber)', fontSize: 12 }}>Baseline unknown</p>
+                        <p style={{ color: 'var(--accent-amber-solid)', fontSize: 12 }}>Baseline unknown</p>
                       ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
-                          <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
+                          <p style={{ color: 'var(--accent-blue-solid)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
                           <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>required PPW</p>
                         </>
                       ) : (
@@ -950,7 +950,7 @@ function CalculatorPage() {
                         type="button"
                         onClick={() => handleLoadHistory(entry)}
                         className="flex-shrink-0 text-xs font-medium rounded-md px-2.5 py-1 transition-colors"
-                        style={{ color: 'var(--accent-blue)', background: 'rgba(77,159,255,0.1)' }}
+                        style={{ color: 'var(--accent-blue-solid)', background: 'var(--accent-blue-soft)' }}
                       >
                         Load
                       </button>
@@ -984,7 +984,7 @@ function CalculatorPage() {
                 <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
-                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px rgba(0,229,160,0.25)' }}>
+                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px rgba(0,229,160,0.25)' }}>
                   ${Math.round(closerTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
@@ -993,14 +993,14 @@ function CalculatorPage() {
 
                 {/* Below-baseline warning */}
                 {soldPPW <= closerPerW && (
-                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid var(--accent-red)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red)' }}>
+                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-solid)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
                 {closerPerW === 0 && soldPPW > 0 && (
-                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid var(--accent-amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber)' }}>
+                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-solid)' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
                 )}
@@ -1031,7 +1031,7 @@ function CalculatorPage() {
                   {/* Closer */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-green)', flexShrink: 0 }} />
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald-solid)', flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -1040,11 +1040,11 @@ function CalculatorPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
                     </div>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
                     </div>
@@ -1061,7 +1061,7 @@ function CalculatorPage() {
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', flexShrink: 0 }} />
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan-solid)', flexShrink: 0 }} />
                           <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -1070,11 +1070,11 @@ function CalculatorPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
                         </div>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
                         </div>
@@ -1120,7 +1120,7 @@ function CalculatorPage() {
                   {effectiveRole === 'admin' && kiloTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber)', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -1140,9 +1140,9 @@ function CalculatorPage() {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-green), transparent 70%)' }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-emerald-solid), transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
-                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
+                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
                     ${((reps.find(r => r.id === effectiveCloserId)?.repType === 'setter' && selectedSetterId === effectiveCloserId || (reps.find(r => r.id === effectiveCloserId)?.repType === 'both' && selectedSetterId === effectiveCloserId)) && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>

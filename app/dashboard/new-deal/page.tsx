@@ -247,7 +247,7 @@ function NewDealPage() {
   const fieldCheck = (field: string, value?: string) => {
     const v = value ?? form[field as keyof typeof form] ?? '';
     if (!touched.has(field) || errors[field] || !v) return null;
-    return <Check className="w-3.5 h-3.5 text-[var(--accent-green)] shrink-0" />;
+    return <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)] shrink-0" />;
   };
 
   const handleInstallerChange = (value: string) => {
@@ -793,17 +793,17 @@ function NewDealPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const inputFieldStyle = (field: string): React.CSSProperties => ({
     background: 'var(--surface-card)',
-    border: `1px solid ${errors[field] ? 'var(--accent-red)' : 'var(--border-subtle)'}`,
+    border: `1px solid ${errors[field] ? 'var(--accent-red-solid)' : 'var(--border-subtle)'}`,
     color: 'var(--text-primary)',
     fontFamily: "'DM Sans', sans-serif",
   });
 
   const _selectCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: React.CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
@@ -868,15 +868,15 @@ function NewDealPage() {
                 <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: done ? 'var(--accent-green)' : active ? 'rgba(0,224,122,0.1)' : 'var(--surface-card)',
-                    border: `1.5px solid ${done || active ? 'var(--accent-green)' : 'var(--border-subtle)'}`,
+                    background: done ? 'var(--accent-emerald-solid)' : active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    border: `1.5px solid ${done || active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-green)' : 'var(--text-muted)',
-                    boxShadow: active ? '0 0 20px rgba(0,224,122,0.25)' : 'none',
+                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                    boxShadow: active ? '0 0 20px var(--accent-emerald-glow)' : 'none',
                   }}>
                     {done ? '\u2713' : n}
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
+                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
                 </div>
               );
             })}
@@ -896,9 +896,9 @@ function NewDealPage() {
 
       {/* Duplicate info badge */}
       {duplicateCustomerName && (
-        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 rounded-xl px-4 py-2.5">
-          <RotateCcw className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" />
-          <p className="text-[var(--accent-cyan)] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
+        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 rounded-xl px-4 py-2.5">
+          <RotateCcw className="w-4 h-4 text-[var(--accent-emerald-solid)] flex-shrink-0" />
+          <p className="text-[var(--accent-cyan-solid)] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
         </div>
       )}
 
@@ -913,8 +913,8 @@ function NewDealPage() {
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-green)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
-                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-emerald-solid)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
+                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
                 </div>
                 {i < DEAL_STEPS.length - 1 && <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{'\u203A'}</span>}
               </div>
@@ -1069,7 +1069,7 @@ function NewDealPage() {
         {/* ── Section 2: Deal Details ── */}
         {currentStep === 1 && (
         <div id="section-deal" className="overflow-visible">
-          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan-solid)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
 
           <div className="space-y-4">
             {/* ── Card 1: Installer / Financer / Product selects ── */}
@@ -1118,7 +1118,7 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                       }`}
                     >
@@ -1133,7 +1133,7 @@ function NewDealPage() {
             {/* Cash product type — no financer needed indicator */}
             {form.installer && form.productType === 'Cash' && (
               <div className="flex items-center gap-2 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)]">
-                <Check className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
                 Cash deal — no financer required
               </div>
             )}
@@ -1163,11 +1163,11 @@ function NewDealPage() {
                               disabled
                                 ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                 : selected
-                                  ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-solid)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
                                   : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                             }`}
                           >
-                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>
+                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-muted)]'}`}>
                               {isPrepaid ? 'Prepaid' : family}
                             </span>
                           </button>
@@ -1287,11 +1287,11 @@ function NewDealPage() {
                                 disabled
                                   ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                   : selected
-                                    ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                    ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-solid)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
                                     : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                               }`}
                             >
-                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
+                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
                             </button>
                           );
                         });
@@ -1446,7 +1446,7 @@ function NewDealPage() {
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
                     {kW > 0 && !errors.kWSize && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-solid)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1463,7 +1463,7 @@ function NewDealPage() {
                       className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} style={inputFieldStyle('netPPW')} />
                     {soldPPW > 0 && !errors.netPPW && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-solid)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1625,7 +1625,7 @@ function NewDealPage() {
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                       form.leadSource === value
-                        ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
+                        ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_var(--accent-emerald-glow)]'
                         : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
                     }`}
                   >
@@ -1702,7 +1702,7 @@ function NewDealPage() {
               type="button"
               onClick={handleNext}
               className="inline-flex items-center gap-2 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
@@ -1714,7 +1714,7 @@ function NewDealPage() {
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1752,7 +1752,7 @@ function NewDealPage() {
               <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
                 {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
               </span>
-              <span className="text-lg font-black text-[var(--accent-green)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <span className="text-lg font-black text-[var(--accent-emerald-solid)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 Est. Commission: ${(isSubDealer ? subDealerCommission : closerTotal).toLocaleString()}
               </span>
             </div>

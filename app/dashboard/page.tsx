@@ -51,7 +51,7 @@ const PIPELINE_PHASE_COLORS: Record<string, { bar: string; text: string; dot: st
   'Permitting':      { bar: 'bg-amber-500',    text: 'text-amber-300',   dot: 'bg-amber-400',   chipBg: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      chipBorder: 'border-amber-700/30'    },
   'Pending Install': { bar: 'bg-orange-500',   text: 'text-orange-300',  dot: 'bg-orange-400',  chipBg: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    chipBorder: 'border-orange-700/30'   },
   'Installed':       { bar: 'bg-teal-500',     text: 'text-teal-300',    dot: 'bg-teal-400',    chipBg: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        chipBorder: 'border-teal-700/30'     },
-  'PTO':             { bar: 'bg-[var(--accent-green)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
+  'PTO':             { bar: 'bg-[var(--accent-emerald-solid)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', chipBg: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  chipBorder: 'border-emerald-700/30'  },
   'Completed':       { bar: 'bg-slate-500',     text: 'text-slate-300',   dot: 'bg-slate-400',   chipBg: 'bg-gradient-to-r from-slate-900/40 to-slate-800/20',       chipBorder: 'border-slate-700/30'    },
 };
 
@@ -189,7 +189,7 @@ export function NeedsAttentionSection({
     <div
       ref={sectionRef}
       className={`card-surface rounded-2xl mb-6 ${sectionVisible ? 'scroll-reveal-visible' : 'scroll-reveal-hidden'}`}
-      style={totalCount === 0 ? { borderLeft: '3px solid var(--accent-green)' } : undefined}
+      style={totalCount === 0 ? { borderLeft: '3px solid var(--accent-emerald-solid)' } : undefined}
     >
       {/* Collapsible header */}
       <button
@@ -199,10 +199,10 @@ export function NeedsAttentionSection({
       >
         <div className="flex items-center gap-3">
           <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r ${totalCount > 0 ? 'from-amber-500 to-amber-400' : 'from-emerald-500 to-emerald-400'}`} />
-          <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-green)]/15'}`}>
+          <div className={`p-1.5 rounded-lg ${totalCount > 0 ? 'bg-amber-500/15' : 'bg-[var(--accent-emerald-solid)]/15'}`}>
             {totalCount > 0
               ? <AlertCircle className="w-4 h-4 text-amber-400" />
-              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+              : <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
             }
           </div>
           <h2 className="text-white font-bold tracking-tight text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -228,7 +228,7 @@ export function NeedsAttentionSection({
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
-                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+                <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
               </div>
               <p className="text-[var(--text-secondary)] text-sm">All clear! No items need attention right now.</p>
             </div>
@@ -341,7 +341,7 @@ export function NeedsAttentionSection({
                   <span className="text-[var(--text-muted)] text-xs">{items.length - 5} more item{items.length - 5 !== 1 ? 's' : ''} hidden</span>
                   <Link
                     href="/dashboard/projects"
-                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors"
+                    className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors"
                   >
                     View all projects →
                   </Link>
@@ -435,11 +435,11 @@ export function MyTasksSection({
     <div className="card-surface rounded-2xl mb-6">
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-        <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-          <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+        <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+          <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
         </div>
         <h2 className="text-white font-bold tracking-tight text-base">My Tasks</h2>
-        <span className="bg-[var(--accent-green)]/20 border border-[var(--accent-green)]/30 text-[var(--accent-green)] text-xs font-bold px-2 py-0.5 rounded-full">
+        <span className="bg-[var(--accent-emerald-solid)]/20 border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)] text-xs font-bold px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -476,7 +476,7 @@ export function MyTasksSection({
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-green)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-green)] flex-shrink-0"
+                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-emerald-solid)] focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer accent-[var(--accent-emerald-solid)] flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium truncate ${overdue ? 'text-red-300' : 'text-[var(--text-secondary)]'}`}>
@@ -485,7 +485,7 @@ export function MyTasksSection({
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Link
                     href={`/dashboard/projects/${task.projectId}#chatter`}
-                    className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors truncate max-w-[140px]"
+                    className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors truncate max-w-[140px]"
                   >
                     {task.projectName}
                   </Link>
@@ -640,7 +640,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)] text-xs">—</span>;
   return (
     <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-      paid ? 'bg-emerald-900/50 text-[var(--accent-green)]' : 'bg-yellow-900/50 text-yellow-400'
+      paid ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]' : 'bg-yellow-900/50 text-yellow-400'
     }`}>
       {paid ? fmt$(amount) : 'Unpaid'}
     </span>
@@ -649,7 +649,7 @@ export function StatusDot({ paid, amount }: { paid: boolean; amount: number }) {
 
 export function MilestoneDot({ label, paid, amount }: { label: string; paid: boolean; amount: number }) {
   if (amount === 0) return <span className="text-[var(--text-dim)]">{label}</span>;
-  const color = paid ? 'text-[var(--accent-green)]' : 'text-yellow-400';
+  const color = paid ? 'text-[var(--accent-emerald-solid)]' : 'text-yellow-400';
   const dotColor = paid ? 'bg-emerald-400' : 'bg-yellow-400';
   return (
     <span className="flex items-center gap-1">
@@ -1209,11 +1209,11 @@ export default function DashboardPage() {
       value: fmt$(totalPaid),
       sub: 'Deposited to you',
       icon: CheckCircle,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-solid)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: paidSparkData,
-      sparkStroke: 'var(--accent-green)',
+      sparkStroke: 'var(--accent-emerald-solid)',
       pctChange: computePctChange(totalPaid, prevTotalPaid),
       href: '/dashboard/my-pay',
       tooltip: 'Total commission disbursed to you across all payment stages',
@@ -1223,11 +1223,11 @@ export default function DashboardPage() {
       value: fmt$(inPipeline),
       sub: `${activeProjects.length} active projects`,
       icon: TrendingUp,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-solid)]',
       accentGradient: 'from-blue-500 to-blue-400',
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
-      sparkStroke: 'var(--accent-cyan)',
+      sparkStroke: 'var(--accent-cyan-solid)',
       pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
@@ -1251,11 +1251,11 @@ export default function DashboardPage() {
       value: `${totalKWInstalled.toFixed(1)} kW`,
       sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
       icon: Zap,
-      color: 'text-[var(--accent-green)]',
+      color: 'text-[var(--accent-emerald-solid)]',
       accentGradient: 'from-emerald-500 to-emerald-400',
       glowClass: 'stat-glow-emerald',
       sparkData: installedSparkData,
-      sparkStroke: 'var(--accent-green)',
+      sparkStroke: 'var(--accent-emerald-solid)',
       pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
       href: '/dashboard/projects',
       tooltip: 'Total kilowatts from projects that have been physically installed',
@@ -1289,11 +1289,11 @@ export default function DashboardPage() {
           <div>
             <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
             <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-green)' }}>${pendingPayrollTotal.toLocaleString()}</span>
+              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-emerald-solid)' }}>${pendingPayrollTotal.toLocaleString()}</span>
             </p>
             <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-2">
               {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
                 {paydayCountdownLabel}
               </span>
             </p>
@@ -1357,13 +1357,13 @@ export default function DashboardPage() {
               <line x1="38" y1="14" x2="38" y2="46" stroke="#334155" strokeWidth="1" />
               {/* Cell shimmer fills */}
               <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="39" y="15" width="16" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
-              <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan)" fillOpacity="0.45" />
-              <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
+              <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan-solid)" fillOpacity="0.45" />
+              <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="5" y="37" width="15" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
-              <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-green)" fillOpacity="0.5" />
+              <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="39" y="37" width="16" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
               {/* Mount legs */}
               <line x1="20" y1="46" x2="16" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
@@ -1371,7 +1371,7 @@ export default function DashboardPage() {
               <line x1="13" y1="55" x2="47" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge — top-right corner */}
               <circle cx="49" cy="15" r="9" fill="#0f172a" />
-              <circle cx="49" cy="15" r="8" fill="var(--accent-green)" />
+              <circle cx="49" cy="15" r="8" fill="var(--accent-emerald-solid)" />
               <line x1="49" y1="10" x2="49" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="44" y1="15" x2="54" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
@@ -1412,7 +1412,7 @@ export default function DashboardPage() {
             {stats.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[var(--accent-green)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
+                <Link key={stat.label} href={stat.href} className={`group card-surface card-surface-stat rounded-2xl p-4 md:p-5 h-full cursor-pointer hover:border-[var(--accent-emerald-solid)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}>
                   <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider flex items-center gap-1">
@@ -1491,12 +1491,12 @@ export default function DashboardPage() {
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-                <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-                  <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+                <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
                 </div>
                 <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
               </div>
-              <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+              <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
                 View All →
               </Link>
             </div>
@@ -1534,12 +1534,12 @@ export default function DashboardPage() {
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-                <Target className="w-4 h-4 text-[var(--accent-green)]" />
+              <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                <Target className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
               </div>
               <h2 className="text-white font-bold tracking-tight text-base">Active Incentives</h2>
             </div>
-            <Link href="/dashboard/incentives" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+            <Link href="/dashboard/incentives" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1561,14 +1561,14 @@ export default function DashboardPage() {
                         <span className="text-xs text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">Personal</span>
                       )}
                     </div>
-                    <p className="text-[var(--accent-green)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="text-[var(--accent-emerald-solid)] font-bold text-sm">{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
                   <div className="w-full bg-[var(--border)] rounded-full h-1.5 mb-1.5">
                     <div
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))',
+                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
                       }}
                     />
                   </div>
@@ -1589,16 +1589,16 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-              <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+              <DollarSign className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">This Week&apos;s Pay</h2>
           </div>
           <div className="flex items-center gap-3">
             {thisWeekTotal > 0 && (
-              <span className="text-[var(--accent-green)] font-bold">${thisWeekTotal.toLocaleString()}</span>
+              <span className="text-[var(--accent-emerald-solid)] font-bold">${thisWeekTotal.toLocaleString()}</span>
             )}
-            <Link href="/dashboard/my-pay" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+            <Link href="/dashboard/my-pay" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
               View All →
             </Link>
           </div>
@@ -1634,14 +1634,14 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {thisWeekPayroll.map((entry) => (
-                <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-green)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="px-6 py-3 text-[var(--text-secondary)]">{entry.customerName || '—'}</td>
                   <td className="px-6 py-3">
                     <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">
                       {entry.paymentStage}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-[var(--accent-green)] font-semibold">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3 text-[var(--accent-emerald-solid)] font-semibold">${entry.amount.toLocaleString()}</td>
                   <td className="px-6 py-3 text-[var(--text-muted)] text-xs">{entry.date}</td>
                 </tr>
               ))}
@@ -1656,12 +1656,12 @@ export default function DashboardPage() {
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-              <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+              <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
             </div>
             <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] text-xs transition-colors">
             View All →
           </Link>
         </div>
@@ -1718,11 +1718,11 @@ export default function DashboardPage() {
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[var(--accent-green)]/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
                     {/* Row 1: Customer + Phase + Date */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan)] transition-colors">{proj.customerName}</span>
+                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan-solid)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
                       <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
@@ -1731,7 +1731,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
                       <span className="text-[var(--text-dim)]">·</span>
-                      <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-solid)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === effectiveRepId ? (
                           <>

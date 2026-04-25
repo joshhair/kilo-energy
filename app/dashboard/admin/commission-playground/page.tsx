@@ -78,8 +78,8 @@ export default function CommissionPlaygroundPage() {
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-lg bg-[var(--accent-cyan)]/15">
-            <Calculator className="w-5 h-5 text-[var(--accent-cyan)]" />
+          <div className="p-2 rounded-lg bg-[var(--accent-cyan-solid)]/15">
+            <Calculator className="w-5 h-5 text-[var(--accent-cyan-solid)]" />
           </div>
           <h1 className="text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Commission Playground
@@ -107,7 +107,7 @@ export default function CommissionPlaygroundPage() {
                   type="button"
                   onClick={() => setDealType(t)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    dealType === t ? 'bg-[var(--accent-cyan)]/15 text-[var(--accent-cyan)]' : 'text-[var(--text-secondary)] hover:text-white'
+                    dealType === t ? 'bg-[var(--accent-cyan-solid)]/15 text-[var(--accent-cyan-solid)]' : 'text-[var(--text-secondary)] hover:text-white'
                   }`}
                 >
                   {t === 'paired' ? 'Paired (closer + setter)' : 'Self-gen (closer only)'}
@@ -171,7 +171,7 @@ export default function CommissionPlaygroundPage() {
                   <Row label="Trainer override" value={fmt$(inputs.trainerRate * inputs.kW * 1000)} />
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-[var(--border-subtle)]">
                     <span className="text-[var(--text-muted)]">Residual (gross − comms)</span>
-                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-cyan)]'}`}>
+                    <span className={`font-bold tabular-nums ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-cyan-solid)]'}`}>
                       {fmt$(kiloMargin)}
                     </span>
                   </div>
@@ -209,7 +209,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan)]/50 disabled:opacity-40 disabled:cursor-not-allowed font-mono tabular-nums"
+        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50 disabled:opacity-40 disabled:cursor-not-allowed font-mono tabular-nums"
       />
       {helper && <p className="text-[10px] text-[var(--text-dim)] mt-1">{helper}</p>}
     </div>
@@ -218,7 +218,7 @@ function Field({
 
 function TotalCard({ label, value, tint }: { label: string; value: number; tint: 'emerald' | 'violet' | 'slate' }) {
   const colors = {
-    emerald: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', text: 'var(--accent-green)' },
+    emerald: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', text: 'var(--accent-emerald-solid)' },
     violet: { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)', text: '#c4b5fd' },
     slate: { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: 'var(--text-muted)' },
   }[tint];
@@ -235,7 +235,7 @@ function MilestoneRow({ label, closer, setter }: { label: string; closer: number
     <div className="flex items-center gap-3 text-sm">
       <span className="text-[var(--text-muted)] text-xs font-mono w-8">{label}</span>
       <div className="flex-1 grid grid-cols-2 gap-3">
-        <span className="text-[var(--accent-green)] tabular-nums">{fmt$(closer)}</span>
+        <span className="text-[var(--accent-emerald-solid)] tabular-nums">{fmt$(closer)}</span>
         <span className="text-violet-300 tabular-nums">{fmt$(setter)}</span>
       </div>
     </div>

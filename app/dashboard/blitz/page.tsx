@@ -56,10 +56,10 @@ interface BlitzRequestData {
 }
 
 const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
-  upcoming:  { bg: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', dotBg: 'var(--accent-blue)', border: '1px solid rgba(77,159,255,0.3)' },
-  active:    { bg: 'rgba(0,224,122,0.12)',  color: 'var(--accent-green)', dotBg: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' },
+  upcoming:  { bg: 'var(--accent-blue-soft)', color: 'var(--accent-blue-solid)', dotBg: 'var(--accent-blue-solid)', border: '1px solid rgba(77,159,255,0.3)' },
+  active:    { bg: 'rgba(0,224,122,0.12)',  color: 'var(--accent-emerald-solid)', dotBg: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' },
   completed: { bg: 'rgba(136,145,168,0.12)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid rgba(136,145,168,0.3)' },
-  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red)', dotBg: 'var(--accent-red)', border: '1px solid rgba(255,82,82,0.3)' },
+  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red-solid)', dotBg: 'var(--accent-red-solid)', border: '1px solid rgba(255,82,82,0.3)' },
 };
 
 function getBlitzTimingLabel(blitz: BlitzData): string | null {
@@ -145,7 +145,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         </div>
 
         {/* Name */}
-        <h3 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-primary)' }}>{blitz.name}</h3>
+        <h3 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-cyan-solid)] transition-colors" style={{ color: 'var(--text-primary)' }}>{blitz.name}</h3>
 
         {/* Location + dates */}
         <div className="flex flex-col gap-1 text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
@@ -168,7 +168,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan))' }}
+                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
               />
             </div>
           </div>
@@ -202,10 +202,10 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan-solid)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20">
               <Tent className="w-3 h-3" /> Leading
             </span>
           )}
@@ -213,20 +213,20 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <button
               disabled={joining}
               onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 rounded-lg hover:bg-[var(--accent-green)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
             </button>
           )}
           {!isOwner && myParticipation && !canJoin && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
             </span>
           )}
         </div>
 
         {/* Hover glow bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan), var(--accent-green))' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid), var(--accent-emerald-solid))' }} />
       </div>
     </Link>
   );
@@ -279,7 +279,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
       <div ref={modalPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-green)]" /> New Blitz</h2>
+        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-emerald-solid)]" /> New Blitz</h2>
 
         <div className="space-y-4">
           <div>
@@ -329,7 +329,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
             onClick={handleSubmit}
             disabled={!name.trim() || !startDate || !endDate || saving}
             className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
@@ -784,13 +784,13 @@ function BlitzPageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            <Tent className="w-7 h-7" style={{ color: 'var(--accent-cyan)' }} /> Blitz
+            <Tent className="w-7 h-7" style={{ color: 'var(--accent-cyan-solid)' }} /> Blitz
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Manage blitzes, track participation and profitability</p>
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
@@ -804,21 +804,21 @@ function BlitzPageInner() {
 
       {/* Summary cards */}
       <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-green)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-emerald-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Active</span>
-            <CheckCircle className="w-4 h-4 text-[var(--accent-green)]" />
+            <CheckCircle className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)' }}>{activeBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-solid)' }}>{activeBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Upcoming</span>
-            <Clock className="w-4 h-4 text-[var(--accent-green)]" />
+            <Clock className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue)' }}>{upcomingBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-solid)' }}>{upcomingBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
@@ -843,7 +843,7 @@ function BlitzPageInner() {
               <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Costs</span>
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber)' }}>{formatCurrency(totalCosts)}</p>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-solid)' }}>{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>
@@ -872,7 +872,7 @@ function BlitzPageInner() {
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
               style={tab === t ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
             >
-              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red-solid)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -1001,7 +1001,7 @@ function BlitzPageInner() {
                       {req.type === 'cancel' ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan-solid)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                       )}
                       <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                     </div>
@@ -1011,7 +1011,7 @@ function BlitzPageInner() {
                     </div>
                     {req.notes && <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">{req.notes}</p>}
                   </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
+                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-emerald-solid)]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
                     {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : req.status === 'denied' ? <XCircle className="w-3 h-3" /> : <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                   </span>
@@ -1042,7 +1042,7 @@ function BlitzPageInner() {
                         {req.type === 'cancel' ? (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan-solid)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                         )}
                         <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
@@ -1062,7 +1062,7 @@ function BlitzPageInner() {
                             onClick={() => handleApproveRequest(req.id)}
                             disabled={processingRequest.has(req.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
                           >
                             {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
@@ -1071,7 +1071,7 @@ function BlitzPageInner() {
                           </button>
                         </>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-emerald-solid)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
                           {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>

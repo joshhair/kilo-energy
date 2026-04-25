@@ -87,7 +87,7 @@ export function AdminNotesEditor({
           draft.length >= 1600 ? 'text-amber-400' :
           'text-[var(--text-muted)]'
         }`}>{draft.length} / 2000</p>
-        {saved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
+        {saved && <span className="text-xs text-[var(--accent-emerald-solid)] animate-fade-in-up">Saved</span>}
         {!saved && draft !== lastSynced.current && (
           <span className="text-xs text-[var(--text-muted)]">Auto-saving...</span>
         )}

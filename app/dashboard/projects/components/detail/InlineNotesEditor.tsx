@@ -56,12 +56,12 @@ export function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (t
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
           maxLength={1000}
-          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500 resize-none"
+          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500 resize-none"
           placeholder="Add notes about this project..."
         />
         <div className="flex items-center justify-between mt-1">
           <p className="text-xs text-[var(--text-muted)]">{text.length} / 1000</p>
-          {saved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
+          {saved && <span className="text-xs text-[var(--accent-emerald-solid)] animate-fade-in-up">Saved</span>}
         </div>
       </div>
     );
@@ -83,7 +83,7 @@ export function InlineNotesEditor({ notes, onSave }: { notes: string; onSave: (t
         )}
         <Pencil className="w-3.5 h-3.5 text-[var(--text-dim)] opacity-0 group-hover/notes:opacity-100 transition-opacity shrink-0 mt-0.5" />
       </div>
-      {saved && <span className="text-xs text-[var(--accent-green)] mt-1 block">Saved</span>}
+      {saved && <span className="text-xs text-[var(--accent-emerald-solid)] mt-1 block">Saved</span>}
     </div>
   );
 }

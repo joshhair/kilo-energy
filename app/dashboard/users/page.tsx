@@ -63,9 +63,9 @@ const ROLE_BADGE_CLS = {
   both:   'border',
 } as const;
 const ROLE_BADGE_STYLES = {
-  closer: { background: 'rgba(77,159,255,0.1)', color: 'var(--accent-blue)', borderColor: 'rgba(77,159,255,0.25)' },
+  closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-solid)', borderColor: 'rgba(77,159,255,0.25)' },
   setter: { background: 'rgba(180,125,255,0.1)', color: '#b47dff', borderColor: 'rgba(180,125,255,0.25)' },
-  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan)', borderColor: 'rgba(0,196,240,0.25)' },
+  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan-solid)', borderColor: 'rgba(0,196,240,0.25)' },
 } as const;
 const ROLE_BADGE_HOVER = {
   closer: 'hover:brightness-125',
@@ -699,7 +699,7 @@ function UsersPageInner() {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-              <Users className="w-5 h-5 text-[var(--accent-green)]" />
+              <Users className="w-5 h-5 text-[var(--accent-emerald-solid)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Users</h1>
           </div>
@@ -725,7 +725,7 @@ function UsersPageInner() {
               setShowAddModal(true);
             }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -791,7 +791,7 @@ function UsersPageInner() {
               onClick={() => setRoleFilter(rf.value)}
               className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${
                 active
-                  ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                  ? 'border-[var(--accent-emerald-solid)] text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10'
                   : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
               }`}
             >
@@ -825,10 +825,10 @@ function UsersPageInner() {
           : pool;
 
         const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-          rep:              { label: 'Rep',              color: 'var(--accent-green)', bg: 'rgba(0,224,122,0.12)' },
-          'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
-          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan)', bg: 'rgba(0,196,240,0.12)' },
-          admin:            { label: 'Admin',            color: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)' },
+          rep:              { label: 'Rep',              color: 'var(--accent-emerald-solid)', bg: 'rgba(0,224,122,0.12)' },
+          'sub-dealer':     { label: 'Sub-Dealer',       color: '#b47dff', bg: 'var(--accent-purple-soft)' },
+          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-solid)', bg: 'rgba(0,196,240,0.12)' },
+          admin:            { label: 'Admin',            color: 'var(--accent-amber-solid)', bg: 'rgba(255,176,32,0.12)' },
         };
 
         return (
@@ -841,7 +841,7 @@ function UsersPageInner() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${roleFilter === 'all' ? 'all users' : roleBadge[roleFilter]?.label.toLowerCase() + 's'}…`}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 placeholder-[var(--text-dim)]"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 placeholder-[var(--text-dim)]"
               />
             </div>
 
@@ -902,7 +902,7 @@ function UsersPageInner() {
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Convert to Rep"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-green)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
                         >
                           <UserCog className="w-3.5 h-3.5" />
                         </button>
@@ -988,7 +988,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
                         >
                           {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1063,7 +1063,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(180,125,255,0.12)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)' }}
+                          style={{ background: 'var(--accent-purple-soft)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)' }}
                         >
                           {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1140,7 +1140,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)' }}
+                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-solid)', border: '1px solid rgba(0,196,240,0.3)' }}
                         >
                           {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1217,7 +1217,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }}
+                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)', border: '1px solid rgba(255,176,32,0.3)' }}
                         >
                           {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1249,7 +1249,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
           borderColor="rgba(77,159,255,0.3)"
-          valueColor="var(--accent-blue)"
+          valueColor="var(--accent-blue-solid)"
           delay={0}
         />
         <GradCard
@@ -1258,7 +1258,7 @@ function UsersPageInner() {
           formatter={(v) => String(Math.round(v))}
           gradient="linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))"
           borderColor="rgba(0,196,240,0.3)"
-          valueColor="var(--accent-cyan)"
+          valueColor="var(--accent-cyan-solid)"
           delay={80}
         />
         <GradCard
@@ -1267,7 +1267,7 @@ function UsersPageInner() {
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
           borderColor="rgba(255,176,32,0.3)"
-          valueColor="var(--accent-amber)"
+          valueColor="var(--accent-amber-solid)"
           delay={160}
         />
         {!isPM && (
@@ -1275,9 +1275,9 @@ function UsersPageInner() {
             label="Total Paid"
             rawValue={payrollEntries.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0)}
             formatter={(v) => '$' + Math.round(v).toLocaleString()}
-            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,224,122,0.05))"
+            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), var(--accent-emerald-soft))"
             borderColor="rgba(0,224,122,0.3)"
-            valueColor="var(--accent-green)"
+            valueColor="var(--accent-emerald-solid)"
             delay={240}
           />
         )}
@@ -1285,7 +1285,7 @@ function UsersPageInner() {
 
       {/* ── Role filter tabs ──────────────────────────────────────────────── */}
       <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-green)' }} />}
+        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-emerald-solid)' }} />}
         {FILTER_TABS.map((t, i) => (
           <button
             key={t.value}
@@ -1309,7 +1309,7 @@ function UsersPageInner() {
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
-          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500"
+          className="w-full rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         {/* Clear button — shown when there is a search query */}
@@ -1367,7 +1367,7 @@ function UsersPageInner() {
               }
             }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              sortBy === val ? 'bg-[var(--accent-green)]/15 text-[var(--accent-green)] border border-[var(--accent-green)]/30' : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] hover:text-white'
+              sortBy === val ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/30' : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] hover:text-white'
             }`}
           >
             {label}
@@ -1409,10 +1409,10 @@ function UsersPageInner() {
               {comparePeriod === 'custom' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                   <span className="text-[var(--text-muted)] text-xs">to</span>
                   <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]" />
+                    className="bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                 </div>
               )}
             </div>
@@ -1455,7 +1455,7 @@ function UsersPageInner() {
                         <span className="text-white font-semibold flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>
+                            <span className={`text-[10px] ${deltaDeals > 0 ? 'text-[var(--accent-emerald-solid)]' : 'text-red-400'}`}>
                               {deltaDeals > 0 ? '+' : ''}{deltaDeals}
                             </span>
                           )}
@@ -1463,7 +1463,7 @@ function UsersPageInner() {
                       </div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">kW Sold</span><span className="text-white font-semibold">{formatCompactKW(kwSold)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Deal Size</span><span className="text-white font-semibold">{avgDealSize.toFixed(1)} kW</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-green)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Paid Out</span><span className="text-[var(--accent-emerald-solid)] font-semibold">${commissionEarned.toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Cancel Rate</span><span className={`font-semibold ${cancelRate > 20 ? 'text-red-400' : 'text-[var(--text-secondary)]'}`}>{cancelRate.toFixed(0)}%</span></div>
                     </div>
                   </div>
@@ -1504,13 +1504,13 @@ function UsersPageInner() {
                     checked={compareIds.has(rep.id)}
                     onChange={() => toggleCompareId(rep.id)}
                     disabled={!compareIds.has(rep.id) && compareIds.size >= 3}
-                    className="w-4 h-4 accent-[var(--accent-green)] rounded cursor-pointer"
+                    className="w-4 h-4 accent-[var(--accent-emerald-solid)] rounded cursor-pointer"
                   />
                 </div>
               )}
             <Link href={`/dashboard/users/${rep.id}`}>
               <div
-                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[var(--accent-green)]/40' : ''}`}
+                className={`rep-card relative rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 transition-shadow duration-300 group cursor-pointer md:flex-row md:items-center md:justify-between hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98] active:shadow-none backdrop-blur-sm animate-slide-in-scale ${compareMode ? 'ml-8' : ''} ${compareIds.has(rep.id) ? 'ring-2 ring-[var(--accent-emerald-solid)]/40' : ''}`}
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
@@ -1538,7 +1538,7 @@ function UsersPageInner() {
                           id={`repRingGrad-${rep.id}`}
                           x1="0%" y1="0%" x2="100%" y2="0%"
                         >
-                          <stop offset="0%"   stopColor="var(--accent-cyan)" />
+                          <stop offset="0%"   stopColor="var(--accent-cyan-solid)" />
                           <stop offset="100%" stopColor="#60a5fa" />
                         </linearGradient>
                       </defs>
@@ -1565,7 +1565,7 @@ function UsersPageInner() {
                     </svg>
 
                     {/* Avatar circle — inset so it sits inside the ring */}
-                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }}>
+                    <div className="absolute inset-[3px] rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }}>
                       <div
                         className="w-full h-full rounded-full flex items-center justify-center text-white text-sm font-bold"
                         style={{ backgroundColor: 'var(--surface)' }}
@@ -1587,7 +1587,7 @@ function UsersPageInner() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-semibold group-hover:text-[var(--accent-green)] transition-colors">
+                      <p className="text-white font-semibold group-hover:text-[var(--accent-emerald-solid)] transition-colors">
                         {rep.name}
                       </p>
                       {canManageReps ? (
@@ -1611,7 +1611,7 @@ function UsersPageInner() {
                       )}
                       {/* Active deals badge */}
                       {(activeDealsByRep.get(rep.id) ?? 0) > 0 && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-emerald-solid)]/10 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20">
                           {activeDealsByRep.get(rep.id)} active
                         </span>
                       )}
@@ -1640,7 +1640,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-solid)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>
@@ -1651,7 +1651,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-solid)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total kW</p>
                   </div>
@@ -1684,7 +1684,7 @@ function UsersPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Paid Out</p>
                     </div>
@@ -1695,7 +1695,7 @@ function UsersPageInner() {
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${rep.name} to Sub-Dealer?`, message: `${rep.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(rep.id, 'sub-dealer'); toast(`${rep.name} converted to Sub-Dealer`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                       title="Convert to Sub-Dealer"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple)] hover:bg-[rgba(180,125,255,0.12)] transition-colors"
+                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple-solid)] hover:bg-[var(--accent-purple-soft)] transition-colors"
                     >
                       <UserCog className="w-3.5 h-3.5" />
                     </button>
@@ -1722,11 +1722,11 @@ function UsersPageInner() {
               {/* Illustration — magnifying glass with question mark */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Outer lens ring */}
-                <circle cx="34" cy="34" r="20" stroke="var(--accent-cyan)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                <circle cx="34" cy="34" r="20" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
                 {/* Inner lens ring */}
-                <circle cx="34" cy="34" r="13" stroke="var(--accent-cyan)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                <circle cx="34" cy="34" r="13" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
                 {/* Handle */}
-                <line x1="49" y1="49" x2="70" y2="70" stroke="var(--accent-cyan)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                <line x1="49" y1="49" x2="70" y2="70" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                 {/* Question mark stem */}
                 <path d="M31 38 Q31 35 34 35 Q37 35 37 32 Q37 29 34 29 Q31 29 31 32" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" strokeOpacity="0.7"/>
                 {/* Question mark dot */}
@@ -1816,7 +1816,7 @@ function UsersPageInner() {
                         }
                       }}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
                     >
                       {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                     </button>
@@ -1855,7 +1855,7 @@ function UsersPageInner() {
                     onClick={() => { setNewUserRole(r); setSendInvite(false); }}
                     className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
                       newUserRole === r
-                        ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                        ? 'border-[var(--accent-emerald-solid)] text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10'
                         : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
                     }`}
                   >
@@ -1879,7 +1879,7 @@ function UsersPageInner() {
                   placeholder="First name"
                   value={newFirstName}
                   onChange={(e) => setNewFirstName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                   autoFocus
                 />
               </div>
@@ -1890,7 +1890,7 @@ function UsersPageInner() {
                   placeholder="Last name"
                   value={newLastName}
                   onChange={(e) => setNewLastName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
@@ -1903,7 +1903,7 @@ function UsersPageInner() {
                 placeholder="rep@kiloenergy.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -1915,7 +1915,7 @@ function UsersPageInner() {
                 placeholder="(555) 000-0000"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -1969,7 +1969,7 @@ function UsersPageInner() {
                   checked={sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager'}
                   onChange={(e) => setSendInvite(e.target.checked)}
                   disabled={newUserRole === 'admin' || newUserRole === 'project_manager'}
-                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-green)] cursor-pointer disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-emerald-solid)] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white">Send invitation email</div>
@@ -1995,7 +1995,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

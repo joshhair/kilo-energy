@@ -73,7 +73,7 @@ export function InstallersSection({
           type="text" placeholder="Installer name"
           value={newInstaller}
           onChange={(e) => setNewInstaller(e.target.value)}
-          className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-green)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
+          className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
         />
         {installerDup && <p className="text-red-400 text-[10px] mb-2">Already exists</p>}
         {/* Pricing structure selector */}
@@ -84,7 +84,7 @@ export function InstallersSection({
               onClick={() => setNewInstallerStructure(s)}
               className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${
                 newInstallerStructure === s
-                  ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)] text-[var(--accent-cyan)]'
+                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)] text-[var(--accent-cyan-solid)]'
                   : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-white'
               }`}
             >
@@ -98,14 +98,14 @@ export function InstallersSection({
               <label className="block text-xs text-[var(--text-muted)] mb-1">Closer $/W</label>
               <input type="number" step="0.01" min="0" placeholder="2.90"
                 value={newInstallerCloser} onChange={(e) => setNewInstallerCloser(e.target.value)}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
               />
             </div>
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">Kilo $/W</label>
               <input type="number" step="0.01" min="0" placeholder="2.35"
                 value={newInstallerKilo} onChange={(e) => setNewInstallerKilo(e.target.value)}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
               />
             </div>
           </div>
@@ -117,7 +117,7 @@ export function InstallersSection({
                 <input type="text" placeholder="Family name (e.g. Goodleap)"
                   value={fam}
                   onChange={(e) => setNewPcFamilies((prev) => prev.map((f, j) => j === i ? e.target.value : f))}
-                  className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+                  className="bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
                 />
                 <button onClick={() => {
                   if (newPcFamilies.length <= 1) return;
@@ -170,8 +170,8 @@ export function InstallersSection({
       {installers.length === 0 && (
         <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-[var(--accent-green)]/10 flex-shrink-0">
-              <Building2 className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
+              <Building2 className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
             </div>
             <div>
               <p className="text-white font-medium text-sm mb-1">No installers yet</p>
@@ -197,7 +197,7 @@ export function InstallersSection({
               onClick={() => { setInstallerSelectMode((v) => !v); setSelectedInstallers(new Set()); }}
               className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                 installerSelectMode
-                  ? 'bg-[var(--accent-green)]/15 border-[var(--accent-green)]/30 text-[var(--accent-green)]'
+                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)]'
                   : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-white'
               }`}
             >
@@ -214,7 +214,7 @@ export function InstallersSection({
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >
                 {filteredActive.every((i) => selectedInstallers.has(i.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </button>
@@ -226,7 +226,7 @@ export function InstallersSection({
               type="text" placeholder="Search installers..."
               value={installerSearch}
               onChange={(e) => setInstallerSearch(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
             />
           </div>
           <div className="space-y-2">
@@ -234,7 +234,7 @@ export function InstallersSection({
               const instPrepaid = getInstallerPrepaidOptions(inst.name);
               const isExpanded = prepaidInstallerExpanded === inst.name;
               return (
-                <div key={inst.name} className={`card-surface rounded-xl overflow-hidden ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-green)]/40' : ''}`}>
+                <div key={inst.name} className={`card-surface rounded-xl overflow-hidden ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-emerald-solid)]/40' : ''}`}>
                   <div className="px-4 py-3 flex items-center justify-between group">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {installerSelectMode && (
@@ -247,7 +247,7 @@ export function InstallersSection({
                           className="flex-shrink-0"
                         >
                           {selectedInstallers.has(inst.name)
-                            ? <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+                            ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
                             : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                         </button>
                       )}
@@ -255,7 +255,7 @@ export function InstallersSection({
                         <p className="text-white text-sm font-medium">{inst.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {productCatalogInstallerConfigs[inst.name] && (
-                            <span className="text-[10px] text-[var(--accent-green)]/70">Product Catalog</span>
+                            <span className="text-[10px] text-[var(--accent-emerald-solid)]/70">Product Catalog</span>
                           )}
                           {instPrepaid.length > 0 && (
                             <span className="text-[10px] text-violet-400/70">Prepaid: {instPrepaid.join(', ')}</span>
@@ -286,7 +286,7 @@ export function InstallersSection({
                           }
                         }}
                         title="Configure pay schedule"
-                        className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-[var(--accent-green)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-green)] opacity-0 group-hover:opacity-100'}`}
+                        className={`transition-colors ${payScheduleExpanded === inst.name ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] opacity-0 group-hover:opacity-100'}`}
                       >
                         <DollarSign className="w-3.5 h-3.5" />
                       </button>
@@ -352,10 +352,10 @@ export function InstallersSection({
                                       if (e.key === 'Escape') setEditingPrepaid(null);
                                     }}
                                     autoFocus
-                                    className="flex-1 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                                    className="flex-1 bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                                   />
                                   <button onClick={() => { if (editPrepaidVal.trim()) { updateInstallerPrepaidOption(inst.name, opt, editPrepaidVal.trim()); setEditingPrepaid(null); } }}
-                                    className="text-[var(--accent-green)] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
+                                    className="text-[var(--accent-emerald-solid)] hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => setEditingPrepaid(null)}
                                     className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"><X className="w-3.5 h-3.5" /></button>
                                 </div>
@@ -364,7 +364,7 @@ export function InstallersSection({
                                   <span className="text-white text-xs font-medium">{opt}</span>
                                   <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                     <button onClick={() => { setEditingPrepaid(`${inst.name}::${opt}`); setEditPrepaidVal(opt); }}
-                                      className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors"><Pencil className="w-3 h-3" /></button>
+                                      className="text-[var(--text-muted)] hover:text-[var(--accent-emerald-solid)] transition-colors"><Pencil className="w-3 h-3" /></button>
                                     <button onClick={() => removeInstallerPrepaidOption(inst.name, opt)}
                                       className="text-[var(--text-muted)] hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button>
                                   </div>
@@ -381,7 +381,7 @@ export function InstallersSection({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && newPrepaidOption.trim()) { addInstallerPrepaidOption(inst.name, newPrepaidOption.trim()); setNewPrepaidOption(''); }
                           }}
-                          className="flex-1 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+                          className="flex-1 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
                         />
                         <button
                           onClick={() => { if (newPrepaidOption.trim()) { addInstallerPrepaidOption(inst.name, newPrepaidOption.trim()); setNewPrepaidOption(''); } }}
@@ -404,7 +404,7 @@ export function InstallersSection({
                     const remainder = 100 - previewPct;
                     return (
                       <div className="px-4 pb-4 pt-1 border-t border-[var(--border-subtle)]/50">
-                        <p className="text-xs font-semibold text-[var(--accent-green)]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
+                        <p className="text-xs font-semibold text-[var(--accent-emerald-solid)]/80 uppercase tracking-wider mb-2">Pay Schedule</p>
                         <div className="space-y-3">
                           <div>
                             <label className="block text-xs text-[var(--text-secondary)] mb-1">Install payment %</label>
@@ -421,15 +421,15 @@ export function InstallersSection({
                                   }, 500);
                                 }
                               }}
-                              className="w-24 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                              className="w-24 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                             />
                             <p className="text-[10px] text-[var(--text-dim)] mt-1">% paid at Installed. Remainder paid at PTO (M3).</p>
                           </div>
                           <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                             <p className="text-xs text-[var(--text-secondary)] font-medium">
-                              M2: <span className="text-[var(--accent-green)]">{previewPct}%</span> at Install
+                              M2: <span className="text-[var(--accent-emerald-solid)]">{previewPct}%</span> at Install
                               <span className="text-[var(--text-dim)] mx-1.5">&middot;</span>
-                              M3: <span className="text-[var(--accent-green)]">{remainder}%</span> at PTO
+                              M3: <span className="text-[var(--accent-emerald-solid)]">{remainder}%</span> at PTO
                             </p>
                             {remainder === 0 && (
                               <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Full payment at install — no M3 created.</p>
@@ -477,7 +477,7 @@ export function InstallersSection({
                 className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors ml-auto"
               >
                 {archivedInstallers.every((i) => selectedInstallers.has(i.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </span>
@@ -486,7 +486,7 @@ export function InstallersSection({
           {archivedInstallersOpen && (
           <div className="grid grid-cols-2 gap-2">
             {archivedInstallers.map((inst) => (
-              <div key={inst.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-green)]/40 opacity-90' : ''}`}>
+              <div key={inst.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${installerSelectMode && selectedInstallers.has(inst.name) ? 'ring-1 ring-[var(--accent-emerald-solid)]/40 opacity-90' : ''}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {installerSelectMode && (
                     <button
@@ -498,7 +498,7 @@ export function InstallersSection({
                       className="flex-shrink-0"
                     >
                       {selectedInstallers.has(inst.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
@@ -509,7 +509,7 @@ export function InstallersSection({
                   <button
                     onClick={() => setInstallerActive(inst.name, true)}
                     title="Restore installer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>

@@ -112,7 +112,7 @@ export function PMSection() {
             <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
             <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
           </div>
-          <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
+          <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}>
             <Plus className="w-4 h-4" />
           </button>
         </div>
@@ -163,7 +163,7 @@ export function PMSection() {
                     disabled={!!pm.scopedInstallerId}
                     className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       pm[field]
-                        ? 'bg-emerald-900/30 text-emerald-300 border-[var(--accent-green)]/30'
+                        ? 'bg-emerald-900/30 text-emerald-300 border-[var(--accent-emerald-solid)]/30'
                         : 'bg-[var(--surface-card)]/50 text-[var(--text-muted)] border-[var(--border)]/50'
                     }`}
                     title={pm.scopedInstallerId ? 'Disabled while scoped to an installer' : undefined}

@@ -110,8 +110,8 @@ export function AdminDashboard({
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[var(--text-dim)] inline ml-1" />;
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-[var(--accent-green)] inline ml-1" />
-      : <ChevronDown className="w-3 h-3 text-[var(--accent-green)] inline ml-1" />;
+      ? <ChevronUp className="w-3 h-3 text-[var(--accent-emerald-solid)] inline ml-1" />
+      : <ChevronDown className="w-3 h-3 text-[var(--accent-emerald-solid)] inline ml-1" />;
   };
 
   // Sliding pill for admin period tabs
@@ -192,12 +192,12 @@ export function AdminDashboard({
   // when values hit 8+ digits (e.g. $53,869,792 → $53.87M). Tooltip on
   // hover still shows the exact number via the card's title attr.
   const topStats = [
-    { label: 'Kilo Revenue', value: fmtCompact$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmtCompact$(n), icon: DollarSign, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: `Total revenue from installer baselines across all deals · ${fmt$(Math.round(totalRevenue))}` },
-    { label: 'Gross Profit', value: fmtCompact$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmtCompact$(n), icon: BarChart2, accentHex: 'var(--accent-cyan)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: `Revenue minus Kilo cost basis (closer baseline minus Kilo baseline) · ${fmt$(Math.round(totalProfit))}` },
-    { label: 'Paid Out', value: fmtCompact$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmtCompact$(n), icon: CheckCircle, accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: `Commission disbursed to reps via payroll in the selected period · ${fmt$(Math.round(totalPaid))}` },
+    { label: 'Kilo Revenue', value: fmtCompact$(Math.round(totalRevenue)), raw: Math.round(totalRevenue), format: (n: number) => fmtCompact$(n), icon: DollarSign, accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects', tooltip: `Total revenue from installer baselines across all deals · ${fmt$(Math.round(totalRevenue))}` },
+    { label: 'Gross Profit', value: fmtCompact$(Math.round(totalProfit)), raw: Math.round(totalProfit), format: (n: number) => fmtCompact$(n), icon: BarChart2, accentHex: 'var(--accent-cyan-solid)', accentGradient: totalProfit >= 0 ? 'from-emerald-500 to-emerald-400' : 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: `Revenue minus Kilo cost basis (closer baseline minus Kilo baseline) · ${fmt$(Math.round(totalProfit))}` },
+    { label: 'Paid Out', value: fmtCompact$(Math.round(totalPaid)), raw: Math.round(totalPaid), format: (n: number) => fmtCompact$(n), icon: CheckCircle, accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/payroll?status=Paid', tooltip: `Commission disbursed to reps via payroll in the selected period · ${fmt$(Math.round(totalPaid))}` },
     { label: 'Total Users', value: totalUsers.toString(), raw: totalUsers, format: (n: number) => n.toString(), icon: Users, accentHex: '#b47dff', accentGradient: 'from-purple-500 to-purple-400', href: '/dashboard/users', tooltip: 'Number of active sales reps in the system' },
     { label: 'Total Sold', value: formatCompactKW(totalKWSold), raw: Math.round(totalKWSold * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: '#00d4c8', accentGradient: 'from-teal-500 to-teal-400', href: '/dashboard/projects', tooltip: 'Total system size from all deals (kW or MW when ≥1 MW)' },
-    { label: 'Total Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Total system size from Installed, PTO, or Completed projects' },
+    { label: 'Total Installed', value: formatCompactKW(totalKWInstalled), raw: Math.round(totalKWInstalled * 10), format: (n: number) => formatCompactKW(n / 10), icon: Zap, accentHex: 'var(--accent-red-solid)', accentGradient: 'from-red-500 to-red-400', href: '/dashboard/projects', tooltip: 'Total system size from Installed, PTO, or Completed projects' },
   ];
 
   // Period-filtered aggregations (stat cards, pipeline bar, installer ranking)
@@ -257,16 +257,16 @@ export function AdminDashboard({
   }, [projects]);
 
   const pipelineStats = [
-    { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-cyan)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
+    { label: 'Active Projects', value: periodActiveCount, raw: periodActiveCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-cyan-solid)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects', tooltip: 'Projects currently in the pipeline (New through PTO)' },
     { label: 'Inactive Projects', value: periodInactiveCount, raw: periodInactiveCount, format: (n: number) => n.toString(), accentHex: 'var(--text-dim)', accentGradient: 'from-blue-500 to-blue-400', href: '/dashboard/projects?status=inactive', tooltip: 'Projects that are cancelled or on hold' },
-    { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-green)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
+    { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
   // Inline pipeline phase hex colors for the segmented bar
   const PHASE_HEX: Record<string, string> = {
     'New': '#38bdf8', 'Acceptance': '#818cf8', 'Site Survey': '#a78bfa',
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
-    'Installed': '#2dd4bf', 'PTO': 'var(--accent-cyan)',
+    'Installed': '#2dd4bf', 'PTO': 'var(--accent-cyan-solid)',
   };
 
   // Attention items count (used for All Clear vs Needs Attention)
@@ -300,9 +300,9 @@ export function AdminDashboard({
 
   // GradCard color config for the 6 stat cards
   const gradCardConfig: Record<string, { color: string; grad: string }> = {
-    'Kilo Revenue':      { color: 'var(--accent-green)', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
-    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red)', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: 'var(--accent-cyan)', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
-    'Paid Out':          { color: 'var(--accent-amber)', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
+    'Kilo Revenue':      { color: 'var(--accent-emerald-solid)', grad: 'linear-gradient(135deg, #00160d 0%, #001c10 100%)' },
+    'Gross Profit':      totalProfit < 0 ? { color: 'var(--accent-red-solid)', grad: 'linear-gradient(135deg, #160000 0%, #1a0000 100%)' } : { color: 'var(--accent-cyan-solid)', grad: 'linear-gradient(135deg, #000e16 0%, #001218 100%)' },
+    'Paid Out':          { color: 'var(--accent-amber-solid)', grad: 'linear-gradient(135deg, #120b00 0%, #180e00 100%)' },
     'Total Users':       { color: '#b47dff', grad: 'linear-gradient(135deg, #0a061a 0%, #0e0820 100%)' },
     'Total Sold':     { color: '#00d4c8', grad: 'linear-gradient(135deg, #001210 0%, #001614 100%)' },
     'Total Installed': { color: 'var(--text-muted)', grad: 'linear-gradient(135deg, #101012 0%, #141416 100%)' },
@@ -312,7 +312,7 @@ export function AdminDashboard({
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, var(--accent-green), var(--accent-cyan))' }} />
+          <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, var(--accent-emerald-solid), var(--accent-cyan-solid))' }} />
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Admin Dashboard · Overview of all reps and deals</p>
@@ -320,7 +320,7 @@ export function AdminDashboard({
               <button
                 onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
                 className="text-xs font-semibold px-3 py-1 rounded-full border transition-colors whitespace-nowrap"
-                style={{ background: 'rgba(0,229,160,0.10)', borderColor: 'rgba(0,229,160,0.3)', color: 'var(--accent-green)' }}
+                style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-solid)' }}
               >
                 My Rep View
               </button>
@@ -349,10 +349,10 @@ export function AdminDashboard({
       {/* Quick-action toolbar */}
       <div className="grid grid-cols-4 gap-2.5 mb-7">
         {[
-          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[var(--accent-green)]/25', textCls: 'text-[var(--accent-green)]', href: '/dashboard/payroll'   },
+          { label: 'Run Payroll', Icon: Banknote,   bgClass: 'bg-[#00160d]',  hoverBg: 'hover:bg-[#001e12]', borderCls: 'border-[var(--accent-emerald-solid)]/25', textCls: 'text-[var(--accent-emerald-solid)]', href: '/dashboard/payroll'   },
           { label: 'Add User',   Icon: UserPlus,   bgClass: 'bg-[#0a061a]',  hoverBg: 'hover:bg-[#0e0820]', borderCls: 'border-[#b47dff]/25', textCls: 'text-[#b47dff]', href: '/dashboard/users'     },
-          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[var(--accent-cyan)]/25', textCls: 'text-[var(--accent-cyan)]', href: '/dashboard/new-deal'  },
-          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[var(--accent-amber)]/25', textCls: 'text-[var(--accent-amber)]', href: '/dashboard/settings'  },
+          { label: 'New Deal',   Icon: PlusCircle, bgClass: 'bg-[#000e16]',  hoverBg: 'hover:bg-[#001218]', borderCls: 'border-[var(--accent-cyan-solid)]/25', textCls: 'text-[var(--accent-cyan-solid)]', href: '/dashboard/new-deal'  },
+          { label: 'Settings',  Icon: Settings,   bgClass: 'bg-[#120b00]',  hoverBg: 'hover:bg-[#180e00]', borderCls: 'border-[var(--accent-amber-solid)]/25', textCls: 'text-[var(--accent-amber-solid)]', href: '/dashboard/settings'  },
         ].map(({ label, Icon, bgClass, hoverBg, borderCls, textCls, href }) => (
           <Link
             key={label}
@@ -395,7 +395,7 @@ export function AdminDashboard({
       {/* Pipeline stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {pipelineStats.map((s, i) => (
-          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-[var(--accent-green)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
+          <Link key={s.label} href={s.href} className={`group card-surface card-surface-stat rounded-2xl p-5 h-full cursor-pointer hover:border-[var(--accent-emerald-solid)]/30 hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ '--card-accent': `${s.accentHex}14` } as CSSProperties}>
             <div className="h-[2px] w-12 rounded-full mb-3" style={{ background: s.accentHex }} />
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>
@@ -419,7 +419,7 @@ export function AdminDashboard({
       {/* Pipeline Overview — inline segmented bar */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 26px', marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)', flexShrink: 0 }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-emerald-solid)', boxShadow: '0 0 8px var(--accent-emerald-solid)', flexShrink: 0 }} />
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>Pipeline Overview</h2>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{periodPipelineTotal} active deal{periodPipelineTotal !== 1 ? 's' : ''}</span>
         </div>
@@ -458,12 +458,12 @@ export function AdminDashboard({
 
       {/* Needs Attention / All Clear */}
       {attentionItemCount === 0 ? (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-green)', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-green)' }} />
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-emerald-solid)', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid var(--accent-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-emerald-solid)' }} />
           </div>
           <div>
-            <p style={{ color: 'var(--accent-green)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
+            <p style={{ color: 'var(--accent-emerald-solid)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
             <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
           </div>
         </div>
@@ -491,8 +491,8 @@ export function AdminDashboard({
             onClick={() => setTopRepsExpanded((e) => !e)}
             className="flex items-center gap-2 w-full text-left group"
           >
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,229,160,0.15)' }}>
-              <Trophy className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--accent-emerald-soft)' }}>
+              <Trophy className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
             </div>
             <h2 className="text-white font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Top Reps</h2>
             <span className="text-xs text-[var(--text-muted)] mr-2">
@@ -511,8 +511,8 @@ export function AdminDashboard({
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums"
                       style={{
-                        background: r.rank === 1 ? 'rgba(0,229,160,0.15)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
-                        color: r.rank === 1 ? 'var(--accent-green)' : r.rank === 2 ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                        color: r.rank === 1 ? 'var(--accent-emerald-solid)' : r.rank === 2 ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
                       }}
                     >
                       {r.rank}
@@ -661,7 +661,7 @@ export function AdminDashboard({
         const thCls = (col: SortKey) =>
           `text-left px-6 py-3 text-xs font-medium select-none cursor-pointer transition-colors ${
             sortKey === col
-              ? 'text-[var(--accent-green)] bg-[var(--accent-green)]/[0.04]'
+              ? 'text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/[0.04]'
               : 'text-[var(--text-secondary)] hover:text-white'
           }`;
 
@@ -684,7 +684,7 @@ export function AdminDashboard({
               placeholder="Search customer or rep..."
               value={recentSearch}
               onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-              className="bg-[var(--surface-card)] border border-[var(--border)] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] transition-colors"
+              className="bg-[var(--surface-card)] border border-[var(--border)] text-white placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs w-56 focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] transition-colors"
             />
             {recentSearch.trim() && (
               <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</span>
@@ -719,9 +719,9 @@ export function AdminDashboard({
                       const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + coCloserPay);
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) + coSetterPay);
                       return (
-                      <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-green)]/[0.03] transition-colors duration-150">
+                      <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150">
                         {/* 1 */}<td className="px-6 py-3">
-                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-green)] transition-colors">{proj.customerName}</Link>
+                          <Link href={`/dashboard/projects/${proj.id}`} className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors">{proj.customerName}</Link>
                           {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Sub-Dealer</span>}
                         </td>
                         {/* 2 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs">{proj.subDealerName ?? proj.repName}{proj.setterName ? <span className="text-[var(--text-dim)]"> / {proj.setterName}</span> : ''}</td>
@@ -731,7 +731,7 @@ export function AdminDashboard({
                         {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
                         {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
                         {/* 8 */}<td className="px-6 py-3">
-                          <span className="text-[var(--accent-green)] font-medium">${closerPay.toLocaleString()}</span>
+                          <span className="text-[var(--accent-emerald-solid)] font-medium">${closerPay.toLocaleString()}</span>
                           {setterPay > 0 && <span className="block text-[var(--text-dim)] text-xs">+${setterPay.toLocaleString()} setter</span>}
                         </td>
                         {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={isCancelled ? 0 : (proj.m1Amount ?? 0)} /></td>

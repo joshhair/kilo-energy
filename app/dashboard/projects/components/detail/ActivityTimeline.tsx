@@ -34,11 +34,11 @@ function relativeTime(dateStr: string): string {
 
 // ─── Activity type styling ────────────────────────────────────────────
 const ACTIVITY_STYLES: Record<string, { color: string; icon: typeof Clock }> = {
-  phase_change:    { color: 'bg-[var(--accent-green)]',    icon: ArrowRight },
+  phase_change:    { color: 'bg-[var(--accent-emerald-solid)]',    icon: ArrowRight },
   flagged:         { color: 'bg-red-500',     icon: Flag },
   unflagged:       { color: 'bg-red-400',     icon: FlagOff },
-  m1_paid:         { color: 'bg-[var(--accent-green)]', icon: Check },
-  m2_paid:         { color: 'bg-[var(--accent-green)]', icon: Check },
+  m1_paid:         { color: 'bg-[var(--accent-emerald-solid)]', icon: Check },
+  m2_paid:         { color: 'bg-[var(--accent-emerald-solid)]', icon: Check },
   note_edit:       { color: 'bg-amber-500',   icon: MessageSquare },
   field_edit:      { color: 'bg-[var(--text-muted)]',   icon: Pencil },
   created:         { color: 'bg-purple-500',  icon: Plus },
@@ -121,7 +121,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="mt-3 text-xs text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors disabled:opacity-50"
+          className="mt-3 text-xs text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] transition-colors disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>

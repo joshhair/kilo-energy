@@ -44,17 +44,17 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 const COST_CATEGORY_STYLES: Record<string, { badge: string; bar: string }> = {
-  housing:    { badge: 'bg-blue-900/40 text-[var(--accent-cyan)] border border-blue-700/30',       bar: 'bg-[var(--accent-green)]' },
+  housing:    { badge: 'bg-blue-900/40 text-[var(--accent-cyan-solid)] border border-blue-700/30',       bar: 'bg-[var(--accent-emerald-solid)]' },
   travel:     { badge: 'bg-purple-900/40 text-purple-300 border border-purple-700/30',  bar: 'bg-purple-500' },
   gas:        { badge: 'bg-amber-900/40 text-amber-300 border border-amber-700/30',     bar: 'bg-amber-500' },
-  meals:      { badge: 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/30', bar: 'bg-[var(--accent-green)]' },
+  meals:      { badge: 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/30', bar: 'bg-[var(--accent-emerald-solid)]' },
   incentives: { badge: 'bg-pink-900/40 text-pink-300 border border-pink-700/30',        bar: 'bg-pink-500' },
   swag:       { badge: 'bg-orange-900/40 text-orange-300 border border-orange-700/30',  bar: 'bg-orange-500' },
   other:      { badge: 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border border-[var(--border)]/30',        bar: 'bg-[var(--text-muted)]' },
 };
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; border: string }> = {
-  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-[var(--accent-cyan)]',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
+  upcoming:  { bg: 'bg-blue-900/30',    text: 'text-[var(--accent-cyan-solid)]',    dot: 'bg-blue-400',    border: 'border-blue-700/30' },
   active:    { bg: 'bg-emerald-900/30',  text: 'text-emerald-300', dot: 'bg-emerald-400', border: 'border-emerald-700/30' },
   completed: { bg: 'bg-[var(--surface-card)]/50',     text: 'text-[var(--text-secondary)]',    dot: 'bg-[var(--text-muted)]',    border: 'border-[var(--border)]/30' },
   cancelled: { bg: 'bg-red-900/30',      text: 'text-red-300',     dot: 'bg-red-400',     border: 'border-red-700/30' },
@@ -565,33 +565,33 @@ export default function BlitzDetailPage() {
             </div>
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">Blitz Name</label>
-              <input autoFocus value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none" onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false); }} />
+              <input autoFocus value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false); }} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Location</label>
-                <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none" />
+                <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
               </div>
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Housing / Address</label>
-                <input value={editForm.housing} onChange={(e) => setEditForm((f) => ({ ...f, housing: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none" />
+                <input value={editForm.housing} onChange={(e) => setEditForm((f) => ({ ...f, housing: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Start Date</label>
-                <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((f) => ({ ...f, startDate: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none" />
+                <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((f) => ({ ...f, startDate: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
               </div>
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">End Date</label>
-                <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none" />
+                <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {isAdmin && (
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Blitz Leader</label>
-                <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none">
+                <select value={editForm.ownerId} onChange={(e) => setEditForm((f) => ({ ...f, ownerId: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none">
                   {(() => {
                     const activeReps = reps.filter((r) => r.active);
                     const currentOwnerInList = activeReps.some((r) => r.id === blitz?.owner?.id);
@@ -609,7 +609,7 @@ export default function BlitzDetailPage() {
               )}
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Notes</label>
-                <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-green)] focus:border-transparent outline-none resize-none" />
+                <textarea value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none resize-none" />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
@@ -618,7 +618,7 @@ export default function BlitzDetailPage() {
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -701,12 +701,12 @@ export default function BlitzDetailPage() {
             {isAdmin ? (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Net Profit</p>
-                <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-green)]' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
+                <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-emerald-solid)]' : 'text-red-400'}`}>{formatCurrency(netProfit)}</p>
               </div>
             ) : (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
                 <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> My Pay</p>
-                <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
+                <p className="text-2xl font-bold text-[var(--accent-emerald-solid)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
               </div>
             )}
           </div>
@@ -725,7 +725,7 @@ export default function BlitzDetailPage() {
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">kW Sold</p>
                 </div>
                 <div>
-                    <p className="text-2xl font-bold text-[var(--accent-green)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
+                    <p className="text-2xl font-bold text-[var(--accent-emerald-solid)]">{formatCurrency(visibleProjects.reduce((s: number, p: any) => { const ccEntry = (p.additionalClosers ?? []).find((cc: any) => cc.userId === effectiveRepId); const csEntry = (p.additionalSetters ?? []).find((cs: any) => cs.userId === effectiveRepId); return s + (p.closer?.id === effectiveRepId ? (p.setter?.id === effectiveRepId ? (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)) : (p.setter?.id === effectiveRepId ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : (ccEntry ? (ccEntry.m1Amount ?? 0) + (ccEntry.m2Amount ?? 0) + (ccEntry.m3Amount ?? 0) : (csEntry ? (csEntry.m1Amount ?? 0) + (csEntry.m2Amount ?? 0) + (csEntry.m3Amount ?? 0) : 0)))); }, 0))}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">Projected Pay</p>
                 </div>
               </div>
@@ -743,7 +743,7 @@ export default function BlitzDetailPage() {
               </div>
               <div className="w-full bg-[var(--surface-card)] rounded-full h-2.5 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${blitz.status === 'completed' ? 'bg-[var(--accent-green)]' : 'bg-[var(--accent-green)]'}`}
+                  className={`h-full rounded-full transition-all duration-500 ${blitz.status === 'completed' ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--accent-emerald-solid)]'}`}
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -769,7 +769,7 @@ export default function BlitzDetailPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-[var(--text-muted)]">Leader</span>
-                  <Link href={`/dashboard/users/${blitz.owner.id}`} className="text-white font-medium hover:text-[var(--accent-cyan)] transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
+                  <Link href={`/dashboard/users/${blitz.owner.id}`} className="text-white font-medium hover:text-[var(--accent-cyan-solid)] transition-colors">{blitz.owner.firstName} {blitz.owner.lastName}</Link>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--text-muted)]">Duration</span>
@@ -794,15 +794,15 @@ export default function BlitzDetailPage() {
             <div className="card-surface rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Team</p>
-                <button onClick={() => setTab('participants')} className="text-xs text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors">View all</button>
+                <button onClick={() => setTab('participants')} className="text-xs text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] transition-colors">View all</button>
               </div>
               {approvedParticipants.length === 0 ? (
                 <p className="text-sm text-[var(--text-dim)]">No participants yet</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {approvedParticipants.slice(0, 8).map((p: any) => (
-                    <Link key={p.user.id} href={`/dashboard/users/${p.user.id}`} className="flex items-center gap-1.5 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-full px-2.5 py-1 hover:border-[var(--accent-green)]/40 hover:bg-[var(--surface-card)] transition-colors">
-                      <div className="w-5 h-5 rounded-full bg-[var(--accent-green)]/30 border border-[var(--accent-green)]/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan)]">
+                    <Link key={p.user.id} href={`/dashboard/users/${p.user.id}`} className="flex items-center gap-1.5 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-full px-2.5 py-1 hover:border-[var(--accent-emerald-solid)]/40 hover:bg-[var(--surface-card)] transition-colors">
+                      <div className="w-5 h-5 rounded-full bg-[var(--accent-emerald-solid)]/30 border border-[var(--accent-emerald-solid)]/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan-solid)]">
                         {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
                       </div>
                       <span className="text-xs text-[var(--text-secondary)]">{p.user.firstName}</span>
@@ -841,7 +841,7 @@ export default function BlitzDetailPage() {
               <button
                 onClick={() => setShowAddParticipant(true)}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
               >
                 <UserPlus className="w-4 h-4" /> Add Rep
               </button>
@@ -855,7 +855,7 @@ export default function BlitzDetailPage() {
                 <p className="text-sm text-[var(--text-muted)] mt-1">Add reps to this blitz to start tracking participation</p>
               </div>
               {canManage && (
-                <button onClick={() => setShowAddParticipant(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 rounded-lg hover:bg-[var(--accent-green)]/30 transition-colors">
+                <button onClick={() => setShowAddParticipant(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors">
                   <span className="flex items-center gap-1.5"><UserPlus className="w-4 h-4" /> Add Rep</span>
                 </button>
               )}
@@ -883,7 +883,7 @@ export default function BlitzDetailPage() {
                     const repKW = stats?.kW ?? 0;
                     return (
                     <tr key={p.id} className={`border-b border-[var(--border-subtle)]/50 last:border-0 hover:bg-[var(--surface-card)]/40 transition-colors ${idx % 2 === 0 ? 'bg-[var(--surface)]/20' : ''}`}>
-                      <td className="px-4 py-3 text-white font-medium"><Link href={`/dashboard/users/${p.user.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
+                      <td className="px-4 py-3 text-white font-medium"><Link href={`/dashboard/users/${p.user.id}`} className="hover:text-[var(--accent-cyan-solid)] transition-colors">{p.user.firstName} {p.user.lastName}</Link></td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.joinStatus === 'approved' ? 'bg-emerald-900/30 text-emerald-300' : p.joinStatus === 'pending' ? 'bg-amber-900/30 text-amber-300' : 'bg-red-900/30 text-red-300'}`}>
                           {p.joinStatus}
@@ -907,7 +907,7 @@ export default function BlitzDetailPage() {
                         <td className="px-4 py-3 text-right">
                           {p.joinStatus === 'pending' ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[var(--accent-green)] text-white rounded hover:bg-[var(--accent-green)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
+                              <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'approved' }) }).then((r) => { if (r.ok) { toast('Approved'); loadBlitz(); } else { toast('Failed to approve', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-[var(--accent-emerald-solid)] text-white rounded hover:bg-[var(--accent-emerald-solid)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Approve</button>
                               <button disabled={processingParticipants.has(p.user.id)} onClick={() => { const uid = p.user.id; setProcessingParticipants((s) => new Set(s).add(uid)); fetch(`/api/blitzes/${blitzId}/participants`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid, joinStatus: 'declined' }) }).then((r) => { if (r.ok) { toast('Declined'); loadBlitz(); } else { toast('Failed to decline', 'error'); } }).catch(() => { toast('Network error', 'error'); }).finally(() => { setProcessingParticipants((s) => { const n = new Set(s); n.delete(uid); return n; }); }); }} className="px-2 py-1 text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Decline</button>
                             </div>
                           ) : (
@@ -939,7 +939,7 @@ export default function BlitzDetailPage() {
                     onClick={handleAddParticipant}
                     disabled={!selectedRepId || addingParticipant}
                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
                   >
                     {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {addingParticipant ? 'Adding...' : 'Add'}
@@ -994,9 +994,9 @@ export default function BlitzDetailPage() {
                   {sortedDeals.map((p: any, idx: number) => (
                     <tr key={p.id} className={`border-b border-[var(--border-subtle)]/50 last:border-0 hover:bg-[var(--surface-card)]/40 transition-colors ${idx % 2 === 0 ? 'bg-[var(--surface)]/20' : ''}`}>
                       <td className={'px-4 py-3' + (dealsSort.col === 'customer' ? ' bg-[var(--surface-card)]/20' : '')}>
-                        <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[var(--accent-cyan)] transition-colors">{p.customerName}</Link>
+                        <Link href={`/dashboard/projects/${p.id}`} className="text-white font-medium hover:text-[var(--accent-cyan-solid)] transition-colors">{p.customerName}</Link>
                       </td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id ? <Link href={`/dashboard/users/${p.closer.id}`} className="hover:text-[var(--accent-cyan-solid)] transition-colors">{p.closer?.firstName} {p.closer?.lastName}</Link> : <>{p.closer?.firstName} {p.closer?.lastName}</>}</td>
                       {!isAdmin && !isOwner && <td className="px-4 py-3 text-[var(--text-secondary)]">{p.closer?.id === effectiveRepId && p.setter?.id === effectiveRepId ? 'Self-gen' : p.closer?.id === effectiveRepId || p.additionalClosers?.some((c: any) => c.userId === effectiveRepId) ? 'Closer' : 'Setter'}</td>}
                       <td className="px-4 py-3">
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${PHASE_COLORS[p.phase] ?? 'bg-[var(--surface-card)]/40 text-[var(--text-secondary)] border-[var(--border)]/30'}`}>{p.phase}</span>
@@ -1028,7 +1028,7 @@ export default function BlitzDetailPage() {
             <button
               onClick={() => setShowAddCost(true)}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
             >
               <Plus className="w-4 h-4" /> Add Cost
             </button>
@@ -1050,7 +1050,7 @@ export default function BlitzDetailPage() {
                   onClick={handleAddCost}
                   disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
                 >
                   {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {addingCost ? 'Adding...' : 'Add Cost'}
@@ -1066,7 +1066,7 @@ export default function BlitzDetailPage() {
                 <p className="text-base font-semibold text-white">No costs recorded</p>
                 <p className="text-sm text-[var(--text-muted)] mt-1">Track housing, travel, meals, and other blitz expenses</p>
               </div>
-              <button onClick={() => setShowAddCost(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 rounded-lg hover:bg-[var(--accent-green)]/30 transition-colors">
+              <button onClick={() => setShowAddCost(true)} className="mt-1 px-4 py-2 text-sm font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors">
                 <span className="flex items-center gap-1.5"><Plus className="w-4 h-4" /> Add Cost</span>
               </button>
             </div>

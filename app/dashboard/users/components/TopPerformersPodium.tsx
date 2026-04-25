@@ -51,7 +51,7 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} p-[2px] flex-shrink-0`}>
                 <div
                   className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: 'var(--navy-card)' }}
+                  style={{ backgroundColor: 'var(--surface-pressed)' }}
                 >
                   {initials}
                 </div>

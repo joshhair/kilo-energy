@@ -52,7 +52,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); }
               }}
-              className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-green)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
+              className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
             />
             {financerDup && <p className="text-red-400 text-[10px] mt-1">Already exists</p>}
           </div>
@@ -71,8 +71,8 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
       {financers.filter((f) => !hiddenFinancers.has(f.name)).length === 0 && (
         <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-[var(--accent-green)]/10 flex-shrink-0">
-              <Landmark className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
+              <Landmark className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
             </div>
             <div>
               <p className="text-white font-medium text-sm mb-1">No financers yet</p>
@@ -98,7 +98,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               onClick={() => { setFinancerSelectMode((v) => !v); setSelectedFinancers(new Set()); }}
               className={`ml-auto flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-lg border transition-colors ${
                 financerSelectMode
-                  ? 'bg-[var(--accent-green)]/15 border-[var(--accent-green)]/30 text-[var(--accent-green)]'
+                  ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-solid)]'
                   : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-muted)] hover:text-white'
               }`}
             >
@@ -115,7 +115,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                 className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-white transition-colors"
               >
                 {filteredActiveFinancers.every((f) => selectedFinancers.has(f.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </button>
@@ -127,12 +127,12 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               type="text" placeholder="Search financers..."
               value={financerSearch}
               onChange={(e) => setFinancerSearch(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-[var(--text-dim)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             {filteredActiveFinancers.map((fin) => (
-              <div key={fin.name} className={`card-surface rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-green)]/40' : ''}`}>
+              <div key={fin.name} className={`card-surface rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-emerald-solid)]/40' : ''}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {financerSelectMode && (
                     <button
@@ -144,7 +144,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       className="flex-shrink-0"
                     >
                       {selectedFinancers.has(fin.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
@@ -156,7 +156,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                         return (
                           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                             dealCount > 0
-                              ? 'bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20'
+                              ? 'bg-[var(--accent-emerald-solid)]/10 text-[var(--accent-emerald-solid)] border border-[var(--accent-emerald-solid)]/20'
                               : 'bg-[var(--surface-card)] text-[var(--text-dim)] border border-[var(--border)]/50'
                           }`}>
                             {dealCount} deal{dealCount !== 1 ? 's' : ''}
@@ -246,7 +246,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                 className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors ml-auto"
               >
                 {archivedFinancers.every((f) => selectedFinancers.has(f.name))
-                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[var(--accent-emerald-solid)]" />
                   : <Square className="w-3.5 h-3.5" />}
                 Select all
               </span>
@@ -263,7 +263,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
           <div style={{ overflow: 'hidden' }}>
           <div className="grid grid-cols-2 gap-2">
             {archivedFinancers.map((fin) => (
-              <div key={fin.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-green)]/40 opacity-90' : ''}`}>
+              <div key={fin.name} className={`bg-[var(--surface)]/50 border border-[var(--border-subtle)]/50 rounded-xl px-4 py-3 flex items-center justify-between group opacity-60 hover:opacity-90 transition-opacity ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-emerald-solid)]/40 opacity-90' : ''}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {financerSelectMode && (
                     <button
@@ -275,7 +275,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                       className="flex-shrink-0"
                     >
                       {selectedFinancers.has(fin.name)
-                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-green)]" />
+                        ? <CheckSquare className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
                         : <Square className="w-4 h-4 text-[var(--text-dim)]" />}
                     </button>
                   )}
@@ -286,7 +286,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                   <button
                     onClick={() => setFinancerActive(fin.name, true)}
                     title="Restore financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-green)] transition-colors"
+                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-solid)] transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>

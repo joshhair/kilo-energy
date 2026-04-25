@@ -53,8 +53,8 @@ function getInitials(name: string): string {
 }
 
 const ROLE_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  admin:        { bg: 'bg-emerald-900/40', text: 'text-[var(--accent-green)]', label: 'Admin' },
-  rep:          { bg: 'bg-blue-900/40',    text: 'text-[var(--accent-green)]',    label: 'Rep' },
+  admin:        { bg: 'bg-emerald-900/40', text: 'text-[var(--accent-emerald-solid)]', label: 'Admin' },
+  rep:          { bg: 'bg-blue-900/40',    text: 'text-[var(--accent-emerald-solid)]',    label: 'Rep' },
   'sub-dealer': { bg: 'bg-amber-900/40',   text: 'text-amber-400',  label: 'Sub-Dealer' },
 };
 
@@ -82,7 +82,7 @@ function renderMessageText(text: string, knownNames: string[]): React.ReactNode[
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
       return (
-        <span key={i} className="text-[var(--accent-green)] font-medium">{part}</span>
+        <span key={i} className="text-[var(--accent-emerald-solid)] font-medium">{part}</span>
       );
     }
     return <span key={i}>{part}</span>;
@@ -124,10 +124,10 @@ function MentionDropdown({ query, anchorRect, reps, onSelect, onClose: _onClose,
           key={rep.id}
           onMouseDown={(e) => { e.preventDefault(); onSelect(rep); }}
           className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
-            idx === highlightIdx ? 'bg-[var(--accent-green)]/20 text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--border)]/60 hover:text-white'
+            idx === highlightIdx ? 'bg-[var(--accent-emerald-solid)]/20 text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--border)]/60 hover:text-white'
           }`}
         >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan)] flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan-solid)] flex-shrink-0">
             {getInitials(rep.name)}
           </div>
           <span className="truncate">{rep.name}</span>
@@ -542,7 +542,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
         <h2 className="text-white font-semibold">Chatter</h2>
         {unreadCount > 0 && (
-          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-[var(--accent-green)] shadow-sm shadow-blue-500/30">
+          <span className="min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-[var(--accent-emerald-solid)] shadow-sm shadow-blue-500/30">
             {unreadCount}
           </span>
         )}
@@ -560,7 +560,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             <button
               onClick={loadEarlierMessages}
               disabled={loadingEarlier}
-              className="text-xs text-[var(--accent-green)] hover:text-[var(--accent-cyan)] font-medium transition-colors disabled:opacity-50"
+              className="text-xs text-[var(--accent-emerald-solid)] hover:text-[var(--accent-cyan-solid)] font-medium transition-colors disabled:opacity-50"
             >
               {loadingEarlier ? (
                 <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> Loading...</span>
@@ -589,13 +589,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               <div
                 key={msg.id}
                 className={`rounded-xl p-4 transition-all animate-fade-in-up ${
-                  isOwn ? 'bg-[var(--accent-green)]/[0.05] border border-[var(--accent-green)]/10' : 'bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/60'
+                  isOwn ? 'bg-[var(--accent-emerald-solid)]/[0.05] border border-[var(--accent-emerald-solid)]/10' : 'bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/60'
                 }`}
                 style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
               >
                 {/* Author row */}
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan)] flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan-solid)] flex-shrink-0">
                     {getInitials(msg.authorName)}
                   </div>
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -626,8 +626,8 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                             onChange={() => toggleCheckItem(msg.id, ci.id, !ci.completed)}
                             className={`w-4 h-4 md:w-4 md:h-4 rounded border-[var(--border)] bg-[var(--surface-card)] focus:ring-offset-0 cursor-pointer flex-shrink-0 min-w-[20px] min-h-[20px] ${
                               ci.completed
-                                ? 'text-[var(--accent-green)] focus:ring-emerald-500/30 accent-[var(--accent-green)]'
-                                : 'text-[var(--accent-green)] focus:ring-[var(--accent-green)]/30 accent-[var(--accent-green)]'
+                                ? 'text-[var(--accent-emerald-solid)] focus:ring-emerald-500/30 accent-[var(--accent-emerald-solid)]'
+                                : 'text-[var(--accent-emerald-solid)] focus:ring-[var(--accent-emerald-solid)]/30 accent-[var(--accent-emerald-solid)]'
                             }`}
                           />
                           <span className={`text-sm ${ci.completed ? 'text-[var(--text-muted)] line-through' : overdue ? 'text-red-300' : 'text-[var(--text-secondary)] group-hover:text-white'}`}>
@@ -668,7 +668,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                                     const val = e.target.value;
                                     setCheckItemDueDate(msg.id, ci.id, val || null);
                                   }}
-                                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs rounded px-1.5 py-0.5 focus:outline-none focus:border-[var(--accent-green)] flex-shrink-0"
+                                  className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs rounded px-1.5 py-0.5 focus:outline-none focus:border-[var(--accent-emerald-solid)] flex-shrink-0"
                                   autoFocus
                                   onBlur={() => setEditingDueDate(null)}
                                 />
@@ -720,7 +720,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               onClick={handleSend}
               disabled={!composeText.trim() || sending}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
             >
               <Send className="w-3.5 h-3.5" />
               Send

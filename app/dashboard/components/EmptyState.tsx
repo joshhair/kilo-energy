@@ -30,7 +30,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
           <button
             onClick={action.onClick}
             className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
-            style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+            style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
           >
             {action.label}
           </button>
@@ -53,7 +53,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
         <button
           onClick={action.onClick}
           className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
-          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' }}
         >
           {action.label}
         </button>

@@ -75,9 +75,9 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
                   <div
                     className={`relative w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold z-10 transition-all duration-500 ${
                       isCompleted
-                        ? 'bg-[var(--accent-green)] text-black'
+                        ? 'bg-[var(--accent-emerald-solid)] text-black'
                         : isCurrent
-                        ? 'bg-[var(--accent-green)] text-black ring-2 ring-[var(--accent-green)] ring-offset-[3px] ring-offset-slate-900'
+                        ? 'bg-[var(--accent-emerald-solid)] text-black ring-2 ring-[var(--accent-emerald-solid)] ring-offset-[3px] ring-offset-slate-900'
                         : 'bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-muted)]'
                     }`}
                   >
@@ -92,8 +92,8 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
                 {/* Label */}
                 <span
                   className={`mt-1.5 text-[9px] leading-tight text-center font-medium w-full ${
-                    isCurrent   ? 'text-[var(--accent-green)]'
-                    : isCompleted ? 'text-[var(--accent-green)]'
+                    isCurrent   ? 'text-[var(--accent-emerald-solid)]'
+                    : isCompleted ? 'text-[var(--accent-emerald-solid)]'
                     : 'text-[var(--text-dim)]'
                   }`}
                 >
@@ -124,7 +124,7 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
               ? daysSinceSold > 60
                 ? 'bg-red-900/40 border border-red-500/20 text-red-300'
                 : 'bg-amber-900/40 border border-amber-500/20 text-amber-300'
-              : 'bg-blue-900/40 border border-[var(--accent-green)]/20 text-[var(--accent-cyan)]'
+              : 'bg-blue-900/40 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-cyan-solid)]'
           }`}>
             <Clock className="w-3 h-3" />
             {daysSinceSold} day{daysSinceSold !== 1 ? 's' : ''} since sold
@@ -155,7 +155,7 @@ export function PipelineStepper({ phase, soldDate }: { phase: Phase; soldDate: s
 
         {/* Completion message */}
         {isComplete && (
-          <p className="text-xs text-[var(--accent-green)] font-medium">
+          <p className="text-xs text-[var(--accent-emerald-solid)] font-medium">
             Project complete!
           </p>
         )}
@@ -202,9 +202,9 @@ export function PhaseBadge({ phase }: { phase: Phase }) {
     : completed
     ? 'bg-green-900/50 text-green-400 ring-1 ring-green-500/30'
     : pto
-    ? 'bg-emerald-900/50 text-[var(--accent-green)]'
+    ? 'bg-emerald-900/50 text-[var(--accent-emerald-solid)]'
     : onHold
     ? 'bg-yellow-900/50 text-yellow-400'
-    : 'bg-blue-900/50 text-[var(--accent-green)]';
+    : 'bg-blue-900/50 text-[var(--accent-emerald-solid)]';
   return <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${cls}`}>{phase}{completed && ' ✓'}</span>;
 }

@@ -1,14 +1,14 @@
 'use client';
 
 const STAT_CARD_STYLES: Record<string, { bg: string; border: string; accent: string; textColor: string }> = {
-  'from-blue-500 to-blue-400':       { bg: 'linear-gradient(135deg, #040c1c, #060e22)', border: 'var(--accent-blue)30', accent: 'var(--accent-blue)', textColor: 'var(--accent-blue)' },
-  'from-yellow-500 to-yellow-400':   { bg: 'linear-gradient(135deg, #120b00, #180e00)', border: 'var(--accent-amber)30', accent: 'var(--accent-amber)', textColor: 'var(--accent-amber)' },
-  'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: 'var(--accent-green)', textColor: 'var(--accent-green)' },
+  'from-blue-500 to-blue-400':       { bg: 'linear-gradient(135deg, #040c1c, #060e22)', border: 'var(--accent-blue-solid)30', accent: 'var(--accent-blue-solid)', textColor: 'var(--accent-blue-solid)' },
+  'from-yellow-500 to-yellow-400':   { bg: 'linear-gradient(135deg, #120b00, #180e00)', border: 'var(--accent-amber-solid)30', accent: 'var(--accent-amber-solid)', textColor: 'var(--accent-amber-solid)' },
+  'from-emerald-500 to-emerald-400': { bg: 'linear-gradient(135deg, #00160d, #001c10)', border: '#00e07a30', accent: 'var(--accent-emerald-solid)', textColor: 'var(--accent-emerald-solid)' },
 };
 
 export function StatCard({ label, value, color: _color, accentGradient, className, entryCount }: { label: string; value: number; color: string; border?: string; accentGradient?: string; className?: string; entryCount?: number }) {
   const accent = accentGradient ?? 'from-blue-500 to-blue-400';
-  const s = STAT_CARD_STYLES[accent] ?? { bg: 'var(--surface-card)', border: 'var(--border)', accent: 'var(--accent-blue)', textColor: 'var(--accent-blue)' };
+  const s = STAT_CARD_STYLES[accent] ?? { bg: 'var(--surface-card)', border: 'var(--border)', accent: 'var(--accent-blue-solid)', textColor: 'var(--accent-blue-solid)' };
   return (
     <div
       className={`rounded-2xl p-5 h-full transition-all duration-200 hover:translate-y-[-2px] ${className ?? ''}`}
@@ -28,8 +28,8 @@ export function StatCard({ label, value, color: _color, accentGradient, classNam
 
 export function ReimBadge({ status }: { status: string }) {
   const st =
-    status === 'Approved' ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)' }
-    : status === 'Pending'  ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)' }
-    : { background: 'rgba(255,82,82,0.12)', color: 'var(--accent-red)' };
+    status === 'Approved' ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-solid)' }
+    : status === 'Pending'  ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-solid)' }
+    : { background: 'rgba(255,82,82,0.12)', color: 'var(--accent-red-solid)' };
   return <span className="px-2 py-0.5 rounded text-xs font-medium" style={st}>{status}</span>;
 }

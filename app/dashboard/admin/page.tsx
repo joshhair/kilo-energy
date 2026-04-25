@@ -52,10 +52,10 @@ export default function AdminHubPage() {
             <Link
               key={t.href}
               href={t.href}
-              className="card-surface rounded-2xl p-5 hover:border-[var(--accent-cyan)]/30 transition-colors group"
+              className="card-surface rounded-2xl p-5 hover:border-[var(--accent-cyan-solid)]/30 transition-colors group"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--accent-cyan)]/10 flex items-center justify-center mb-3 group-hover:bg-[var(--accent-cyan)]/20 transition-colors">
-                <Icon className="w-5 h-5 text-[var(--accent-cyan)]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent-cyan-solid)]/10 flex items-center justify-center mb-3 group-hover:bg-[var(--accent-cyan-solid)]/20 transition-colors">
+                <Icon className="w-5 h-5 text-[var(--accent-cyan-solid)]" />
               </div>
               <h2 className="text-white font-semibold mb-1.5">{t.title}</h2>
               <p className="text-[var(--text-muted)] text-xs leading-relaxed">{t.description}</p>

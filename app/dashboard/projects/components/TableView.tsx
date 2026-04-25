@@ -207,7 +207,7 @@ function SetterPopover({
                   {/* Role badge */}
                   {isTrainee(currentSetter.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-[var(--accent-green)] text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[var(--accent-emerald-solid)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                   {/* Green checkmark */}
                   <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
@@ -247,7 +247,7 @@ function SetterPopover({
                   {/* Role badge */}
                   {isTrainee(rep.id)
                     ? <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">★ Trainee</span>
-                    : <span className="text-[var(--accent-green)] text-[10px] font-medium flex-shrink-0">Setter</span>
+                    : <span className="text-[var(--accent-emerald-solid)] text-[10px] font-medium flex-shrink-0">Setter</span>
                   }
                 </button>
               ))
@@ -624,7 +624,7 @@ export default function TableView({
             onChange={(e) => setSearchInput(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500"
+            className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500"
             style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           />
           {/* Clear button — shown when there is a search query */}
@@ -731,7 +731,7 @@ export default function TableView({
                       type="checkbox"
                       checked={allPageSelected}
                       onChange={toggleAllProjects}
-                      className="accent-[var(--accent-green)] w-4 h-4 rounded cursor-pointer"
+                      className="accent-[var(--accent-emerald-solid)] w-4 h-4 rounded cursor-pointer"
                       aria-label="Select all projects on this page"
                     />
                   </th>
@@ -783,16 +783,16 @@ export default function TableView({
                     tabIndex={0}
                     role="row"
                     onClick={() => { try { sessionStorage.setItem('kilo-project-nav', JSON.stringify(sortedProjects.map((p) => p.id))); } catch {} tableRouter.push(`/dashboard/projects/${proj.id}`); }}
-                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/60 focus-visible:ring-inset`}
+                  className={`group table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/60 focus-visible:ring-inset`}
                   style={{
                     borderBottom: '1px solid var(--border)',
                     background: selectedProjectIds.has(proj.id)
                       ? 'rgba(77,159,255,0.08)'
                       : i % 2 === 0 ? 'var(--surface)' : '#191c24',
                     borderLeft: proj.flagged
-                      ? '3px solid var(--accent-red)'
+                      ? '3px solid var(--accent-red-solid)'
                       : isMyRow
-                        ? '3px solid var(--accent-blue)'
+                        ? '3px solid var(--accent-blue-solid)'
                         : undefined,
                   }}
                 >
@@ -803,7 +803,7 @@ export default function TableView({
                         checked={selectedProjectIds.has(proj.id)}
                         onChange={() => toggleProject(proj.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="accent-[var(--accent-green)] w-4 h-4 rounded cursor-pointer"
+                        className="accent-[var(--accent-emerald-solid)] w-4 h-4 rounded cursor-pointer"
                         aria-label={`Select ${proj.customerName}`}
                       />
                     </td>
@@ -811,7 +811,7 @@ export default function TableView({
                   <td className="px-5 py-3">
                     <Link
                       href={`/dashboard/projects/${proj.id}`}
-                      className="text-white hover:text-[var(--accent-green)] transition-colors flex items-center gap-1.5"
+                      className="text-white hover:text-[var(--accent-emerald-solid)] transition-colors flex items-center gap-1.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {proj.customerName}
@@ -830,7 +830,7 @@ export default function TableView({
                     >
                       {proj.repName}
                       {(proj.additionalClosers?.length ?? 0) > 0 && (
-                        <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                        <span className="ml-1 text-[10px] text-[var(--accent-emerald-solid)] font-semibold">
                           +{proj.additionalClosers!.length}
                         </span>
                       )}
@@ -849,15 +849,15 @@ export default function TableView({
                       >
                         {proj.repName}
                         {(proj.additionalClosers?.length ?? 0) > 0 && (
-                          <span className="text-[10px] text-[var(--accent-green)] font-semibold">
+                          <span className="text-[10px] text-[var(--accent-emerald-solid)] font-semibold">
                             +{proj.additionalClosers!.length}
                           </span>
                         )}
                         {isMyRow && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-[var(--accent-cyan)] border border-[var(--accent-green)]/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-green)]/40'
+                              ? 'bg-blue-900/60 text-[var(--accent-cyan-solid)] border border-[var(--accent-emerald-solid)]/40'
+                              : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-emerald-solid)]/40'
                           }`}>
                             You · {myRole}
                           </span>
@@ -871,7 +871,7 @@ export default function TableView({
                         value={proj.phase}
                         onChange={(e) => onPhaseChange(proj.id, e.target.value as Phase)}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                        className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                       >
                         {PHASES.map((ph) => (
                           <option key={ph} value={ph}>{ph}</option>
@@ -884,7 +884,7 @@ export default function TableView({
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.installer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.financer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
-                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
+                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
                   <td className="px-5 py-3 text-[var(--text-muted)]">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[var(--text-dim)]">{relativeTime(proj.soldDate)}</div>
@@ -900,7 +900,7 @@ export default function TableView({
                             <button
                               onClick={(e) => { e.stopPropagation(); onPhaseChange(proj.id, nextPhase); }}
                               title={`Advance to ${nextPhase}`}
-                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-[var(--border)] hover:bg-[var(--accent-green)] text-[var(--text-secondary)] hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                              className="opacity-40 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-md bg-[var(--border)] hover:bg-[var(--accent-emerald-solid)] text-[var(--text-secondary)] hover:text-white active:scale-[0.97] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                               aria-label={`Advance ${proj.customerName} to ${nextPhase}`}
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -940,9 +940,9 @@ export default function TableView({
                             <rect x="14" y="40" width="34" height="3" rx="1.5" fill="#1e293b"/>
                             <rect x="14" y="47" width="22" height="3" rx="1.5" fill="#1e293b"/>
                             {/* Magnifying glass */}
-                            <circle cx="56" cy="52" r="12" stroke="var(--accent-cyan)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
-                            <circle cx="56" cy="52" r="7" stroke="var(--accent-cyan)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
-                            <line x1="64.5" y1="61" x2="72" y2="69" stroke="var(--accent-cyan)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
+                            <circle cx="56" cy="52" r="12" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" fill="none" strokeOpacity="0.6"/>
+                            <circle cx="56" cy="52" r="7" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" fill="none" strokeOpacity="0.3"/>
+                            <line x1="64.5" y1="61" x2="72" y2="69" stroke="var(--accent-cyan-solid)" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6"/>
                             {/* X inside lens */}
                             <line x1="53" y1="49" x2="59" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
                             <line x1="59" y1="49" x2="53" y2="55" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
@@ -967,12 +967,12 @@ export default function TableView({
                             {/* Folder tab */}
                             <path d="M10 22 L30 22 L34 27 L10 27 Z" fill="#334155"/>
                             {/* Solar panel grid inside folder */}
-                            <rect x="22" y="36" width="8" height="6" rx="1" fill="var(--accent-green)" fillOpacity="0.5" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="32" y="36" width="8" height="6" rx="1" fill="var(--accent-green)" fillOpacity="0.5" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="42" y="36" width="8" height="6" rx="1" fill="var(--accent-green)" fillOpacity="0.5" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.6"/>
-                            <rect x="22" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.4"/>
-                            <rect x="32" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.4"/>
-                            <rect x="42" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan)" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="22" y="36" width="8" height="6" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="32" y="36" width="8" height="6" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="42" y="36" width="8" height="6" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.6"/>
+                            <rect x="22" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="32" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.4"/>
+                            <rect x="42" y="44" width="8" height="6" rx="1" fill="#1d4ed8" fillOpacity="0.4" stroke="var(--accent-cyan-solid)" strokeWidth="0.75" strokeOpacity="0.4"/>
                             {/* Sparkle / plus icon */}
                             <circle cx="58" cy="22" r="8" fill="var(--surface-card)"/>
                             <line x1="58" y1="17" x2="58" y2="27" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round"/>
@@ -1020,13 +1020,13 @@ export default function TableView({
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill with total kW */}
-            <span className="flex items-center gap-1.5 bg-[var(--accent-green)]/15 border border-[var(--accent-green)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+            <span className="flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
               <span className="text-white font-bold tabular-nums">{selectedProjectIds.size}</span>
-              <span className="text-[var(--accent-green)] font-medium">selected</span>
+              <span className="text-[var(--accent-emerald-solid)] font-medium">selected</span>
               {selectedTotalKw > 0 && (
                 <>
                   <span className="text-[var(--text-dim)] mx-0.5">&middot;</span>
-                  <span className="text-[var(--accent-green)] font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
+                  <span className="text-[var(--accent-emerald-solid)] font-semibold tabular-nums">{selectedTotalKw.toFixed(1)} kW</span>
                 </>
               )}
             </span>
@@ -1037,7 +1037,7 @@ export default function TableView({
             {/* Advance Phase — primary action */}
             <button
               onClick={handleBulkAdvance}
-              className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
+              className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap inline-flex items-center gap-1.5"
               style={{ backgroundColor: 'var(--brand)' }}
             >
               Advance Phase
@@ -1107,7 +1107,7 @@ export default function TableView({
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select value={bulkCancelReason} onChange={(e) => setBulkCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
                   <option value="Credit denied">Credit denied</option>
@@ -1120,7 +1120,7 @@ export default function TableView({
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
                 <textarea rows={2} value={bulkCancelNotes} onChange={(e) => setBulkCancelNotes(e.target.value)} placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none placeholder-slate-500" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setBulkCancelReasonModal(null)}

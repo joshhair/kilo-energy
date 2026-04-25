@@ -112,7 +112,7 @@ export function MonthlyEarningsBarChart({
             const startX = groupX + (groupW - groupBarW) / 2;
 
             const bars = [
-              { value: d.paid, color: 'var(--accent-green)', hoverColor: 'var(--accent-cyan)' },
+              { value: d.paid, color: 'var(--accent-emerald-solid)', hoverColor: 'var(--accent-cyan-solid)' },
               { value: d.pending, color: '#eab308', hoverColor: '#facc15' },
               ...(hasReimb ? [{ value: d.reimbursement, color: '#8b5cf6', hoverColor: '#a78bfa' }] : []),
             ];
@@ -178,7 +178,7 @@ export function MonthlyEarningsBarChart({
             }}
           >
             <p className="text-[var(--text-secondary)] font-semibold mb-1">{tooltip.datum.label}</p>
-            <p className="text-[var(--accent-green)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
+            <p className="text-[var(--accent-emerald-solid)]">Paid: ${tooltip.datum.paid.toLocaleString()}</p>
             <p className="text-yellow-400">Pending: ${tooltip.datum.pending.toLocaleString()}</p>
             {tooltip.datum.reimbursement > 0 && (
               <p className="text-violet-400">Reimb: ${tooltip.datum.reimbursement.toLocaleString()}</p>

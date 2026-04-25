@@ -93,7 +93,7 @@ export function DateRangeFilter({ from, to, onFromChange, onToChange, onClear }:
               onClick={() => applyPreset(p)}
               className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
                 isActive
-                  ? 'bg-[var(--accent-green)]/20 text-[var(--accent-green)] border-[var(--accent-green)]/30'
+                  ? 'bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)]/30'
                   : 'bg-[var(--surface-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--border-subtle)] hover:text-white'
               }`}
             >

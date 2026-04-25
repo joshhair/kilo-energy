@@ -130,7 +130,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
           rows={2}
           maxLength={5000}
           placeholder="Add a note…"
-          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500 resize-none"
+          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500 resize-none"
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
               e.preventDefault();
@@ -144,7 +144,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
             onClick={handleAdd}
             disabled={!draft.trim() || adding}
             className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18' }}
           >
             {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post note'}
           </button>
@@ -167,7 +167,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
                 style={{ opacity: deleting ? 0.5 : 1 }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan)]/20 text-[var(--accent-cyan)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan-solid)]/20 text-[var(--accent-cyan-solid)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                     {getInitials(note.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">

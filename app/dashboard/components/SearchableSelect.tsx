@@ -185,7 +185,7 @@ export function SearchableSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--surface-card)] border text-left transition-all text-sm
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
           input-focus-glow active:scale-[0.99]
           ${error ? 'border-red-500' : 'border-[var(--border)]'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500/60 hover:bg-[var(--border)]/80 cursor-pointer'}`}

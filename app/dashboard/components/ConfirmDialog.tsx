@@ -60,9 +60,9 @@ export default function ConfirmDialog({
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
             danger
               ? 'bg-red-500/15 border border-red-500/30'
-              : 'bg-[var(--accent-green)]/15 border border-[var(--accent-green)]/30'
+              : 'bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/30'
           }`}>
-            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[var(--accent-green)]'}`} />
+            <AlertTriangle className={`w-4 h-4 ${danger ? 'text-red-400' : 'text-[var(--accent-emerald-solid)]'}`} />
           </div>
           <h3 className="text-white font-bold">{title}</h3>
         </div>
@@ -80,7 +80,7 @@ export default function ConfirmDialog({
             className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition-colors ${
               danger
                 ? 'bg-red-600 hover:bg-red-500'
-                : 'bg-[var(--accent-green)] hover:bg-[var(--accent-green)]'
+                : 'bg-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)]'
             }`}
           >
             {confirmLabel}

@@ -49,7 +49,7 @@ export function ReimbStatusBadge({ status }: { status: string }) { return <Statu
 
 /** Maps a payroll status to the matching PAYROLL_PILL accent colour hex value. */
 export function getPayrollRowAccent(status: string): string {
-  if (status === 'Paid')    return 'var(--accent-green)'; // emerald-500
+  if (status === 'Paid')    return 'var(--accent-emerald-solid)'; // emerald-500
   if (status === 'Pending') return '#eab308'; // yellow-500
   return '#64748b';                            // slate-500  (Draft / fallback)
 }

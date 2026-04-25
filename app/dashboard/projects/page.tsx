@@ -236,7 +236,7 @@ function ProjectsPageInner() {
           <Link
             href="/dashboard/new-deal"
             className="font-bold px-4 py-2 rounded-xl text-sm active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 0 20px rgba(0,224,122,0.25)' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: '#050d18', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
           >
             + New Deal
           </Link>
@@ -326,7 +326,7 @@ function ProjectsPageInner() {
           name="installer"
           value={installerFilter}
           onChange={(e) => setInstallerFilter(e.target.value)}
-          className="rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] w-full md:w-auto"
+          className="rounded-xl px-3 py-1.5 min-h-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] w-full md:w-auto"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
         >
           <option value="">All Installers</option>
@@ -497,7 +497,7 @@ function ProjectsPageInner() {
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
                   <option value="Credit denied">Credit denied</option>
@@ -510,7 +510,7 @@ function ProjectsPageInner() {
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
                 <textarea rows={2} value={cancelNotes} onChange={(e) => setCancelNotes(e.target.value)} placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none placeholder-slate-500" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setCancelReasonModal(null)}

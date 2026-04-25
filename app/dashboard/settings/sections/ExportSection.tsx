@@ -47,13 +47,13 @@ export function ExportSection() {
           <div>
             <label className="block text-xs text-[var(--text-secondary)] mb-1">From</label>
             <input type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
             />
           </div>
           <div>
             <label className="block text-xs text-[var(--text-secondary)] mb-1">To</label>
             <input type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
             />
           </div>
         </div>
@@ -68,16 +68,16 @@ export function ExportSection() {
           onClick={() => toggleExport('payments')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('payments')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('payments') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
           <h2 className="text-white font-bold tracking-tight text-base mb-1">Payments Export</h2>
@@ -88,16 +88,16 @@ export function ExportSection() {
           onClick={() => toggleExport('projects')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('projects')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('projects') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
           <h2 className="text-white font-bold tracking-tight text-base mb-1">Projects Export</h2>
@@ -108,16 +108,16 @@ export function ExportSection() {
           onClick={() => toggleExport('baselines')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('baselines')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('baselines') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
           <h2 className="text-white font-bold tracking-tight text-base mb-1">Baselines Export</h2>
@@ -128,16 +128,16 @@ export function ExportSection() {
           onClick={() => toggleExport('trainers')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('trainers')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-emerald-solid)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('trainers') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-solid)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
           <h2 className="text-white font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
@@ -149,8 +149,8 @@ export function ExportSection() {
         <div className="mb-6">
           <div className="card-surface rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--accent-green)]/10">
-                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-green)]" />
+              <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10">
+                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-emerald-solid)]" />
               </div>
               <div>
                 <p className="text-white text-sm font-semibold">
@@ -241,7 +241,7 @@ export function ExportSection() {
                 }
                 toast(`Export started — ${exportSelected.size} file${exportSelected.size > 1 ? 's' : ''} downloading`, 'info');
               }}
-              className="flex items-center gap-2 bg-[var(--accent-green)] hover:bg-[var(--accent-green)] active:scale-[0.97] text-black text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
+              className="flex items-center gap-2 bg-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)] active:scale-[0.97] text-black text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
               Download CSV{exportSelected.size > 1 ? 's' : ''}
