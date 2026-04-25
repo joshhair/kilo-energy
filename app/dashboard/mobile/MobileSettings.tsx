@@ -7,7 +7,7 @@ import { DEFAULT_INSTALL_PAY_PCT, InstallerBaseline, InstallerRates, SOLARTECH_F
 import {
   ArrowLeft, Tent, Users, Handshake,
   Building2, Landmark, BookOpen, Shield, Download,
-  Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus,
+  Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus, Sun,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -16,13 +16,14 @@ import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobilePillTabs from './shared/MobilePillTabs';
 import ConfirmDialog from '../components/ConfirmDialog';
+import AppearanceSection from '../settings/sections/AppearanceSection';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type SettingsSection =
   | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
   | 'installers' | 'financers' | 'baselines'
-  | 'admin-users' | 'export' | 'customization';
+  | 'admin-users' | 'export' | 'customization' | 'appearance';
 
 interface NavItem {
   id: SettingsSection;
@@ -56,6 +57,7 @@ const NAV: NavGroup[] = [
   {
     group: 'System',
     items: [
+      { id: 'appearance', label: 'Appearance', icon: Sun },
       { id: 'customization', label: 'Customization', icon: SlidersHorizontal },
       { id: 'export', label: 'Export', icon: Download },
     ],
@@ -217,6 +219,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'baselines': return <MobileBaselinesSection />;
     case 'sub-dealers': return <SubDealersSection />;
     case 'customization': return <CustomizationSection />;
+    case 'appearance': return <AppearanceSection />;
     default: return null;
   }
 }
