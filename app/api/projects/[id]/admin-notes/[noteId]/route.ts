@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/db';
-import { requireInternalUser, userCanAccessProject, isVendorPM } from '../../../../../../lib/api-auth';
+import { requireInternalUser, userCanAccessProject, isVendorPM, isInternalPM as isInternalPMHelper } from '../../../../../../lib/api-auth';
 
 // DELETE /api/projects/[id]/admin-notes/[noteId] — delete an admin note.
 // Policy: admin can delete any note. Internal PM can delete their own.
@@ -15,8 +15,11 @@ export async function DELETE(
   const { id, noteId } = await params;
 
   const isAdmin = user.role === 'admin';
-  const isInternalPM = user.role === 'project_manager' && !user.scopedInstallerId;
-  if (!isAdmin && !isInternalPM) {
+  // Internal PM = unscoped PM on INTERNAL_PM_EMAILS allowlist. Misconfigured
+  // vendor PMs (role=project_manager + no scope, not allowlisted) get the
+  // same 403 as anyone else here.
+  const internalPm = isInternalPMHelper(user);
+  if (!isAdmin && !internalPm) {
     return NextResponse.json(
       { error: 'Forbidden — admin notes are internal-only' },
       { status: 403 },

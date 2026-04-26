@@ -576,8 +576,8 @@ export default function MobileDashboard() {
             const installed = formatCompactKWParts(totalKWInstalled);
             return (
               <>
-                <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color="#fff" />
-                <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color="#fff" />
+                <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color="var(--text-primary)" />
+                <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color="var(--text-primary)" />
               </>
             );
           })()}
@@ -658,9 +658,9 @@ export default function MobileDashboard() {
         {/* Stat grid — 2x2 */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
-          <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
+          <MobileStatCard label="Total Projects" value={myProjects.length} color="var(--text-primary)" />
           {(() => { const t = formatCompactKWParts(totalKWPm); return (<MobileStatCard label={`Total ${t.unit}`} value={t.value} color={ACCENT2} />); })()}
-          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : 'var(--text-primary)'} />
         </div>
 
         {/* Pipeline phase bars */}

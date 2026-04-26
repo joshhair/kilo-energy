@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM } from '../../../lib/api-auth';
+import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM, isInternalPM } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
@@ -23,6 +23,18 @@ export async function GET() {
   // directory. The field-visibility matrix additionally scrubs commission
   // + margin fields from every project they do see.
   const isVendor = isVendorPM(user);
+  // Misconfigured PM: project_manager with no scopedInstallerId AND
+  // not on the INTERNAL_PM_EMAILS allowlist. Default-deny rather than
+  // silently granting org-wide access (the previous behavior — a
+  // vendor PM created without a scope ended up seeing everything).
+  const isMisconfiguredPM = isPM && !user.scopedInstallerId && !isInternalPM(user);
+  if (isMisconfiguredPM) {
+    logger.warn('misconfigured_pm_blocked', {
+      userId: user.id,
+      email: user.email,
+      message: 'project_manager without scopedInstallerId and not on INTERNAL_PM_EMAILS allowlist — denying access',
+    });
+  }
 
   // ─── Trainer-chain lookup ──────────────────────────────────────────────
   // A rep who's assigned as trainer to other reps needs to see those reps'
@@ -38,7 +50,12 @@ export async function GET() {
   // Rep: closer/setter/co-party + projects they train.
   // Sub-dealer: subDealerId match.
   const projectWhere: Record<string, unknown> = {};
-  if (isVendor) {
+  if (isMisconfiguredPM) {
+    // Block all project access — they need an installer scope or to be
+    // explicitly listed on INTERNAL_PM_EMAILS. Impossible id below
+    // returns no rows from Prisma.
+    projectWhere.id = '__misconfigured_pm_no_access__';
+  } else if (isVendor) {
     projectWhere.installerId = user.scopedInstallerId!;
   } else if (isRep) {
     projectWhere.OR = [
@@ -54,7 +71,8 @@ export async function GET() {
   } else if (isSubDealer) {
     projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
   }
-  // Admin + internal PM: no filter (empty where)
+  // Admin + allowlisted internal PM: no filter (empty where).
+  // Misconfigured PM (above): impossible-id where = empty result.
 
   // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any).
   // Vendor PM sees NOTHING — payroll is all commission data. ───

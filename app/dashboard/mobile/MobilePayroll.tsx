@@ -783,7 +783,7 @@ export default function MobilePayroll() {
                       <span
                         className="text-lg font-bold tabular-nums"
                         style={{
-                          color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : '#fff',
+                          color: entry.amount < 0 ? 'var(--accent-red-text)' : 'var(--text-primary)',
                           fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                         }}
                       >{fmt$(entry.amount)}</span>

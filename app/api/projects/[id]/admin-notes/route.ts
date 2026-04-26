@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/db';
-import { requireInternalUser, userCanAccessProject, isVendorPM } from '../../../../../lib/api-auth';
+import { requireInternalUser, userCanAccessProject, isVendorPM, isInternalPM } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
 
@@ -9,9 +9,14 @@ import { enforceRateLimit } from '../../../../../lib/rate-limit';
 // vendor PMs, reps, trainers, sub-dealers get 403. Belt-and-suspenders
 // gate — the field-visibility matrix already scrubs the legacy
 // adminNotes string to undefined for everyone except admin/pm.
-function requireInternalAdminOrPM(user: { role: string; scopedInstallerId: string | null }) {
+//
+// Internal PM = unscoped PM whose email is on the INTERNAL_PM_EMAILS
+// allowlist. A previous version treated *any* unscoped PM as internal,
+// which let a misconfigured vendor PM (no installer scope set) read +
+// modify admin notes — closing that hole here.
+function requireInternalAdminOrPM(user: { role: string; email: string; scopedInstallerId: string | null }) {
   if (user.role === 'admin') return null;
-  if (user.role === 'project_manager' && !user.scopedInstallerId) return null;
+  if (isInternalPM(user)) return null;
   return NextResponse.json(
     { error: 'Forbidden — admin notes are internal-only' },
     { status: 403 },
