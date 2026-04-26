@@ -155,7 +155,7 @@ export default function BottomNav({
       />
       <nav
         className="fixed left-0 right-0 z-50 md:hidden"
-        style={{ bottom: 'var(--install-prompt-offset, 0px)', background: 'linear-gradient(to top, #080c14 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ bottom: 'var(--install-prompt-offset, 0px)', background: 'linear-gradient(to top, var(--surface-page) 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="relative">
           {(() => {

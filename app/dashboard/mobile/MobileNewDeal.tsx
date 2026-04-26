@@ -1122,7 +1122,7 @@ export default function MobileNewDeal() {
                 bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
                 paddingBottom: '12px',
                 paddingTop: '12px',
-                background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
+                background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
                 backdropFilter: 'blur(8px)',
               }}
             >
@@ -1629,7 +1629,7 @@ export default function MobileNewDeal() {
                   : 'calc(72px + env(safe-area-inset-bottom, 0px))',
                 paddingBottom: '12px',
                 paddingTop: '12px',
-                background: 'linear-gradient(to bottom, transparent 0%, rgba(6,14,26,0.92) 28%, rgba(6,14,26,1) 100%)',
+                background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
                 backdropFilter: 'blur(8px)',
               }}
             >
