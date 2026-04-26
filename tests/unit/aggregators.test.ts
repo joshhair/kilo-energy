@@ -21,7 +21,11 @@ const entries: PayrollAggregable[] = [
   { status: 'Paid',    date: '2026-04-01', amount: 1000, type: 'Deal',  repId: 'r1' },
   { status: 'Paid',    date: '2026-04-05', amount: 2000, type: 'Deal',  repId: 'r2' },
   { status: 'Paid',    date: '2026-04-10', amount: 500,  type: 'Bonus', repId: 'r1' },
-  { status: 'Paid',    date: '2026-04-12', amount: 300,  type: 'Trainer', repId: 'r3' },
+  // Trainer override: production schema stores these as type='Deal'
+  // with paymentStage='Trainer' — breakdownByType classifies via the
+  // paymentStage field, not type. Earlier fixture had type='Trainer'
+  // (unused legacy shape) which silently fell into the deal bucket.
+  { status: 'Paid',    date: '2026-04-12', amount: 300,  type: 'Deal',  paymentStage: 'Trainer', repId: 'r3' },
   { status: 'Paid',    date: '2026-04-15', amount: -200, type: 'Deal',  repId: 'r1' }, // chargeback
   { status: 'Paid',    date: '2026-05-01', amount: 900,  type: 'Deal',  repId: 'r1' }, // future-dated
   { status: 'Pending', date: '2026-04-18', amount: 800,  type: 'Deal',  repId: 'r2' },
@@ -45,8 +49,11 @@ describe('sumPaid — canonical net paid-out', () => {
   });
 
   it('respects type filter', () => {
-    // Deal only: 1000 + 2000 + (-200) = 2800. Bonus 500 and Trainer 300 excluded.
-    expect(sumPaid(entries, { asOf: today, types: ['Deal'] })).toBe(2800);
+    // Deal-type entries (incl. trainer-stage which is type='Deal' +
+    // paymentStage='Trainer'): 1000 + 2000 + (-200) + 300 = 3100.
+    // sumPaid filters by `type` field only — the trainer/closer split
+    // on the payroll-tab tabs is done by paymentStage in breakdownByType.
+    expect(sumPaid(entries, { asOf: today, types: ['Deal'] })).toBe(3100);
   });
 
   it('respects rep filter', () => {

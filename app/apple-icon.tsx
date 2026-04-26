@@ -25,11 +25,15 @@ export default function AppleIcon() {
           // Layered background:
           //   1. base diagonal navy → emerald gradient
           //   2. radial highlight from upper-left for depth
+          //
+          // Literals only: next/og ImageResponse renders outside the CSS-
+          // var scope (no globals.css), so var() and color-mix(var(),...)
+          // resolve to invalid `initial` and break the build.
           background:
-            'radial-gradient(circle at 25% 20%, color-mix(in srgb, var(--accent-emerald-solid) 40%, transparent), transparent 55%), linear-gradient(135deg, #050d18 0%, #0a2540 40%, #008f5a 100%)',
+            'radial-gradient(circle at 25% 20%, rgba(0,229,160,0.4), transparent 55%), linear-gradient(135deg, #050d18 0%, #0a2540 40%, #008f5a 100%)',
           // Faint inner ring suggests a card/lens edge
           boxShadow:
-            'inset 0 0 0 2px color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent), inset 0 -30px 60px rgba(0,40,80,0.4)',
+            'inset 0 0 0 2px rgba(0,229,160,0.45), inset 0 -30px 60px rgba(0,40,80,0.4)',
         }}
       >
         {/* Sun-disc accent — top-right corner, evokes solar without being literal */}
@@ -42,7 +46,7 @@ export default function AppleIcon() {
             height: 90,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(0,255,180,0.55) 0%, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent) 35%, transparent 70%)',
+              'radial-gradient(circle, rgba(0,255,180,0.55) 0%, rgba(0,229,160,0.18) 35%, transparent 70%)',
             display: 'flex',
           }}
         />
@@ -57,7 +61,7 @@ export default function AppleIcon() {
             height: 100,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, color-mix(in srgb, var(--accent-cyan-solid) 45%, transparent) 0%, transparent 65%)',
+              'radial-gradient(circle, rgba(0,180,216,0.45) 0%, transparent 65%)',
             display: 'flex',
           }}
         />
@@ -65,13 +69,13 @@ export default function AppleIcon() {
         {/* The K — primary mark, sits above all the glow layers */}
         <span
           style={{
-            color: 'var(--text-primary)',
+            color: '#f0f2f7',
             fontSize: 110,
             fontWeight: 900,
             fontFamily: 'system-ui, sans-serif',
             letterSpacing: -5,
             textShadow:
-              '0 2px 12px color-mix(in srgb, var(--accent-emerald-solid) 50%, transparent), 0 1px 3px rgba(0,0,0,0.6)',
+              '0 2px 12px rgba(0,229,160,0.5), 0 1px 3px rgba(0,0,0,0.6)',
             display: 'flex',
             lineHeight: 1,
             zIndex: 1,
