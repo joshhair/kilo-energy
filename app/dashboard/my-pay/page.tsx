@@ -11,6 +11,7 @@ import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
+import { resolveTrainerRate } from '../../../lib/commission';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
   Wallet as PayIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
@@ -63,18 +64,24 @@ interface PayPeriod {
 }
 
 // ── Status badge ─────────────────────────────────────────────────────────────
+// Outlined-ghost treatment: transparent fill + saturated -display border +
+// readable -text label. Matches the MobileBadge refactor — no more
+// green-on-green collapse in light mode.
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
-  Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
+const STATUS_STYLES: Record<string, { border: string; text: string; dot: string }> = {
+  Paid:    { border: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)', dot: 'var(--accent-emerald-display)' },
+  Pending: { border: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)',   dot: 'var(--accent-amber-display)'   },
+  Draft:   { border: 'var(--border-strong)',          text: 'var(--text-secondary)',      dot: 'var(--text-muted)'             },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] ?? STATUS_STYLES.Draft;
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 md:py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 md:py-0.5 rounded-full text-xs font-medium"
+      style={{ background: 'transparent', border: `1.5px solid ${s.border}`, color: s.text }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
       {status}
     </span>
   );
@@ -82,13 +89,19 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Stage badge ──────────────────────────────────────────────────────────────
 
+const STAGE_STYLES: Record<string, { border: string; text: string }> = {
+  M1: { border: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  M2: { border: 'var(--accent-purple-display)',  text: 'var(--accent-purple-text)'  },
+  M3: { border: 'var(--accent-teal-display)',    text: 'var(--accent-teal-text)'    },
+};
+
 function StageBadge({ stage }: { stage: string }) {
-  const color = stage === 'M1' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
-    : stage === 'M2' ? 'text-[var(--accent-purple-text)] bg-violet-500/10 border-violet-500/20'
-    : stage === 'M3' ? 'text-[var(--accent-teal-text)] bg-teal-500/10 border-teal-500/20'
-    : 'text-[var(--accent-amber-text)] bg-amber-500/10 border-amber-500/20';
+  const s = STAGE_STYLES[stage] ?? { border: 'var(--accent-amber-display)', text: 'var(--accent-amber-text)' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold border ${color}`}>
+    <span
+      className="inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold"
+      style={{ background: 'transparent', border: `1.5px solid ${s.border}`, color: s.text }}
+    >
       {stage}
     </span>
   );
@@ -107,7 +120,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
+  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady, trainerAssignments } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -310,6 +323,20 @@ function MyPayPageInner() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
+  // Forward-looking trainer pipeline. Trainer entries fire alongside M2,
+  // so this counts un-paid trainer totals on deals still in pre-Install
+  // phases. Uses resolveTrainerRate so the per-project override path AND
+  // the rep-level assignment-chain path are both included.
+  const projectedTrainer = useMemo(() => {
+    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    return projects.reduce((s, p) => {
+      if (!preInstalled.includes(p.phase)) return s;
+      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      if (res.trainerId !== effectiveRepId) return s;
+      return s + res.rate * (p.kWSize ?? 0) * 1000;
+    }, 0);
+  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
+
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
   const annualProjection = useMemo(() => {
@@ -327,12 +354,21 @@ function MyPayPageInner() {
       return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
     }
 
-    // Average commission per deal (M1 + M2)
+    // Average commission per deal (M1 + M2 + trainer override).
+    // Reps who are also trainers earn a per-kW override on top of their
+    // closer/setter share. resolveTrainerRate handles both the per-deal
+    // override path and the rep-level assignment-chain path. A rep who's
+    // both closer and trainer on the same deal contributes m1+m2+trainer
+    // — exactly what they actually earn from that deal.
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
       const isSetterRole = p.setterId === effectiveRepId;
       const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
       const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      return s + m1 + m2;
+      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      const trainerEarn = trainerRes.trainerId === effectiveRepId
+        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
+        : 0;
+      return s + m1 + m2 + trainerEarn;
     }, 0) / totalDeals;
 
     // --- Signal 2: Deals per month pace ---
@@ -372,12 +408,14 @@ function MyPayPageInner() {
       details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
     }
 
-    // Add pipeline boost: active deals not yet at milestones add to the projection
-    const pipelineBoost = Math.round((projectedM1 + projectedM2) * 0.15); // conservative 15%
+    // Add pipeline boost: active deals not yet at milestones add to the
+    // projection. Trainer pipeline rolls in here too so trainers see
+    // their forward-looking override pay reflected in the on-pace number.
+    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15); // conservative 15%
     annual += pipelineBoost;
 
     return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2]);
+  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -496,7 +534,7 @@ function MyPayPageInner() {
             <div>
               <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
               <p className="font-black tabular-nums tracking-tight leading-none break-words"
-                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)', textShadow: '0 0 32px color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
+                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)', textShadow: '0 0 32px color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-[var(--text-muted)] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
@@ -525,7 +563,7 @@ function MyPayPageInner() {
                 <p className="text-[var(--accent-amber-text)] text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
                 <p className="text-[var(--text-dim)] text-[11px] mt-0.5">Amounts to be clawed back from a future paycheck.</p>
               </div>
-              <p className="font-black tabular-nums text-[var(--accent-amber-text)] text-2xl">-{fmt$(pendingChargebackTotal)}</p>
+              <p className="font-black tabular-nums text-[var(--accent-amber-display)] text-2xl">-{fmt$(pendingChargebackTotal)}</p>
             </div>
             <div className="space-y-2">
               {pendingEntries.map((e) => (
@@ -554,7 +592,7 @@ function MyPayPageInner() {
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
             <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-emerald-display)] stat-value break-words"
              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {pendingChargebackCount > 0 && (
             <p className="text-[var(--accent-amber-text)]/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
@@ -569,7 +607,7 @@ function MyPayPageInner() {
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
             <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-amber-text)] stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-amber-display)] stat-value break-words"
              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
@@ -588,7 +626,7 @@ function MyPayPageInner() {
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
             <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
+          <p className="font-black tabular-nums text-[var(--accent-emerald-display)] stat-value break-words"
              style={{ textShadow: '0 0 16px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>

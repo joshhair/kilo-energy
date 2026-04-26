@@ -66,13 +66,21 @@ export default function MobileBottomSheet({
 
     // Auto-focus the first interactive element inside the panel on open.
     // Runs in a microtask so the DOM is committed before we try to focus.
+    // preventScroll: the panel is position:fixed at the bottom of the
+    // viewport — without preventScroll, calling .focus() on a button
+    // inside the panel asks the browser to scroll-into-view, which
+    // scrolls the *page* underneath (the panel itself doesn't move).
+    // On taller routes (project detail) the page leaps to align with
+    // the focused button, making it look like the sheet opened off-
+    // screen. preventScroll keeps the page exactly where the user
+    // tapped from.
     const autoFocus = () => {
       const panel = panelRef.current;
       if (!panel) return;
       const focusable = panel.querySelector<HTMLElement>(
         'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
-      focusable?.focus();
+      focusable?.focus({ preventScroll: true });
     };
     const t = setTimeout(autoFocus, 0);
 
@@ -94,10 +102,10 @@ export default function MobileBottomSheet({
         const active = document.activeElement as HTMLElement | null;
         if (e.shiftKey && active === first) {
           e.preventDefault();
-          last.focus();
+          last.focus({ preventScroll: true });
         } else if (!e.shiftKey && active === last) {
           e.preventDefault();
-          first.focus();
+          first.focus({ preventScroll: true });
         }
       }
     };
@@ -108,7 +116,9 @@ export default function MobileBottomSheet({
       window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
       // Restore focus to the element that triggered the sheet opening.
-      previouslyFocusedRef.current?.focus?.();
+      // preventScroll matches the open path so closing also doesn't
+      // jump the page back to align with the trigger button.
+      previouslyFocusedRef.current?.focus?.({ preventScroll: true });
     };
   }, [open, onClose]);
 

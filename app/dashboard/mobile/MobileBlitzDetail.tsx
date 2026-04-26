@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
-import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
 import { ArrowLeft, Pencil, Trash2, XCircle, Loader2 } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -319,18 +319,21 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                     </div>
                     <div className="blitz-stat-1">
-                      <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(myKW)}</p>
+                      <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKWValue(myKW)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW Sold</p>
                     </div>
                     <div className="blitz-stat-2">
-                      <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
+                      <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>My Pay</p>
                     </div>
                   </div>
                 </div>
               );
             })()}
-            <BlitzLeaderboard entries={leaderboard} showPayout={true} />
+            {/* Admins + the blitz owner see everyone's payouts (running a
+                contest, paying it out). Regular reps see ranks/kW/deals
+                only — never other reps' commission. */}
+            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
 
             {/* Progress bar */}
             {(blitz.status === 'active' || blitz.status === 'completed') && (
@@ -380,7 +383,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {approvedParticipants.slice(0, 8).map((p: any) => (
-                    <div key={p.user.id} className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }}>
+                    <div key={p.user.id} className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
                       <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}>
                         {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
                       </div>

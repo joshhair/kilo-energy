@@ -72,7 +72,7 @@ export function AdminUsersSection() {
           onClick={handleAdd}
           disabled={!newFirstName.trim() || !newEmail.trim()}
           className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
         >
           <Plus className="w-4 h-4" />
         </button>

@@ -57,10 +57,10 @@ function matchesPeriod(dateStr: string, period: Period): boolean {
 function StatusDot({ status }: { status: string }) {
   const color =
     status === 'Paid' ? 'var(--accent-emerald-solid)' :
-    status === 'Pending' ? '#f5a623' :
+    status === 'Pending' ? 'var(--accent-amber-solid)' :
     status === 'Approved' ? 'var(--accent-emerald-solid)' :
     status === 'Denied' ? 'var(--accent-red-solid)' :
-    status === 'Draft' ? '#64748b' :
+    status === 'Draft' ? 'var(--text-muted)' :
     'var(--text-muted)';
   return (
     <span className="inline-flex items-center gap-1.5 text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -188,7 +188,7 @@ export default function MobileEarnings() {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Next Payout</p>
-              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -209,7 +209,7 @@ export default function MobileEarnings() {
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
         <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
-        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
@@ -337,7 +337,7 @@ export default function MobileEarnings() {
                       <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(entry.amount)}
                   </span>
                 </div>
@@ -364,7 +364,7 @@ export default function MobileEarnings() {
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -427,7 +427,7 @@ export default function MobileEarnings() {
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -470,7 +470,7 @@ export default function MobileEarnings() {
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -597,7 +597,7 @@ export function MobileAdminEarnings() {
                       {r.receiptName && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>· 📎 receipt</span>}
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(r.amount)}
                   </span>
                 </div>

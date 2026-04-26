@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
-import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
 import { BlitzFilterBar } from './BlitzFilterBar';
 import { useToast } from '../../../lib/toast';
@@ -329,7 +329,7 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
             onClick={handleSubmit}
             disabled={!name.trim() || !startDate || !endDate || saving}
             className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
@@ -790,7 +790,7 @@ function BlitzPageInner() {
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
@@ -810,7 +810,7 @@ function BlitzPageInner() {
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Active</span>
             <CheckCircle className="w-4 h-4 text-[var(--accent-emerald-text)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)' }}>{activeBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)' }}>{activeBlitzes}</p>
         </div>
         <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -818,9 +818,9 @@ function BlitzPageInner() {
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Upcoming</span>
             <Clock className="w-4 h-4 text-[var(--accent-emerald-text)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-text)' }}>{upcomingBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-display)' }}>{upcomingBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': 'var(--accent-purple-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Deals</span>
@@ -828,22 +828,22 @@ function BlitzPageInner() {
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{totalDeals}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total kW</span>
             <Zap className="w-4 h-4 text-[var(--accent-cyan-text)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKW(totalKW)}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKWValue(totalKW)}</p>
         </div>
         {isAdmin && (
-          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
+          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Costs</span>
               <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
-            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-text)' }}>{formatCurrency(totalCosts)}</p>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-display)' }}>{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>
@@ -1062,7 +1062,7 @@ function BlitzPageInner() {
                             onClick={() => handleApproveRequest(req.id)}
                             disabled={processingRequest.has(req.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                           >
                             {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>

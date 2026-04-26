@@ -507,11 +507,11 @@ export default function MobileBlitz() {
       <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Active</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Upcoming</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
+          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-display)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Deals</p>
@@ -524,7 +524,7 @@ export default function MobileBlitz() {
         {isAdmin && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>
-            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
+            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
           </div>
         )}
       </div>
@@ -694,7 +694,7 @@ export default function MobileBlitz() {
                           onClick={() => handleApproveRequest(req.id)}
                           disabled={processingRequest.has(req.id)}
                           className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                         >
                           {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                         </button>

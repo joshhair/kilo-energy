@@ -596,7 +596,7 @@ export default function KanbanView({
                         {/* Mini commission preview + phase nav row */}
                         {!hideFinancials && (
                           <div className="flex items-center mt-1.5 justify-end">
-                            <span className="text-[10px] font-medium tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>
+                            <span className="text-[10px] font-medium tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>
                               ${commissionTotal.toLocaleString()}
                             </span>
                           </div>

@@ -262,7 +262,11 @@ export function AdminDashboard({
     { label: 'Completed Projects', value: periodCompletedCount, raw: periodCompletedCount, format: (n: number) => n.toString(), accentHex: 'var(--accent-emerald-solid)', accentGradient: 'from-emerald-500 to-emerald-400', href: '/dashboard/projects?phase=Completed', tooltip: 'Projects that have been fully completed' },
   ];
 
-  // Inline pipeline phase hex colors for the segmented bar
+  // Inline pipeline phase colors for the segmented bar.
+  // Note: phases need 8 visually distinct hues, more than the canonical
+  // 7-accent vocabulary supports — these literals are intentional and
+  // theme-independent (mid-saturation hues that read fine on both
+  // dark and light backgrounds).
   const PHASE_HEX: Record<string, string> = {
     'New': '#38bdf8', 'Acceptance': '#818cf8', 'Site Survey': '#a78bfa',
     'Design': '#e879f9', 'Permitting': '#fbbf24', 'Pending Install': '#fb923c',
@@ -477,7 +481,7 @@ export function AdminDashboard({
             <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-emerald-text)' }} />
           </div>
           <div>
-            <p style={{ color: 'var(--accent-emerald-text)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
+            <p style={{ color: 'var(--accent-emerald-display)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>All Clear</p>
             <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>No items need attention right now.</p>
           </div>
         </div>
@@ -589,7 +593,7 @@ export function AdminDashboard({
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <div className="w-full h-3 rounded-full bg-[var(--surface-card)] overflow-hidden">
+                            <div className="w-full h-3 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] overflow-hidden">
                               <div className="h-full rounded-full bg-amber-500/70 transition-all duration-500" style={{ width: `${(inst.deals / maxDeals) * 100}%` }} />
                             </div>
                           </td>

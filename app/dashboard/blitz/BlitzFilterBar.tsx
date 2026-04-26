@@ -178,7 +178,7 @@ export function BlitzFilterBar({
             >
               {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
               {count > 0 && (
-                <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}>
+                <span className="ml-1" style={{ color: isActive ? 'color-mix(in srgb, #000 60%, transparent)' : 'var(--text-dim)' }}>
                   {count}
                 </span>
               )}

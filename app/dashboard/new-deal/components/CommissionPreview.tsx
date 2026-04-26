@@ -100,7 +100,7 @@ export function CommissionPreview({
             )}
             <div className="flex justify-between">
               <span style={{ color: 'var(--text-muted)' }}>Closer commission</span>
-              <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
+              <span className="font-semibold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", textShadow: '0 0 15px #00e07a40' }}>
                 <TickerAmount amount={closerTotal} />
                 <span className="text-[var(--text-muted)] font-normal">
                   {' '}(M1: <TickerAmount amount={closerM1} className="tabular-nums" /> · M2: <TickerAmount amount={closerM2} className="tabular-nums" />{hasM3 && <> · M3: <TickerAmount amount={closerM3} className="tabular-nums" /></>})

@@ -884,7 +884,7 @@ export default function TableView({
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.installer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.financer}</td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
-                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
+                  {!hideFinancials && <td className="px-5 py-3" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>${proj.netPPW.toFixed(2)}</td>}
                   <td className="px-5 py-3 text-[var(--text-muted)]">
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[var(--text-dim)]">{relativeTime(proj.soldDate)}</div>

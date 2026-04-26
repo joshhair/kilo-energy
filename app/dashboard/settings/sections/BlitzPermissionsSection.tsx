@@ -228,7 +228,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => togglePermission(rep.id, 'canRequestBlitz', !perms.canRequestBlitz)}
-                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--surface-card)]'}`}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canRequestBlitz ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]'}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canRequestBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
@@ -241,7 +241,7 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => togglePermission(rep.id, 'canCreateBlitz', !perms.canCreateBlitz)}
-                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--surface-card)]'}`}
+                        className={`w-9 h-5 rounded-full transition-colors relative inline-block ${perms.canCreateBlitz ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]'}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${perms.canCreateBlitz ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>

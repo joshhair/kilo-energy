@@ -175,7 +175,7 @@ function CommissionBar({
 
   return (
     <div className="mt-4 space-y-2">
-      <div className="h-3 rounded-full bg-[var(--surface-card)] overflow-hidden flex">
+      <div className="h-3 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] overflow-hidden flex">
         {segments.map((seg) => (
           <div
             key={seg.key}
@@ -694,7 +694,7 @@ function CalculatorPage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                 <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan-text)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan-display)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
               </div>
               <div className="flex items-center gap-2">
                 <SearchableSelect
@@ -843,7 +843,7 @@ function CalculatorPage() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--border)]'}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
@@ -893,10 +893,10 @@ function CalculatorPage() {
                     </div>
                     <div className="text-right min-w-[100px]">
                       {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                        <p style={{ color: 'var(--accent-amber-text)', fontSize: 12 }}>Baseline unknown</p>
+                        <p style={{ color: 'var(--accent-amber-display)', fontSize: 12 }}>Baseline unknown</p>
                       ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
-                          <p style={{ color: 'var(--accent-blue-text)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
+                          <p style={{ color: 'var(--accent-blue-display)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
                           <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>required PPW</p>
                         </>
                       ) : (
@@ -984,7 +984,7 @@ function CalculatorPage() {
                 <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
-                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
+                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                   ${Math.round(closerTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
@@ -993,14 +993,14 @@ function CalculatorPage() {
 
                 {/* Below-baseline warning */}
                 {soldPPW <= closerPerW && (
-                  <div style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-text)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-display)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
                 {closerPerW === 0 && soldPPW > 0 && (
-                  <div style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-text)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-display)' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
                 )}
@@ -1134,7 +1134,7 @@ function CalculatorPage() {
                 {/* Your Commission highlight */}
                 <div style={{
                   background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)',
-                  border: '1px solid #00e07a35',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 21%, transparent)',
                   borderRadius: 14,
                   padding: '18px 20px',
                   position: 'relative',
@@ -1142,7 +1142,7 @@ function CalculatorPage() {
                 }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-emerald-solid), transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
-                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
+                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
                     ${((reps.find(r => r.id === effectiveCloserId)?.repType === 'setter' && selectedSetterId === effectiveCloserId || (reps.find(r => r.id === effectiveCloserId)?.repType === 'both' && selectedSetterId === effectiveCloserId)) && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>

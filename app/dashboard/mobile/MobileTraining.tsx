@@ -316,7 +316,7 @@ export default function MobileTraining() {
                       })()}
                       <div className="flex justify-between items-center mb-2 text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '80ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <span className="font-semibold uppercase tracking-widest text-[11px]" style={{ color: 'var(--text-dim)' }}>Earned from Trainee</span>
-                        <span className="font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
+                        <span className="font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
                       </div>
                       <table className="w-full text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '140ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                         <thead>
@@ -377,7 +377,7 @@ export default function MobileTraining() {
                   </p>
                   <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>

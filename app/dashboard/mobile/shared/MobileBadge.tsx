@@ -1,42 +1,52 @@
 'use client';
 
-// Exported so other mobile components (e.g. the Recent Projects list
-// in MobileDashboard) can reuse the same palette for left-edge accent
-// strips, without duplicating the map.
+// Outlined ghost treatment: transparent bg + accent-display border (punchy,
+// saturated) + accent-text text (4.5:1 readable). Breaks the green-on-green
+// (or amber-on-amber, etc.) collapse the old soft-tinted bg pattern caused
+// in light mode. PHASE_COLORS still exports the same shape (bg/text) so
+// existing consumers like the Recent Projects accent-strip in
+// MobileDashboard keep working — bg here is now the border color, used
+// as a side-strip accent.
 export const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
-  'New':             { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Acceptance':      { bg: 'var(--accent-cyan-soft)',    text: 'var(--accent-cyan-solid)' },
-  'Site Survey':     { bg: 'var(--accent-amber-soft)',   text: 'var(--accent-amber-solid)' },
-  'Design':          { bg: 'var(--accent-purple-soft)',  text: 'var(--accent-purple-solid)' },
-  'Permitting':      { bg: 'var(--accent-amber-soft)',   text: 'var(--accent-amber-solid)' },
-  'Pending Install': { bg: 'var(--accent-amber-soft)',   text: 'var(--accent-amber-solid)' },
-  'Installed':       { bg: 'var(--accent-cyan-soft)',    text: 'var(--accent-cyan-solid)' },
-  'PTO':             { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Completed':       { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Cancelled':       { bg: 'var(--accent-red-soft)',     text: 'var(--accent-red-solid)' },
-  'On Hold':         { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',     text: 'var(--text-muted)' },
+  'New':             { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Acceptance':      { bg: 'var(--accent-cyan-display)',    text: 'var(--accent-cyan-text)' },
+  'Site Survey':     { bg: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)' },
+  'Design':          { bg: 'var(--accent-purple-display)',  text: 'var(--accent-purple-text)' },
+  'Permitting':      { bg: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)' },
+  'Pending Install': { bg: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)' },
+  'Installed':       { bg: 'var(--accent-cyan-display)',    text: 'var(--accent-cyan-text)' },
+  'PTO':             { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Completed':       { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Cancelled':       { bg: 'var(--accent-red-display)',     text: 'var(--accent-red-text)' },
+  'On Hold':         { bg: 'var(--text-muted)',             text: 'var(--text-muted)' },
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  'Draft':     { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',  text: 'var(--text-muted)' },
-  'Pending':   { bg: 'var(--accent-amber-soft)', text: 'var(--accent-amber-solid)' },
-  'Paid':      { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Approved':  { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Denied':    { bg: 'var(--accent-red-soft)',   text: 'var(--accent-red-solid)' },
-  'Rejected':  { bg: 'var(--accent-red-soft)',   text: 'var(--accent-red-solid)' },
-  'Upcoming':  { bg: 'var(--accent-cyan-soft)',  text: 'var(--accent-cyan-solid)' },
-  'Active':    { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Completed': { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
-  'Cancelled': { bg: 'var(--accent-red-soft)',   text: 'var(--accent-red-solid)' },
+  'Draft':     { bg: 'var(--text-muted)',             text: 'var(--text-muted)' },
+  'Pending':   { bg: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)' },
+  'Paid':      { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Approved':  { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Denied':    { bg: 'var(--accent-red-display)',     text: 'var(--accent-red-text)' },
+  'Rejected':  { bg: 'var(--accent-red-display)',     text: 'var(--accent-red-text)' },
+  'Upcoming':  { bg: 'var(--accent-cyan-display)',    text: 'var(--accent-cyan-text)' },
+  'Active':    { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Completed': { bg: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  'Cancelled': { bg: 'var(--accent-red-display)',     text: 'var(--accent-red-text)' },
 };
 
 export default function MobileBadge({ value, variant = 'phase' }: { value: string; variant?: 'phase' | 'status' }) {
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
-  const c = colors[value] ?? { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', text: 'var(--text-muted)' };
+  // `bg` field is reused as the border color in the new outlined treatment.
+  const c = colors[value] ?? { bg: 'var(--text-muted)', text: 'var(--text-muted)' };
   return (
     <span
       className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
-      style={{ background: c.bg, color: c.text, fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+      style={{
+        background: 'transparent',
+        border: `1.5px solid ${c.bg}`,
+        color: c.text,
+        fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+      }}
     >
       {value}
     </span>

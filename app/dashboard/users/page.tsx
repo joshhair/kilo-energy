@@ -725,7 +725,7 @@ function UsersPageInner() {
               setShowAddModal(true);
             }}
             className="flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
           >
             <Plus className="w-4 h-4" /> Add User
           </button>
@@ -1640,7 +1640,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-display)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>
@@ -1651,7 +1651,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' }}>{formatCompactKW(totalKW)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-display)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total kW</p>
                   </div>
@@ -1684,7 +1684,7 @@ function UsersPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}>${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}>${repPaid.toLocaleString()}</span>
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Paid Out</p>
                     </div>
@@ -1995,7 +1995,7 @@ function UsersPageInner() {
                 onClick={handleAddRep}
                 disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
                 {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
               </button>

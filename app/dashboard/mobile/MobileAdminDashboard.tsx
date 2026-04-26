@@ -23,10 +23,14 @@ const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';
 const ACCENT2 = 'var(--accent-cyan-solid)';
+const ACCENT_DISP = 'var(--accent-emerald-display)';
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
 const DANGER = 'var(--accent-red-solid)';
 const WARNING = 'var(--accent-amber-solid)';
+// BIG hero numbers — near-black for max readability on white in light mode.
+// Brand color frames the number via the small uppercase label, not the digit.
+const HERO_NUM = 'var(--text-primary)';
 
 function getGreeting(name: string): string {
   const h = new Date().getHours();
@@ -301,25 +305,25 @@ export default function MobileAdminDashboard() {
   if (!dbReady) {
     return (
       <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-        <div className="h-7 w-48 rounded-lg bg-[#1a2235] animate-skeleton" />
+        <div className="h-7 w-48 rounded-lg bg-[var(--surface-pressed)] animate-skeleton" />
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="shrink-0 h-10 w-24 rounded-full bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60}ms` }} />
+            <div key={i} className="shrink-0 h-10 w-24 rounded-full bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: `${i * 60}ms` }} />
           ))}
         </div>
         <div className="rounded-2xl p-5 bg-[var(--surface-card)] border border-[var(--border-subtle)] space-y-3">
-          <div className="h-4 w-20 rounded bg-[#1a2235] animate-skeleton" />
-          <div className="h-10 w-40 rounded-lg bg-[#1a2235] animate-skeleton" style={{ animationDelay: '80ms' }} />
+          <div className="h-4 w-20 rounded bg-[var(--surface-pressed)] animate-skeleton" />
+          <div className="h-10 w-40 rounded-lg bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '80ms' }} />
           <div className="flex gap-4 mt-2">
-            <div className="h-6 w-24 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: '140ms' }} />
-            <div className="h-6 w-24 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: '200ms' }} />
+            <div className="h-6 w-24 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '140ms' }} />
+            <div className="h-6 w-24 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '200ms' }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="rounded-2xl p-4 bg-[var(--surface-card)] border border-[var(--border-subtle)]">
-              <div className="h-3 w-12 rounded bg-[#1a2235] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
-              <div className="h-7 w-10 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
+              <div className="h-3 w-12 rounded bg-[var(--surface-pressed)] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
+              <div className="h-7 w-10 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
             </div>
           ))}
         </div>
@@ -329,8 +333,8 @@ export default function MobileAdminDashboard() {
 
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <div className="flex items-start justify-between gap-3">
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
         {/* "My Rep View" toggle — only offered when the admin also sells
             (has repType). Flips into rep-view for themselves, replacing
             Glide's two-account hack. The layout's "Viewing as …" banner
@@ -385,10 +389,10 @@ export default function MobileAdminDashboard() {
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Revenue</p>
-          <TrendingUp className="w-5 h-5" style={{ color: ACCENT }} />
+          <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.12em' }}>Revenue</p>
+          <TrendingUp className="w-5 h-5" style={{ color: ACCENT_DISP }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: HERO_NUM, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedProfit)}</p>

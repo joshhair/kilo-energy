@@ -13,9 +13,16 @@ export default function MobileCard({
   hero?: boolean;
   style?: React.CSSProperties;
 }) {
+  // Hero gradient was surface-page → surface-pressed, which in light mode
+  // is #eaeef4 → #dde2ec — DARKER than a regular card, killing the punch
+  // of accent-display hero numbers. Switching to surface-card →
+  // surface-elevated gives a subtle navy variation in dark mode (#161920
+  // → #1d2028) and pure white in light mode, so emerald display stats
+  // sit on the contrasty white surface they need. Hero identity now comes
+  // from the emerald-soft border + glow orb + box shadow, not the bg.
   const heroStyle: React.CSSProperties = hero
     ? {
-        background: 'linear-gradient(135deg, var(--surface-page) 0%, var(--surface-pressed) 100%)',
+        background: 'linear-gradient(135deg, var(--surface-card) 0%, var(--surface-elevated) 100%)',
         border: '1px solid var(--accent-emerald-soft)',
         boxShadow: '0 0 40px var(--accent-emerald-soft)',
         animationName: 'heroCardEnter',

@@ -685,7 +685,7 @@ export default function IncentivesPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 font-medium px-4 py-2.5 rounded-xl text-sm transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}
             >
               <Plus className="w-4 h-4" />
               New Incentive
@@ -705,7 +705,7 @@ export default function IncentivesPage() {
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{incentiveFilter === 'expired' ? 'Expired Incentives' : incentiveFilter === 'ending_soon' ? 'Ending Soon' : 'Active Incentives'}</span>
             <Trophy className="w-4 h-4 text-[var(--accent-emerald-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-text)' }}>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-display)' }}>
             {activeIncentives.length}
           </p>
         </div>
@@ -719,7 +719,7 @@ export default function IncentivesPage() {
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Milestones Achieved</span>
             <Target className="w-4 h-4 text-[var(--accent-emerald-text)] shrink-0" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)' }}>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)' }}>
             {achievedMilestones} <span className="text-base font-medium text-[var(--text-muted)]">of {totalMilestones}</span>
           </p>
         </div>
@@ -733,7 +733,7 @@ export default function IncentivesPage() {
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Next Deadline</span>
             <Calendar className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
           </div>
-          <p className="stat-value text-2xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-text)' }}>
+          <p className="stat-value text-2xl font-black tabular-nums tracking-tight animate-count-up" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-display)' }}>
             {nextDeadline ? formatDate(nextDeadline) : <span className="text-[var(--text-muted)] text-lg">None</span>}
           </p>
         </div>

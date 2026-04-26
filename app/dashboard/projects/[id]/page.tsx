@@ -48,6 +48,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
+  // Optional reason attached to amount edits — shows alongside the
+  // resulting field_edit entry in the activity feed so future readers
+  // know why this number changed.
+  const [editReason, setEditReason] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
@@ -197,8 +201,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const updateProject = (updates: Partial<typeof project>) => {
-    ctxUpdateProject(id, updates);
+  const updateProject = (updates: Partial<typeof project>, opts?: { editReason?: string }) => {
+    ctxUpdateProject(id, updates, opts);
   };
 
   const handleCancel = () => {
@@ -311,8 +315,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const saveM1 = () => {
     const val = parseFloat(m1Val);
-    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
-    else { toast('Invalid amount', 'error'); }
+    if (!isNaN(val)) {
+      updateProject({ m1Amount: val }, { editReason });
+      toast('M1 amount updated', 'success');
+      setEditM1(false);
+      setEditReason('');
+    } else { toast('Invalid amount', 'error'); }
   };
 
   const saveM2 = () => {
@@ -328,13 +336,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
         ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
-      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 }, { editReason });
       if (originalM2 === 0 && project.setterId) {
         toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled.', 'error');
       } else {
         toast('M2 amount updated', 'success');
       }
       setEditM2(false);
+      setEditReason('');
     } else { toast('Invalid amount', 'error'); }
   };
 
@@ -794,7 +803,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
                        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
-                  <p className="text-[var(--accent-emerald-text)] text-4xl font-black tabular-nums">
+                  <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
                     ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-[var(--text-secondary)] text-sm mt-1">
@@ -815,7 +824,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
                      style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                 <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
-                <p className="text-[var(--accent-emerald-text)] text-4xl font-black tabular-nums">
+                <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
                   ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[var(--text-secondary)] text-sm mt-1">Projected earnings on this deal</p>
@@ -1191,15 +1200,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </button>
                     {isEditable && (
                       isEditing ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap">
                           <input
                             type="number"
                             value={stage === 'M1' ? m1Val : m2Val}
                             onChange={(e) => stage === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
                             className="w-24 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
                           />
+                          <input
+                            type="text"
+                            value={editReason}
+                            onChange={(e) => setEditReason(e.target.value)}
+                            placeholder="Reason (optional)"
+                            maxLength={200}
+                            className="w-44 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
+                          />
                           <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-emerald-text)] font-medium">Save</button>
-                          <button onClick={() => stage === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-xs text-[var(--text-muted)]">Cancel</button>
+                          <button
+                            onClick={() => {
+                              if (stage === 'M1') setEditM1(false); else setEditM2(false);
+                              setEditReason('');
+                            }}
+                            className="text-xs text-[var(--text-muted)]"
+                          >Cancel</button>
                         </div>
                       ) : (
                         <button

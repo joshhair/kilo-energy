@@ -434,7 +434,7 @@ export default function MobileReps() {
           </div>
           <div className="space-y-2">
             {pendingInvitations.map((inv) => (
-              <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }}>
+              <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
                 <Clock className="w-3.5 h-3.5 text-[var(--accent-amber-text)]/60 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--text-primary)] font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
@@ -604,7 +604,7 @@ export default function MobileReps() {
                   onClick={() => setComparePeriod(opt.value)}
                   className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
                   style={{
-                    background: comparePeriod === opt.value ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'rgba(0,0,0,0.2)',
+                    background: comparePeriod === opt.value ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-pressed)',
                     color: comparePeriod === opt.value ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
                     border: comparePeriod === opt.value ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
@@ -618,11 +618,11 @@ export default function MobileReps() {
               <div className="flex items-center gap-2 mb-3">
                 <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
                   className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
-                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }} />
+                  style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>to</span>
                 <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
                   className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
-                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)' }} />
+                  style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }} />
               </div>
             )}
             <div className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -645,7 +645,7 @@ export default function MobileReps() {
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
                 return (
-                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-subtle)' }}>
+                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-black text-xs font-bold mx-auto mb-1.5"
                       style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}>
                       {getInitials(rep.name)}

@@ -546,7 +546,7 @@ export function BaselinesSection({
 
       {/* New Version Modal */}
       {newVersionFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--surface-overlay)' }}>
           <div className="bg-[var(--surface)] border border-[var(--border)]/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -955,7 +955,7 @@ export function BaselinesSection({
       {pcNewVersionFor && (() => {
         const pcProduct = productCatalogProducts.find((p) => p.id === pcNewVersionFor) || solarTechProducts.find((p) => p.id === pcNewVersionFor);
         return pcProduct ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--surface-overlay)' }}>
             <div className="bg-[var(--surface)] border border-[var(--border)]/80 rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel">
               <div className="flex items-center justify-between mb-4">
                 <div><h3 className="text-[var(--text-primary)] font-bold">New Pricing Version</h3><p className="text-[var(--text-muted)] text-xs mt-0.5">{pcProduct.name} &mdash; closes current version on the day before effective date</p></div>
@@ -994,7 +994,7 @@ export function BaselinesSection({
         const targetProducts = isSt ? solarTechProducts.filter((p) => p.family === stFamily) : (() => { const installerName = baselineTab; const config = productCatalogInstallerConfigs[installerName]; if (!config) return []; const currentFamily = pcFamily[installerName] ?? config.families[0] ?? ''; return productCatalogProducts.filter((p) => p.installer === installerName && p.family === currentFamily); })();
         const familyLabel = isSt ? stFamily : (() => { const config = productCatalogInstallerConfigs[baselineTab]; return config ? `${baselineTab} \u2014 ${pcFamily[baselineTab] ?? config.families[0] ?? ''}` : baselineTab; })();
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--surface-overlay)' }}>
             <div className="bg-[var(--surface)] border border-[var(--border)]/80 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/40 animate-modal-panel">
               <div className="flex items-center justify-between mb-4">
                 <div><h3 className="text-[var(--text-primary)] font-bold">Duplicate All as New Version</h3><p className="text-[var(--text-muted)] text-xs mt-0.5">Snapshot current pricing for {targetProducts.length} product{targetProducts.length !== 1 ? 's' : ''} in {familyLabel}</p></div>

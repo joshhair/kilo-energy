@@ -598,7 +598,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
+            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
@@ -937,7 +937,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold"
                 style={{
                   background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                  color: 'var(--surface-page)',
+                  color: 'var(--text-on-accent)',
                   opacity: saving ? 0.6 : 1,
                 }}
               >

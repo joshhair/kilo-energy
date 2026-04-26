@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWValue, localDateString } from '../../../lib/utils';
@@ -39,8 +39,13 @@ const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';
 const ACCENT2 = 'var(--accent-cyan-solid)';
+const ACCENT_DISP = 'var(--accent-emerald-display)';
+const ACCENT2_DISP = 'var(--accent-cyan-display)';
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
+// BIG hero numbers — near-black for max readability on white in light mode.
+// Brand color frames the number via the small uppercase label, not the digit.
+const HERO_NUM = 'var(--text-primary)';
 const DANGER = 'var(--accent-red-solid)';
 
 function relativeTime(dateStr: string): string {
@@ -108,15 +113,29 @@ export default function MobileDashboard() {
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
 
-  useEffect(() => {
-    const idx = PERIODS.findIndex(p => p.value === period);
-    const el = pillRefs.current[idx];
-    if (!el) return;
-    const parent = el.parentElement!;
-    const parentRect = parent.getBoundingClientRect();
-    const rect = el.getBoundingClientRect();
-    setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
-    setPillReady(true);
+  // useLayoutEffect (synchronous, pre-paint) instead of useEffect so the
+  // active-pill highlight is positioned before the user sees the first
+  // frame. With the post-paint useEffect, switching from admin → rep view
+  // (the dashboard component swap in the parent layout) sometimes left
+  // the highlight unset until the user re-tapped a pill — refs were
+  // populated but the effect's measurement hadn't completed before paint.
+  // Layout effect avoids that race. We also re-measure once via rAF in
+  // case fonts/scroll-snap settle on the next frame.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const idx = PERIODS.findIndex(p => p.value === period);
+      const el = pillRefs.current[idx];
+      if (!el) return;
+      const parent = el.parentElement;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
+      setPillReady(true);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
   }, [period]);
 
   useEffect(() => { setStatVersion(v => v + 1); }, [period]);
@@ -717,7 +736,7 @@ export default function MobileDashboard() {
   return (
     <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
+      <h1 className="truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
@@ -769,24 +788,24 @@ export default function MobileDashboard() {
       <MobileCard hero>
         {onPaceAnnual > 0 ? (
           <div>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>On Pace For {new Date().getFullYear()}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
             {/* Next Payout — secondary */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
+                <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
           </div>
         ) : (
           <div>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday} days</span></>}</p>
           </div>
         )}
@@ -872,7 +891,7 @@ export default function MobileDashboard() {
                   className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150 mobile-list-item"
                   style={{
                     background: 'var(--surface-card)',
-                    border: '1px solid #2a3858',
+                    border: '1px solid var(--border-default)',
                     animationDelay: `${i * 45}ms`,
                     transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
                   }}

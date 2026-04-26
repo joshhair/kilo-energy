@@ -1080,7 +1080,7 @@ function StandardBaselines() {
         <div
           className="bs-backdrop fixed inset-0 z-50 flex items-end justify-center"
           style={{
-            background: 'rgba(0,0,0,0.6)',
+            background: 'var(--surface-overlay)',
             animation: sheetLeaving
               ? 'bs-backdrop-out 280ms ease both'
               : 'bs-backdrop-in 200ms ease both',

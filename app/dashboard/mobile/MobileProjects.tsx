@@ -406,7 +406,7 @@ export default function MobileProjects() {
               {phase}
               {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
                 <span style={{
-                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--border-subtle)',
+                  background: isActive ? 'color-mix(in srgb, #000 20%, transparent)' : 'var(--border-subtle)',
                   color: isActive ? '#000' : 'var(--text-muted)',
                   borderRadius: 999,
                   fontSize: '0.68rem',
@@ -472,7 +472,7 @@ export default function MobileProjects() {
                     className="mt-2 inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold"
                     style={{
                       background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                      color: 'var(--surface-page)',
+                      color: 'var(--text-on-accent)',
                     }}
                   >
                     <Plus className="w-4 h-4" />

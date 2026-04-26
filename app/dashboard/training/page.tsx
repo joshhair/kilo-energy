@@ -856,7 +856,7 @@ function TrainingPageInner() {
           <button
             onClick={() => setShowNewAssignment(true)}
             className="mt-3 ml-[52px] inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-            style={{ backgroundColor: 'var(--brand)', color: 'var(--surface-page)' }}
+            style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
           >
             <Plus className="w-4 h-4" />
             New Assignment

@@ -74,9 +74,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               width:  idx === currentStep ? 10 : 8,
               height: idx === currentStep ? 10 : 8,
               background: idx === currentStep
-                ? '#1de9b6'
+                ? 'var(--accent-emerald-solid)'
                 : idx < currentStep
-                ? 'rgba(29,233,182,0.35)'
+                ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
                 : 'color-mix(in srgb, var(--text-primary) 18%, transparent)',
               transition: 'all 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               flexShrink: 0,
@@ -172,7 +172,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
                 {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
               </p>
             </div>
-            <p className="text-xl font-black" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
+            <p className="text-xl font-black" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
           </div>
         ) : (
           <p className="text-base" style={{ color: 'var(--text-muted)' }}>Commission will be calculated once pricing is confirmed.</p>
@@ -1132,7 +1132,7 @@ export default function MobileNewDeal() {
                 disabled={!!exitAnimClass}
                 className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
                 style={{
-                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
 
                   borderRadius: 16,
                   padding: 18,
@@ -1569,7 +1569,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${displayedTotal.toLocaleString()}</span>
                     </div>
                   </div>
@@ -1590,7 +1590,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${displayedTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-base" style={{ color: 'var(--text-muted)' }}>
@@ -1655,7 +1655,7 @@ export default function MobileNewDeal() {
                   disabled={!!exitAnimClass}
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
-                    background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                    background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
 
                     borderRadius: 16,
                     padding: 18,
@@ -1763,7 +1763,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${subDealerCommission.toLocaleString()}</span>
                     </div>
                   </div>
@@ -1774,7 +1774,7 @@ export default function MobileNewDeal() {
                       <span
                         key={commFlash ? 'flash' : 'idle'}
                         className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                       >${closerTotal.toLocaleString()}</span>
                     </div>
                     <div className="text-base" style={{ color: 'var(--text-muted)' }}>
@@ -1911,7 +1911,7 @@ export default function MobileNewDeal() {
                 disabled={submitting}
                 className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
                 style={{
-                  background: 'linear-gradient(135deg, #1de9b6, #00b894)',
+                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
 
                   borderRadius: 16,
                   padding: 18,
@@ -1947,7 +1947,7 @@ export default function MobileNewDeal() {
           <span
             key={commFlash ? 'flash' : 'idle'}
             className={`text-xl font-black${commFlash ? ' commission-val-flash' : ''}`}
-            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+            style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
           >${displayedTotal.toLocaleString()}</span>
         </div>
       )}

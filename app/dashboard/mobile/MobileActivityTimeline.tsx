@@ -26,14 +26,14 @@ function relativeTime(dateStr: string): string {
 
 const ACTIVITY_STYLES: Record<string, string> = {
   phase_change:    'var(--accent-cyan-solid)',
-  flagged:         '#ef4444',
-  unflagged:       '#f87171',
-  m1_paid:         '#10b981',
-  m2_paid:         '#10b981',
-  note_edit:       '#f59e0b',
+  flagged:         'var(--accent-red-solid)',
+  unflagged:       'var(--accent-red-text)',
+  m1_paid:         'var(--accent-emerald-solid)',
+  m2_paid:         'var(--accent-emerald-solid)',
+  note_edit:       'var(--accent-amber-solid)',
   field_edit:      'var(--text-muted)',
-  created:         '#a855f7',
-  setter_assigned: '#22d3ee',
+  created:         'var(--accent-purple-solid)',
+  setter_assigned: 'var(--accent-teal-solid)',
 };
 
 // ── Activity Timeline ──
@@ -114,15 +114,15 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-slate-400" />
+        <Clock className="w-4 h-4 text-[var(--text-muted)]" />
         <h2 className="text-base font-semibold text-[var(--text-primary)]">Activity</h2>
-        <span className="text-base text-slate-400">({total})</span>
+        <span className="text-base text-[var(--text-muted)]">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
         <ActivityTimelineSkeleton />
       ) : activities.length === 0 ? (
-        <p className="text-base text-slate-400">No activity yet</p>
+        <p className="text-base text-[var(--text-muted)]">No activity yet</p>
       ) : (
         <div className="relative pl-6">
           <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--border-subtle)' }} />
@@ -131,8 +131,8 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ background: dotColor }} />
-                <p className="text-base text-slate-300">{entry.detail}</p>
-                <p className="text-base text-slate-400">{relativeTime(entry.createdAt)}</p>
+                <p className="text-base text-[var(--text-secondary)]">{entry.detail}</p>
+                <p className="text-base text-[var(--text-muted)]">{relativeTime(entry.createdAt)}</p>
               </div>
             );
           })}

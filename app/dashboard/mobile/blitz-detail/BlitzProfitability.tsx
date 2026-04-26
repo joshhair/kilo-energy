@@ -9,11 +9,11 @@ import { getBlitzProjectBaselines } from '../../../../lib/blitzComputed';
 
 const COST_BAR: Record<string, string> = {
   housing: 'var(--accent-emerald-solid)',
-  travel: '#a78bfa',
-  gas: '#f59e0b',
+  travel: 'var(--accent-purple-solid)',
+  gas: 'var(--accent-amber-solid)',
   meals: 'var(--accent-emerald-solid)',
-  incentives: '#ec4899',
-  swag: '#fb923c',
+  incentives: 'var(--accent-red-solid)',
+  swag: 'var(--accent-amber-text)',
   other: 'var(--text-dim)',
 };
 
@@ -134,7 +134,7 @@ export default function BlitzProfitability({
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                   className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 active:opacity-70 min-h-[56px]"
-                  style={{ background: 'rgba(0,0,0,0.15)' }}
+                  style={{ background: 'var(--surface-pressed)' }}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>

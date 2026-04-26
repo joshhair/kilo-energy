@@ -567,7 +567,7 @@ function SettingsPageInner() {
                 <button
                   onClick={() => { selectedArchivedInstallers.forEach((n) => setInstallerActive(n, true)); selectedArchivedFinancers.forEach((n) => setFinancerActive(n, true)); const count = selectedArchivedInstallers.length + selectedArchivedFinancers.length; toast(`${count} item${count !== 1 ? 's' : ''} restored`, 'info'); setSelectedInstallers(new Set()); setSelectedFinancers(new Set()); setInstallerSelectMode(false); setFinancerSelectMode(false); }}
                   className="flex items-center gap-1.5 font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition-all hover:brightness-110 whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                 >
                   <Eye className="w-3.5 h-3.5" /> Restore Selected
                 </button>

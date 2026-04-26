@@ -1248,7 +1248,7 @@ export default function DashboardPage() {
       accentGradient: 'from-yellow-500 to-yellow-400',
       glowClass: 'stat-glow-yellow',
       sparkData: systemSizeSparkData,
-      sparkStroke: '#eab308',
+      sparkStroke: 'var(--accent-amber-solid)',
       pctChange: computePctChange(totalKWSold, prevTotalKWSold),
       href: '/dashboard/projects',
       tooltip: 'Total system size in kilowatts from all active deals',
@@ -1363,21 +1363,21 @@ export default function DashboardPage() {
               <line x1="21" y1="14" x2="21" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
               <line x1="38" y1="14" x2="38" y2="46" stroke="var(--border-strong)" strokeWidth="1" />
               {/* Cell shimmer fills */}
-              <rect x="5" y="15" width="15" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
+              <rect x="5" y="15" width="15" height="10" rx="1" fill="var(--accent-blue-solid)" fillOpacity="0.4" />
               <rect x="22" y="15" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
-              <rect x="39" y="15" width="16" height="10" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
+              <rect x="39" y="15" width="16" height="10" rx="1" fill="var(--accent-blue-solid)" fillOpacity="0.4" />
               <rect x="5" y="26" width="15" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
               <rect x="22" y="26" width="15" height="10" rx="1" fill="var(--accent-cyan-solid)" fillOpacity="0.45" />
               <rect x="39" y="26" width="16" height="10" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
-              <rect x="5" y="37" width="15" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
+              <rect x="5" y="37" width="15" height="8" rx="1" fill="var(--accent-blue-solid)" fillOpacity="0.4" />
               <rect x="22" y="37" width="15" height="8" rx="1" fill="var(--accent-emerald-solid)" fillOpacity="0.5" />
-              <rect x="39" y="37" width="16" height="8" rx="1" fill="#1d4ed8" fillOpacity="0.4" />
+              <rect x="39" y="37" width="16" height="8" rx="1" fill="var(--accent-blue-solid)" fillOpacity="0.4" />
               {/* Mount legs */}
-              <line x1="20" y1="46" x2="16" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
-              <line x1="40" y1="46" x2="44" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
-              <line x1="13" y1="55" x2="47" y2="55" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+              <line x1="20" y1="46" x2="16" y2="55" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="40" y1="46" x2="44" y2="55" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" />
+              <line x1="13" y1="55" x2="47" y2="55" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge — top-right corner */}
-              <circle cx="49" cy="15" r="9" fill="#0f172a" />
+              <circle cx="49" cy="15" r="9" fill="var(--surface-page)" />
               <circle cx="49" cy="15" r="8" fill="var(--accent-emerald-solid)" />
               <line x1="49" y1="10" x2="49" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="44" y1="15" x2="54" y2="15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />

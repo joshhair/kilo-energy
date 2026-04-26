@@ -523,7 +523,7 @@ export default function MobilePayroll() {
                       )}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
+                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${r.amount.toFixed(2)}</p>
                       <span
                         className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={
@@ -615,8 +615,8 @@ export default function MobilePayroll() {
           so admins see everything owed at a glance. Sub-lines break
           down by type. Mirrors the desktop payroll tab (2026-04-23). */}
       <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
-        <SummaryCard label="Draft" total={draftBreakdown.total} tone="#4d9fff" breakdown={draftBreakdown} pending />
-        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="#f5a623" breakdown={pendingBreakdown} pending />
+        <SummaryCard label="Draft" total={draftBreakdown.total} tone="var(--accent-blue-solid)" breakdown={draftBreakdown} pending />
+        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="var(--accent-amber-solid)" breakdown={pendingBreakdown} pending />
         <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-solid)" breakdown={paidBreakdown} />
       </div>
       {pendingTotal > 0 && (

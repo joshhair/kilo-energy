@@ -846,17 +846,17 @@ function PayrollPageInner() {
               {/* Illustration — wallet with coins (no earnings yet) */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Wallet body */}
-                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="var(--border-strong)" strokeWidth="1.5"/>
-                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="var(--surface-pressed)" stroke="var(--border-strong)" strokeWidth="1.5"/>
+                <rect x="10" y="30" width="52" height="4" fill="var(--border-strong)"/>
                 {/* Coin pocket */}
-                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="var(--border-strong)" strokeWidth="1.5"/>
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="var(--surface-page)" stroke="var(--border-strong)" strokeWidth="1.5"/>
                 <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
                 {/* Dashed lines — empty content indicator */}
-                <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="17" y1="40" x2="36" y2="40" stroke="var(--border-default)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="17" y1="46" x2="30" y2="46" stroke="var(--border-default)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 {/* Dollar sign badge */}
                 <circle cx="60" cy="22" r="9" fill="var(--surface-card)" stroke="var(--accent-emerald-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
-                <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+                <text x="60" y="26.5" textAnchor="middle" fill="var(--accent-blue-text)" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
               </svg>
               <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
               <p className="text-[var(--text-muted)] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
@@ -890,7 +890,7 @@ function PayrollPageInner() {
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)' : 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)' : 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)', color: entry.type === 'Bonus' ? 'var(--accent-purple-text)' : 'var(--accent-blue-text)' }}>
                         {entry.type}
                       </span>
                     </td>
@@ -959,7 +959,7 @@ function PayrollPageInner() {
               onClick={() => setShowPublishConfirm(true)}
               disabled={pendingCount === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -1158,7 +1158,7 @@ function PayrollPageInner() {
                   <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">
                       {r.receiptUrl ? (
@@ -1256,21 +1256,21 @@ function PayrollPageInner() {
         {/* Draft */}
         <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-blue-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' }}>${draftBreakdown.total.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' }}>${draftBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
           <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
         <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-amber-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>${pendingBreakdown.total.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>${pendingBreakdown.total.toLocaleString()}</p>
           <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
           <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
         </div>
         {/* Total Paid */}
         <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-emerald-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
           <p style={{ color: 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
           <p style={{ color: 'var(--accent-emerald-glow)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
         </div>
@@ -1391,7 +1391,7 @@ function PayrollPageInner() {
                   setShowPaymentModal(true);
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
                 <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
               </button>
@@ -1509,10 +1509,10 @@ function PayrollPageInner() {
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
                       entry.status === 'Paid'
-                        ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : entry.status === 'Pending'
-                        ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
-                        : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                     }>{entry.status}</span>
                   </td>
                   <td style={{ padding: '12px 14px', fontSize: 12, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' as const, textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>

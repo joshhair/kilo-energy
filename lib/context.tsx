@@ -87,7 +87,7 @@ interface AppContextType {
   deleteSubDealerPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateSubDealerContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipFetch?: boolean) => void;
   // Project editing
-  updateProject: (id: string, updates: Partial<Project>) => void;
+  updateProject: (id: string, updates: Partial<Project>, opts?: { editReason?: string }) => void;
   // Editable baselines (derived from active pricing versions for backward compat)
   installerBaselines: Record<string, InstallerBaseline>;
   updateInstallerBaseline: (installer: string, baseline: InstallerBaseline) => void;
@@ -352,7 +352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     persistPayrollEntry, deletePayrollEntriesFromDb, logProjectActivity,
   };
 
-  const updateProject = (id: string, updates: Partial<Project>) => {
+  const updateProject = (id: string, updates: Partial<Project>, opts?: { editReason?: string }) => {
     // ── 1. Find old project & log activity ──
     const old = projectsRef.current.find((p) => p.id === id);
     if (old) {
@@ -376,10 +376,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kWSize: 'System Size (kW)', netPPW: 'Net PPW', soldDate: 'Sold Date',
         m1Amount: 'M1 Amount', m2Amount: 'M2 Amount',
       };
+      // Trim + cap admin-supplied reason so we don't write unbounded
+      // text into the activity feed. 200 chars is generous for a sentence
+      // explaining "why this number changed" without becoming a note dump.
+      const editReason = opts?.editReason?.trim().slice(0, 200) || undefined;
       for (const [key, label] of Object.entries(fieldLabels)) {
         const k = key as keyof Project;
         if (updates[k] !== undefined && updates[k] !== old[k]) {
-          logProjectActivity(id, 'field_edit', `${label} changed from ${old[k]} to ${updates[k]}`, JSON.stringify({ field: key, old: old[k], new: updates[k] }));
+          const baseDetail = `${label} changed from ${old[k]} to ${updates[k]}`;
+          const detail = editReason ? `${baseDetail} — ${editReason}` : baseDetail;
+          const meta = JSON.stringify({
+            field: key,
+            old: old[k],
+            new: updates[k],
+            ...(editReason ? { reason: editReason } : {}),
+          });
+          logProjectActivity(id, 'field_edit', detail, meta);
         }
       }
 

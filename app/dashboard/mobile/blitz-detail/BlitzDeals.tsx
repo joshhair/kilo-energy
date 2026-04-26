@@ -125,7 +125,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
               {showPayout && payout > 0 && (
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Payout</p>
-                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
+                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
                 </div>
               )}
             </button>

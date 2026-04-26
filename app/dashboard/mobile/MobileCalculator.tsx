@@ -715,10 +715,10 @@ export default function MobileCalculator() {
             />
             <div className="text-right min-w-[90px]">
               {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                <p style={{ color: 'var(--accent-amber-text)', fontSize: 12 }}>Baseline unknown</p>
+                <p style={{ color: 'var(--accent-amber-display)', fontSize: 12 }}>Baseline unknown</p>
               ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                 <>
-                  <p style={{ color: 'var(--accent-blue-text)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
+                  <p style={{ color: 'var(--accent-blue-display)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
                   <p style={{ color: 'var(--text-dim)', fontSize: 11 }}>required PPW</p>
                 </>
               ) : (
@@ -734,7 +734,7 @@ export default function MobileCalculator() {
         <div ref={resultRef}>
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
           <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
+          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 
@@ -793,7 +793,7 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{trainerRep ? `: ${trainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
               </div>
             )}
 
@@ -803,7 +803,7 @@ export default function MobileCalculator() {
                 <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{closerTrainerRep ? `: ${closerTrainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
               </div>
             )}
 

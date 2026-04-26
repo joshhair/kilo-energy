@@ -68,7 +68,7 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
                   <p className="text-[var(--text-secondary)] text-sm font-medium">{deal.repName} (Closer)</p>
                   <p className="text-[var(--text-muted)] text-xs">M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}{deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}</p>
                 </div>
-                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
+                <p className="text-2xl font-black" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)', textShadow: '0 0 20px #00e07a50' }}>${deal.closerTotal.toLocaleString()}</p>
               </div>
             ) : (
               <p className="text-[var(--text-muted)] text-sm">Commission will be calculated once pricing is confirmed.</p>
@@ -89,7 +89,7 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
             <button
               onClick={() => router.push('/dashboard/projects')}
               className="flex-1 inline-flex items-center justify-center gap-2 font-bold px-5 py-2.5 rounded-xl text-sm transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
             >
               View Projects <ArrowRight className="w-4 h-4" />
             </button>

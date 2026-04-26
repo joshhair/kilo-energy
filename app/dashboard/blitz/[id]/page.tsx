@@ -15,7 +15,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
-import { formatDate, formatCurrency, formatCompactKW } from '../../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWValue } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
 import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
@@ -618,7 +618,7 @@ export default function BlitzDetailPage() {
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -696,7 +696,7 @@ export default function BlitzDetailPage() {
             </div>
             <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-2">
               <p className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1"><Zap className="w-3 h-3" /> Total kW</p>
-              <p className="text-2xl font-bold text-[var(--text-primary)]">{formatCompactKW(totalKW)}</p>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">{formatCompactKWValue(totalKW)}</p>
             </div>
             {isAdmin ? (
               <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-3">
@@ -841,7 +841,7 @@ export default function BlitzDetailPage() {
               <button
                 onClick={() => setShowAddParticipant(true)}
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
                 <UserPlus className="w-4 h-4" /> Add Rep
               </button>
@@ -939,7 +939,7 @@ export default function BlitzDetailPage() {
                     onClick={handleAddParticipant}
                     disabled={!selectedRepId || addingParticipant}
                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                   >
                     {addingParticipant ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {addingParticipant ? 'Adding...' : 'Add'}
@@ -1028,7 +1028,7 @@ export default function BlitzDetailPage() {
             <button
               onClick={() => setShowAddCost(true)}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
             >
               <Plus className="w-4 h-4" /> Add Cost
             </button>
@@ -1050,7 +1050,7 @@ export default function BlitzDetailPage() {
                   onClick={handleAddCost}
                   disabled={addingCost || !costAmount || parseFloat(costAmount) <= 0}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--surface-page)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                 >
                   {addingCost ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {addingCost ? 'Adding...' : 'Add Cost'}

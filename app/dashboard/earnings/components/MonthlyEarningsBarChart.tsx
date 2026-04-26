@@ -113,8 +113,8 @@ export function MonthlyEarningsBarChart({
 
             const bars = [
               { value: d.paid, color: 'var(--accent-emerald-text)', hoverColor: 'var(--accent-cyan-solid)' },
-              { value: d.pending, color: '#eab308', hoverColor: '#facc15' },
-              ...(hasReimb ? [{ value: d.reimbursement, color: '#8b5cf6', hoverColor: '#a78bfa' }] : []),
+              { value: d.pending, color: 'var(--accent-amber-solid)', hoverColor: 'var(--accent-amber-text)' },
+              ...(hasReimb ? [{ value: d.reimbursement, color: 'var(--accent-purple-solid)', hoverColor: 'var(--accent-purple-text)' }] : []),
             ];
 
             return (

@@ -54,7 +54,7 @@ export function BlitzProfitability({
           <p className="text-2xl font-bold text-[var(--accent-emerald-text)]">{formatCurrency(Math.round(kiloMargin))}</p>
           <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Baseline spread × kW</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-1" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">Blitz Costs</p>
           <p className="text-2xl font-bold text-[var(--accent-amber-text)]">{formatCurrency(totalCosts)}</p>
         </div>
@@ -63,7 +63,7 @@ export function BlitzProfitability({
           <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>{formatCurrency(Math.round(netProfit))}</p>
           <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Margin − Costs</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-3" style={{ '--card-accent': '#8b5cf6' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-purple-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">ROI</p>
           <p className={`text-2xl font-bold flex items-center gap-1.5 ${roi > 100 ? 'text-[var(--accent-emerald-text)]' : roi >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
             {roi.toFixed(0)}%

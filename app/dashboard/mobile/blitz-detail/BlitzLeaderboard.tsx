@@ -10,7 +10,6 @@ const RANK_GRAD = [
   'linear-gradient(135deg, #cbd5e1, #64748b)',
   'linear-gradient(135deg, #d97706, #92400e)',
 ];
-const RANK_COLOR = ['#fbbf24', '#cbd5e1', '#fb923c'];
 
 interface Props {
   entries: LeaderboardEntry[];
@@ -46,7 +45,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
               onClick={() => router.push(`/dashboard/users/${rep.userId}`)}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70 relative overflow-hidden"
               style={{
-                background: isTop3 ? 'rgba(0,0,0,0.15)' : 'transparent',
+                background: isTop3 ? 'var(--surface-pressed)' : 'transparent',
                 animation: 'fadeUpIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both',
                 animationDelay: `${idx * 50}ms`,
               }}
@@ -62,14 +61,14 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
               >
                 {rank}
               </span>
-              <span className="flex-1 text-sm font-semibold truncate text-left" style={{ color: isTop3 ? RANK_COLOR[rank - 1] : 'white', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <span className="flex-1 text-sm font-semibold truncate text-left" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {rep.name}
               </span>
               <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {rep.deals}d · {rep.kW.toFixed(1)}kW
               </span>
               {showPayout && rep.payout > 0 && (
-                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {formatCurrency(Math.round(rep.payout))}
                 </span>
               )}

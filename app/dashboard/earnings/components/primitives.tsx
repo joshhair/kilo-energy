@@ -49,9 +49,9 @@ export function ReimbStatusBadge({ status }: { status: string }) { return <Statu
 
 /** Maps a payroll status to the matching PAYROLL_PILL accent colour hex value. */
 export function getPayrollRowAccent(status: string): string {
-  if (status === 'Paid')    return 'var(--accent-emerald-solid)'; // emerald-500
-  if (status === 'Pending') return '#eab308'; // yellow-500
-  return '#64748b';                            // slate-500  (Draft / fallback)
+  if (status === 'Paid')    return 'var(--accent-emerald-solid)';
+  if (status === 'Pending') return 'var(--accent-amber-solid)';
+  return 'var(--text-muted)'; // Draft / fallback
 }
 
 // ── Sparkline with hover tooltip ───────────────────────────────────────────────
