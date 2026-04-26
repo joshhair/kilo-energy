@@ -207,13 +207,13 @@ export default function BottomNav({
                   key="more"
                   onClick={() => setMoreOpen((v) => !v)}
                   className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
-                  style={{ opacity: active ? 1 : 0.55, WebkitTapHighlightColor: 'transparent' }}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <span className="relative w-[18px] h-[18px] block">
                     <MoreHorizontal
                       className="w-[18px] h-[18px] absolute inset-0"
                       style={{
-                        color: active ? 'var(--accent-emerald-solid)' : '#fff',
+                        color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                         opacity: active ? 0 : 1,
                         transform: active ? 'scale(0.5) rotate(-30deg)' : 'scale(1) rotate(0deg)',
                         transition: 'opacity 200ms ease, transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -230,12 +230,11 @@ export default function BottomNav({
                     />
                   </span>
                   <span className="text-[10px] tracking-wide" style={{
-                    color: active ? 'var(--accent-emerald-solid)' : 'var(--text-mobile-muted)',
+                    color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                     fontFamily: "'DM Sans', sans-serif",
                     transform: active ? 'translateY(0px)' : 'translateY(2px)',
-                    opacity: active ? 1 : 0.65,
-                    transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease',
-                    willChange: 'transform, opacity',
+                    transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    willChange: 'transform',
                   }}>{item.label}</span>
                 </button>
               );
@@ -247,13 +246,13 @@ export default function BottomNav({
                 key={item.href}
                 href={item.href}
                 className="relative flex flex-col items-center justify-center gap-1 py-1 min-w-[56px] min-h-[48px] transition-all duration-200 active:scale-95"
-                style={{ opacity: active ? 1 : 0.55, WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <span
                   key={active ? 'on' : 'off'}
                   className="nav-icon-pop inline-block"
                   style={{
-                    color: active ? 'var(--accent-emerald-solid)' : '#fff',
+                    color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                     animation: active ? 'navIconPop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
                     transform: active ? undefined : 'scale(1)',
                     transition: active ? 'none' : 'color 200ms ease, transform 200ms ease',
@@ -262,12 +261,11 @@ export default function BottomNav({
                   <Icon className="w-[18px] h-[18px]" />
                 </span>
                 <span className="text-[10px] tracking-wide" style={{
-                  color: active ? 'var(--accent-emerald-solid)' : 'var(--text-mobile-muted)',
+                  color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                   fontFamily: "'DM Sans', sans-serif",
                   transform: active ? 'translateY(0px)' : 'translateY(2px)',
-                  opacity: active ? 1 : 0.65,
-                  transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease',
-                  willChange: 'transform, opacity',
+                  transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  willChange: 'transform',
                 }}>{item.label}</span>
               </Link>
             );
