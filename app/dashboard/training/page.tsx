@@ -370,35 +370,57 @@ function TrainingPageInner() {
   // silently disappear from the Trainer tab — viewer can open them but
   // can't see them listed. Synthesize pseudo-assignments so the existing
   // render path picks them up.
+  //
+  // Previously this bailed for admin with a comment claiming "admin sees
+  // every assignment already" — but admin's adminRows is built from
+  // trainerAssignments[] only, NOT direct project.trainerId overrides.
+  // Result: a Paul → Josh per-project override appeared in Paul's view
+  // (rep path synthesized the pseudo) but vanished from the admin Trainer
+  // Hub. The synthesizer now runs for both paths — admin sees ALL
+  // trainers' direct overrides, non-admin sees only their own.
   const directTrainerProjects = useMemo(() => {
-    if (effectiveRole === 'admin') return []; // admin sees every assignment already
-    const assignmentTraineeIds = new Set(myAssignments.map((a) => a.traineeId));
-    return projects.filter((p) =>
-      p.trainerId === effectiveRepId &&
-      p.phase !== 'Cancelled' &&
-      p.phase !== 'On Hold' &&
-      !assignmentTraineeIds.has(p.repId ?? '') &&
-      !assignmentTraineeIds.has(p.setterId ?? ''),
+    const isAdmin = effectiveRole === 'admin';
+    if (!isAdmin && !effectiveRepId) return [];
+    // Index existing trainer-trainee pairs so we don't re-list a deal
+    // that's already covered by a real assignment.
+    const assignedPairs = new Set(
+      trainerAssignments.map((a) => `${a.trainerId}::${a.traineeId}`),
     );
-  }, [projects, effectiveRepId, effectiveRole, myAssignments]);
+    return projects.filter((p) => {
+      if (!p.trainerId) return false;
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') return false;
+      // Non-admin: only direct overrides where this viewer is the trainer.
+      if (!isAdmin && p.trainerId !== effectiveRepId) return false;
+      // Skip if a real TrainerAssignment already covers this pair via
+      // either the closer or the setter.
+      const closerKey = `${p.trainerId}::${p.repId ?? ''}`;
+      const setterKey = `${p.trainerId}::${p.setterId ?? ''}`;
+      if (assignedPairs.has(closerKey) || assignedPairs.has(setterKey)) return false;
+      return true;
+    });
+  }, [projects, effectiveRepId, effectiveRole, trainerAssignments]);
 
   const directPseudoAssignments = useMemo<TrainerAssignment[]>(() => {
-    if (!effectiveRepId) return [];
-    const byCloser = new Map<string, typeof projects>();
+    // Group by (trainerId, closerId) so each (trainer, trainee) pair
+    // surfaces once even when there are multiple direct-override deals.
+    const byPair = new Map<string, { trainerId: string; closerId: string; rate: number }>();
     for (const p of directTrainerProjects) {
-      const key = p.repId ?? '';
-      if (!key) continue;
-      if (!byCloser.has(key)) byCloser.set(key, []);
-      byCloser.get(key)!.push(p);
+      const trainerId = p.trainerId;
+      const closerId = p.repId;
+      if (!trainerId || !closerId) continue;
+      const key = `${trainerId}::${closerId}`;
+      if (!byPair.has(key)) {
+        byPair.set(key, { trainerId, closerId, rate: p.trainerRate ?? 0 });
+      }
     }
-    return Array.from(byCloser.entries()).map(([closerId, projs]) => ({
-      id: `direct-${closerId}`,
-      trainerId: effectiveRepId,
+    return Array.from(byPair.entries()).map(([key, { trainerId, closerId, rate }]) => ({
+      id: `direct-${key}`,
+      trainerId,
       traineeId: closerId,
-      tiers: [{ upToDeal: null, ratePerW: projs[0]?.trainerRate ?? 0 }],
+      tiers: [{ upToDeal: null, ratePerW: rate }],
       isActiveTraining: true,
     }));
-  }, [directTrainerProjects, effectiveRepId]);
+  }, [directTrainerProjects]);
 
   const isTrainer = myAssignments.length > 0 || directPseudoAssignments.length > 0;
 
@@ -653,8 +675,11 @@ function TrainingPageInner() {
   const adminRows = useMemo(() => {
     if (effectiveRole !== 'admin') return [];
     // Group by (trainer, trainee) and render multi-tier rows so the full
-    // tier chain is visible at a glance.
-    return trainerAssignments.map((a) => {
+    // tier chain is visible at a glance. Include directPseudoAssignments
+    // so per-project trainer overrides without a matching TrainerAssignment
+    // surface in the admin Trainer Hub (matches what the rep view shows).
+    const allRows = [...trainerAssignments, ...directPseudoAssignments];
+    return allRows.map((a) => {
       const trainee = reps.find((r) => r.id === a.traineeId);
       const trainer = reps.find((r) => r.id === a.trainerId);
       const consumed = getConsumedDeals(a);
@@ -667,7 +692,7 @@ function TrainingPageInner() {
       return { assignment: a, trainer, trainee, consumed, status, rate, activeTierIndex };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainerAssignments, reps, projects, payrollEntries, effectiveRole]);
+  }, [trainerAssignments, directPseudoAssignments, reps, projects, payrollEntries, effectiveRole]);
 
   const filteredAdminRows = useMemo(() => {
     return adminRows.filter((row) => {

@@ -9,7 +9,7 @@ const RANK_GRADIENTS = ['from-yellow-400 to-amber-600', 'from-slate-300 to-slate
 const RANK_BG = ['bg-[var(--accent-amber-soft)] border-yellow-600/30', 'bg-[var(--surface-card)]/40 border-[var(--border)]/30', 'bg-[var(--accent-amber-soft)] border-amber-700/30'];
 const RANK_TEXT = ['text-[var(--accent-amber-text)]', 'text-[var(--text-secondary)]', 'text-[var(--accent-amber-text)]'];
 
-export function BlitzLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
+export function BlitzLeaderboard({ entries, showPayout = false }: { entries: LeaderboardEntry[]; showPayout?: boolean }) {
   return (
     <div className="card-surface rounded-2xl p-4">
       <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -34,7 +34,10 @@ export function BlitzLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
               }`}>{rep.name}</Link>
               <span className="text-xs text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
               <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{rep.kW.toFixed(1)} kW</span>
-              {rep.payout > 0 && (
+              {/* Payout column gated to admins + the blitz owner. Regular
+                  reps must not see other reps' commission on the blitz —
+                  was leaking before because showPayout defaulted to true. */}
+              {showPayout && rep.payout > 0 && (
                 <span className="hidden xl:inline text-xs font-semibold tabular-nums text-[var(--accent-emerald-text)] whitespace-nowrap">{formatCurrency(rep.payout)}</span>
               )}
             </div>

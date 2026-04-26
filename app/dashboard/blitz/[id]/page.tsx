@@ -761,7 +761,7 @@ export default function BlitzDetailPage() {
               instead of re-running the O(participants × projects) scan
               inside an IIFE. */}
           {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
-            <BlitzLeaderboard entries={leaderboard} />
+            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -835,7 +835,7 @@ export default function BlitzDetailPage() {
           {/* Mini-leaderboard — same shared `leaderboard` memo as the
               overview panel. No second scan. */}
           {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
-            <BlitzLeaderboard entries={leaderboard} />
+            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
           )}
 
           {canManage && (
