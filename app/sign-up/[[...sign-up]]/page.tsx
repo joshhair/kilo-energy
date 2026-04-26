@@ -12,7 +12,7 @@ export default function SignUpPage() {
   return (
     <div
       data-force-dark
-      className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-5 relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center px-1 sm:px-5 relative overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)',
@@ -101,9 +101,15 @@ export default function SignUpPage() {
           </p>
         </div>
 
-        {/* Clerk sign-up card */}
+        {/* Clerk sign-up card. Outer ring + inner glass each add 4px of
+            padding on desktop; on phones every pixel matters because the
+            Clerk input placeholders ("Enter your email address" / "Enter
+            your phone number") get clipped if the widget is narrower than
+            ~290px. Responsive padding (p-0.5 phones, p-1 sm+) gives the
+            widget back ~12px on narrow viewports without losing the glass
+            frame on desktop. Mirrors the sign-in page treatment. */}
         <div
-          className="w-full rounded-3xl p-1"
+          className="w-full rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
               'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, color-mix(in srgb, var(--text-primary) 4%, transparent) 100%)',
@@ -112,7 +118,7 @@ export default function SignUpPage() {
           }}
         >
           <div
-            className="rounded-[22px] p-1"
+            className="rounded-[22px] p-0 sm:p-1"
             style={{ background: 'rgba(13,21,37,0.75)', backdropFilter: 'blur(10px)' }}
           >
             <SignUp />
