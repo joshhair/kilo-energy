@@ -533,8 +533,15 @@ async function main() {
     // Cancellation
     const cancellationReason = phase === 'Cancelled' ? get(row, 'Status 1 / Cancellation Reason') || null : null;
 
-    // Notes
-    const notes = get(row, 'Note / Rep Note').slice(0, 2000);
+    // Notes — Glide's "Note / Rep Note" textarea content lands in a
+    // ProjectAdminNote (admin-only) instead of Project.notes (rep-
+    // visible). Same rationale as the Stage 8 deal-notes treatment:
+    // historical Glide note content can include comp adjustments,
+    // cancellation backstory, and other admin context that shouldn't
+    // be exposed to reps in the new app. Project.notes itself is left
+    // empty for Glide-imported projects so reps see a clean Notes
+    // section they can populate themselves going forward.
+    const glideRepNote = get(row, 'Note / Rep Note').slice(0, 2000);
 
     const dealData = {
       customerName,
@@ -556,7 +563,9 @@ async function main() {
       setterM1AmountCents: Math.round(setterM1Amount * 100),
       setterM2AmountCents: Math.round(setterM2Amount * 100),
       setterM3AmountCents: setterM3Amount > 0 ? Math.round(setterM3Amount * 100) : null,
-      notes,
+      // Project.notes intentionally cleared for Glide imports — content
+      // moves to ProjectAdminNote below.
+      notes: '',
       cancellationReason,
       baselineOverrideJson: baselineOverride ? JSON.stringify(baselineOverride) : null,
     };
@@ -564,6 +573,22 @@ async function main() {
     if (COMMIT) {
       const created = await prisma.project.create({ data: dealData });
       glideDealIdToKiloId.set(glideDealId, created.id);
+      // Persist the legacy Glide rep-note as an admin-only note attributed
+      // to the closer (or to Josh as a fallback) so authorship is preserved.
+      if (glideRepNote.trim().length > 0) {
+        const noteAuthorId = closerId;
+        const noteAuthor = existingUsers.find((u) => u.id === noteAuthorId);
+        const noteAuthorName = noteAuthor ? `${noteAuthor.firstName} ${noteAuthor.lastName}` : 'Glide Import';
+        await prisma.projectAdminNote.create({
+          data: {
+            projectId: created.id,
+            authorId: noteAuthorId,
+            authorName: noteAuthorName,
+            text: glideRepNote,
+            createdAt: new Date(effectiveSoldDate + 'T12:00:00'),
+          },
+        });
+      }
     } else {
       glideDealIdToKiloId.set(glideDealId, `DRY_${glideDealId.slice(0, 8)}`);
     }
@@ -741,7 +766,13 @@ async function main() {
     `  (receipt image files not migrated — URLs preserved as receiptName only)`,
   );
 
-  // ── Stage 8: Deal Notes → ProjectMessage ─────────────────────────────────
+  // ── Stage 8: Deal Notes → ProjectAdminNote ──────────────────────────────
+  // Glide-imported notes land in ProjectAdminNote (admin-only) instead
+  // of ProjectMessage (rep-visible Chatter). Glide notes can contain
+  // historical context, comp adjustments, and customer-resolution detail
+  // that should NOT be exposed to reps in the new app — admins explicitly
+  // asked for these to be admin-only. ProjectAdminNote is enforced as
+  // admin/internal-PM only at the API endpoint boundary.
   console.log('── Stage 8 — Notes ──');
   let notesCreated = 0, notesSkipped = 0, notesFallbackAuthor = 0;
   // Fall back to Josh's user when a note's author isn't resolvable —
@@ -765,16 +796,14 @@ async function main() {
     const authorUser = existingUsers.find((u) => u.id === kiloAuthorId)
       ?? (await prisma.user.findUnique({ where: { id: kiloAuthorId } }).catch(() => null));
     const authorName = authorUser ? `${authorUser.firstName} ${authorUser.lastName}` : 'Unknown';
-    const authorRole = authorUser?.role ?? 'rep';
     const timestamp = get(row, 'Timestamp');
     const createdAt = timestamp ? new Date(timestamp) : new Date();
     if (COMMIT && !kiloProjectId.startsWith('DRY_') && !kiloAuthorId.startsWith('DRY_')) {
-      await prisma.projectMessage.create({
+      await prisma.projectAdminNote.create({
         data: {
           projectId: kiloProjectId,
           authorId: kiloAuthorId,
           authorName,
-          authorRole,
           text,
           createdAt,
         },
@@ -783,7 +812,7 @@ async function main() {
     notesCreated++;
   }
   push('Notes',
-    `  ${notesCreated} ProjectMessage rows (${COMMIT ? 'created' : 'would create'})`,
+    `  ${notesCreated} ProjectAdminNote rows (${COMMIT ? 'created' : 'would create'}, admin-only)`,
     `  ${notesSkipped} skipped (empty text or unresolved project FK)`,
     notesFallbackAuthor > 0 ? `  ${notesFallbackAuthor} notes attributed to Josh (original author not in user map)` : '',
   );
