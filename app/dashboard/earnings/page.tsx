@@ -41,10 +41,10 @@ import {
 
 /** Maps Tailwind accent-gradient class strings to an RGBA radial glow for --card-accent */
 const ACCENT_COLOR_MAP: Record<string, string> = {
-  'from-emerald-500 to-emerald-400': 'rgba(16,185,129,0.08)',
-  'from-yellow-500 to-yellow-400':   'rgba(234,179,8,0.08)',
-  'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
-  'from-violet-500 to-violet-400':   'rgba(139,92,246,0.08)',
+  'from-emerald-500 to-emerald-400': 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)',
+  'from-yellow-500 to-yellow-400':   'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
+  'from-blue-500 to-blue-400':       'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',
+  'from-violet-500 to-violet-400':   'color-mix(in srgb, var(--accent-purple-solid) 8%, transparent)',
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -295,7 +295,7 @@ function RepEarningsView() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
               <DollarSign className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <div>
@@ -349,7 +349,7 @@ function RepEarningsView() {
       {nextPayoutTotal > 0 ? (
         <div
           className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
-          style={{ '--card-accent': 'rgba(16,185,129,0.18)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)' } as React.CSSProperties}
         >
           {/* emerald top accent bar */}
           <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-5" />
@@ -382,7 +382,7 @@ function RepEarningsView() {
       ) : totalPending > 0 ? (
         <div
           className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
-          style={{ '--card-accent': 'rgba(16,185,129,0.07)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 7%, transparent)' } as React.CSSProperties}
         >
           <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/30 mb-5" />
           <div className="flex flex-col items-center py-3 text-center gap-3">
@@ -394,7 +394,7 @@ function RepEarningsView() {
       ) : (
         <div
           className="card-surface rounded-2xl p-6 mb-5 animate-slide-in-scale stagger-1"
-          style={{ '--card-accent': 'rgba(16,185,129,0.07)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 7%, transparent)' } as React.CSSProperties}
         >
           <div className="h-[3px] w-16 rounded-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/30 mb-5" />
           <div className="flex flex-col items-center py-3 text-center gap-3">
@@ -574,7 +574,7 @@ function RepEarningsView() {
                       <tr
                         key={row.entry.id}
                         style={!isReim ? ({ '--row-accent': getPayrollRowAccent(status) } as React.CSSProperties) : undefined}
-                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-[var(--accent-purple-soft)]' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}
+                        className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 ${isReim ? 'bg-[var(--accent-purple-soft)]' : 'odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30'} hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-blue-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}
                       >
                         <td className="px-5 py-3 text-[var(--text-primary)]">{name}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap">{stage}</span></td>
@@ -659,7 +659,7 @@ function RepEarningsView() {
                 </thead>
                 <tbody>
                   {pagedBonuses.map((b, i) => (
-                    <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150 cursor-default`}>
+                    <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-blue-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-[var(--text-primary)]">{b.notes || '—'}</td>
                       <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
                       <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
@@ -733,7 +733,7 @@ function RepEarningsView() {
                 </thead>
                 <tbody>
                   {pagedReimbs.map((r, i) => (
-                    <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150 cursor-default`}>
+                    <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-[var(--text-primary)]">{r.description}</td>
                       <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
@@ -1025,7 +1025,7 @@ function AdminFinancialsView() {
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
             <Building2 className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Financials</h1>
@@ -1035,7 +1035,7 @@ function AdminFinancialsView() {
 
       {/* Stat cards — 4 across */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-1" style={{ '--card-accent': 'rgba(16,185,129,0.12)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-1" style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Total Paid</span>
@@ -1044,7 +1044,7 @@ function AdminFinancialsView() {
           <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-text)]">${totalPaid.toLocaleString()}</p>
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'rgba(234,179,8,0.12)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-2" style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Pending Payroll</span>
@@ -1063,7 +1063,7 @@ function AdminFinancialsView() {
           <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--text-secondary)]">${totalDraft.toLocaleString()}</p>
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-4" style={{ '--card-accent': 'rgba(139,92,246,0.12)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-4" style={{ '--card-accent': 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Reimbs Pending</span>
@@ -1136,7 +1136,7 @@ function AdminFinancialsView() {
                   </thead>
                   <tbody>
                     {pagedPayroll.map((e, i) => (
-                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-blue-solid) 50%, transparent)] transition-colors duration-150`}>
                         <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{e.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)]">{e.customerName || '—'}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
@@ -1229,7 +1229,7 @@ function AdminFinancialsView() {
                   </thead>
                   <tbody>
                     {pagedReimbs.map((r, i) => (
-                      <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(139,92,246,0.5)] transition-colors duration-150`}>
+                      <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150`}>
                         <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{r.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)]">{r.description}</td>
                         <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
@@ -1340,7 +1340,7 @@ function AdminFinancialsView() {
                 </thead>
                 <tbody>
                   {repSummary.map((s, i) => (
-                    <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)] transition-colors duration-150`}>
+                    <tr key={s.rep.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-blue-solid) 50%, transparent)] transition-colors duration-150`}>
                       <td className="px-5 py-3">
                         <div>
                           <p className="text-[var(--text-primary)] font-medium">{s.rep.name}</p>

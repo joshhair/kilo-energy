@@ -122,8 +122,8 @@ function StatusPillBadge({ status }: { status: AdminStatus }) {
 type PillStyle = { gradient: string; border: string; shadow: string; text: string; dot: string };
 
 const PAYROLL_PILL: Record<string, PillStyle> = {
-  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
+  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
+  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   Draft:   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',    border: 'border-[var(--border)]/30',   shadow: '',                                       text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
@@ -973,7 +973,7 @@ function TrainingPageInner() {
                   <Link
                     href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}
+                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: '#fbbf24', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                   >
                     View payments
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -1329,10 +1329,10 @@ function TrainingPageInner() {
       {activeTab === 'overview' && (
         <div key="overview" className="animate-tab-enter space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-[var(--accent-amber-text)]" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
+            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-[var(--accent-amber-text)]" border="border-l-amber-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={1} icon={<DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={2} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
           </div>
 
           <div className="card-surface rounded-2xl p-6">

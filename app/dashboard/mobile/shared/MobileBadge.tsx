@@ -14,11 +14,11 @@ export const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
   'PTO':             { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
   'Completed':       { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
   'Cancelled':       { bg: 'var(--accent-red-soft)',     text: 'var(--accent-red-solid)' },
-  'On Hold':         { bg: 'rgba(136,153,170,0.12)',     text: 'var(--text-muted)' },
+  'On Hold':         { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',     text: 'var(--text-muted)' },
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  'Draft':     { bg: 'rgba(136,153,170,0.12)',  text: 'var(--text-muted)' },
+  'Draft':     { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)',  text: 'var(--text-muted)' },
   'Pending':   { bg: 'var(--accent-amber-soft)', text: 'var(--accent-amber-solid)' },
   'Paid':      { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
   'Approved':  { bg: 'var(--accent-emerald-soft)', text: 'var(--accent-emerald-solid)' },
@@ -32,7 +32,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export default function MobileBadge({ value, variant = 'phase' }: { value: string; variant?: 'phase' | 'status' }) {
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
-  const c = colors[value] ?? { bg: 'rgba(136,153,170,0.12)', text: 'var(--text-muted)' };
+  const c = colors[value] ?? { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', text: 'var(--text-muted)' };
   return (
     <span
       className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}

@@ -342,8 +342,8 @@ export default function MobileProjects() {
               className="min-h-[40px] px-4 rounded-lg text-sm font-semibold transition-all duration-150"
               style={dealScope === scope
                 ? {
-                    background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                    border: '1px solid rgba(0, 224, 122, 0.45)',
+                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
                     color: 'var(--text-primary)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }

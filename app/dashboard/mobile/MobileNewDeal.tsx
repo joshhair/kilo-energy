@@ -191,7 +191,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
           className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
           style={{
             background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-            boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+            boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -942,11 +942,11 @@ export default function MobileNewDeal() {
       return {
         ...base,
         border: above
-          ? '1px solid rgba(16,185,129,0.5)'
-          : '1px solid rgba(245,158,11,0.45)',
+          ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 50%, transparent)'
+          : '1px solid color-mix(in srgb, var(--accent-amber-solid) 45%, transparent)',
         boxShadow: above
-          ? '0 0 0 3px rgba(16,185,129,0.12), inset 0 1px 0 rgba(16,185,129,0.08)'
-          : '0 0 0 3px var(--accent-amber-soft), inset 0 1px 0 rgba(245,158,11,0.08)',
+          ? '0 0 0 3px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent), inset 0 1px 0 color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)'
+          : '0 0 0 3px var(--accent-amber-soft), inset 0 1px 0 color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
         transition: 'box-shadow 280ms ease, border-color 280ms ease',
       };
     }
@@ -1681,12 +1681,12 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
-                className="w-full text-left pb-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                className="w-full text-left pb-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
                 style={{ borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px' }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
-                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
+                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -1715,12 +1715,12 @@ export default function MobileNewDeal() {
               <button
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
-                className="w-full text-left pt-2 mt-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
+                className="w-full text-left pt-2 mt-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
                 style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
-                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
+                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -1937,8 +1937,8 @@ export default function MobileNewDeal() {
           className="fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5"
           style={{
             bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-            background: 'linear-gradient(135deg, var(--accent-emerald-soft), rgba(0,180,216,0.08))',
-            border: '1px solid rgba(0,229,160,0.25)',
+            background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent))',
+            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
             backdropFilter: 'blur(12px)',
             animation: 'comm-pill-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}

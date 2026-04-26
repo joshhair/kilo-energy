@@ -58,7 +58,7 @@ function ActivityTimelineSkeleton() {
           <div
             className="absolute -left-4 top-1 w-2 h-2 rounded-full"
             style={{
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}
@@ -67,7 +67,7 @@ function ActivityTimelineSkeleton() {
             className="h-4 rounded-md mb-1.5"
             style={{
               width: `${[72, 55, 63][i]}%`,
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}
@@ -76,7 +76,7 @@ function ActivityTimelineSkeleton() {
             className="h-3 rounded-md"
             style={{
               width: '28%',
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}

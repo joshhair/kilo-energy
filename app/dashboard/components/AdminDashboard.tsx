@@ -394,7 +394,7 @@ export function AdminDashboard({
                 position: 'relative',
                 overflow: 'hidden',
                 flex: 1,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent)',
               }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${gc.color}, transparent 70%)` }} />
                 <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${gc.color}15 0%, transparent 70%)` }} />
@@ -473,7 +473,7 @@ export function AdminDashboard({
       {/* Needs Attention / All Clear */}
       {attentionItemCount === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent-emerald-solid)', borderRadius: 16, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,224,122,0.13)', border: '1px solid var(--accent-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'color-mix(in srgb, var(--accent-emerald-solid) 13%, transparent)', border: '1px solid var(--accent-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CheckCircle style={{ width: 16, height: 16, color: 'var(--accent-emerald-text)' }} />
           </div>
           <div>
@@ -525,7 +525,7 @@ export function AdminDashboard({
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums"
                       style={{
-                        background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                        background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
                         color: r.rank === 1 ? 'var(--accent-emerald-solid)' : r.rank === 2 ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
                       }}
                     >
@@ -550,7 +550,7 @@ export function AdminDashboard({
               onClick={() => setInsightsExpanded(e => !e)}
               className="flex items-center gap-2 w-full text-left group"
             >
-              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.15)' }}>
+              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)' }}>
                 <BarChart2 className="w-4 h-4 text-[var(--accent-amber-text)]" />
               </div>
               <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Installer Insights</h2>
@@ -620,7 +620,7 @@ export function AdminDashboard({
               onClick={() => setCancellationExpanded(e => !e)}
               className="flex items-center gap-2 w-full text-left group"
             >
-              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
+              <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)' }}>
                 <AlertCircle className="w-4 h-4 text-[var(--accent-red-text)]" />
               </div>
               <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cancellation Reasons <span className="text-[var(--text-muted)] font-normal text-xs">(all time)</span></h2>

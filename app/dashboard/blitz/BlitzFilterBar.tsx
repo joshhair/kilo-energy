@@ -128,9 +128,9 @@ export function BlitzFilterBar({
               left: sortIndicator.left,
               width: sortIndicator.width,
               transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-              border: '1px solid rgba(0,224,122,0.45)',
-              boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
             }}
           />
         )}
@@ -159,9 +159,9 @@ export function BlitzFilterBar({
               left: statusIndicator.left,
               width: statusIndicator.width,
               transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-              border: '1px solid rgba(0,224,122,0.45)',
-              boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
             }}
           />
         )}

@@ -800,7 +800,7 @@ function PayrollPageInner() {
     return (
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
             <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
@@ -830,9 +830,9 @@ function PayrollPageInner() {
               <button key={s} onClick={() => setRepStatusFilter(s)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                 style={repStatusFilter === s
-                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: 'var(--accent-emerald-text)' }
-                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: 'var(--accent-amber-text)' }
-                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: 'var(--accent-blue-text)' }
+                  ? s === 'Paid' ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)' }
+                    : s === 'Pending' ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }
+                    : s === 'Draft' ? { background: 'color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)', color: 'var(--accent-blue-text)' }
                     : { background: '#2563eb', color: 'var(--text-primary)' }
                   : { color: 'var(--text-muted)' }}>
                 {s}
@@ -890,7 +890,7 @@ function PayrollPageInner() {
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'rgba(168,85,247,0.15)' : 'rgba(37,99,235,0.15)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)' : 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
                         {entry.type}
                       </span>
                     </td>
@@ -903,9 +903,9 @@ function PayrollPageInner() {
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
-                          ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)' }
+                          ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)' }
                           : entry.status === 'Pending'
-                          ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)' }
+                          ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)' }
                           : { background: 'var(--surface-card)', color: 'var(--accent-blue-text)' }
                       }>
                         {entry.status}
@@ -937,7 +937,7 @@ function PayrollPageInner() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
             <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
@@ -1059,9 +1059,9 @@ function PayrollPageInner() {
             className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={pageView === v
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
@@ -1254,24 +1254,24 @@ function PayrollPageInner() {
           drill-down. 2026-04-23. */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {/* Draft */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-blue-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' }}>${draftBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-amber-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>${pendingBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
         </div>
         {/* Total Paid */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-emerald-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
           <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-text)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
           <p style={{ color: 'var(--accent-emerald-glow)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
         </div>
       </div>
@@ -1287,9 +1287,9 @@ function PayrollPageInner() {
             className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={statusTab === s
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
@@ -1315,9 +1315,9 @@ function PayrollPageInner() {
             className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={typeTab === t
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
@@ -1509,9 +1509,9 @@ function PayrollPageInner() {
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
                       entry.status === 'Paid'
-                        ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : entry.status === 'Pending'
-                        ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                     }>{entry.status}</span>
                   </td>

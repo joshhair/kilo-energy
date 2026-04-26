@@ -441,7 +441,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             width: '40vmin',
             height: '40vmin',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)',
             filter: 'blur(20px)',
           }}
         />
@@ -455,11 +455,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           width={80}
           height={80}
           className="relative z-10"
-          style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
+          style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' }}
         />
         {/* Brand-colored spinner — matches the rest of the emerald accents */}
         <div className="w-6 h-6 relative z-10">
-          <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'rgba(0,229,160,0.15)' }} />
+          <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)' }} />
           <div
             className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
             style={{ borderTopColor: 'var(--accent-emerald-solid)' }}

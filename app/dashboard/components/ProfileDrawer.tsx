@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { LogOut, Mail, Phone, Eye, XCircle, Search } from 'lucide-react';
+import { LogOut, Mail, Phone, Eye, XCircle, Search, Monitor, Moon, Sun } from 'lucide-react';
+import { useTheme, type ThemePreference } from '../../../lib/use-theme';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
@@ -50,6 +51,7 @@ export default function ProfileDrawer({
   viewAsName?: string;
   onClearViewAs?: () => void;
 }) {
+  const { preference: themePref, setPreference: setThemePref } = useTheme();
   const [viewAsSearch, setViewAsSearch] = useState('');
   const [viewAsOpen, setViewAsOpen] = useState(false);
   const [shouldRenderViewAs, setShouldRenderViewAs] = useState(false);
@@ -205,7 +207,7 @@ export default function ProfileDrawer({
               <span
                 className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold mt-1"
                 style={{
-                  background: 'rgba(0,229,160,0.15)',
+                  background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)',
                   color: 'var(--accent-emerald-text)',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
@@ -241,7 +243,7 @@ export default function ProfileDrawer({
                 key={href}
                 href={href}
                 onClick={onClose}
-                className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
+                className="flex items-center gap-3 min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms]"
                 style={{
                   color: 'var(--text-primary)',
                   fontFamily: "'DM Sans', sans-serif",
@@ -272,7 +274,7 @@ export default function ProfileDrawer({
                 </div>
                 <button
                   onClick={() => { onClearViewAs(); onClose(); }}
-                  className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl min-h-[44px] active:scale-[0.94] active:bg-white/5 transition-[transform,background-color] duration-75"
+                  className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-xl min-h-[44px] active:scale-[0.94] active:bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] transition-[transform,background-color] duration-75"
                   style={{ color: 'var(--accent-amber-text)', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <XCircle className="w-4 h-4" /> Exit
@@ -282,7 +284,7 @@ export default function ProfileDrawer({
               <>
                 <button
                   onClick={() => setViewAsOpen(!viewAsOpen)}
-                  className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
+                  className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms]"
                   style={{ color: 'var(--text-mobile-muted)', fontFamily: "'DM Sans', sans-serif", fontSize: '1rem', WebkitTapHighlightColor: 'transparent', animation: !isExiting && !reduceMotion ? `itemFadeUp 220ms cubic-bezier(0.16, 1, 0.3, 1) ${items.length * 45}ms both` : 'none' }}
                 >
                   <Eye className="w-5 h-5" />
@@ -308,7 +310,7 @@ export default function ProfileDrawer({
                           <button
                             key={u.id}
                             onClick={() => { onViewAs(u); setViewAsOpen(false); setViewAsSearch(''); onClose(); }}
-                            className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
+                            className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
                             style={{ borderBottom: '1px solid var(--border-mobile)', fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: 'transparent' }}
                           >
                             <span>{u.name}</span>
@@ -323,12 +325,46 @@ export default function ProfileDrawer({
           </div>
         )}
 
+        {/* Theme switcher — every role can flip System/Dark/Light from here.
+            Reps don't have access to the Settings page, so this is their
+            only entry point. Inline 3-button group so it's tap-once. */}
+        <div className="px-4 pt-3 pb-1" style={{ borderTop: '1px solid var(--border-mobile)' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Appearance</p>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { value: 'system', label: 'System', icon: Monitor },
+              { value: 'dark',   label: 'Dark',   icon: Moon },
+              { value: 'light',  label: 'Light',  icon: Sun },
+            ] as Array<{ value: ThemePreference; label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }>).map(({ value, label, icon: Icon }) => {
+              const active = themePref === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setThemePref(value)}
+                  aria-pressed={active}
+                  className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors min-h-[56px]"
+                  style={{
+                    background: active ? 'var(--accent-emerald-soft)' : 'var(--surface-pressed)',
+                    border: active ? '1px solid var(--accent-emerald-solid)' : '1px solid var(--border-default)',
+                    color: 'var(--text-primary)',
+                    fontFamily: "'DM Sans', sans-serif",
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)' }} />
+                  <span className="text-xs font-semibold">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Sign Out */}
         {onLogout && (
           <div className="px-2 pt-1" style={{ borderTop: '1px solid var(--border-mobile)' }}>
             <button
               onClick={() => { onClose(); onLogout(); }}
-              className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-white/[0.06] transition-[transform,background-color] duration-[75ms]"
+              className="flex items-center gap-3 w-full min-h-[48px] px-4 py-3 rounded-xl active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms]"
               style={{
                 color: 'var(--accent-red-text)',
                 fontFamily: "'DM Sans', sans-serif",

@@ -787,7 +787,7 @@ export default function TableView({
                   style={{
                     borderBottom: '1px solid var(--border)',
                     background: selectedProjectIds.has(proj.id)
-                      ? 'rgba(77,159,255,0.08)'
+                      ? 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)'
                       : i % 2 === 0 ? 'var(--surface)' : '#191c24',
                     borderLeft: proj.flagged
                       ? '3px solid var(--accent-red-solid)'

@@ -913,7 +913,7 @@ function NewDealPage() {
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-emerald-solid)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-emerald-solid)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px color-mix(in srgb, var(--accent-emerald-solid) 50%, transparent)' : 'none' }} />
                   <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
                 </div>
                 {i < DEAL_STEPS.length - 1 && <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{'\u203A'}</span>}
@@ -1118,7 +1118,7 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                       }`}
                     >
@@ -1163,7 +1163,7 @@ function NewDealPage() {
                               disabled
                                 ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                 : selected
-                                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)]'
                                   : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1194,7 +1194,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1287,7 +1287,7 @@ function NewDealPage() {
                                 disabled
                                   ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                   : selected
-                                    ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
+                                    ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)]'
                                     : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                               }`}
                             >
@@ -1317,7 +1317,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
@@ -1416,7 +1416,7 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_rgba(139,92,246,0.2)]'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
                                 : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >

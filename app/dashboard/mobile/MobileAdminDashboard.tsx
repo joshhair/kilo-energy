@@ -491,7 +491,7 @@ export default function MobileAdminDashboard() {
       ) : (
         <MobileCard>
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)' }}>
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 13%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
               <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             </div>
             <div>
@@ -512,7 +512,7 @@ export default function MobileAdminDashboard() {
             return (
               <div key={phase} className="flex items-center gap-3">
                 <span className="w-24 shrink-0 truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{phase}</span>
-                <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="flex-1 h-2 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: ACCENT }} />
                 </div>
                 <span className="w-8 text-right tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
@@ -535,7 +535,7 @@ export default function MobileAdminDashboard() {
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
-                    background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'var(--accent-cyan-soft)' : 'rgba(136,153,170,0.12)',
+                    background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'var(--accent-cyan-soft)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
                     color: r.rank === 1 ? ACCENT : r.rank === 2 ? ACCENT2 : MUTED,
                     fontFamily: FONT_DISPLAY,
                   }}
@@ -562,7 +562,7 @@ export default function MobileAdminDashboard() {
               <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                 <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
                 <span className="tabular-nums text-sm" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
-                <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                   <div className="h-full rounded-full" style={{ width: `${(inst.deals / maxInstallerDeals) * 100}%`, background: WARNING }} />
                 </div>
                 <span className="tabular-nums font-semibold" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
@@ -585,7 +585,7 @@ export default function MobileAdminDashboard() {
           </div>
           <div className="space-y-2">
             {cancellationReasons.map(([reason, count]) => (
-              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
                 <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{reason}</span>
                 <span className="font-semibold tabular-nums text-sm" style={{ color: DANGER }}>{count}</span>
               </div>
@@ -627,7 +627,7 @@ export default function MobileAdminDashboard() {
           value={recentSearch}
           onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
           className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)' }}
+          style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '1px solid var(--border-subtle)' }}
         />
         {(() => {
           const searched = recentSearch.trim()
@@ -694,7 +694,7 @@ export default function MobileAdminDashboard() {
                     onClick={() => setRecentPage((pg) => Math.max(1, pg - 1))}
                     disabled={safePage <= 1}
                     className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
-                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                    style={{ color: ACCENT, background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}
                   >
                     ‹ Prev
                   </button>
@@ -705,7 +705,7 @@ export default function MobileAdminDashboard() {
                     onClick={() => setRecentPage((pg) => Math.min(totalPages, pg + 1))}
                     disabled={safePage >= totalPages}
                     className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
-                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                    style={{ color: ACCENT, background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}
                   >
                     Next ›
                   </button>

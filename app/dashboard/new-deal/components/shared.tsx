@@ -85,7 +85,7 @@ export function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; cl
 export function SectionHeader({ step, label }: { step: number; label: string }) {
   return (
     <div className="flex items-center gap-2.5 mb-4">
-      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(0,224,122,0.15)', border: '1px solid rgba(0,224,122,0.3)', color: 'var(--accent-emerald-text)' }}>
+      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)', color: 'var(--accent-emerald-text)' }}>
         {step}
       </span>
       <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>

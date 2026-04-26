@@ -429,7 +429,7 @@ export default function MobilePayroll() {
               className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
               style={{
                 background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -528,10 +528,10 @@ export default function MobilePayroll() {
                         className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={
                           r.status === 'Approved'
-                            ? { background: 'rgba(0,224,122,0.15)', color: 'var(--accent-emerald-text)' }
+                            ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)', color: 'var(--accent-emerald-text)' }
                             : r.status === 'Denied'
-                            ? { background: 'rgba(239,68,68,0.15)', color: 'var(--accent-red-text)' }
-                            : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-text)' }
+                            ? { background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'var(--accent-red-text)' }
+                            : { background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber-text)' }
                         }
                       >
                         {r.status}
@@ -1029,7 +1029,7 @@ export default function MobilePayroll() {
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -1088,7 +1088,7 @@ export default function MobilePayroll() {
               className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
               style={{
                 background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+                boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >

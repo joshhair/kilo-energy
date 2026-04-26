@@ -198,7 +198,7 @@ export default function MobileEarnings() {
                 {nextPayoutCount} pending {nextPayoutCount === 1 ? 'entry' : 'entries'}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-emerald-text)' }}>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)' }}>
               <Clock className="w-3 h-3" />
               {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
             </span>
@@ -614,7 +614,7 @@ export function MobileAdminEarnings() {
                       <button
                         onClick={() => setReimbStatus(r.id, 'Denied')}
                         className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'rgba(239,68,68,0.15)', color: 'rgb(248,113,113)' }}
+                        style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'rgb(248,113,113)' }}
                       >
                         <XCircle className="w-3.5 h-3.5" /> Deny
                       </button>
@@ -641,7 +641,7 @@ export function MobileAdminEarnings() {
                   <button
                     onClick={() => setDeleteReimbId(r.id)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(239,68,68,0.08)', color: 'rgb(248,113,113)', border: '1px solid rgba(239,68,68,0.2)' }}
+                    style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', color: 'rgb(248,113,113)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 20%, transparent)' }}
                   >
                     Delete
                   </button>

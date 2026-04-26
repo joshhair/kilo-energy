@@ -46,7 +46,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
       className="sticky z-20 -mx-5 px-5 pt-2"
       style={{
         top: 0,
-        background: 'rgba(8, 12, 24, 0.88)',
+        background: 'color-mix(in srgb, var(--surface-page) 88%, transparent)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -62,7 +62,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             left: indicator.left,
             width: indicator.width,
             background: 'var(--accent-emerald-solid)',
-            boxShadow: '0 0 12px rgba(0,229,160,0.35)',
+            boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
           }}
         />
       )}

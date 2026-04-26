@@ -34,12 +34,12 @@ export type { Period } from './components/dashboard-utils';
 
 /** Maps Tailwind accent-gradient class strings to an RGBA glow for --card-accent */
 export const ACCENT_COLOR_MAP: Record<string, string> = {
-  'from-blue-500 to-blue-400':       'rgba(59,130,246,0.08)',
-  'from-red-500 to-red-400':         'rgba(239,68,68,0.08)',
-  'from-emerald-500 to-emerald-400': 'rgba(16,185,129,0.08)',
-  'from-yellow-500 to-yellow-400':   'rgba(234,179,8,0.08)',
-  'from-purple-500 to-purple-400':   'rgba(168,85,247,0.08)',
-  'from-amber-500 to-amber-400':     'rgba(245,158,11,0.08)',
+  'from-blue-500 to-blue-400':       'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',
+  'from-red-500 to-red-400':         'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)',
+  'from-emerald-500 to-emerald-400': 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)',
+  'from-yellow-500 to-yellow-400':   'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
+  'from-purple-500 to-purple-400':   'color-mix(in srgb, var(--accent-purple-solid) 8%, transparent)',
+  'from-amber-500 to-amber-400':     'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
 };
 
 /** Pipeline phase color palette — mirrors PHASE_PILL in projects/page.tsx */
@@ -227,7 +227,7 @@ export function NeedsAttentionSection({
           {totalCount === 0 ? (
             /* ── Empty / all-clear state ── */
             <div className="flex items-center gap-3 px-6 py-6">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,224,122,0.12)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' }}>
                 <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
               </div>
               <p className="text-[var(--text-secondary)] text-sm">All clear! No items need attention right now.</p>

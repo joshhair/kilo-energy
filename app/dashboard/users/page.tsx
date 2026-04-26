@@ -63,9 +63,9 @@ const ROLE_BADGE_CLS = {
   both:   'border',
 } as const;
 const ROLE_BADGE_STYLES = {
-  closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', borderColor: 'rgba(77,159,255,0.25)' },
-  setter: { background: 'rgba(180,125,255,0.1)', color: 'var(--accent-purple-text)', borderColor: 'rgba(180,125,255,0.25)' },
-  both:   { background: 'rgba(0,196,240,0.1)', color: 'var(--accent-cyan-text)', borderColor: 'rgba(0,196,240,0.25)' },
+  closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', borderColor: 'color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' },
+  setter: { background: 'color-mix(in srgb, var(--accent-purple-solid) 10%, transparent)', color: 'var(--accent-purple-text)', borderColor: 'color-mix(in srgb, var(--accent-purple-solid) 25%, transparent)' },
+  both:   { background: 'color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)', color: 'var(--accent-cyan-text)', borderColor: 'color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)' },
 } as const;
 const ROLE_BADGE_HOVER = {
   closer: 'hover:brightness-125',
@@ -698,7 +698,7 @@ function UsersPageInner() {
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
               <Users className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Users</h1>
@@ -736,7 +736,7 @@ function UsersPageInner() {
       {canManageReps && effectiveRole === 'admin' && pendingInvitations.length > 0 && (
         <div className="card-surface rounded-2xl p-5 mb-6" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,176,32,0.15)' }}>
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)' }}>
               <Mail className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
             <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Pending Invitations</h2>
@@ -767,7 +767,7 @@ function UsersPageInner() {
                   onClick={() => handleRevokeInvitation(inv.id, inv.emailAddress)}
                   disabled={revokingInvitationId === inv.id}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-red-500/10 disabled:opacity-50"
-                  style={{ color: 'var(--accent-red-text)', border: '1px solid rgba(239,68,68,0.3)' }}
+                  style={{ color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -825,10 +825,10 @@ function UsersPageInner() {
           : pool;
 
         const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-          rep:              { label: 'Rep',              color: 'var(--accent-emerald-text)', bg: 'rgba(0,224,122,0.12)' },
+          rep:              { label: 'Rep',              color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' },
           'sub-dealer':     { label: 'Sub-Dealer',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
-          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-text)', bg: 'rgba(0,196,240,0.12)' },
-          admin:            { label: 'Admin',            color: 'var(--accent-amber-text)', bg: 'rgba(255,176,32,0.12)' },
+          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-text)', bg: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)' },
+          admin:            { label: 'Admin',            color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)' },
         };
 
         return (
@@ -858,7 +858,7 @@ function UsersPageInner() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {filtered.map((u, i) => {
-                  const badge = roleBadge[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'rgba(136,145,168,0.12)' };
+                  const badge = roleBadge[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)' };
                   const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
                   // Cascade entrance animation.
                   //
@@ -902,7 +902,7 @@ function UsersPageInner() {
                         <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
                           title="Convert to Rep"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] hover:bg-[rgba(0,224,122,0.12)] transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] hover:bg-[color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)] transition-colors"
                         >
                           <UserCog className="w-3.5 h-3.5" />
                         </button>
@@ -988,7 +988,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
+                          style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
                         >
                           {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1063,7 +1063,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid rgba(180,125,255,0.3)' }}
+                          style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}
                         >
                           {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1140,7 +1140,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
+                          style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
                         >
                           {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1217,7 +1217,7 @@ function UsersPageInner() {
                             }
                           }}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
+                          style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                         >
                           {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                         </button>
@@ -1247,8 +1247,8 @@ function UsersPageInner() {
           // exclude them from the Total Reps count — they're counted under Admins.
           rawValue={reps.filter(r => r.active !== false && r.role === 'rep').length}
           formatter={(v) => String(Math.round(v))}
-          gradient="linear-gradient(135deg, rgba(77,159,255,0.18), rgba(77,159,255,0.05))"
-          borderColor="rgba(77,159,255,0.3)"
+          gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 18%, transparent), color-mix(in srgb, var(--accent-blue-solid) 5%, transparent))"
+          borderColor="color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)"
           valueColor="var(--accent-blue-solid)"
           delay={0}
         />
@@ -1256,8 +1256,8 @@ function UsersPageInner() {
           label="Active Deals"
           rawValue={(() => { let count = 0; for (const p of projects) { if (!PIPELINE_EXCLUDED.has(p.phase)) count++; } return count; })()}
           formatter={(v) => String(Math.round(v))}
-          gradient="linear-gradient(135deg, rgba(0,196,240,0.18), rgba(0,196,240,0.05))"
-          borderColor="rgba(0,196,240,0.3)"
+          gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 5%, transparent))"
+          borderColor="color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)"
           valueColor="var(--accent-cyan-solid)"
           delay={80}
         />
@@ -1265,8 +1265,8 @@ function UsersPageInner() {
           label="kW Sold"
           rawValue={projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0)}
           formatter={formatCompactKW}
-          gradient="linear-gradient(135deg, rgba(255,176,32,0.18), rgba(255,176,32,0.05))"
-          borderColor="rgba(255,176,32,0.3)"
+          gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 18%, transparent), color-mix(in srgb, var(--accent-amber-solid) 5%, transparent))"
+          borderColor="color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)"
           valueColor="var(--accent-amber-solid)"
           delay={160}
         />
@@ -1275,8 +1275,8 @@ function UsersPageInner() {
             label="Total Paid"
             rawValue={payrollEntries.filter((p) => p.status === 'Paid' && p.date <= today).reduce((s, p) => s + p.amount, 0)}
             formatter={(v) => '$' + Math.round(v).toLocaleString()}
-            gradient="linear-gradient(135deg, rgba(0,224,122,0.18), var(--accent-emerald-soft))"
-            borderColor="rgba(0,224,122,0.3)"
+            gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), var(--accent-emerald-soft))"
+            borderColor="color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)"
             valueColor="var(--accent-emerald-solid)"
             delay={240}
           />
@@ -1640,7 +1640,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '75ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,196,240,0.08)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-cyan-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent)' }}>{activeDealsByRep.get(rep.id) ?? 0}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Active</p>
                   </div>
@@ -1651,7 +1651,7 @@ function UsersPageInner() {
                     style={{ transitionDelay: '150ms' }}
                   >
                     <p className="font-semibold">
-                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(255,176,32,0.08)' }}>{formatCompactKW(totalKW)}</span>
+                      <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-amber-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' }}>{formatCompactKW(totalKW)}</span>
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Total kW</p>
                   </div>
@@ -1684,7 +1684,7 @@ function UsersPageInner() {
                       style={{ transitionDelay: '225ms' }}
                     >
                       <p className="font-semibold">
-                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", background: 'rgba(0,224,122,0.08)' }}>${repPaid.toLocaleString()}</span>
+                        <span className="rounded-lg px-2 py-0.5" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}>${repPaid.toLocaleString()}</span>
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>Paid Out</p>
                     </div>
@@ -1816,7 +1816,7 @@ function UsersPageInner() {
                         }
                       }}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
+                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
                     >
                       {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                     </button>

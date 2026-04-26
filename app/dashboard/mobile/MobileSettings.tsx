@@ -95,7 +95,7 @@ const SETTINGS_KEYFRAMES = `
   .sk {
     background: linear-gradient(90deg,
       var(--border-subtle) 25%,
-      rgba(255,255,255,0.04) 50%,
+      color-mix(in srgb, var(--text-primary) 4%, transparent) 50%,
       var(--border-subtle) 75%);
     background-size: 200% 100%;
     animation: sk-shimmer 1.4s linear infinite;
@@ -104,7 +104,7 @@ const SETTINGS_KEYFRAMES = `
   @media(prefers-reduced-motion:reduce){.sk{animation:none;}}
   @keyframes exportSpin { to { transform: rotate(360deg); } }
   @keyframes exportPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-emerald-solid) 50%, transparent); }
     60%  { box-shadow: 0 0 0 8px rgba(0,229,160,0); }
     100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
   }
@@ -755,8 +755,8 @@ function ExportSection() {
           style={{
             background: getStatus(type) === 'done' ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
             border: `1px solid ${
-              getStatus(type) === 'done' ? 'rgba(0,229,160,0.4)'
-              : getStatus(type) === 'loading' ? 'rgba(255,255,255,0.08)'
+              getStatus(type) === 'done' ? 'color-mix(in srgb, var(--accent-emerald-solid) 40%, transparent)'
+              : getStatus(type) === 'loading' ? 'color-mix(in srgb, var(--text-primary) 8%, transparent)'
               : 'var(--border-subtle)'
             }`,
             transition: 'background 300ms ease, border-color 300ms ease',
@@ -767,7 +767,7 @@ function ExportSection() {
             <span
               className="export-shimmer absolute inset-y-0 left-0 w-1/2 pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)',
+                background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-primary) 4%, transparent), transparent)',
                 animation: 'exportShimmer 900ms cubic-bezier(0.4,0,0.6,1) infinite',
               }}
             />

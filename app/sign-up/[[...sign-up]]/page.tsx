@@ -105,7 +105,7 @@ export default function SignUpPage() {
           className="w-full rounded-3xl p-1"
           style={{
             background:
-              'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, rgba(255,255,255,0.04) 100%)',
+              'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, color-mix(in srgb, var(--text-primary) 4%, transparent) 100%)',
             boxShadow:
               '0 0 60px var(--accent-emerald-soft), 0 20px 50px -20px rgba(0,0,0,0.6)',
           }}

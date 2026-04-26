@@ -63,7 +63,7 @@ export function CommissionPreview({
 }: CommissionPreviewProps) {
   return (
     <div style={{ maxHeight: showPreview || (isSubDealer && subDealerCommission > 0) ? '400px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s ease-in-out' }}>
-      <div className="rounded-xl p-4 text-sm space-y-2" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.05))', border: '1px solid rgba(0,224,122,0.2)' }}>
+      <div className="rounded-xl p-4 text-sm space-y-2" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 5%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)' }}>
         <p className="font-medium text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Commission Preview</p>
         {isSubDealer ? (
           <>

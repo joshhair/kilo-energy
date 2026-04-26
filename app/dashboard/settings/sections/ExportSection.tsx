@@ -68,7 +68,7 @@ export function ExportSection() {
           onClick={() => toggleExport('payments')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('payments')
-              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
@@ -88,7 +88,7 @@ export function ExportSection() {
           onClick={() => toggleExport('projects')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('projects')
-              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
@@ -108,7 +108,7 @@ export function ExportSection() {
           onClick={() => toggleExport('baselines')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('baselines')
-              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
@@ -128,7 +128,7 @@ export function ExportSection() {
           onClick={() => toggleExport('trainers')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('trainers')
-              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >

@@ -63,7 +63,7 @@ export function AdminNotesEditor({
 
   return (
     <div className="card-surface rounded-2xl p-6 border border-amber-500/20"
-         style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), rgba(245,158,11,0.02))' }}>
+         style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 4%, transparent), color-mix(in srgb, var(--accent-amber-solid) 2%, transparent))' }}>
       <div className="flex items-center gap-2 mb-3">
         <Shield className="w-4 h-4 text-[var(--accent-amber-text)]" />
         <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>

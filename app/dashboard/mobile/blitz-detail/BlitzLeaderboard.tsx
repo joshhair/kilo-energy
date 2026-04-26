@@ -51,7 +51,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
                 animationDelay: `${idx * 50}ms`,
               }}
             >
-              <span aria-hidden className="bar-grow-anim absolute inset-y-0 left-0 rounded-lg" style={{ '--bar-w': `${Math.max(8, Math.round((rep.kW / maxKW) * 100))}%`, '--bar-delay': `${idx * 70}ms`, background: isTop3 ? RANK_BG[rank - 1] : 'rgba(255,255,255,0.04)' } as React.CSSProperties} />
+              <span aria-hidden className="bar-grow-anim absolute inset-y-0 left-0 rounded-lg" style={{ '--bar-w': `${Math.max(8, Math.round((rep.kW / maxKW) * 100))}%`, '--bar-delay': `${idx * 70}ms`, background: isTop3 ? RANK_BG[rank - 1] : 'color-mix(in srgb, var(--text-primary) 4%, transparent)' } as React.CSSProperties} />
               <span
                 className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                 style={{

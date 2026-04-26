@@ -218,8 +218,8 @@ function Field({
 
 function TotalCard({ label, value, tint }: { label: string; value: number; tint: 'emerald' | 'violet' | 'slate' }) {
   const colors = {
-    emerald: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', text: 'var(--accent-emerald-solid)' },
-    violet: { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.25)', text: '#c4b5fd' },
+    emerald: { bg: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)', border: 'color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', text: 'var(--accent-emerald-solid)' },
+    violet: { bg: 'color-mix(in srgb, var(--accent-purple-solid) 8%, transparent)', border: 'color-mix(in srgb, var(--accent-purple-solid) 25%, transparent)', text: '#c4b5fd' },
     slate: { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: 'var(--text-muted)' },
   }[tint];
   return (

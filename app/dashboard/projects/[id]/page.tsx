@@ -790,9 +790,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const myTotal = trainerEntries.length > 0 ? (paidTotal + pendingTotal) : projected;
               return myTotal > 0 ? (
                 <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                   <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                       style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                       style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
                   <p className="text-[var(--accent-emerald-text)] text-4xl font-black tabular-nums">
                     ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -811,9 +811,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0);
             return myTotal > 0 ? (
               <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                   style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                   style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                     style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                     style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                 <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
                 <p className="text-[var(--accent-emerald-text)] text-4xl font-black tabular-nums">
                   ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -1236,7 +1236,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           than leaked data. Replaced the single-textarea
           AdminNotesEditor on 2026-04-23. */}
       {(effectiveRole === 'admin' || isPM) && (
-        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)', border: '1px solid rgba(245,158,11,0.2)' }}>
+        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 4%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
             <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
@@ -1331,7 +1331,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
-                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)]'
                           : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                       }`}
                     >

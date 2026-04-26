@@ -381,7 +381,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 <div className="flex flex-wrap gap-2">
                   {approvedParticipants.slice(0, 8).map((p: any) => (
                     <div key={p.user.id} className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-subtle)' }}>
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.2)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}>
                         {(p.user.firstName?.[0] ?? '').toUpperCase()}{(p.user.lastName?.[0] ?? '').toUpperCase()}
                       </div>
                       <span className="text-xs text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.user.firstName}</span>

@@ -761,7 +761,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   const trainerName = project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? 'Trainer';
                   if (!effTrainerId || effTrainerRate <= 0) return null;
                   return (
-                    <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{trainerName} (trainer)</p>
                         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
@@ -850,7 +850,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           <button
                             onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
                             className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
-                            style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : '#f59e0b' }}
+                            style={{ background: stage.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : '#f59e0b' }}
                           >
                             {stage.paid ? 'Mark Unpaid' : 'Mark Paid'}
                           </button>
@@ -918,7 +918,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             className="flex-1 min-h-[48px] text-[var(--text-primary)] text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
               background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -1002,14 +1002,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         <div className="px-5 space-y-5 pb-24">
           {/* Setter */}
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
               Setter (optional)
             </label>
             <select
               value={editDraft.setterId}
               onChange={(e) => setEditDraft((d) => ({ ...d, setterId: e.target.value }))}
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >
               <option value="">— None —</option>
               {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== project.repId).map((r) => (
@@ -1020,7 +1020,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
           {/* Notes */}
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
               Notes
             </label>
             <textarea
@@ -1028,7 +1028,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               value={editDraft.notes}
               onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
               className="w-full outline-none resize-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '14px 16px', color: 'var(--text-primary)', fontSize: '1rem' }}
             />
           </div>
 
@@ -1057,28 +1057,28 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
           {/* Per-project trainer override — admin only. */}
           {isAdmin && (
-            <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+            <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--text-primary) 3%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 8%, transparent)' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>Per-project trainer</span>
+                <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Per-project trainer</span>
                 {editDraft.trainerId && (
                   <button
                     type="button"
                     onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '' }))}
                     className="text-xs"
-                    style={{ color: 'rgba(255,100,100,0.8)' }}
+                    style={{ color: 'color-mix(in srgb, var(--accent-red-solid) 80%, transparent)' }}
                   >
                     Clear
                   </button>
                 )}
               </div>
-              <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
                 Attaches a trainer + rate to this deal only. Overrides the rep&apos;s assignment chain.
               </p>
               <select
                 value={editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value }))}
                 className="w-full mb-2"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
               >
                 <option value="">— no trainer override —</option>
                 {reps.filter((r) => r.active && r.id !== project.repId && r.id !== editDraft.setterId).map((r) => (
@@ -1095,7 +1095,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 disabled={!editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerRate: e.target.value }))}
                 className="w-full"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)', opacity: editDraft.trainerId ? 1 : 0.45 }}
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)', opacity: editDraft.trainerId ? 1 : 0.45 }}
               />
             </div>
           )}
@@ -1113,7 +1113,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={() => setEditSheetOpen(false)}
               className="flex-1"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Cancel
             </button>
@@ -1127,8 +1127,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center p-4 pb-8"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}
         >
-          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--text-primary) 8%, transparent)' }}>
               <span className="text-[var(--text-primary)] font-bold text-base">Cancel Project</span>
               <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 p-1"><XIcon className="w-5 h-5" /></button>
             </div>
@@ -1140,7 +1140,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}
                 >
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
@@ -1159,14 +1159,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
                   className="w-full rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none resize-none placeholder-slate-500"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}
                 />
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setShowCancelReasonModal(false)}
                   className="flex-1 font-medium text-sm rounded-xl py-3"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', color: 'var(--text-secondary)' }}
                 >
                   Go Back
                 </button>

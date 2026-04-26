@@ -462,7 +462,7 @@ export default function MobileMyPay() {
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
           <div className="space-y-2">
             {projectedM1 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(29,233,182,0.12)' }}>
                     <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
@@ -476,9 +476,9 @@ export default function MobileMyPay() {
               </div>
             )}
             {projectedM2 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' }}>
                     <span style={{ color: '#a78bfa', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
                   </div>
                   <div>
@@ -490,9 +490,9 @@ export default function MobileMyPay() {
               </div>
             )}
             {projectedM3 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(20,184,166,0.12)' }}>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-teal-solid) 12%, transparent)' }}>
                     <span style={{ color: '#2dd4bf', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
                   </div>
                   <div>
@@ -572,8 +572,8 @@ export default function MobileMyPay() {
           minHeight: '52px',
           padding: '14px 18px',
           borderRadius: '16px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '0.5px solid rgba(255,255,255,0.08)',
+          background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)',
+          border: '0.5px solid color-mix(in srgb, var(--text-primary) 8%, transparent)',
           transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           fontFamily: FONT_BODY,
         }}
@@ -595,7 +595,7 @@ export default function MobileMyPay() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 36px 12px 40px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.95rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 36px 12px 40px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.95rem', minHeight: '44px' }}
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
@@ -608,7 +608,7 @@ export default function MobileMyPay() {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as typeof filterType)}
             className="flex-1 outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Types</option>
             {effectiveRole !== 'sub-dealer' && <option value="M1">M1</option>}
@@ -621,7 +621,7 @@ export default function MobileMyPay() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
             className="flex-1 outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -634,13 +634,13 @@ export default function MobileMyPay() {
             type="date"
             value={payFilterFrom}
             onChange={(e) => setPayFilterFrom(e.target.value)}
-            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            style={{ flex: 1, background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
           />
           <input
             type="date"
             value={payFilterTo}
             onChange={(e) => setPayFilterTo(e.target.value)}
-            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            style={{ flex: 1, background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
           />
         </div>
         {(searchQuery || filterType !== 'all' || filterStatus !== 'all' || payFilterFrom || payFilterTo) && (
@@ -684,7 +684,7 @@ export default function MobileMyPay() {
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
                         className="font-semibold text-[var(--text-primary)] active:opacity-70 transition-opacity"
-                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
+                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'color-mix(in srgb, var(--text-primary) 15%, transparent)', textUnderlineOffset: '3px' }}
                       >
                         {label}
                       </Link>
@@ -722,7 +722,7 @@ export default function MobileMyPay() {
       <MobileBottomSheet open={showReimbSheet} onClose={() => setShowReimbSheet(false)} title="Request Reimbursement">
         <form onSubmit={handleSubmitReimb} className="px-5 space-y-5 pb-2">
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
             <input
               type="number"
               step="0.01"
@@ -731,11 +731,11 @@ export default function MobileMyPay() {
               onChange={(e) => setReimbForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Description</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Description</label>
             <input
               type="text"
               required
@@ -743,26 +743,26 @@ export default function MobileMyPay() {
               onChange={(e) => setReimbForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="e.g. Gas mileage — site visits"
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Date</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Date</label>
             <input
               type="date"
               value={reimbForm.date}
               onChange={(e) => setReimbForm((f) => ({ ...f, date: e.target.value }))}
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Receipt <span className="normal-case" style={{ color: 'rgba(255,255,255,0.3)' }}>(optional)</span></label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Receipt <span className="normal-case" style={{ color: 'var(--text-dim)' }}>(optional)</span></label>
             {/* Native file picker triggers the camera on iOS when `accept="image/*"` is honored.
                 Accept images + PDF to mirror the desktop modal + server whitelist. */}
             <label
               className="flex items-center gap-2 w-full min-h-[48px] cursor-pointer"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px dashed rgba(255,255,255,0.15)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? '#fff' : 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px dashed color-mix(in srgb, var(--text-primary) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? '#fff' : 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
             >
               <span className="truncate">{reimbFile ? reimbFile.name : 'Attach photo or PDF…'}</span>
               <input

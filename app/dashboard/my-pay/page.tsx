@@ -486,7 +486,7 @@ function MyPayPageInner() {
       <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-[var(--accent-emerald-solid)]/15">
         <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
-            <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 12%, transparent)' }}>
               <PayIcon className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>My Pay</h1>
@@ -496,7 +496,7 @@ function MyPayPageInner() {
             <div>
               <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
               <p className="font-black tabular-nums tracking-tight leading-none break-words"
-                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)', textShadow: '0 0 32px rgba(16,185,129,0.30)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
+                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-text)', textShadow: '0 0 32px color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-[var(--text-muted)] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
@@ -519,7 +519,7 @@ function MyPayPageInner() {
           .sort((a, b) => a.date.localeCompare(b.date));
         return (
           <div id="pending-chargebacks" className="card-surface rounded-2xl p-5 mb-6 border-l-2 border-l-amber-500/40 scroll-mt-20"
-               style={{ '--card-accent': 'rgba(245,158,11,0.08)' } as React.CSSProperties}>
+               style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[var(--accent-amber-text)] text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
@@ -549,13 +549,13 @@ function MyPayPageInner() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {/* Lifetime Earned — anchor card with emerald left border */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-1 border-l-2 border-l-emerald-500/40"
-             style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
             <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
           <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
+             style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {pendingChargebackCount > 0 && (
             <p className="text-[var(--accent-amber-text)]/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
               {pendingChargebackCount} pending chargeback{pendingChargebackCount === 1 ? '' : 's'} · -{fmt$(pendingChargebackTotal)}
@@ -564,13 +564,13 @@ function MyPayPageInner() {
         </div>
         {/* On Pace For — standout card with amber left border + larger number */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
-             style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 10%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
             <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />
           </div>
           <p className="font-black tabular-nums text-[var(--accent-amber-text)] stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
+             style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1.5">
@@ -583,13 +583,13 @@ function MyPayPageInner() {
         </div>
         {/* Pipeline — blue left border */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-3 col-span-2 sm:col-span-1 border-l-2 border-l-blue-500/40"
-             style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
             <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
           <p className="font-black tabular-nums text-[var(--accent-emerald-text)] stat-value break-words"
-             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
+             style={{ textShadow: '0 0 16px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
@@ -616,7 +616,7 @@ function MyPayPageInner() {
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Acceptance</p>
                     </div>
                   </div>
-                  <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
+                  <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' }}>
                     {fmt$(projectedM1)}
                   </p>
                 </div>
@@ -632,7 +632,7 @@ function MyPayPageInner() {
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
-                  <p className="text-[var(--accent-purple-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
+                  <p className="text-[var(--accent-purple-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}>
                     {fmt$(projectedM2)}
                   </p>
                 </div>
@@ -648,7 +648,7 @@ function MyPayPageInner() {
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
                     </div>
                   </div>
-                  <p className="text-[var(--accent-teal-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(20,184,166,0.3)' }}>
+                  <p className="text-[var(--accent-teal-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-teal-solid) 30%, transparent)' }}>
                     {fmt$(projectedM3)}
                   </p>
                 </div>

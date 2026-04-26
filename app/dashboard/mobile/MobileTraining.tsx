@@ -269,7 +269,7 @@ export default function MobileTraining() {
                              motion-safe:transition-[transform,background-color]
                              motion-safe:duration-150 motion-safe:ease-out
                              active:scale-[0.985]
-                             active:bg-white/[0.03]"
+                             active:bg-[color-mix(in_srgb,var(--text-primary)_3%,transparent)]"
                 >
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>

@@ -27,7 +27,7 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
     <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale" style={{ animationDelay: 'var(--podium-delay, 300ms)' }}>
       <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
       <div className="flex items-center gap-2 mb-5">
-        <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(234,179,8,0.15)' }}>
+        <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)' }}>
           <Trophy className="w-4 h-4 text-[var(--accent-amber-text)]" />
         </div>
         <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Top Performers</h2>

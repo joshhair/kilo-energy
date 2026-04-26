@@ -54,17 +54,17 @@ export const PHASE_COLORS: Record<string, string> = {
 };
 
 export const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string; hex: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-[var(--accent-cyan-text)]',     dot: 'bg-sky-400',     hex: 'var(--accent-cyan-solid)' },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-[var(--accent-blue-text)]',  dot: 'bg-indigo-400',  hex: 'var(--accent-blue-solid)' },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-[var(--accent-purple-text)]',  dot: 'bg-violet-400',  hex: 'var(--accent-purple-solid)' },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-[var(--accent-purple-text)]', dot: 'bg-fuchsia-400', hex: 'var(--accent-purple-solid)' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-[var(--accent-amber-text)]',   dot: 'bg-amber-400',   hex: 'var(--accent-amber-solid)' },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-orange-400',  hex: 'var(--accent-amber-solid)' },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-[var(--accent-teal-text)]',    dot: 'bg-teal-400',    hex: 'var(--accent-teal-solid)' },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', hex: 'var(--accent-emerald-solid)' },
-  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-[var(--accent-emerald-text)]',   dot: 'bg-green-400',   hex: 'var(--accent-emerald-solid)' },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400',     hex: 'var(--accent-red-solid)' },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400',  hex: 'var(--accent-amber-solid)' },
+  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)]',  text: 'text-[var(--accent-cyan-text)]',     dot: 'bg-sky-400',     hex: 'var(--accent-cyan-solid)' },
+  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]',  text: 'text-[var(--accent-blue-text)]',  dot: 'bg-indigo-400',  hex: 'var(--accent-blue-solid)' },
+  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)]',  text: 'text-[var(--accent-purple-text)]',  dot: 'bg-violet-400',  hex: 'var(--accent-purple-solid)' },
+  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)]',  text: 'text-[var(--accent-purple-text)]', dot: 'bg-fuchsia-400', hex: 'var(--accent-purple-solid)' },
+  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',   dot: 'bg-amber-400',   hex: 'var(--accent-amber-solid)' },
+  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-orange-400',  hex: 'var(--accent-amber-solid)' },
+  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-teal-solid) 15%, transparent)]',  text: 'text-[var(--accent-teal-text)]',    dot: 'bg-teal-400',    hex: 'var(--accent-teal-solid)' },
+  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', hex: 'var(--accent-emerald-solid)' },
+  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)]',   text: 'text-[var(--accent-emerald-text)]',   dot: 'bg-green-400',   hex: 'var(--accent-emerald-solid)' },
+  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-red-solid) 15%, transparent)]',   text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400',     hex: 'var(--accent-red-solid)' },
+  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400',  hex: 'var(--accent-amber-solid)' },
 };
 
 /**
@@ -84,8 +84,8 @@ export function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase
       title={`${days} days since sold`}
       className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
       style={isRed
-        ? { background: 'rgba(255,82,82,0.15)', color: 'var(--accent-red-text)', border: '1px solid rgba(255,82,82,0.3)' }
-        : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }
+        ? { background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }
+        : { background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }
       }
     >
       {days}d

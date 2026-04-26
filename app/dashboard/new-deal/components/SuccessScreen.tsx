@@ -12,7 +12,7 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
             <PlusCircle className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>New Deal</h1>
@@ -20,14 +20,14 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
       </div>
 
       {/* Success card */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,224,122,0.08), rgba(0,196,240,0.04))', border: '1px solid var(--accent-emerald-glow)', boxShadow: '0 0 40px rgba(0,224,122,0.08)' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 4%, transparent))', border: '1px solid var(--accent-emerald-glow)', boxShadow: '0 0 40px color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}>
         {/* Green top bar */}
         <div className="h-1" style={{ background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }} />
 
         <div className="p-8">
           {/* Icon + message */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--accent-emerald-soft)', border: '1px solid rgba(0,224,122,0.3)' }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--accent-emerald-soft)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}>
               <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--accent-emerald-text)' }} strokeWidth={1.5} />
             </div>
             <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--text-primary)' }}>Deal Submitted!</h2>

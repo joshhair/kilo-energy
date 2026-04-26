@@ -7,7 +7,7 @@ const OPTIONS: Array<{
   value: ThemePreference;
   label: string;
   hint: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }> = [
   { value: 'system', label: 'System', hint: 'Follow OS preference', icon: Monitor },
   { value: 'dark', label: 'Dark', hint: 'Always dark', icon: Moon },

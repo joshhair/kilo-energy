@@ -226,7 +226,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       : 'var(--accent-purple-solid)';
     const badgeBg =
       resolvedUser.role === 'admin' ? 'var(--accent-amber-soft)'
-      : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'
+      : resolvedUser.role === 'project_manager' ? 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)'
       : 'var(--accent-purple-soft)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
     const fu = fetchedUser; // PM permission flags only available from fetched payload
@@ -562,7 +562,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             <MobileBadge value={repType} variant="status" />
             {isSubDealer && <MobileBadge value="Sub-Dealer" variant="status" />}
             {resolvedUser.active === false && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(136,153,170,0.15)', color: 'var(--text-muted)' }}>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'color-mix(in srgb, var(--text-muted) 15%, transparent)', color: 'var(--text-muted)' }}>
                 Inactive
               </span>
             )}
@@ -625,7 +625,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           {trainerAssignment && (
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(245,166,35,0.15)', color: 'var(--accent-amber, #f5a623)' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber, #f5a623)' }}>
                   {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
                 </div>
                 <div>
@@ -811,7 +811,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                         className="min-h-[44px] rounded-xl text-sm font-semibold"
                         style={{
                           background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
-                          color: active ? '#050d18' : 'var(--text-muted)',
+                          color: active ? 'var(--surface-page)' : 'var(--text-muted)',
                           border: active ? 'none' : '1px solid var(--border-subtle)',
                           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                         }}

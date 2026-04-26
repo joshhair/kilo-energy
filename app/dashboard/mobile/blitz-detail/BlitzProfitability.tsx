@@ -165,7 +165,7 @@ export default function BlitzProfitability({
                     <div className="flex items-center gap-2 min-w-0">
                       <div
                         className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                        style={{ background: idx === 0 ? 'rgba(245,158,11,0.2)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--text-muted)', border: `1px solid ${idx === 0 ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'}` }}
+                        style={{ background: idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--text-muted)', border: `1px solid ${idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' : 'var(--border-subtle)'}` }}
                       >
                         {idx + 1}
                       </div>

@@ -63,7 +63,7 @@ export default function PrivacyPage() {
       <ul className="list-disc pl-6 space-y-1 my-3">
         <li>
           <strong>Access / Portability</strong>: fetch a full JSON export of your own records via{' '}
-          <code className="text-emerald-300 bg-white/5 px-1.5 py-0.5 rounded">GET /api/users/&lt;your-id&gt;/export</code>
+          <code className="text-emerald-300 bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] px-1.5 py-0.5 rounded">GET /api/users/&lt;your-id&gt;/export</code>
           {' '}(authenticated). Admins can export any user&apos;s records for GDPR/CCPA response.
         </li>
         <li><strong>Correction</strong>: edit your name or phone in Settings, or ask your admin.</li>
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
           <strong>Erasure</strong>: email{' '}
           <a href="mailto:privacy@kiloenergies.com" className="text-emerald-400 hover:underline">privacy@kiloenergies.com</a>
           {' '}from the address on file. An admin will anonymize your record via{' '}
-          <code className="text-emerald-300 bg-white/5 px-1.5 py-0.5 rounded">POST /api/users/&lt;id&gt;/erase</code>
+          <code className="text-emerald-300 bg-[color-mix(in_srgb,var(--text-primary)_5%,transparent)] px-1.5 py-0.5 rounded">POST /api/users/&lt;id&gt;/erase</code>
           {' '}within 30 days. Historical financial rows are retained (tax / commission audit), but no longer attributable
           to you.
         </li>

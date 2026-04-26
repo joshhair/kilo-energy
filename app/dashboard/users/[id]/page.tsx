@@ -453,8 +453,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan-solid)'
       : 'var(--accent-purple-solid)'; // sub-dealer purple
     const badgeBg =
-      resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
-      : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'
+      resolvedUser.role === 'admin' ? 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)'
+      : resolvedUser.role === 'project_manager' ? 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)'
       : 'var(--accent-purple-soft)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
 
@@ -739,7 +739,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleReactivate}
                   disabled={isReactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
+                  style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
                 >
                   {isReactivating ? 'Reactivating…' : 'Reactivate'}
                 </button>
@@ -748,7 +748,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={() => setConfirmDeactivate(true)}
                   disabled={isDeactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
+                  style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                 >
                   {isDeactivating ? 'Deactivating…' : 'Deactivate'}
                 </button>
@@ -771,7 +771,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   onClick={handleSendInvite}
                   disabled={isSendingInvite}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
+                  style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
                 >
                   {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
                 </button>
@@ -786,7 +786,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     disabled={hasRelations}
                     title={userMetaError ? 'Failed to load user data — use Retry to reload' :!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                    style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                   >
                     Delete permanently
                   </button>
@@ -968,10 +968,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-4 mb-8">
         {[
-          { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-text)]',    accentColor: 'rgba(59,130,246,0.08)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-[var(--accent-amber-text)]',  accentColor: 'rgba(234,179,8,0.08)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-text)]', accentColor: 'rgba(16,185,129,0.08)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
+          { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-text)]',    accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-text)]',    accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-[var(--accent-amber-text)]',  accentColor: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
+          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-text)]', accentColor: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
         ].map((s) => (
           <div
             key={s.label}
@@ -1440,7 +1440,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={handleReactivate}
                 disabled={isReactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-emerald-text)', border: '1px solid rgba(0,224,122,0.3)' }}
+                style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
               >
                 {isReactivating ? 'Reactivating…' : 'Reactivate'}
               </button>
@@ -1449,7 +1449,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={() => setConfirmDeactivate(true)}
                 disabled={isDeactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)' }}
+                style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
               >
                 {isDeactivating ? 'Deactivating…' : 'Deactivate'}
               </button>
@@ -1459,7 +1459,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 onClick={handleSendInvite}
                 disabled={isSendingInvite}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }}
+                style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
               >
                 {isSendingInvite ? 'Sending…' : userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
               </button>
@@ -1482,7 +1482,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   disabled={hasRelations}
                   title={userMetaError ? 'Failed to load user data — use Retry to reload' : !userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                  style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                 >
                   Delete permanently
                 </button>

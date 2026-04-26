@@ -159,9 +159,9 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
             className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
             style={roleFilter === role
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
                 }

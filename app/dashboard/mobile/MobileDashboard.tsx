@@ -543,7 +543,7 @@ export default function MobileDashboard() {
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
           <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? 'Today' : `${nextFridayLabel} \u00b7 ${daysUntilPayday} days`}</p>
-          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
             <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }} />
           </div>
         </MobileCard>
@@ -646,7 +646,7 @@ export default function MobileDashboard() {
                 return (
                   <div key={phase} className="flex items-center gap-3 py-2">
                     <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{phase}</span>
-                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: ACCENT }} />
                     </div>
                     <span className="w-8 text-right tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>

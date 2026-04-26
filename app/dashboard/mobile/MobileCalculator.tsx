@@ -609,7 +609,7 @@ export default function MobileCalculator() {
                   className="min-h-[44px] rounded-xl text-sm font-semibold transition-[transform,color] duration-75 ease-out active:scale-[0.97]"
                   style={{
                     background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
-                    color: active ? '#050d18' : 'var(--text-muted)',
+                    color: active ? 'var(--surface-page)' : 'var(--text-muted)',
                     border: active ? 'none' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     transition: 'background 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)',

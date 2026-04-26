@@ -14,7 +14,7 @@ export function DealEntryPage({ onStart, projects, currentRepId }: { onStart: ()
         <div className="px-6 py-8 sm:px-8 sm:py-10 md:px-12 md:py-14">
           {/* Icon + heading */}
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+            <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
               <PlusCircle className="w-6 h-6 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>

@@ -388,7 +388,7 @@ function SettingsPageInner() {
         <div className="mb-6">
           <div className="h-[3px] w-8 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }} />
           <div className="flex items-center gap-2 mb-0.5">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,196,240,0.15)' }}>
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)' }}>
               <Settings className="w-4 h-4" style={{ color: 'var(--accent-cyan-text)' }} />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Settings</h1>
@@ -401,12 +401,12 @@ function SettingsPageInner() {
             aria-hidden="true"
             style={{
               position: 'absolute', left: 0, width: '100%', borderRadius: '12px',
-              background: 'rgba(0,196,240,0.1)',
+              background: 'color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)',
               transition: 'top 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1)',
               opacity: 1, zIndex: 0, pointerEvents: 'none',
               top: pillStyle.top, height: pillStyle.height,
-              boxShadow: '0 0 12px rgba(0,196,240,0.1)',
-              border: '1px solid rgba(0,196,240,0.25)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)',
             }}
           />
 

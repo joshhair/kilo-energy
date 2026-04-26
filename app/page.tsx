@@ -89,7 +89,7 @@ export default function LoginPage() {
             alt="Kilo Energy"
             width={80}
             height={80}
-            style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
+            style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' }}
           />
           <div className="flex items-baseline gap-1">
             <span className="text-[var(--text-primary)] font-black tracking-tight leading-none"

@@ -702,7 +702,7 @@ export default function MobileBlitz() {
                           onClick={() => handleDenyRequest(req.id)}
                           disabled={processingRequest.has(req.id)}
                           className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                          style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                          style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                         >
                           <XCircle className="w-3 h-3" /> Deny
                         </button>

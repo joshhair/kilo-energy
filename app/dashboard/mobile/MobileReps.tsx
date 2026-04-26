@@ -55,7 +55,7 @@ const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_mana
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   rep:              { label: 'Rep',      color: 'var(--accent-emerald-text)', bg: 'var(--accent-emerald-soft)' },
   'sub-dealer':     { label: 'SD',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
-  project_manager:  { label: 'PM',       color: 'var(--accent-cyan-text)', bg: 'rgba(0,196,240,0.12)' },
+  project_manager:  { label: 'PM',       color: 'var(--accent-cyan-text)', bg: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)' },
   admin:            { label: 'Admin',    color: 'var(--accent-amber-text)', bg: 'var(--accent-amber-soft)' },
 };
 
@@ -346,7 +346,7 @@ export default function MobileReps() {
                 color: active ? '#000' : 'var(--text-muted)',
                 border: active ? 'none' : '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                boxShadow: active ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+                boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
                 transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
@@ -367,11 +367,11 @@ export default function MobileReps() {
                 onClick={() => setRepTypeFilter(rt.value)}
                 className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold active:scale-[0.94]"
                 style={{
-                  background: active ? 'rgba(0,196,240,0.2)' : 'var(--surface-card)',
+                  background: active ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-card)',
                   color: active ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
-                  border: active ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--border-subtle)',
+                  border: active ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  boxShadow: active ? '0 0 14px rgba(0,196,240,0.25)' : 'none',
+                  boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)' : 'none',
                   transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               >
@@ -410,7 +410,7 @@ export default function MobileReps() {
               color: compareMode ? '#000' : 'var(--text-muted)',
               border: compareMode ? 'none' : '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              boxShadow: compareMode ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+              boxShadow: compareMode ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
               transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
@@ -426,7 +426,7 @@ export default function MobileReps() {
 
       {/* Pending invitations panel — admin only */}
       {isAdmin && pendingInvitations.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,176,32,0.25)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>
           <div className="flex items-center gap-2 mb-2">
             <Mail className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
             <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
@@ -467,7 +467,7 @@ export default function MobileReps() {
                     });
                   }}
                   className="shrink-0 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                  style={{ color: 'var(--accent-red-text)', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -504,7 +504,7 @@ export default function MobileReps() {
         return (
           <div className="space-y-3">
             {filteredPool.map((u) => {
-              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'rgba(136,145,168,0.12)' };
+              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)' };
               const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
               return (
                 <MobileCard key={u.id} onTap={() => router.push(`/dashboard/users/${u.id}`)}>
@@ -604,9 +604,9 @@ export default function MobileReps() {
                   onClick={() => setComparePeriod(opt.value)}
                   className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
                   style={{
-                    background: comparePeriod === opt.value ? 'rgba(0,196,240,0.2)' : 'rgba(0,0,0,0.2)',
+                    background: comparePeriod === opt.value ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'rgba(0,0,0,0.2)',
                     color: comparePeriod === opt.value ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
-                    border: comparePeriod === opt.value ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--border-subtle)',
+                    border: comparePeriod === opt.value ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -781,7 +781,7 @@ export default function MobileReps() {
             <div className="mt-2 space-y-2">
               {inactiveReps.map((rep) => (
                 <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--text-muted)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(rep.firstName?.[0] ?? '') + (rep.lastName?.[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${rep.id}`)}>
@@ -833,7 +833,7 @@ export default function MobileReps() {
             <div className="mt-2 space-y-2">
               {inactiveSubDealers.map((sd) => (
                 <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--text-muted)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(sd.firstName[0] ?? '') + (sd.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${sd.id}`)}>
@@ -856,7 +856,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid rgba(180,125,255,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -885,7 +885,7 @@ export default function MobileReps() {
             <div className="mt-2 space-y-2">
               {inactivePMs.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--text-muted)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
@@ -910,7 +910,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -939,7 +939,7 @@ export default function MobileReps() {
             <div className="mt-2 space-y-2">
               {inactiveAdmins.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--text-muted)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
@@ -964,7 +964,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid rgba(255,176,32,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>

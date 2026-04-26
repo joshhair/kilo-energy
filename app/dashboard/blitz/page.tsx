@@ -56,10 +56,10 @@ interface BlitzRequestData {
 }
 
 const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
-  upcoming:  { bg: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', dotBg: 'var(--accent-blue-solid)', border: '1px solid rgba(77,159,255,0.3)' },
-  active:    { bg: 'rgba(0,224,122,0.12)',  color: 'var(--accent-emerald-text)', dotBg: 'var(--accent-emerald-solid)', border: '1px solid rgba(0,224,122,0.3)' },
-  completed: { bg: 'rgba(136,145,168,0.12)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid rgba(136,145,168,0.3)' },
-  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red-text)', dotBg: 'var(--accent-red-solid)', border: '1px solid rgba(255,82,82,0.3)' },
+  upcoming:  { bg: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', dotBg: 'var(--accent-blue-solid)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' },
+  active:    { bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',  color: 'var(--accent-emerald-text)', dotBg: 'var(--accent-emerald-solid)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' },
+  completed: { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid color-mix(in srgb, var(--text-muted) 30%, transparent)' },
+  cancelled: { bg: 'color-mix(in srgb, var(--accent-red-solid) 12%, transparent)',  color: 'var(--accent-red-text)', dotBg: 'var(--accent-red-solid)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' },
 };
 
 function getBlitzTimingLabel(blitz: BlitzData): string | null {
@@ -858,9 +858,9 @@ function BlitzPageInner() {
                 left: adminTabIndicator.left,
                 width: adminTabIndicator.width,
                 transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-                background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-                border: '1px solid rgba(0,224,122,0.45)',
-                boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
               }}
             />
           )}

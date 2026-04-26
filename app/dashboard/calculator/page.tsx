@@ -678,7 +678,7 @@ function CalculatorPage() {
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
             <Calculator className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
@@ -984,7 +984,7 @@ function CalculatorPage() {
                 <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
-                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px rgba(0,229,160,0.25)' }}>
+                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-text)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                   ${Math.round(closerTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
@@ -993,14 +993,14 @@ function CalculatorPage() {
 
                 {/* Below-baseline warning */}
                 {soldPPW <= closerPerW && (
-                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-text)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-text)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
                 {closerPerW === 0 && soldPPW > 0 && (
-                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-text)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-text)' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
                 )}

@@ -171,7 +171,7 @@ export default function BottomNav({
                   background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                   transform: `translateX(${activeIdx * 100}%)`,
                   transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  boxShadow: '0 0 8px rgba(0,229,160,0.6)',
+                  boxShadow: '0 0 8px color-mix(in srgb, var(--accent-emerald-solid) 60%, transparent)',
                 }}
               />
             );
@@ -192,7 +192,7 @@ export default function BottomNav({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)', boxShadow: '0 0 24px rgba(0,229,160,0.45)' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)', boxShadow: '0 0 24px color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}>
                     <span className="text-2xl font-light text-black leading-none">+</span>
                   </div>
                   <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>

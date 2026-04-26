@@ -597,7 +597,7 @@ export default function IncentivesPage() {
           onClick={() => { if (selectMode) clearSelection(); else setSelectMode(true); }}
           className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
           style={selectMode
-            ? { background: 'rgba(0,196,240,0.15)', color: 'var(--accent-cyan-text)', border: '1px solid rgba(0,196,240,0.3)' }
+            ? { background: 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }
             : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }
           }
         >
@@ -627,7 +627,7 @@ export default function IncentivesPage() {
         <div>
           <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }} />
           <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(0,224,122,0.15)' }}>
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)' }}>
               <Trophy className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Incentives</h1>
@@ -698,7 +698,7 @@ export default function IncentivesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div
           className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1"
-          style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)' } as React.CSSProperties}
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
@@ -712,7 +712,7 @@ export default function IncentivesPage() {
 
         <div
           className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2"
-          style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' } as React.CSSProperties}
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
@@ -726,7 +726,7 @@ export default function IncentivesPage() {
 
         <div
           className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3"
-          style={{ '--card-accent': 'rgba(234,179,8,0.08)' } as React.CSSProperties}
+          style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' } as React.CSSProperties}
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
@@ -1064,8 +1064,8 @@ function IncentiveCard({
 
   return (
     <div
-      className={`relative rounded-2xl border overflow-hidden transition-[transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 hover:translate-y-[-3px] hover:shadow-[0_0_28px_rgba(16,185,129,0.13),0_8px_32px_rgba(0,0,0,0.32)] active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[var(--accent-emerald-solid)]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${Math.min(cardIndex, 6)} ${!incentive.active ? 'opacity-50' : ''}`}
-      style={{ borderColor: incentive.type === 'company' ? 'rgba(77,159,255,0.3)' : 'rgba(180,125,255,0.3)', background: 'var(--surface)' }}
+      className={`relative rounded-2xl border overflow-hidden transition-[transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 hover:translate-y-[-3px] hover:shadow-[0_0_28px_color-mix(in srgb, var(--accent-emerald-solid) 13%, transparent),0_8px_32px_rgba(0,0,0,0.32)] active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-[var(--accent-emerald-solid)]/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity animate-slide-in-scale stagger-${Math.min(cardIndex, 6)} ${!incentive.active ? 'opacity-50' : ''}`}
+      style={{ borderColor: incentive.type === 'company' ? 'color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' : 'color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', background: 'var(--surface)' }}
     >
       {/* Header */}
       <div
@@ -1240,14 +1240,14 @@ function IncentiveCard({
                   className={`flex items-center justify-between rounded-xl px-4 py-3 ${milestone.achieved ? 'animate-milestone-achieve' : ''}`}
                   style={{
                     border: milestone.achieved
-                      ? '1px solid rgba(0,224,122,0.3)'
+                      ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)'
                       : hit
-                      ? '1px solid rgba(255,176,32,0.3)'
+                      ? '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)'
                       : '1px solid rgba(39,43,53,0.5)',
                     background: milestone.achieved
-                      ? 'rgba(0,224,122,0.06)'
+                      ? 'color-mix(in srgb, var(--accent-emerald-solid) 6%, transparent)'
                       : hit
-                      ? 'rgba(255,176,32,0.06)'
+                      ? 'color-mix(in srgb, var(--accent-amber-solid) 6%, transparent)'
                       : 'rgba(29,32,40,0.3)',
                   }}
                 >
@@ -1255,7 +1255,7 @@ function IncentiveCard({
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{
-                        background: milestone.achieved ? 'rgba(0,224,122,0.2)' : hit ? 'rgba(255,176,32,0.2)' : 'rgba(136,145,168,0.15)',
+                        background: milestone.achieved ? 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)' : hit ? 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' : 'color-mix(in srgb, var(--text-muted) 15%, transparent)',
                       }}
                     >
                       {milestone.achieved ? (

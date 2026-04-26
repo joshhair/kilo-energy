@@ -19,15 +19,15 @@ export function SortIcon<K extends string>({ colKey, sortKey, sortDir }: { colKe
 type PillStyle = { gradient: string; border: string; shadow: string; text: string; dot: string };
 
 export const PAYROLL_PILL: Record<string, PillStyle> = {
-  'Paid':    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  'Pending': { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
+  'Paid':    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
+  'Pending': { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   'Draft':   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',     border: 'border-[var(--border)]/30',   shadow: '',                                        text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
 export const REIMB_PILL: Record<string, PillStyle> = {
-  'Approved': { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
-  'Pending':  { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
-  'Denied':   { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',         border: 'border-red-700/30',     shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',  text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400'     },
+  'Approved': { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
+  'Pending':  { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',   border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
+  'Denied':   { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',         border: 'border-red-700/30',     shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-red-solid) 15%, transparent)]',  text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400'     },
 };
 
 const DEFAULT_PILL: PillStyle = { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20', border: 'border-[var(--border)]/30', shadow: '', text: 'text-[var(--text-secondary)]', dot: 'bg-[var(--text-muted)]' };
