@@ -45,14 +45,14 @@ export default function AppearanceSection() {
                 border: active
                   ? '1px solid var(--accent-emerald-solid)'
                   : '1px solid var(--border-default)',
-                color: active ? 'var(--accent-emerald-solid)' : 'var(--text-primary)',
+                color: 'var(--text-primary)',
               }}
             >
               <div className="flex items-center gap-2">
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4" style={{ color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)' }} />
                 <span className="font-semibold">{label}</span>
               </div>
-              <span className="text-xs" style={{ color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {hint}
               </span>
             </button>

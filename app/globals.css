@@ -102,11 +102,15 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --surface-page: #f7f8fb;
+  /* Page sits a notch darker than before (#f7f8fb → #eaeef4) so the
+     pure-white surface-card has somewhere to elevate against. Without
+     this, cards-on-page contrast was ~1.04:1, which made every white
+     card visually shout while borders/text felt washed out. */
+  --surface-page: #eaeef4;
   --surface-card: #ffffff;
   --surface-elevated: #ffffff;
   --surface-overlay: rgba(0, 0, 0, 0.40);
-  --surface-pressed: #eef0f5;
+  --surface-pressed: #dde2ec;
 
   /* Light-mode text ramp tuned for WCAG AA on #ffffff and #f7f8fb.
      Each step is ≥4.5:1 so even the dim tier (used for tertiary
@@ -117,9 +121,9 @@
   --text-muted: #45506a;       /* ~7.5:1   */
   --text-dim: #606b82;         /* ~4.8:1   */
 
-  --border-default: #dfe3eb;
-  --border-subtle: #eef0f5;
-  --border-strong: #a8b1c2;
+  --border-default: #d2d8e3;
+  --border-subtle: #e3e7ef;
+  --border-strong: #98a2b3;
 
   /* Accent solids stay identical across themes — emerald is emerald.
      Only the soft / glow alpha forms shift to compensate for the
