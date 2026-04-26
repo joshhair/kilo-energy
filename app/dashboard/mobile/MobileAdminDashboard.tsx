@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWValue } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
 import {
   ACTIVE_PHASES,
@@ -406,8 +406,8 @@ export default function MobileAdminDashboard() {
       <div className="grid grid-cols-2 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
         <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
-        <MobileStatCard label="Sold" value={formatCompactKW(totalKW)} color={WARNING} />
-        <MobileStatCard label="Installed" value={formatCompactKW(totalKWInstalled)} color={DANGER} />
+        <MobileStatCard label="kW Sold" value={formatCompactKWValue(totalKW)} color={WARNING} />
+        <MobileStatCard label="kW Installed" value={formatCompactKWValue(totalKWInstalled)} color={DANGER} />
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}

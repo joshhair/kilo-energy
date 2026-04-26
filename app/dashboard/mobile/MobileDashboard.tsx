@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWValue, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
@@ -552,8 +552,8 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
           <MobileStatCard label="In Pipeline" value={fmt$(pipelineValue)} color={ACCENT2} />
-          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color="#fff" />
-          <MobileStatCard label="kW Installed" value={formatCompactKW(totalKWInstalled)} color="#fff" />
+          <MobileStatCard label="kW Sold" value={formatCompactKWValue(totalKW)} color="#fff" />
+          <MobileStatCard label="kW Installed" value={formatCompactKWValue(totalKWInstalled)} color="#fff" />
           {outstandingChargebacks.length > 0 && (
             <MobileStatCard
               label="Chargebacks"
@@ -632,7 +632,7 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
           <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
-          <MobileStatCard label="Total kW" value={formatCompactKW(totalKWPm)} color={ACCENT2} />
+          <MobileStatCard label="Total kW" value={formatCompactKWValue(totalKWPm)} color={ACCENT2} />
           <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
         </div>
 
@@ -802,8 +802,8 @@ export default function MobileDashboard() {
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{formatCompactKW(periodKW)}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{formatCompactKWValue(periodKW)}</p>
+            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>kW Sold</p>
           </div>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{periodActive.length}</p>
