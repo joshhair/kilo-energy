@@ -540,7 +540,7 @@ export default function BlitzDetailPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="p-4 md:p-8 space-y-6 animate-fade-in-up">
       {/* Back + header */}
       <div>
         <Link href="/dashboard/blitz" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors mb-3">
