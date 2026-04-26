@@ -157,6 +157,50 @@
   --text-on-accent: #ffffff;
 }
 
+/* ── Force-dark scope ───────────────────────────────────────────────────────
+   Sign-in / sign-up / legal pages are intentionally dark regardless of the
+   user's theme preference (they're marketing surfaces meant to feel
+   premium / brand-defining). Wrapping a subtree in [data-force-dark]
+   re-asserts the dark token values inside, even when <html> has
+   data-theme="light" applied. */
+[data-force-dark] {
+  color-scheme: dark;
+  --surface-page: #050d18;
+  --surface-card: #161920;
+  --surface-elevated: #1d2028;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-pressed: #0d1525;
+  --text-primary: #f0f2f7;
+  --text-secondary: #c2c8d8;
+  --text-muted: #8899aa;
+  --text-dim: #445577;
+  --border-default: #272b35;
+  --border-subtle: #1a2840;
+  --border-strong: #334155;
+  --accent-emerald-soft: rgba(0, 229, 160, 0.10);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.30);
+  --accent-emerald-text: #00e5a0;
+  --accent-cyan-soft: rgba(0, 180, 216, 0.10);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+  --accent-cyan-text: #00b4d8;
+  --accent-blue-soft: rgba(77, 159, 255, 0.10);
+  --accent-blue-glow: rgba(77, 159, 255, 0.30);
+  --accent-blue-text: #4d9fff;
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.30);
+  --accent-red-text: #ef4444;
+  --accent-amber-soft: rgba(245, 166, 35, 0.10);
+  --accent-amber-glow: rgba(245, 166, 35, 0.30);
+  --accent-amber-text: #f5a623;
+  --accent-purple-soft: rgba(180, 125, 255, 0.10);
+  --accent-purple-glow: rgba(180, 125, 255, 0.30);
+  --accent-purple-text: #b47dff;
+  --accent-teal-soft: rgba(0, 212, 200, 0.10);
+  --accent-teal-glow: rgba(0, 212, 200, 0.30);
+  --accent-teal-text: #00d4c8;
+  --text-on-accent: #000;
+}
+
 /* ── Light-mode overrides for legacy class-based surfaces ───────────────────
    A handful of utility classes (.card-surface, .table-header-frost,
    .card-surface-interactive) bake hardcoded rgba(0,0,0,*) shadows or

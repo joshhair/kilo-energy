@@ -608,7 +608,7 @@ export default function MobileMyPay() {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as typeof filterType)}
             className="flex-1 outline-none"
-            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Types</option>
             {effectiveRole !== 'sub-dealer' && <option value="M1">M1</option>}
@@ -621,7 +621,7 @@ export default function MobileMyPay() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
             className="flex-1 outline-none"
-            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -630,18 +630,24 @@ export default function MobileMyPay() {
           </select>
         </div>
         <div className="flex gap-2">
-          <input
-            type="date"
-            value={payFilterFrom}
-            onChange={(e) => setPayFilterFrom(e.target.value)}
-            style={{ flex: 1, background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
-          />
-          <input
-            type="date"
-            value={payFilterTo}
-            onChange={(e) => setPayFilterTo(e.target.value)}
-            style={{ flex: 1, background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
-          />
+          <label className="flex-1 flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>From</span>
+            <input
+              type="date"
+              value={payFilterFrom}
+              onChange={(e) => setPayFilterFrom(e.target.value)}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            />
+          </label>
+          <label className="flex-1 flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>To</span>
+            <input
+              type="date"
+              value={payFilterTo}
+              onChange={(e) => setPayFilterTo(e.target.value)}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            />
+          </label>
         </div>
         {(searchQuery || filterType !== 'all' || filterStatus !== 'all' || payFilterFrom || payFilterTo) && (
           <button

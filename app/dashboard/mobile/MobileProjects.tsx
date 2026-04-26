@@ -334,29 +334,33 @@ export default function MobileProjects() {
 
       {/* My Deals / All Deals toggle — admin/PM only */}
       {!isRep && (
-        <div className="flex gap-0.5 rounded-xl p-1 self-start" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          {(['all', 'mine'] as const).map((scope) => (
-            <button
-              key={scope}
-              onClick={() => setDealScope(scope)}
-              className="min-h-[40px] px-4 rounded-lg text-sm font-semibold transition-all duration-150"
-              style={dealScope === scope
-                ? {
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                    border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                    color: 'var(--text-primary)',
-                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  }
-                : {
-                    border: '1px solid transparent',
-                    color: 'var(--text-muted)',
-                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  }
-              }
-            >
-              {scope === 'all' ? 'All Deals' : 'My Deals'}
-            </button>
-          ))}
+        <div className="inline-flex w-fit gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          {(['all', 'mine'] as const).map((scope) => {
+            const isActive = dealScope === scope;
+            return (
+              <button
+                key={scope}
+                onClick={() => setDealScope(scope)}
+                className="min-h-[40px] px-4 rounded-lg text-sm font-semibold transition-all duration-150"
+                style={isActive
+                  ? {
+                      background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                      color: 'var(--text-primary)',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }
+                  : {
+                      background: 'transparent',
+                      border: '1px solid transparent',
+                      color: 'var(--text-secondary)',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }
+                }
+              >
+                {scope === 'all' ? 'All Deals' : 'My Deals'}
+              </button>
+            );
+          })}
         </div>
       )}
 

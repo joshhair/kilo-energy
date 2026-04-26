@@ -12,6 +12,7 @@ export default function SignInPage() {
 
   return (
     <div
+      data-force-dark
       className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-5 relative overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
