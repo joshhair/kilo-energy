@@ -94,8 +94,6 @@ export default function MobileProjects() {
     const v = searchParams.get('sort');
     return v && SORT_OPTIONS.some((o) => o.value === v) ? (v as SortMode) : 'soldDesc';
   });
-  const [qaOnly, setQaOnly] = useState(() => searchParams.get('qa') === '1');
-
   // Re-initialise dealScope once effectiveRole resolves from null on first hydration.
   useEffect(() => {
     if (!didInitDealScope.current && effectiveRole !== null) {
@@ -116,11 +114,10 @@ export default function MobileProjects() {
     if (sortMode !== 'soldDesc') params.set('sort', sortMode); else params.delete('sort');
     if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
     if (dealScope === 'mine') params.set('scope', 'mine'); else params.delete('scope');
-    if (qaOnly) params.set('qa', '1'); else params.delete('qa');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, phaseFilter, installerFilter, sortMode, statusFilter, dealScope, qaOnly]);
+  }, [debouncedSearch, phaseFilter, installerFilter, sortMode, statusFilter, dealScope]);
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
   const [listKey, setListKey] = useState(0);
@@ -167,7 +164,7 @@ export default function MobileProjects() {
       setListFading(false);
     }, 130);
     return () => clearTimeout(t);
-  }, [phaseFilter, debouncedSearch, statusFilter, installerFilter, sortMode, dealScope, qaOnly]);
+  }, [phaseFilter, debouncedSearch, statusFilter, installerFilter, sortMode, dealScope]);
 
   const visibleProjects = useMemo(() => {
     const isOnDeal = (p: typeof projects[0]) =>
@@ -207,10 +204,6 @@ export default function MobileProjects() {
       result = result.filter((p) => p.installer === installerFilter);
     }
 
-    if (qaOnly) {
-      result = result.filter((p) => p.customerName.startsWith('[QA]'));
-    }
-
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       result = result.filter((p) =>
@@ -238,11 +231,11 @@ export default function MobileProjects() {
   // doesn't carry over and re-blow memory after the user narrows.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode, dealScope, qaOnly]);
+  }, [phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode, dealScope]);
 
   // "Are any non-default filters active?" — drives the empty-state CTA:
   // if yes, show Clear Filters; otherwise show Submit Deal.
-  const hasActiveFilters = phaseFilter !== 'All' || !!installerFilter || !!debouncedSearch || statusFilter !== 'active' || dealScope !== (isRep ? 'mine' : 'all') || qaOnly;
+  const hasActiveFilters = phaseFilter !== 'All' || !!installerFilter || !!debouncedSearch || statusFilter !== 'active' || dealScope !== (isRep ? 'mine' : 'all');
 
   // Average days in each phase (based on days since sold for all projects in that phase)
   const phaseAvgDays = useMemo(() => {
@@ -338,30 +331,6 @@ export default function MobileProjects() {
           {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-
-      {/* [QA] filter — admin only, shows only agent-generated test deals */}
-      {effectiveRole === 'admin' && (
-        <button
-          onClick={() => setQaOnly((v) => !v)}
-          className="self-start min-h-[44px] px-4 rounded-xl text-sm font-semibold transition-colors"
-          style={qaOnly
-            ? {
-                background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                border: '1px solid rgba(0, 224, 122, 0.45)',
-                color: 'var(--text-primary)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }
-            : {
-                background: 'var(--surface-card)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-muted)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-          title="Show only agent-generated test deals ([QA] prefix)"
-        >
-          [QA] only
-        </button>
-      )}
 
       {/* My Deals / All Deals toggle — admin/PM only */}
       {!isRep && (
@@ -478,7 +447,7 @@ export default function MobileProjects() {
                   Try a different phase, installer, or clear your search.
                 </p>
                 <button
-                  onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); setStatusFilter('active'); setDealScope(isRep ? 'mine' : 'all'); setQaOnly(false); }}
+                  onClick={() => { setPhaseFilter('All'); setInstallerFilter(''); setSearch(''); setSortMode('soldDesc'); setStatusFilter('active'); setDealScope(isRep ? 'mine' : 'all'); }}
                   className="mt-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold text-[var(--text-primary)]"
                   style={{ background: 'var(--border-subtle)' }}
                 >

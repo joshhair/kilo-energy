@@ -62,7 +62,6 @@ function ProjectsPageInner() {
   });
   const [installerFilter, setInstallerFilter] = useState(() => searchParams.get('installer') ?? '');
   const [phaseFilter, setPhaseFilter] = useState(() => searchParams.get('phase') ?? '');
-  const [qaOnly, setQaOnly] = useState(() => searchParams.get('qa') === '1');
   const isHydrated = useIsHydrated();
 
   // Sync filters to URL searchParams (debouncedSearch is used for the q param
@@ -74,13 +73,12 @@ function ProjectsPageInner() {
     if (statusFilter !== 'active') params.set('status', statusFilter); else params.delete('status');
     if (installerFilter) params.set('installer', installerFilter); else params.delete('installer');
     if (phaseFilter) params.set('phase', phaseFilter); else params.delete('phase');
-    if (qaOnly) params.set('qa', '1'); else params.delete('qa');
     if (dealScope === 'mine') params.set('scope', 'mine'); else params.delete('scope');
     if (debouncedSearch) params.set('q', debouncedSearch); else params.delete('q');
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, statusFilter, installerFilter, phaseFilter, qaOnly, dealScope, debouncedSearch]);
+  }, [tab, statusFilter, installerFilter, phaseFilter, dealScope, debouncedSearch]);
 
   // Sliding tab indicators
   const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -143,8 +141,7 @@ function ProjectsPageInner() {
       p.installer.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchInstaller = !installerFilter || p.installer === installerFilter;
     const matchPhase = !phaseFilter || p.phase === phaseFilter;
-    const matchQa = !qaOnly || p.customerName.startsWith('[QA]');
-    return matchSearch && matchInstaller && matchPhase && matchQa;
+    return matchSearch && matchInstaller && matchPhase;
   });
 
   // Destructive phase change confirmation
@@ -202,7 +199,7 @@ function ProjectsPageInner() {
     setCancelReasonModal(null);
   };
 
-  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || qaOnly || dealScope !== (isRep ? 'mine' : 'all');
+  const hasActiveFilters = statusFilter !== 'active' || installerFilter !== '' || searchInput !== '' || phaseFilter !== '' || dealScope !== (isRep ? 'mine' : 'all');
 
   const [kanbanResetKey, setKanbanResetKey] = useState(0);
 
@@ -212,7 +209,6 @@ function ProjectsPageInner() {
     setSearchInput('');
     setDebouncedSearch('');
     setPhaseFilter('');
-    setQaOnly(false);
     setDealScope(isRep ? 'mine' : 'all');
     setKanbanResetKey((k) => k + 1);
     toast('Filters cleared', 'info');
@@ -333,25 +329,6 @@ function ProjectsPageInner() {
           {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
         </select>
 
-        {/* [QA] filter — admin only, shows only agent-generated test deals */}
-        {effectiveRole === 'admin' && (
-          <button
-            onClick={() => setQaOnly((v) => !v)}
-            className="rounded-xl px-3 py-1.5 min-h-[36px] text-xs font-semibold transition-colors w-full md:w-auto"
-            style={qaOnly
-              ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                }
-              : { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-            title="Show only agent-generated test deals ([QA] prefix)"
-          >
-            [QA] only
-          </button>
-        )}
       </div>
 
       {/* Active filter chips */}
@@ -400,18 +377,6 @@ function ProjectsPageInner() {
                 onClick={() => setPhaseFilter('')}
                 className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 aria-label="Clear phase filter"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          {qaOnly && (
-            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
-              QA only
-              <button
-                onClick={() => setQaOnly(false)}
-                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                aria-label="Clear QA filter"
               >
                 <X className="w-3 h-3" />
               </button>
