@@ -77,7 +77,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 ? '#1de9b6'
                 : idx < currentStep
                 ? 'rgba(29,233,182,0.35)'
-                : 'rgba(255,255,255,0.18)',
+                : 'color-mix(in srgb, var(--text-primary) 18%, transparent)',
               transition: 'all 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               flexShrink: 0,
             }}
@@ -91,7 +91,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           display: 'inline-block',
           animation: 'deal-title-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both',
           fontSize: '12px',
-          color: 'rgba(255,255,255,0.4)',
+          color: 'var(--text-muted)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
         }}
       >
@@ -914,8 +914,8 @@ export default function MobileNewDeal() {
   // ── Style helpers ─────────────────────────────────────────────────────────
 
   const v0InputStyle = (field: string): React.CSSProperties => ({
-    background: 'rgba(255,255,255,0.05)',
-    border: errors[field] ? '1px solid #ef4444' : '0.5px solid rgba(255,255,255,0.1)',
+    background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
+    border: errors[field] ? '1px solid #ef4444' : '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
     borderRadius: 14,
     padding: '16px 18px',
     fontSize: '1rem',
@@ -925,13 +925,13 @@ export default function MobileNewDeal() {
   const v0FocusCss = 'focus:!border-[rgba(29,233,182,0.3)] focus:shadow-[0_0_0_3px_rgba(29,233,182,0.08)]';
 
   const inputCls = (_field: string) =>
-    `w-full text-[var(--text-primary)] focus:outline-none transition-colors placeholder-[rgba(255,255,255,0.25)] ${v0FocusCss}`;
+    `w-full text-[var(--text-primary)] focus:outline-none transition-colors placeholder-[var(--text-dim)] ${v0FocusCss}`;
 
   const selectCls = (_field: string) =>
     `w-full text-[var(--text-primary)] focus:outline-none transition-colors appearance-none ${v0FocusCss}`;
 
   const labelCls = 'mb-1.5 block uppercase';
-  const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
+  const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.08em', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -988,7 +988,7 @@ export default function MobileNewDeal() {
 
       {/* Page header */}
       <div className="mb-6">
-        <p style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>NEW DEAL</p>
+        <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>NEW DEAL</p>
         <span key={currentStep} style={{ display: 'block', animation: 'deal-title-enter 200ms cubic-bezier(0.16,1,0.3,1) both' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.2, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{DEAL_STEPS[currentStep]}</h1>
         </span>
@@ -1046,7 +1046,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls} style={labelStyle}>Setter <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+                <label className={labelCls} style={labelStyle}>Setter <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -1206,7 +1206,7 @@ export default function MobileNewDeal() {
 
             {/* Cash indicator */}
             {form.installer && form.productType === 'Cash' && (
-              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-base" style={{ background: 'rgba(13,21,37,0.6)', border: '1px solid rgba(26,40,64,0.5)', color: 'var(--text-muted)' }}>
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-base" style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}>
                 <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                 Cash deal -- no financer required
               </div>
@@ -1235,8 +1235,8 @@ export default function MobileNewDeal() {
                               disabled ? 'opacity-50' : ''
                             }`}
                             style={{
-                              background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
-                              border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              background: disabled ? 'color-mix(in srgb, var(--surface-pressed) 60%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 18%, transparent)' : 'var(--surface-pressed)',
+                              border: `1px solid ${disabled ? 'color-mix(in srgb, var(--border-default) 70%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 60%, transparent)' : 'var(--border-default)'}`,
                               color: disabled ? 'var(--text-muted)' : selected ? '#93c5fd' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: selected ? 'scale(1.04)' : 'scale(1)',
@@ -1267,8 +1267,8 @@ export default function MobileNewDeal() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
-                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
-                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
@@ -1356,8 +1356,8 @@ export default function MobileNewDeal() {
                                 disabled ? 'opacity-50' : ''
                               }`}
                               style={{
-                                background: disabled ? 'rgba(13,21,37,0.4)' : selected ? 'rgba(37,99,235,0.2)' : 'rgba(13,21,37,0.6)',
-                                border: `1px solid ${disabled ? 'rgba(26,40,64,0.4)' : selected ? 'rgba(59,130,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                                background: disabled ? 'color-mix(in srgb, var(--surface-pressed) 60%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 18%, transparent)' : 'var(--surface-pressed)',
+                                border: `1px solid ${disabled ? 'color-mix(in srgb, var(--border-default) 70%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 60%, transparent)' : 'var(--border-default)'}`,
                                 color: disabled ? 'var(--text-muted)' : selected ? '#93c5fd' : 'var(--text-muted)',
                                 transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                                 transform: selected ? 'scale(1.04)' : 'scale(1)',
@@ -1389,8 +1389,8 @@ export default function MobileNewDeal() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
-                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
-                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
@@ -1483,8 +1483,8 @@ export default function MobileNewDeal() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className="min-h-[44px] rounded-xl text-base font-medium transition-transform active:scale-[0.97]"
                             style={{
-                              background: form.prepaidSubType === opt ? 'rgba(124,58,237,0.2)' : 'rgba(13,21,37,0.6)',
-                              border: `1px solid ${form.prepaidSubType === opt ? 'rgba(139,92,246,0.6)' : 'rgba(26,40,64,0.5)'}`,
+                              background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
+                              border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
                               color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
@@ -1549,7 +1549,7 @@ export default function MobileNewDeal() {
 
             {/* Divider */}
             {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(26,40,64,0.5), transparent)' }} />
+              <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border-default), transparent)' }} />
             )}
 
             {/* Commission preview card */}
@@ -1597,7 +1597,7 @@ export default function MobileNewDeal() {
                       <span>M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}</span>
                     </div>
                     {form.setterId && setterTotal > 0 && (
-                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Setter</span>
                         <span className="text-[var(--accent-blue-text)] font-semibold">${setterTotal.toLocaleString()}</span>
                       </div>
@@ -1609,7 +1609,7 @@ export default function MobileNewDeal() {
                       </div>
                     )}
                     {effectiveRole === 'admin' && (
-                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Kilo margin</span>
                         <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal).toLocaleString()}</span>
                       </div>
@@ -1639,12 +1639,12 @@ export default function MobileNewDeal() {
                   onClick={handlePrev}
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '0.5px solid rgba(255,255,255,0.1)',
+                    background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
+                    border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
                     borderRadius: 16,
                     padding: 18,
                     fontSize: 16,
-                    color: 'rgba(255,255,255,0.6)',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   <ChevronLeft className="w-4 h-4" /> Back
@@ -1716,7 +1716,7 @@ export default function MobileNewDeal() {
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
                 className="w-full text-left pt-2 mt-2 rounded-xl active:bg-white/[0.06] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderTop: '1px solid rgba(26,40,64,0.5)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
+                style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
@@ -1782,7 +1782,7 @@ export default function MobileNewDeal() {
                     </div>
                     {form.setterId && setterTotal > 0 && (
                       <>
-                        <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                        <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                           <span style={{ color: 'var(--text-muted)' }}>Setter total</span>
                           <span className="text-[var(--accent-blue-text)] font-semibold">${setterTotal.toLocaleString()}</span>
                         </div>
@@ -1792,13 +1792,13 @@ export default function MobileNewDeal() {
                       </>
                     )}
                     {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between pt-1.5 text-base" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                      <div className="flex justify-between pt-1.5 text-base" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Trainer ({trainerRep.name})</span>
                         <span className="text-[var(--accent-amber-text)]">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
                       </div>
                     )}
                     {effectiveRole === 'admin' && (
-                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid rgba(26,40,64,0.5)' }}>
+                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Kilo margin</span>
                         <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal).toLocaleString()}</span>
                       </div>
@@ -1809,11 +1809,11 @@ export default function MobileNewDeal() {
             )}
 
             {/* Divider */}
-            <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(26,40,64,0.5), transparent)' }} />
+            <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border-default), transparent)' }} />
 
             {/* Notes */}
             <div>
-              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
@@ -1830,7 +1830,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {
@@ -1896,12 +1896,12 @@ export default function MobileNewDeal() {
                 disabled={submitting}
                 className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '0.5px solid rgba(255,255,255,0.1)',
+                  background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
+                  border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
                   borderRadius: 16,
                   padding: 18,
                   fontSize: 16,
-                  color: 'rgba(255,255,255,0.6)',
+                  color: 'var(--text-secondary)',
                 }}
               >
                 <ChevronLeft className="w-4 h-4" /> Back
@@ -1943,7 +1943,7 @@ export default function MobileNewDeal() {
             animation: 'comm-pill-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}
         >
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Commission</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Commission</span>
           <span
             key={commFlash ? 'flash' : 'idle'}
             className={`text-xl font-black${commFlash ? ' commission-val-flash' : ''}`}
