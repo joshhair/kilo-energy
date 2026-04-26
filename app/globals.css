@@ -92,10 +92,14 @@
   --surface-overlay: rgba(0, 0, 0, 0.40);
   --surface-pressed: #eef0f5;
 
-  --text-primary: #0a0e1a;
-  --text-secondary: #3a4358;
-  --text-muted: #5a6478;
-  --text-dim: #8a93a5;
+  /* Light-mode text ramp tuned for WCAG AA on #ffffff and #f7f8fb.
+     Each step is ≥4.5:1 so even the dim tier (used for tertiary
+     captions, helper text, footnotes) stays legible. Old ramp had
+     #8a93a5 at ~3.0:1 which failed AA — common offender on mobile. */
+  --text-primary: #0a0e1a;     /* ~19.2:1  */
+  --text-secondary: #232b3d;   /* ~13.5:1  */
+  --text-muted: #45506a;       /* ~7.5:1   */
+  --text-dim: #606b82;         /* ~4.8:1   */
 
   --border-default: #dfe3eb;
   --border-subtle: #eef0f5;
