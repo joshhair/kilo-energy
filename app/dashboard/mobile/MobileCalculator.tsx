@@ -428,7 +428,7 @@ export default function MobileCalculator() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-28">
         <MobilePageHeader title="Calculator" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
@@ -458,7 +458,7 @@ export default function MobileCalculator() {
   if (!isHydrated) return <MobileCalculatorSkeleton />;
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Calculator" />
 
       {/* ── Quick Fill ────────────────────────────────────────────────────── */}

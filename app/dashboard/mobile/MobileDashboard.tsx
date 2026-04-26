@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKWValue, localDateString } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWValue, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
@@ -554,7 +554,7 @@ export default function MobileDashboard() {
   // ── Sub-dealer dispatch (after all hooks) ─────────────────────────────────
   if (effectiveRole === 'sub-dealer') {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="Dashboard" />
 
         {/* Hero — next payout */}
@@ -571,8 +571,16 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
           <MobileStatCard label="In Pipeline" value={fmt$(pipelineValue)} color={ACCENT2} />
-          <MobileStatCard label="kW Sold" value={formatCompactKWValue(totalKW)} color="#fff" />
-          <MobileStatCard label="kW Installed" value={formatCompactKWValue(totalKWInstalled)} color="#fff" />
+          {(() => {
+            const sold = formatCompactKWParts(totalKW);
+            const installed = formatCompactKWParts(totalKWInstalled);
+            return (
+              <>
+                <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color="#fff" />
+                <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color="#fff" />
+              </>
+            );
+          })()}
           {outstandingChargebacks.length > 0 && (
             <MobileStatCard
               label="Chargebacks"
@@ -644,14 +652,14 @@ export default function MobileDashboard() {
       {} as Record<string, number>,
     );
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="Dashboard" />
 
         {/* Stat grid — 2x2 */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
           <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
-          <MobileStatCard label="Total kW" value={formatCompactKWValue(totalKWPm)} color={ACCENT2} />
+          {(() => { const t = formatCompactKWParts(totalKWPm); return (<MobileStatCard label={`Total ${t.unit}`} value={t.value} color={ACCENT2} />); })()}
           <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
         </div>
 
@@ -734,7 +742,7 @@ export default function MobileDashboard() {
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
       <h1 className="truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
 

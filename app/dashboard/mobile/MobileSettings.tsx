@@ -137,7 +137,7 @@ export default function MobileSettings() {
   // Admin guard — uses effectiveRole so View As respects what reps actually see.
   if (effectiveRole !== 'admin') {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <style>{SETTINGS_KEYFRAMES}</style>
         <MobilePageHeader title="Settings" />
         <MobileEmptyState
@@ -151,7 +151,7 @@ export default function MobileSettings() {
 
   if (activeSection) {
     return (
-      <div className={`px-5 pt-4 pb-24 space-y-6 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
+      <div className={`px-5 pt-4 pb-28 space-y-6 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
         <style>{SETTINGS_KEYFRAMES}</style>
         {/* Back button */}
         <button
@@ -176,7 +176,7 @@ export default function MobileSettings() {
 
   // Navigation list
   return (
-    <div key={navKey} className="px-5 pt-4 pb-24 space-y-4">
+    <div key={navKey} className="px-5 pt-4 pb-28 space-y-4">
       <style>{SETTINGS_KEYFRAMES}</style>
       <MobilePageHeader title="Settings" />
 

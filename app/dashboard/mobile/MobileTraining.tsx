@@ -162,7 +162,7 @@ export default function MobileTraining() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Training" />
 
         {/* Section header skeleton */}
@@ -211,7 +211,7 @@ export default function MobileTraining() {
   // ── PM guard (moved below hooks to satisfy rules-of-hooks) ──────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-28">
         <MobilePageHeader title="Training" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
@@ -223,7 +223,7 @@ export default function MobileTraining() {
   // ── Empty state ──────────────────────────────────────────────────────────
   if (!isTrainer) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Training" />
         <MobileCard>
           <MobileEmptyState
@@ -237,7 +237,7 @@ export default function MobileTraining() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Training" />
 
       {/* ── Hero stat strip ──────────────────────────────────────────────── */}

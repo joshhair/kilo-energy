@@ -74,15 +74,32 @@ export function formatCompactKW(kw: number): string {
 /**
  * Same as formatCompactKW but omits the "kW" suffix — intended for
  * stat-card values where the label already says "Total kW" and the
- * suffix would be redundant (and forces awkward text-wrap on narrow
- * phone viewports). Still shows "MW" for values ≥ 1,000 because the
- * scale shift is meaningful — the label says "kW" but 1.2 MW in a
- * "Total kW" card reads correctly as "total 1,200 kW".
+ * suffix would be redundant. Still shows "MW" for values ≥ 1,000 so
+ * very large org-wide totals don't render as "21,000".
+ *
+ * NOTE: when the value crosses into MW, the unit label on the card
+ * is wrong ("kW Sold" with "2.1 MW" value). Use formatCompactKWParts
+ * below for the dynamic-label case.
  */
 export function formatCompactKWValue(kw: number): string {
   const n = kw || 0;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)} MW`;
   return `${n.toFixed(1)}`;
+}
+
+/**
+ * Returns the formatted number + its unit so a stat card can render
+ * `${unit} Sold` / `${unit} Installed` and the value side-by-side
+ * without the unit mismatch (e.g. "2.1 MW" value with "kW Sold"
+ * label, which formatCompactKWValue produces above 1,000 kW).
+ *
+ *   formatCompactKWParts(34.8)   → { value: '34.8', unit: 'kW' }
+ *   formatCompactKWParts(2_100)  → { value: '2.1',  unit: 'MW' }
+ */
+export function formatCompactKWParts(kw: number): { value: string; unit: 'kW' | 'MW' } {
+  const n = kw || 0;
+  if (n >= 1_000) return { value: (n / 1_000).toFixed(1), unit: 'MW' };
+  return { value: n.toFixed(1), unit: 'kW' };
 }
 
 export function isInDateRange(dateStr: string, startDate: string, endDate: string | null): boolean {

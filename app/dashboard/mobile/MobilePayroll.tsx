@@ -419,7 +419,7 @@ export default function MobilePayroll() {
     'w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none transition-colors';
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader
         title="Payroll"
         right={

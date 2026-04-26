@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
-import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
 import { ArrowLeft, Pencil, Trash2, XCircle, Loader2 } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -178,7 +178,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!hydrated || loading) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
         <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
         <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--surface-card)', opacity: 0.6 }} />
@@ -188,7 +188,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   if (!blitz) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/blitz')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
@@ -215,7 +215,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const canCancelRequest = canRequestBlitz && blitzActive && (isOwner || blitz.createdById === effectiveRepId);
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+    <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
       <button
         onClick={() => router.push('/dashboard/blitz')}
         className="flex items-center gap-1.5 text-base min-h-[48px]"
@@ -318,10 +318,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                       <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{visibleProjects.length}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deal{visibleProjects.length !== 1 ? 's' : ''} Attributed</p>
                     </div>
-                    <div className="blitz-stat-1">
-                      <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKWValue(myKW)}</p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW Sold</p>
-                    </div>
+                    {(() => { const t = formatCompactKWParts(myKW); return (
+                      <div className="blitz-stat-1">
+                        <p className="text-xl font-bold text-[var(--text-primary)] leading-none" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{t.value}</p>
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{t.unit} Sold</p>
+                      </div>
+                    ); })()}
                     <div className="blitz-stat-2">
                       <p className="text-xl font-bold leading-none" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(myPay)}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>My Pay</p>

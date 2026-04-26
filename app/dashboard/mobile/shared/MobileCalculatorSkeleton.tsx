@@ -2,7 +2,7 @@ import MobilePageHeader from './MobilePageHeader';
 
 export default function MobileCalculatorSkeleton() {
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Calculator" />
       {/* Quick Fill row */}
       <div className="calc-skeleton rounded-2xl h-[64px]" />

@@ -96,7 +96,7 @@ export default function MobileIncentives() {
   // PM guard — rendered AFTER hooks so hook ordering stays stable.
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Incentives" />
         <MobileEmptyState
           icon={Trophy}
@@ -314,7 +314,7 @@ export default function MobileIncentives() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader
         title="Incentives"
         right={isAdmin ? (

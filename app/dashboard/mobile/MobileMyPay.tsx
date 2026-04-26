@@ -403,7 +403,7 @@ export default function MobileMyPay() {
   // ── PM guard ──
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>You don&apos;t have permission to view this page.</p>
@@ -416,7 +416,7 @@ export default function MobileMyPay() {
   const adminMaySellCheck = effectiveRole === 'admin' && !!currentUserRepType;
   if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer' && !adminMaySellCheck) {
     return (
-      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>My Pay is only available in the rep view.</p>
@@ -426,7 +426,7 @@ export default function MobileMyPay() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="My Pay" />
 
       {/* ── Consolidated hero — Next Payout (primary) + Pending/Pipeline

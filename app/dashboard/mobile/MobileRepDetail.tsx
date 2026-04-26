@@ -177,7 +177,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   if (!hydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
         <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
         <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--surface-card)', opacity: 0.6 }} />
@@ -192,7 +192,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   // Still fetching — show skeleton
   if (!resolvedUser && !lookupFailed) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
         <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
       </div>
@@ -201,7 +201,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   if (!resolvedUser) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
@@ -232,7 +232,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     const fu = fetchedUser; // PM permission flags only available from fetched payload
 
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
@@ -544,7 +544,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+    <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/users')}

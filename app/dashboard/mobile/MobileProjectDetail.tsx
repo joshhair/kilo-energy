@@ -129,7 +129,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (!project) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-[var(--text-muted)]">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         Project not found.
         <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back to Projects</button>
       </div>
@@ -145,7 +145,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
   ) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-[var(--text-muted)]">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
@@ -154,7 +154,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (effectiveRole === 'sub-dealer' && project.subDealerId !== effectiveRepId && project.repId !== effectiveRepId) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-[var(--text-muted)]">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
         <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>

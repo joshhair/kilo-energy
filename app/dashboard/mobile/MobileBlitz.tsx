@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -238,7 +238,7 @@ export default function MobileBlitz() {
   // PM access guard -- placed after all hooks
   if (isPM && pmPermissions && !pmPermissions.canAccessBlitz) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Blitz" />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
@@ -488,7 +488,7 @@ export default function MobileBlitz() {
 
   if (loading) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Blitz" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -500,7 +500,7 @@ export default function MobileBlitz() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
       {/* Summary stat cards */}
@@ -517,10 +517,12 @@ export default function MobileBlitz() {
           <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Deals</p>
           <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{summaryTotalDeals}</p>
         </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Total kW</p>
-          <p className="text-2xl font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{formatCompactKWValue(summaryTotalKW)}</p>
-        </div>
+        {(() => { const t = formatCompactKWParts(summaryTotalKW); return (
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Total {t.unit}</p>
+            <p className="text-2xl font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{t.value}</p>
+          </div>
+        ); })()}
         {isAdmin && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKWValue } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWParts } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
 import {
   ACTIVE_PHASES,
@@ -304,7 +304,7 @@ export default function MobileAdminDashboard() {
   // ── Skeleton while data hydrates (prevents stale-number flash) ──────────
   if (!dbReady) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
         <div className="h-7 w-48 rounded-lg bg-[var(--surface-pressed)] animate-skeleton" />
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
           {[1, 2, 3, 4].map((i) => (
@@ -332,7 +332,7 @@ export default function MobileAdminDashboard() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <div className="flex items-center justify-between gap-3">
         <h1 className="min-w-0 truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
         {/* "My Rep View" toggle — only offered when the admin also sells
@@ -410,8 +410,16 @@ export default function MobileAdminDashboard() {
       <div className="grid grid-cols-2 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
         <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
-        <MobileStatCard label="kW Sold" value={formatCompactKWValue(totalKW)} color={WARNING} />
-        <MobileStatCard label="kW Installed" value={formatCompactKWValue(totalKWInstalled)} color={DANGER} />
+        {(() => {
+          const sold = formatCompactKWParts(totalKW);
+          const installed = formatCompactKWParts(totalKWInstalled);
+          return (
+            <>
+              <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color={WARNING} />
+              <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color={DANGER} />
+            </>
+          );
+        })()}
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}

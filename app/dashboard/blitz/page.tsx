@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
-import { formatDate, formatCurrency, formatCompactKWValue } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
 import { BlitzFilterBar } from './BlitzFilterBar';
 import { useToast } from '../../../lib/toast';
@@ -828,14 +828,16 @@ function BlitzPageInner() {
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{totalDeals}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
-          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total kW</span>
-            <Zap className="w-4 h-4 text-[var(--accent-cyan-text)]" />
+        {(() => { const t = formatCompactKWParts(totalKW); return (
+          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
+            <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total {t.unit}</span>
+              <Zap className="w-4 h-4 text-[var(--accent-cyan-text)]" />
+            </div>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{t.value}</p>
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKWValue(totalKW)}</p>
-        </div>
+        ); })()}
         {isAdmin && (
           <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />

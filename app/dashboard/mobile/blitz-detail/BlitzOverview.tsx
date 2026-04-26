@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCompactKWValue } from '../../../../lib/utils';
+import { formatCompactKWParts } from '../../../../lib/utils';
 
 interface Props {
   participantCount: number;
@@ -16,7 +16,7 @@ export default function BlitzOverview({ participantCount, totalDeals, totalKW, n
         {([
           { value: participantCount, label: participantCount !== 1 ? 'Participants' : 'Participant' },
           { value: totalDeals, label: totalDeals !== 1 ? 'Deals' : 'Deal' },
-          { value: formatCompactKWValue(totalKW), label: 'Total kW' },
+          (() => { const t = formatCompactKWParts(totalKW); return { value: t.value, label: `Total ${t.unit}` }; })(),
         ] as const).map((stat, i) => (
           <div
             key={stat.label}

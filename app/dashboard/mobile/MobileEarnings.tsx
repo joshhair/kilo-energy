@@ -101,7 +101,7 @@ export default function MobileEarnings() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-28">
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
@@ -170,7 +170,7 @@ export default function MobileEarnings() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="My Pay" />
         <div className="rounded-2xl p-5 h-24 animate-pulse" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }} />
         <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }} />
@@ -179,7 +179,7 @@ export default function MobileEarnings() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="My Pay" />
 
       {/* ── Next Payout Hero ────────────────────────────────────────────── */}
@@ -553,7 +553,7 @@ export function MobileAdminEarnings() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Earnings" />
       <MobileSection
         title="Reimbursement Review"
