@@ -216,15 +216,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     financerNameToId: Record<string, string>;
   }>({ installerNameToId: {}, financerNameToId: {} });
 
-  // Hydrate all state from the database on mount
+  // Hydrate all state from the database on mount.
+  // Retry on transient auth failures: on a fresh sign-in the Clerk session
+  // cookie can lag the first navigation, so /api/data may 401 momentarily.
+  // We back off and retry a few times before surfacing the error banner.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/data')
-      .then((res) => {
-        if (!res.ok) throw new Error(`/api/data returned ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+    const RETRY_DELAYS = [300, 600, 1200, 2000];
+    const attempt = async (i: number): Promise<void> => {
+      try {
+        const res = await fetch('/api/data');
+        if (!res.ok) {
+          const isTransient = res.status === 401 || res.status === 403 || res.status >= 500;
+          if (isTransient && i < RETRY_DELAYS.length) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
+            if (cancelled) return;
+            return attempt(i + 1);
+          }
+          throw new Error(`/api/data returned ${res.status}`);
+        }
+        const data = await res.json();
         if (cancelled) return;
         setReps(data.reps ?? []);
         setSubDealers(data.subDealers ?? []);
@@ -244,13 +255,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setInstallerPayConfigs(data.installerPayConfigs ?? {});
         if (data._idMaps) setIdMaps(data._idMaps);
         setDbReady(true);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
+        if (i < RETRY_DELAYS.length) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
+          if (cancelled) return;
+          return attempt(i + 1);
+        }
         console.error('Failed to load data from API:', err);
         setDataError(true);
         setDbReady(true);
-      });
+      }
+    };
+    attempt(0);
     return () => { cancelled = true; };
   }, []);
 

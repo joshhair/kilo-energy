@@ -526,7 +526,7 @@ export default function MobileBlitz() {
         {isAdmin && (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>
-            <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(summaryTotalCosts)}</p>
+            <p className="font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-amber-display)', fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(0.95rem, 4.2vw, 1.5rem)' }}>{formatCurrency(summaryTotalCosts)}</p>
           </div>
         )}
       </div>

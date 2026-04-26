@@ -312,19 +312,21 @@ function NewDealPage() {
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Clear setterId only when a BLITZ change makes the selected setter
-  // no longer an approved participant. Previously this fired any time
-  // setterPickerReps shifted — including the moment reps[] was empty
-  // during initial hydration — silently dropping the user's picked
-  // setter. Tyson dropped on Trevor Schauwecker's deal (2026-04-22)
-  // was traced to this race. Guard so clearing only happens when
-  // (a) reps are loaded and (b) a blitz is actually selected.
+  // no longer an approved participant. Has regressed twice (Tyson on
+  // Trevor 2026-04-22, Melissa Lance 2026-04-26) — both times because
+  // the picker computed empty against half-loaded data and the effect
+  // happily wiped the setter. Rule: NEVER clear without positive
+  // evidence the setter is invalid. Absent data ≠ invalid setter.
   useEffect(() => {
     if (!form.setterId) return;
-    if (!form.blitzId) return;         // no blitz → don't filter membership
-    if (reps.length === 0) return;     // reps still loading → don't clear
+    if (!form.blitzId) return;            // no blitz → no membership rule applies
+    if (reps.length === 0) return;        // reps still loading
+    if (rawBlitzes.length === 0) return;  // blitzes still loading — can't judge membership
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    if (!selectedBlitz) return;           // blitz not in our list (stale/deleted) — don't presume invalid
     if (setterPickerReps.some((r) => r.id === form.setterId)) return;
     setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
+  }, [form.setterId, form.blitzId, setterPickerReps, reps.length, rawBlitzes]);
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {

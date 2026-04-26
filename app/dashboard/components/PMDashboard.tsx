@@ -4,7 +4,7 @@ import { FolderKanban, Users } from 'lucide-react';
 import { formatCompactKW } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import type { useApp } from '../../../lib/context';
-import type { Period } from './dashboard-utils';
+import { getGreeting, type Period } from './dashboard-utils';
 
 export function PMDashboard({
   projects,
@@ -13,6 +13,7 @@ export function PMDashboard({
   setPeriod,
   PERIODS,
   totalReps,
+  currentRepName,
 }: {
   projects: ReturnType<typeof useApp>['projects'];
   allProjects: ReturnType<typeof useApp>['projects'];
@@ -20,6 +21,7 @@ export function PMDashboard({
   setPeriod: (p: Period) => void;
   PERIODS: { value: Period; label: string }[];
   totalReps: number;
+  currentRepName?: string | null;
 }) {
   const activeProjects = projects.filter((p) => ACTIVE_PHASES.includes(p.phase));
   const phaseCounts = ACTIVE_PHASES.reduce((acc, phase) => {
@@ -30,7 +32,12 @@ export function PMDashboard({
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
+      <div>
+        <div className="h-[3px] w-12 rounded-full mb-3" style={{ background: 'linear-gradient(to right, var(--accent-emerald-solid), var(--accent-cyan-solid))' }} />
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
+        <p className="text-sm font-medium tracking-wide mt-1" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Project Manager · Pipeline overview</p>
+      </div>
       {/* Period filter */}
       <div className="flex items-center gap-2">
         {PERIODS.map((p) => (

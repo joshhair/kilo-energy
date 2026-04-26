@@ -875,7 +875,7 @@ export default function DashboardPage() {
   if (isMobile) return <MobileDashboard />;
 
   if (effectiveRole === 'project_manager') {
-    return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.filter(r => r.active !== false).length} />;
+    return <PMDashboard projects={periodProjects} allProjects={projects} period={period} setPeriod={setPeriod} PERIODS={PERIODS} totalReps={reps.filter(r => r.active !== false).length} currentRepName={currentRepName} />;
   }
 
   if (effectiveRole === 'admin') {

@@ -417,16 +417,19 @@ export default function MobileNewDeal() {
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Clear setterId only when a BLITZ change makes the selected setter
-  // no longer an approved participant. Guard matches desktop
-  // new-deal/page.tsx — prevents silent setter drops during hydration.
-  // See Trevor Schauwecker regression (2026-04-22).
+  // no longer an approved participant. Mirrors desktop hardening —
+  // see app/dashboard/new-deal/page.tsx for the regression history.
+  // Never clear without positive evidence the setter is invalid.
   useEffect(() => {
     if (!form.setterId) return;
     if (!form.blitzId) return;
     if (reps.length === 0) return;
+    if (rawBlitzes.length === 0) return;
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    if (!selectedBlitz) return;
     if (setterPickerReps.some((r) => r.id === form.setterId)) return;
     setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
+  }, [form.setterId, form.blitzId, setterPickerReps, reps.length, rawBlitzes]);
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {

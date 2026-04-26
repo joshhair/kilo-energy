@@ -110,7 +110,7 @@ export default function SignInPage() {
             its own internal padding). Dropping it on mobile lets the
             widget breathe without losing the glass effect on desktop. */}
         <div
-          className="w-full rounded-3xl p-0.5 sm:p-1"
+          className="w-fit max-w-full mx-auto rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
               'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, color-mix(in srgb, var(--text-primary) 4%, transparent) 100%)',

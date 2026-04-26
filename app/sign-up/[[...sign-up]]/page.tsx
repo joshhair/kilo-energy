@@ -109,7 +109,7 @@ export default function SignUpPage() {
             widget back ~12px on narrow viewports without losing the glass
             frame on desktop. Mirrors the sign-in page treatment. */}
         <div
-          className="w-full rounded-3xl p-0.5 sm:p-1"
+          className="w-fit max-w-full mx-auto rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
               'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, color-mix(in srgb, var(--text-primary) 4%, transparent) 100%)',
