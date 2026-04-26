@@ -630,7 +630,7 @@ export default function MobilePayroll() {
         className="sticky z-20 -mx-5 px-5 pt-2 space-y-2"
         style={{
           top: 0,
-          background: 'rgba(8, 12, 24, 0.88)',
+          background: 'color-mix(in srgb, var(--surface-page) 88%, transparent)',
           backdropFilter: 'blur(14px)',
           WebkitBackdropFilter: 'blur(14px)',
           borderBottom: '1px solid var(--border-subtle)',

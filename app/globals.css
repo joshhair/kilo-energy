@@ -76,6 +76,22 @@
   /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
   --text-on-accent: #000;       /* black text on solid accent buttons */
   --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
+
+  /* ── Legacy mobile aliases ──────────────────────────────────────────────
+     A handful of mobile-only components (ProfileDrawer, BottomNav,
+     MobileRepDetail) still reference the pre-tokenization --*-mobile
+     family. Phase 3 removed the dark-mode fallbacks but missed a few
+     callsites, so var(--surface-mobile-card) was resolving to
+     unset/transparent — visible as see-through More sheets and
+     transparent bottom-nav strip. These aliases route the legacy
+     names back into the canonical token vocabulary so both themes
+     work without touching the components themselves. */
+  --surface-mobile-page: var(--surface-page);
+  --surface-mobile-card: var(--surface-card);
+  --surface-mobile-elevated: var(--surface-elevated);
+  --border-mobile: var(--border-default);
+  --text-mobile-muted: var(--text-muted);
+  --text-mobile-dim: var(--text-dim);
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
