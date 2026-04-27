@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef, type CSSProperties } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
@@ -10,10 +10,11 @@ import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/dat
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
-import { ChevronRight, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, Pencil, Check, X, Plus, Trash2, FolderKanban, UserCheck, UserPlus } from 'lucide-react';
 import { RepSelector } from '../../components/RepSelector';
-import { Sparkline } from '../../../../lib/sparkline';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { StatCard } from './StatCard';
+import RepDetailSkeleton from './RepDetailSkeleton';
 
 const PIPELINE_PHASES = ['New','Acceptance','Site Survey','Design','Permitting','Pending Install','Installed','PTO','Completed'] as const;
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
@@ -1030,33 +1031,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-4 mb-8">
         {[
-          { label: 'Total Deals',    value: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, color: 'text-[var(--accent-emerald-text)]',    accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: dealsTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Active Pipeline', value: activeProjects.length,          color: 'text-[var(--accent-emerald-text)]',    accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',  glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400', trend: null as number | null, sparkData: null as number[] | null, sparkStroke: '' },
-          { label: 'Total kW',       value: formatCompactKW(totalKW),         color: 'text-[var(--accent-amber-text)]',  accentColor: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',   glowClass: 'stat-glow-yellow',  accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend, sparkData: null as number[] | null, sparkStroke: '' },
-          ...(!isPM ? [{ label: 'Estimated Pay',  value: `$${totalEst.toLocaleString()}`, color: 'text-[var(--accent-emerald-text)]', accentColor: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="card-surface card-surface-stat rounded-2xl p-4 transition-all duration-200 hover:translate-y-[-2px]"
-            style={{ '--card-accent': s.accentColor } as CSSProperties}
-          >
-            <div className={`h-[2px] w-8 rounded-full bg-gradient-to-r mb-2 ${s.accentGradient}`} />
-            <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider mb-1">{s.label}</p>
-            <div className="flex items-center gap-2">
-              <p className={`stat-value stat-value-glow ${s.glowClass} text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
-              {s.trend !== null && s.trend > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)]">
-                  <TrendingUp className="w-2.5 h-2.5" /> +{s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
-                </span>
-              )}
-              {s.trend !== null && s.trend < 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-[var(--accent-red-text)]">
-                  <TrendingDown className="w-2.5 h-2.5" /> {s.label === 'Total kW' ? s.trend.toFixed(1) : s.trend}
-                </span>
-              )}
-            </div>
-            {s.sparkData && <Sparkline data={s.sparkData} stroke={s.sparkStroke} />}
-          </div>
+          { label: 'Total Deals',    rawValue: repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length, formatter: (n: number) => String(Math.round(n)), accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',    glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400',    trend: dealsTrend,        trendLabel: '',   sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Active Pipeline', rawValue: activeProjects.length,                                                           formatter: (n: number) => String(Math.round(n)), accentColor: 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)',    glowClass: 'stat-glow-blue',    accentGradient: 'from-blue-500 to-blue-400',    trend: null as number | null, trendLabel: '',   sparkData: null as number[] | null, sparkStroke: '' },
+          { label: 'Total kW',        rawValue: totalKW,                                                                         formatter: formatCompactKW,                       accentColor: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',   glowClass: 'stat-glow-yellow', accentGradient: 'from-yellow-500 to-yellow-400', trend: kwTrend,           trendLabel: 'kW', sparkData: null as number[] | null, sparkStroke: '' },
+          ...(!isPM ? [{ label: 'Estimated Pay', rawValue: totalEst, formatter: (n: number) => '$' + Math.round(n).toLocaleString(), accentColor: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)', glowClass: 'stat-glow-emerald', accentGradient: 'from-emerald-500 to-emerald-400', trend: null as number | null, trendLabel: '', sparkData: monthlyEarnings, sparkStroke: 'var(--accent-emerald-solid)' }] : []),
+        ].map((s, cardIndex) => (
+          <StatCard key={s.label} cardIndex={cardIndex} {...s} />
         ))}
       </div>
 
@@ -1854,98 +1834,6 @@ function TrainerOverrideCard({
   );
 }
 
-// ── Rep Detail Skeleton ───────────────────────────────────────────────────────
-
-function RepDetailSkeleton() {
-  return (
-    <div className="p-4 md:p-8 max-w-4xl">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 mb-6">
-        <div className="h-3 w-16 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '0ms' }} />
-        <div className="h-3 w-3 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '25ms' }} />
-        <div className="h-3 w-10 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '50ms' }} />
-        <div className="h-3 w-3 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '75ms' }} />
-        <div className="h-3 w-24 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '100ms' }} />
-      </div>
-
-      {/* Header — avatar + name */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-full bg-[var(--surface-card)] animate-skeleton flex-shrink-0" style={{ animationDelay: '100ms' }} />
-        <div>
-          <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" style={{ animationDelay: '150ms' }} />
-          <div className="h-7 w-48 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '200ms' }} />
-          <div className="h-4 w-56 bg-[var(--surface-card)]/60 rounded animate-skeleton mt-1.5" style={{ animationDelay: '250ms' }} />
-        </div>
-      </div>
-
-      {/* Stat cards — 4-column grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        {[0, 1, 2, 3].map((cardIdx) => {
-          const base = 300 + cardIdx * 50;
-          return (
-            <div key={cardIdx} className="card-surface rounded-2xl p-4">
-              <div className="h-[2px] w-8 rounded-full bg-[var(--border)] animate-skeleton mb-2" style={{ animationDelay: `${base}ms` }} />
-              <div className="h-3 w-20 bg-[var(--surface-card)]/80 rounded animate-skeleton mb-2" style={{ animationDelay: `${base + 30}ms` }} />
-              <div className="h-6 w-24 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: `${base + 60}ms` }} />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Table skeleton — Payment History */}
-      <div className="card-surface rounded-2xl overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-          <div className="h-5 w-36 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '550ms' }} />
-          <div className="flex gap-4">
-            <div className="h-4 w-24 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '575ms' }} />
-            <div className="h-4 w-28 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ animationDelay: '600ms' }} />
-          </div>
-        </div>
-        {/* Header row */}
-        <div className="border-b border-[var(--border-subtle)] px-5 py-3 flex gap-4">
-          {[96, 56, 56, 64, 56, 64].map((w, i) => (
-            <div key={i} className="h-4 bg-[var(--border)]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${625 + i * 30}ms` }} />
-          ))}
-        </div>
-        {/* 6 placeholder rows */}
-        {[0, 1, 2, 3, 4, 5].map((rowIdx) => {
-          const delay = 700 + rowIdx * 40;
-          return (
-            <div key={rowIdx} className={`border-b border-[var(--border-subtle)]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[var(--surface-card)]/20' : ''}`}>
-              {[120, 48, 48, 56, 52, 56].map((w, colIdx) => (
-                <div key={colIdx} className="h-4 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Table skeleton — All Projects */}
-      <div className="card-surface rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
-          <div className="h-5 w-28 bg-[var(--surface-card)] rounded animate-skeleton" style={{ animationDelay: '950ms' }} />
-        </div>
-        {/* Header row */}
-        <div className="border-b border-[var(--border-subtle)] px-5 py-3 flex gap-4">
-          {[80, 48, 56, 72, 40, 64].map((w, i) => (
-            <div key={i} className="h-4 bg-[var(--border)]/70 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${975 + i * 30}ms` }} />
-          ))}
-        </div>
-        {/* 6 placeholder rows */}
-        {[0, 1, 2, 3, 4, 5].map((rowIdx) => {
-          const delay = 1050 + rowIdx * 40;
-          return (
-            <div key={rowIdx} className={`border-b border-[var(--border-subtle)]/50 px-5 py-3.5 flex gap-4 items-center ${rowIdx % 2 !== 0 ? 'bg-[var(--surface-card)]/20' : ''}`}>
-              {[100, 44, 56, 64, 36, 56].map((w, colIdx) => (
-                <div key={colIdx} className="h-4 bg-[var(--surface-card)]/60 rounded animate-skeleton" style={{ width: `${w}px`, animationDelay: `${delay + colIdx * 20}ms` }} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 const PHASE_HEX: Record<string, { solid: string; text: string }> = {
   'New':             { solid: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)'    },

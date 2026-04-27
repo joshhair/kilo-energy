@@ -89,6 +89,7 @@ export default function MobileEarnings() {
   const [dealSortKey, setDealSortKey] = useState<DealSortKey>('date');
 
   useEffect(() => { setMonthFilter(null); }, [period]);
+  useEffect(() => { setDealRoleFilter(null); }, [monthFilter]);
   const [dealSortDir, setDealSortDir] = useState<SortDir>('desc');
   const [bonusSortKey, setBonusSortKey] = useState<BonusSortKey>('date');
   const [bonusSortDir, setBonusSortDir] = useState<SortDir>('desc');

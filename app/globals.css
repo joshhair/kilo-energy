@@ -401,6 +401,18 @@ body {
   [data-hero-card] { animation: none; }
 }
 
+/* ── Stat card stagger entrance ─────────────────────────────────────────── */
+@keyframes statCardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stat-card-enter {
+  animation: statCardEnter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-stat-card-enter { animation: none; }
+}
+
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
@@ -222,6 +222,7 @@ export default function MobileNewDeal() {
     installerPayConfigs, solarTechProducts, payrollEntries,
   } = useApp();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const isSubDealer = effectiveRole === 'sub-dealer';
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -334,6 +335,7 @@ export default function MobileNewDeal() {
   const netPPWRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (lastInstallerApplied.current) return;
+    if (searchParams.get('duplicate') === 'true') return; // duplicate overrides
     if (!dbReady) return;
     lastInstallerApplied.current = true;
     try {
@@ -342,7 +344,33 @@ export default function MobileNewDeal() {
         setForm((prev) => prev.installer ? prev : { ...prev, installer: lastInstaller });
       }
     } catch {}
-  }, [activeInstallers, dbReady]);
+  }, [searchParams, activeInstallers, dbReady]);
+
+  // ── Duplicate deal pre-fill from query params ─────────────────────────────
+  const duplicateApplied = useRef(false);
+  useEffect(() => {
+    if (duplicateApplied.current) return;
+    if (searchParams.get('duplicate') !== 'true') return;
+    if (!dbReady) return;
+    duplicateApplied.current = true;
+    const rawInstaller = searchParams.get('installer') ?? '';
+    const installer = activeInstallers.includes(rawInstaller) ? rawInstaller : '';
+    const rawFinancer = searchParams.get('financer') ?? '';
+    const financer = activeFinancers.includes(rawFinancer) ? rawFinancer : '';
+    const productType = searchParams.get('productType') ?? '';
+    const repId = searchParams.get('repId') ?? (effectiveRole === 'admin' ? '' : (effectiveRepId ?? ''));
+    const setterId = searchParams.get('setterId') ?? '';
+    setForm((prev) => ({
+      ...prev,
+      installer,
+      financer,
+      productType,
+      repId,
+      setterId,
+    }));
+    toast('Deal duplicated — fill in the new customer details', 'info');
+    setTimeout(() => customerNameRef.current?.focus(), 150);
+  }, [searchParams, dbReady, effectiveRole, effectiveRepId, activeInstallers, activeFinancers, toast]);
 
   // ── Field helpers ─────────────────────────────────────────────────────────
 
