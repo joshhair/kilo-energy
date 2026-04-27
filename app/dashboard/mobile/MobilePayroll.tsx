@@ -1120,16 +1120,21 @@ export default function MobilePayroll() {
  * suppressed when $0 to reduce noise. Inline chargeback note on the
  * Deals line when non-zero.
  */
-/** Compact currency for narrow mobile cards. Values ≥ $1M render as
- *  $1.83M (2 sig figs) so they don't truncate in a 3-up card grid on
- *  a phone. Values < $1M render at full precision where the locale
- *  comma formatting reads cleanly. Full tooltip stays available via
- *  the `title` attribute on the paragraph. */
+/** Compact currency for narrow mobile cards. The 3-up summary grid
+ *  on a phone leaves ~80px of content width per tile, so anything
+ *  with 4-digit-plus dollars + cents truncates ("$5,118.04" → "$5,11…").
+ *  Tiered formatting:
+ *    ≥ $1M  → $1.83M (1–2 sig figs)
+ *    ≥ $10K → $15K
+ *    ≥ $1K  → $5,118 (drop cents — cents are noise at the summary level)
+ *    < $1K  → $128 (full precision)
+ *  Full untruncated value stays available via the title= tooltip. */
 function compactCurrency(n: number): string {
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2)}M`;
-  if (abs >= 100_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+  if (abs >= 10_000) return `${sign}$${Math.round(abs / 1_000)}K`;
+  if (abs >= 1_000) return `${sign}$${Math.round(abs).toLocaleString()}`;
   return `${sign}$${abs.toLocaleString()}`;
 }
 
@@ -1140,17 +1145,20 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   breakdown: StatusBreakdown;
   pending?: boolean;
 }) {
+  // Round to whole dollars in the breakdown lines — cents are noise at
+  // this density and they push values past the 80px column width.
+  const fmtWhole = (n: number) => Math.round(Math.abs(n)).toLocaleString();
   const lines: string[] = [];
   if (breakdown.deal !== 0) {
-    const dealAmt = breakdown.deal < 0 ? `−$${Math.abs(breakdown.deal).toLocaleString()}` : `$${breakdown.deal.toLocaleString()}`;
+    const dealAmt = breakdown.deal < 0 ? `−$${fmtWhole(breakdown.deal)}` : `$${fmtWhole(breakdown.deal)}`;
     let line = `Deals ${dealAmt}`;
     if (breakdown.chargebacks !== 0) {
-      line += ` (−$${Math.abs(breakdown.chargebacks).toLocaleString()} ${pending ? 'pending cb' : 'cb'})`;
+      line += ` (−$${fmtWhole(breakdown.chargebacks)} ${pending ? 'pending cb' : 'cb'})`;
     }
     lines.push(line);
   }
-  if (breakdown.bonus !== 0) lines.push(`Bonus $${breakdown.bonus.toLocaleString()}`);
-  if (breakdown.trainer !== 0) lines.push(`Trainer $${breakdown.trainer.toLocaleString()}`);
+  if (breakdown.bonus !== 0) lines.push(`Bonus $${fmtWhole(breakdown.bonus)}`);
+  if (breakdown.trainer !== 0) lines.push(`Trainer $${fmtWhole(breakdown.trainer)}`);
 
   return (
     <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
