@@ -46,69 +46,93 @@ export async function GET() {
   const chainTraineeIds = Array.from(chainTrainees);
 
   // ─── Project filter: who sees which projects? ───
-  // Admin: all. PM (internal): all. Vendor PM: installerId scoped.
-  // Rep: closer/setter/co-party + projects they train.
-  // Sub-dealer: subDealerId match.
-  const projectWhere: Record<string, unknown> = {};
-  if (isMisconfiguredPM) {
-    // Block all project access — they need an installer scope or to be
-    // explicitly listed on INTERNAL_PM_EMAILS. Impossible id below
-    // returns no rows from Prisma.
-    projectWhere.id = '__misconfigured_pm_no_access__';
+  // Defense-in-depth: positive allowlist + default-DENY at the end. The
+  // previous shape ("empty where = full access") leaked when a user's
+  // role didn't match any branch — every misconfigured row, every typo,
+  // every future role got admin-level visibility by accident. The
+  // Joe-Dale-BVI leak (2026-04-26) was traced to exactly this fall-
+  // through. Any unknown user shape now returns zero rows + logs loud.
+  const isInternal = isInternalPM(user);
+  const isAllowlisted = isAdmin || isInternal;
+  let projectWhere: Record<string, unknown>;
+  if (isAllowlisted) {
+    projectWhere = {};
+  } else if (isMisconfiguredPM) {
+    projectWhere = { id: '__deny_misconfigured_pm__' };
   } else if (isVendor) {
-    projectWhere.installerId = user.scopedInstallerId!;
+    projectWhere = { installerId: user.scopedInstallerId! };
   } else if (isRep) {
-    projectWhere.OR = [
-      { closerId: user.id },
-      { setterId: user.id },
-      { additionalClosers: { some: { userId: user.id } } },
-      { additionalSetters: { some: { userId: user.id } } },
-      // Per-project trainer override
-      { trainerId: user.id },
-      // Rep-chain trainer: projects where this user trains the closer
-      ...(chainTraineeIds.length > 0 ? [{ closerId: { in: chainTraineeIds } }] : []),
-    ];
+    projectWhere = {
+      OR: [
+        { closerId: user.id },
+        { setterId: user.id },
+        { additionalClosers: { some: { userId: user.id } } },
+        { additionalSetters: { some: { userId: user.id } } },
+        { trainerId: user.id },
+        ...(chainTraineeIds.length > 0 ? [{ closerId: { in: chainTraineeIds } }] : []),
+      ],
+    };
   } else if (isSubDealer) {
-    projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
-  }
-  // Admin + allowlisted internal PM: no filter (empty where).
-  // Misconfigured PM (above): impossible-id where = empty result.
-
-  // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any).
-  // Vendor PM sees NOTHING — payroll is all commission data. ───
-  const payrollWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    // Impossible repId so the query returns nothing. Cheaper than a
-    // branch around the Promise.all below.
-    payrollWhere.repId = '__vendor_pm_no_payroll__';
-  } else if (!isAdmin) {
-    payrollWhere.repId = user.id;
+    projectWhere = { OR: [{ subDealerId: user.id }, { closerId: user.id }] };
+  } else {
+    // Default DENY. Unknown / null / unexpected role shape — block
+    // and log. Reaching this branch is a configuration bug.
+    logger.warn('default_deny_project_access', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      reason: 'role does not match any allowed branch',
+    });
+    projectWhere = { id: '__deny_unknown_role__' };
   }
 
-  // ─── Reimbursements: rep/sub-dealer/PM only see own. Vendor PM: none. ───
-  const reimbWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    reimbWhere.repId = '__vendor_pm_no_reimb__';
-  } else if (!isAdmin) {
-    reimbWhere.repId = user.id;
+  // ─── Payroll filter: positive allowlist + default-deny. ───
+  let payrollWhere: Record<string, unknown>;
+  if (isAdmin) {
+    payrollWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    payrollWhere = { repId: '__deny_vendor_pm_no_payroll__' };
+  } else if (isInternal || isRep || isSubDealer) {
+    // PM (internal), rep, sub-dealer all see only their OWN payroll.
+    payrollWhere = { repId: user.id };
+  } else {
+    payrollWhere = { repId: '__deny_unknown_role__' };
   }
 
-  // ─── Trainer assignments: rep sees where they're trainer or trainee.
-  // Admin sees all. Vendor PM: none. ───
-  const trainerWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    trainerWhere.id = '__vendor_pm_no_training__';
-  } else if (!isAdmin) {
-    trainerWhere.OR = [{ trainerId: user.id }, { traineeId: user.id }];
+  // ─── Reimbursements: same shape. ───
+  let reimbWhere: Record<string, unknown>;
+  if (isAdmin) {
+    reimbWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    reimbWhere = { repId: '__deny_vendor_pm_no_reimb__' };
+  } else if (isInternal || isRep || isSubDealer) {
+    reimbWhere = { repId: user.id };
+  } else {
+    reimbWhere = { repId: '__deny_unknown_role__' };
   }
 
-  // ─── Incentives: rep/sub-dealer see incentives targeting them or
-  // company-wide. Vendor PM: none. ───
-  const incentiveWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    incentiveWhere.id = '__vendor_pm_no_incentives__';
-  } else if (!isAdmin) {
-    incentiveWhere.OR = [{ targetRepId: user.id }, { targetRepId: null }];
+  // ─── Trainer assignments: rep sees self-as-trainer or trainee. ───
+  let trainerWhere: Record<string, unknown>;
+  if (isAdmin || isInternal) {
+    trainerWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    trainerWhere = { id: '__deny_vendor_pm_no_training__' };
+  } else if (isRep || isSubDealer) {
+    trainerWhere = { OR: [{ trainerId: user.id }, { traineeId: user.id }] };
+  } else {
+    trainerWhere = { id: '__deny_unknown_role__' };
+  }
+
+  // ─── Incentives: rep/SD see targeted-at-them OR company-wide. ───
+  let incentiveWhere: Record<string, unknown>;
+  if (isAdmin || isInternal) {
+    incentiveWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    incentiveWhere = { id: '__deny_vendor_pm_no_incentives__' };
+  } else if (isRep || isSubDealer) {
+    incentiveWhere = { OR: [{ targetRepId: user.id }, { targetRepId: null }] };
+  } else {
+    incentiveWhere = { id: '__deny_unknown_role__' };
   }
 
   // Ensure the Cash financer always exists so reps can submit Cash deals on
@@ -142,7 +166,12 @@ export async function GET() {
     // contact directory. We scrub the returned list to empty to block
     // any accidental exposure elsewhere in the client.
     prisma.user.findMany({
-      where: isVendor ? { id: '__vendor_pm_no_users__' } : (isAdmin ? {} : { active: true }),
+      where: (() => {
+        if (isAdmin) return {}; // includes deactivated for historical contexts
+        if (isVendor || isMisconfiguredPM) return { id: '__deny_vendor_pm_no_users__' };
+        if (isInternal || isRep || isSubDealer) return { active: true };
+        return { id: '__deny_unknown_role__' };
+      })(),
       orderBy: { lastName: 'asc' },
     }),
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),
