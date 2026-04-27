@@ -1309,6 +1309,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // markForPayroll delegated to payrollActions (defined above)
   const { markForPayroll } = payrollActions;
 
+  // ── View-As scoping (admin impersonating PM/vendor PM) ────────────────
+  // /api/data is admin-scoped (full access), so view-as is a pure CLIENT-
+  // SIDE PREVIEW. We MUST filter what the client sees to mirror what the
+  // impersonated user would actually receive — otherwise admin views-as
+  // Joe Dale (BVI) and sees every installer's projects, totally defeating
+  // the purpose. This is a UI mirror of /api/data/route.ts's per-role
+  // filtering (vendor PM: scoped projects, no payroll/reimb/training/
+  // incentives/users; internal PM: no payroll/reimb).
+  const isVendorPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager' && !!viewAsUser.scopedInstallerId;
+  const isAnyPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager';
+  const visibleProjects = useMemo(() => {
+    if (isVendorPmViewAs && effectiveScopedInstallerName) {
+      return projects.filter((p) => p.installer === effectiveScopedInstallerName);
+    }
+    return projects;
+  }, [projects, isVendorPmViewAs, effectiveScopedInstallerName]);
+  const visiblePayrollEntries = isAnyPmViewAs ? [] : payrollEntries;
+  const visibleReimbursements = isAnyPmViewAs ? [] : reimbursements;
+  const visibleTrainerAssignments = isVendorPmViewAs ? [] : trainerAssignments;
+  const visibleIncentives = isVendorPmViewAs ? [] : incentives;
+  const visibleReps = isVendorPmViewAs ? [] : reps;
+  const visibleSubDealers = isVendorPmViewAs ? [] : subDealers;
+
   return (
     <AppContext.Provider
       value={{
@@ -1320,15 +1343,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentUserRepType,
         setRole,
         logout,
-        projects,
+        projects: visibleProjects,
         setProjects,
-        payrollEntries,
+        payrollEntries: visiblePayrollEntries,
         setPayrollEntries,
-        reimbursements,
+        reimbursements: visibleReimbursements,
         setReimbursements,
-        trainerAssignments,
+        trainerAssignments: visibleTrainerAssignments,
         setTrainerAssignments,
-        incentives,
+        incentives: visibleIncentives,
         setIncentives,
         addDeal,
         markForPayroll,
@@ -1341,7 +1364,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFinancerActive,
         addInstaller,
         addFinancer,
-        reps,
+        reps: visibleReps,
         addRep,
         removeRep,
         deactivateRep,
@@ -1384,7 +1407,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         installerPayConfigs,
         setInstallerPayConfigs,
         updateInstallerPayConfig,
-        subDealers,
+        subDealers: visibleSubDealers,
         addSubDealer,
         removeSubDealer,
         deactivateSubDealer,
