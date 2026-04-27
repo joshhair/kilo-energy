@@ -16,6 +16,7 @@ import {
   INSTALLER_PAY_CONFIGS,
 } from '../../../lib/data';
 import { todayLocalDateStr } from '../../../lib/utils';
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -196,24 +197,10 @@ export default function MobileCalculator() {
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === effectiveSetterId)).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
-
-  // Reverse-solve: PPW needed to hit a target dollar amount (mirrors desktop logic)
-  const targetAmount = parseFloat(targetEarning) || 0;
-  const requiredPPW = (() => {
-    if (!hasInput || kW <= 0) return 0;
-    if (!isSelfGen) {
-      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
-      if (targetAmount <= closerDiff) {
-        return targetAmount / (kW * 1000) + closerPerW;
-      }
-      const splitPoint = setterBaselinePerW + trainerRate;
-      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
-    }
-    return targetAmount / (kW * 1000) + closerPerW;
-  })();
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
-  // Closer trainer — mirrors desktop calculator logic
+  // Closer trainer — mirrors desktop calculator logic. Computed BEFORE
+  // requiredPPW so the reverse-solve can include the override.
   const effectiveCloserId = quickFillRepId ?? effectiveRepId;
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
@@ -227,6 +214,24 @@ export default function MobileCalculator() {
     ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
     : 0;
 
+  // Reverse-solve: PPW needed to hit a target dollar amount. Closer trainer
+  // override sits above closerPerW and comes out of closer pay, so the rep's
+  // *personal* threshold is closerPerW + closerTrainerRate.
+  const targetAmount = parseFloat(targetEarning) || 0;
+  const requiredPPW = (() => {
+    if (!hasInput || kW <= 0) return 0;
+    const adjustedCloser = closerPerW + closerTrainerRate;
+    if (!isSelfGen) {
+      const closerDiffCap = Math.max(0, (setterBaselinePerW - adjustedCloser) * kW * 1000);
+      if (targetAmount <= closerDiffCap) {
+        return targetAmount / (kW * 1000) + adjustedCloser;
+      }
+      const splitPoint = setterBaselinePerW + trainerRate;
+      return ((targetAmount - closerDiffCap) * 2) / (kW * 1000) + splitPoint;
+    }
+    return targetAmount / (kW * 1000) + adjustedCloser;
+  })();
+
   // Commission split via the same resolver the server uses on POST +
   // PATCH (Batch 2b.4), so the mobile preview matches what a deal in
   // these exact conditions would actually pay. Self-gen = paired=false,
@@ -234,7 +239,11 @@ export default function MobileCalculator() {
   // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
-  const split = hasInput && soldPPW > 0
+  // Raw split — `splitCloserSetterPay` does not factor in closer trainer
+  // overrides. Server payroll (project-transitions.ts) carves the closer-
+  // trainer slice out of M2/M3 after the split; mirror that locally via
+  // `applyCloserTrainerDeduction` so calc reflects actual paid amount.
+  const rawSplit = hasInput && soldPPW > 0
     ? splitCloserSetterPay(
         soldPPW,
         closerPerW,
@@ -244,6 +253,7 @@ export default function MobileCalculator() {
         installPayPct,
       )
     : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
+  const split = applyCloserTrainerDeduction(rawSplit, closerTrainerRate, kW, installPayPct);
   const closerTotal = split.closerTotal;
   const setterTotal = split.setterTotal;
   const trainerTotal = isPaired && trainerRate > 0 && kW > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
@@ -825,12 +835,13 @@ export default function MobileCalculator() {
             )}
           </div>
 
-          {/* Baseline info */}
+          {/* Baseline info — display values fold in trainer overrides so the
+              rep's redline reflects their personal break-even. Setter is
+              hidden on self-gen since there's no setter pay path. */}
           <div className="calc-row-6 mt-4 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
             <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Closer baseline: ${closerPerW.toFixed(2)}/W
-              {!isSelfGen && setterBaselinePerW > 0 && ` · Setter: $${setterBaselinePerW.toFixed(2)}/W`}
-              {trainerRate > 0 && ` · ${trainerRep ? trainerRep.name : 'Trainer'}: +$${trainerRate.toFixed(2)}/W`}
+              Closer baseline: ${(closerPerW + closerTrainerRate).toFixed(2)}/W
+              {!isSelfGen && setterBaselinePerW > 0 && ` · Setter: $${(setterBaselinePerW + trainerRate).toFixed(2)}/W`}
             </p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Sold: ${soldPPW.toFixed(2)}/W · {kW.toFixed(1)} kW

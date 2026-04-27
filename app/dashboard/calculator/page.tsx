@@ -6,6 +6,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
 import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS } from '../../../lib/data';
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
@@ -495,8 +496,13 @@ function CalculatorPage() {
   const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
-  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } =
-    splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
+  // Raw split — `splitCloserSetterPay` does not factor in closer trainer
+  // overrides. Server payroll (project-transitions.ts) carves the closer-
+  // trainer slice out of M2/M3 after the split; we mirror that locally
+  // via `applyCloserTrainerDeduction` so calc reflects actual paid amount.
+  const rawSplit = splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
+  const adjustedSplit = applyCloserTrainerDeduction(rawSplit, closerTrainerRate, kW, installPayPct);
+  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = adjustedSplit;
 
   /** Copies a formatted deal summary to the clipboard with a toast confirmation. */
   const handleCopyResult = () => {
@@ -523,7 +529,7 @@ function CalculatorPage() {
     if (hasSetter && setterTotal > 0) {
       lines.push(`Setter: $${setterTotal.toLocaleString()}${hasM3Split ? ` (M1: $${setterM1.toLocaleString()} / M2: $${setterM2.toLocaleString()} / M3: $${setterM3.toLocaleString()})` : ''}`);
     }
-    lines.push(`Baseline: $${closerPerW.toFixed(2)}/W | Break-even: $${breakEvenPPW.toFixed(2)}/W`);
+    lines.push(`Baseline: $${closerBaselineDisplay.toFixed(2)}/W | Break-even: $${breakEvenPPW.toFixed(2)}/W`);
     navigator.clipboard.writeText(lines.join('\n')).then(
       () => toast('Share summary copied to clipboard', 'success'),
       () => toast('Could not access clipboard', 'error'),
@@ -581,24 +587,35 @@ function CalculatorPage() {
     toast('History cleared', 'info');
   };
 
-  // Break-even PPW (minimum PPW to earn anything as closer)
-  const breakEvenPPW = closerPerW;
+  // Personal break-even — what THIS rep needs to clear before they earn $1.
+  // Includes any closer-trainer override, since that slice sits above the
+  // installer baseline and comes out of closer pay (see commission rules
+  // memory: trainer override sits ABOVE the trainee's baseline). Setter
+  // side mirrors the same idea — installer baseline + setter trainer override.
+  const closerBaselineDisplay = closerPerW + closerTrainerRate;
+  const setterBaselineDisplay = setterBaselinePerW + trainerRate;
+  const breakEvenPPW = closerBaselineDisplay;
   // PPW needed to earn a target amount
   const targetAmount = parseFloat(targetEarning) || 0;
   const requiredPPW = (() => {
     if (!hasInput || kW <= 0) return 0;
+    // Closer trainer override sits above the closer baseline, so the rep's
+    // *personal* break-even is closerPerW + closerTrainerRate. Reverse-solve
+    // uses that effective baseline so target=0 returns the same number as
+    // breakEvenPPW above.
+    const adjustedCloser = closerPerW + closerTrainerRate;
     if (!isSelfGen) {
-      // With setter: closer earns the differential band + half of everything above splitPoint.
-      // Reverse-solve: if target fits within the differential band, use simple formula;
-      // otherwise solve for the PPW where half-of-above-split makes up the remainder.
-      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
-      if (targetAmount <= closerDiff) {
-        return targetAmount / (kW * 1000) + closerPerW;
+      // With setter: closer earns the (adjusted) differential band, then half
+      // of everything above splitPoint. The override eats into the differential
+      // band — once it's exhausted, additional overage comes off the 50/50 zone.
+      const closerDiffCap = Math.max(0, (setterBaselinePerW - adjustedCloser) * kW * 1000);
+      if (targetAmount <= closerDiffCap) {
+        return targetAmount / (kW * 1000) + adjustedCloser;
       }
       const splitPoint = setterBaselinePerW + trainerRate;
-      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
+      return ((targetAmount - closerDiffCap) * 2) / (kW * 1000) + splitPoint;
     }
-    return targetAmount / (kW * 1000) + closerPerW;
+    return targetAmount / (kW * 1000) + adjustedCloser;
   })();
 
   // Hash of all inputs — forces React to remount the results container on each
@@ -1017,16 +1034,21 @@ function CalculatorPage() {
                   <StackedBar segments={breakdownSegments} total={breakdownTotal} />
                 )}
 
-                {/* Baseline rates row */}
+                {/* Baseline rates row — display values include trainer override
+                    so the redline reflects the rep's *personal* break-even.
+                    Setter Baseline is hidden on self-gen since there's no
+                    setter pay path to inform the rep about. */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerBaselineDisplay.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Closer Baseline</p>
                   </div>
-                  <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Setter Baseline</p>
-                  </div>
+                  {hasSetter && (
+                    <div>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterBaselineDisplay.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Setter Baseline</p>
+                    </div>
+                  )}
                   <div>
                     <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Break-Even</p>
