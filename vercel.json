@@ -4,6 +4,10 @@
     {
       "path": "/api/admin/retention",
       "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/privacy-prober",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
