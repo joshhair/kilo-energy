@@ -23,7 +23,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestContext } from '../../../../lib/request-context';
-import { projectVisibilityWhere, payrollEntryVisibilityWhere } from '../../../../lib/db-gated';
+import {
+  projectVisibilityWhere,
+  payrollEntryVisibilityWhere,
+  reimbursementVisibilityWhere,
+  blitzCostVisibilityWhere,
+  projectAdminNoteVisibilityWhere,
+} from '../../../../lib/db-gated';
 import type { InternalUser } from '../../../../lib/api-auth';
 import { logger } from '../../../../lib/logger';
 
@@ -127,12 +133,25 @@ export async function GET(req: NextRequest) {
       () => payrollEntryVisibilityWhere(),
     );
 
+    const reimbWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => reimbursementVisibilityWhere(),
+    );
+    const blitzCostWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => blitzCostVisibilityWhere(),
+    );
+    const adminNoteWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => projectAdminNoteVisibilityWhere(),
+    );
+
     if (f.name === 'vendor_pm_scoped_to_fake_installer') {
       // Special case: vendor PM with a real-looking scope returns an
-      // installerId where, not a deny sentinel. Validate the where
-      // matches the fake-installer policy instead.
+      // installerId where for Project (not a deny sentinel). Validate
+      // the where matches the fake-installer policy. Other models all
+      // deny vendor PMs entirely.
       const projectOk = JSON.stringify(projectWhere).includes('inst_prober_fake');
-      const payrollOk = JSON.stringify(payrollWhere).includes('__deny_');
       results.push({
         fixture: f.name,
         model: 'Project',
@@ -140,16 +159,16 @@ export async function GET(req: NextRequest) {
         whereJson: JSON.stringify(projectWhere),
         reason: projectOk ? undefined : 'Vendor PM scope did not produce installerId-bound WHERE',
       });
-      results.push({
-        fixture: f.name,
-        model: 'PayrollEntry',
-        ok: payrollOk,
-        whereJson: JSON.stringify(payrollWhere),
-        reason: payrollOk ? undefined : 'Vendor PM payroll WHERE did not contain a __deny_ sentinel',
-      });
+      results.push(assertWhereDeniesAll(f.name, 'PayrollEntry', payrollWhere));
+      results.push(assertWhereDeniesAll(f.name, 'Reimbursement', reimbWhere));
+      results.push(assertWhereDeniesAll(f.name, 'BlitzCost', blitzCostWhere));
+      results.push(assertWhereDeniesAll(f.name, 'ProjectAdminNote', adminNoteWhere));
     } else {
       results.push(assertWhereDeniesAll(f.name, 'Project', projectWhere));
       results.push(assertWhereDeniesAll(f.name, 'PayrollEntry', payrollWhere));
+      results.push(assertWhereDeniesAll(f.name, 'Reimbursement', reimbWhere));
+      results.push(assertWhereDeniesAll(f.name, 'BlitzCost', blitzCostWhere));
+      results.push(assertWhereDeniesAll(f.name, 'ProjectAdminNote', adminNoteWhere));
     }
   }
 

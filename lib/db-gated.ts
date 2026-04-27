@@ -148,6 +148,106 @@ export function projectVisibilityWhere(): Prisma.ProjectWhereInput {
 }
 
 /**
+ * Compute the WHERE clause that scopes Reimbursements. Same shape as
+ * PayrollEntry — per-rep, vendor PM denied, default-deny on unknowns.
+ */
+export function reimbursementVisibilityWhere(): Prisma.ReimbursementWhereInput {
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  if (isVendorPM(user)) return { repId: '__deny_vendor_pm_no_reimb__' };
+  if (user.role === 'project_manager') {
+    return { repId: '__deny_misconfigured_pm__' };
+  }
+  if (user.role === 'rep' || user.role === 'sub-dealer') return { repId: user.id };
+  logger.warn('gated_db_default_deny', { userId: user.id, role: user.role, model: 'Reimbursement' });
+  return { repId: '__deny_unknown_role__' };
+}
+
+/**
+ * Compute the WHERE for project-scoped child models (ProjectMessage,
+ * ProjectActivity, ProjectMention, ProjectAdminNote). The visibility
+ * delegates to the parent project's policy: a row is visible iff the
+ * containing project is visible.
+ *
+ * Implemented as a Prisma relational filter `{ project: <projectGate> }`,
+ * which Prisma compiles to a JOIN with the project gate's WHERE applied.
+ *
+ * For ProjectAdminNote, an EXTRA admin/PM check is layered on top —
+ * even if the user can see the project, they shouldn't see admin notes
+ * unless they're admin or internal PM.
+ */
+function projectScopedWhere(): { project: Prisma.ProjectWhereInput } {
+  return { project: projectVisibilityWhere() };
+}
+
+/**
+ * ProjectMessage / ProjectActivity / ProjectMention: scoped via parent
+ * project. If the user can see the project, they can see its messages /
+ * activity / mentions.
+ *
+ * Note: ProjectActivity additionally filters out financial field_edit
+ * entries from non-admin viewers — that's done at the route layer
+ * (app/api/projects/[id]/activity/route.ts) since it's a per-row
+ * decision based on the meta JSON shape, not a row-level WHERE.
+ */
+export function projectMessageVisibilityWhere(): Prisma.ProjectMessageWhereInput {
+  return projectScopedWhere();
+}
+export function projectActivityVisibilityWhere(): Prisma.ProjectActivityWhereInput {
+  return projectScopedWhere();
+}
+export function projectMentionVisibilityWhere(): Prisma.ProjectMentionWhereInput {
+  // Mentions also filter on the message (which lives on a project), but
+  // mention rows are per-user, so a user only sees mentions targeted at
+  // them in the first place. The gate intersects both: must be a
+  // mention for me AND on a project I can see.
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  // Mentions are scoped through the parent ProjectMessage's project.
+  // Use a nested relational filter.
+  return {
+    userId: user.id,
+    message: { project: projectVisibilityWhere() },
+  };
+}
+
+/**
+ * BlitzCost: admin + internal PM only. Vendor PMs and reps never see
+ * blitz operating costs. Default-deny everywhere else.
+ */
+export function blitzCostVisibilityWhere(): Prisma.BlitzCostWhereInput {
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  // Everyone else: deny. There's no blitz-cost field that isn't
+  // admin-sensitive — operating costs aren't shared with reps or
+  // vendor staff.
+  return { id: '__deny_non_admin_no_blitz_costs__' };
+}
+
+/**
+ * ProjectAdminNote: admin + internal PM only. Vendor PMs explicitly
+ * blocked even if they can see the project (admin notes about a vendor
+ * project shouldn't reach the vendor). Default-deny everyone else.
+ */
+export function projectAdminNoteVisibilityWhere(): Prisma.ProjectAdminNoteWhereInput {
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  return { id: '__deny_non_admin_no_admin_notes__' };
+}
+
+/**
  * Combine the caller's WHERE with the gate's visibility WHERE. Uses AND
  * so the gate is restrictive — a caller can only see records that are
  * BOTH a match for their query AND visible to them.
@@ -283,6 +383,162 @@ export const db = prisma.$extends({
       async groupBy({ args, query }) {
         const gate = payrollEntryVisibilityWhere();
         args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+    },
+    reimbursement: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, reimbursementVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, reimbursementVisibilityWhere());
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        args.where = intersectWhere(args.where, reimbursementVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.reimbursement.findFirst({
+          where: { AND: [{ id: result.id }, reimbursementVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, reimbursementVisibilityWhere());
+        return query(args);
+      },
+      async aggregate({ args, query }) {
+        args.where = intersectWhere(args.where, reimbursementVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectMessage: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectMessageVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectMessageVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectMessage.findFirst({
+          where: { AND: [{ id: result.id }, projectMessageVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectMessageVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectActivity: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectActivityVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectActivityVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectActivity.findFirst({
+          where: { AND: [{ id: result.id }, projectActivityVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectActivityVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectMention: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectMentionVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectMentionVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectMention.findFirst({
+          where: { AND: [{ id: result.id }, projectMentionVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectMentionVisibilityWhere());
+        return query(args);
+      },
+    },
+    blitzCost: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.blitzCost.findFirst({
+          where: { AND: [{ id: result.id }, blitzCostVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+      async aggregate({ args, query }) {
+        args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectAdminNote: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectAdminNoteVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectAdminNoteVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectAdminNote.findFirst({
+          where: { AND: [{ id: result.id }, projectAdminNoteVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectAdminNoteVisibilityWhere());
         return query(args);
       },
     },
