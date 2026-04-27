@@ -573,13 +573,13 @@ export default function MobileAdminDashboard() {
             {installerRanking.map((inst) => (
               <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                 <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
-                <span className="tabular-nums text-sm" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
+                <span className="tabular-nums text-sm whitespace-nowrap" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
                 <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                   <div className="h-full rounded-full" style={{ width: `${(inst.deals / maxInstallerDeals) * 100}%`, background: WARNING }} />
                 </div>
                 <span className="tabular-nums font-semibold" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
                 {inst.cancelled > 0 && (
-                  <span className="tabular-nums text-xs font-medium" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
+                  <span className="tabular-nums text-xs font-medium whitespace-nowrap" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
                 )}
               </div>
             ))}
