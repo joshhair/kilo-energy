@@ -100,6 +100,10 @@ export default function MobileMyPay() {
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
   const [reimbFile, setReimbFile] = useState<File | undefined>(undefined);
+  // Per-row expand state for long reimbursement descriptions. Long notes
+  // (admin-facing context like "as discussed with Josh, here are…") used
+  // to dominate the card. Now collapsed to 2 lines with tap-to-expand.
+  const [expandedReimbId, setExpandedReimbId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>('all');
@@ -543,25 +547,82 @@ export default function MobileMyPay() {
       )}
 
       {/* ── Active reimbursements (only if any) ── */}
+      {/*
+       * Card hierarchy: amount + status are the headline (what the rep
+       * scans for). Description is secondary — clamped to 2 lines with a
+       * tap-to-expand affordance because rep-authored notes can run
+       * paragraphs long ("as discussed with Josh, here are the travel
+       * expenses incurred by my brother and me for the…"). Without the
+       * clamp those notes used to push the amount/status off-screen.
+       * Date + receipt sit at the bottom in muted small. Admin reviews
+       * full descriptions on the desktop earnings table; the rep doesn't
+       * need to read their own note prominently here.
+       */}
       {activeReimbs.length > 0 && (
         <MobileSection title="Reimbursements" count={activeReimbs.length}>
           <MobileCard>
-            {activeReimbs.map((r, i) => (
-              <div
-                key={r.id}
-                className={`flex items-center justify-between py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
-                style={{ borderColor: 'var(--border-subtle)' }}
-              >
-                <div>
-                  <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.description}</p>
-                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{formatDate(r.date)}</p>
+            {activeReimbs.map((r, i) => {
+              const desc = r.description ?? '';
+              const isLong = desc.length > 80 || desc.split('\n').length > 2;
+              const isExpanded = expandedReimbId === r.id;
+              return (
+                <div
+                  key={r.id}
+                  className={`py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
+                  style={{ borderColor: 'var(--border-subtle)' }}
+                >
+                  {/* Headline row: amount + status */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.25rem', fontWeight: 700 }}>{fmt$(r.amount)}</span>
+                    <MobileBadge value={r.status} variant="status" />
+                  </div>
+                  {/* Description: clamped by default */}
+                  {desc && (
+                    <>
+                      <p
+                        className={isExpanded ? '' : 'line-clamp-2'}
+                        style={{
+                          color: 'var(--text-primary)',
+                          fontFamily: FONT_BODY,
+                          fontSize: '0.9375rem',
+                          lineHeight: 1.4,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {desc}
+                      </p>
+                      {isLong && (
+                        <button
+                          onClick={() => setExpandedReimbId(isExpanded ? null : r.id)}
+                          style={{
+                            color: ACCENT,
+                            fontFamily: FONT_BODY,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            marginTop: '4px',
+                            minHeight: '24px',
+                          }}
+                        >
+                          {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {/* Footer: date + receipt name */}
+                  <p
+                    style={{
+                      color: MUTED,
+                      fontFamily: FONT_BODY,
+                      fontSize: '0.8125rem',
+                      marginTop: '6px',
+                    }}
+                  >
+                    {formatDate(r.date)}
+                    {r.receiptName ? ` · ${r.receiptName}` : ''}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(r.amount)}</span>
-                  <MobileBadge value={r.status} variant="status" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </MobileCard>
         </MobileSection>
       )}

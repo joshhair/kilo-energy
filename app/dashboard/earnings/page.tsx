@@ -734,7 +734,7 @@ function RepEarningsView() {
                 <tbody>
                   {pagedReimbs.map((r, i) => (
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}>
-                      <td className="px-5 py-3 text-[var(--text-primary)]">{r.description}</td>
+                      <td className="px-5 py-3 text-[var(--text-primary)] max-w-md break-words align-top">{r.description}</td>
                       <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                       <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
@@ -1230,8 +1230,8 @@ function AdminFinancialsView() {
                   <tbody>
                     {pagedReimbs.map((r, i) => (
                       <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150`}>
-                        <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{r.repName}</td>
-                        <td className="px-5 py-3 text-[var(--text-secondary)]">{r.description}</td>
+                        <td className="px-5 py-3 text-[var(--text-primary)] font-medium align-top">{r.repName}</td>
+                        <td className="px-5 py-3 text-[var(--text-secondary)] max-w-md break-words align-top">{r.description}</td>
                         <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                         <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
