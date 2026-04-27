@@ -899,6 +899,19 @@ function CalculatorPage() {
               )}
             </div>
 
+            {/* Pricing date — admin-only, for modeling historical rates */}
+            {effectiveRole === 'admin' && (
+              <div>
+                <label className={labelCls} style={labelStyle}>Pricing Date (optional)</label>
+                <input
+                  type="date"
+                  value={pricingDate}
+                  onChange={(e) => setPricingDate(e.target.value)}
+                  className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
+                />
+              </div>
+            )}
+
             {/* Target earnings tool */}
             {hasInput && (
               <>

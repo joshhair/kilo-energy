@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
-import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle, MapPin, Calendar, Users } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -53,6 +53,10 @@ interface BlitzRequestData {
   id: string;
   type: 'create' | 'cancel';
   name: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  expectedHeadcount: number;
   status: string;
   requestedBy: { id: string; firstName: string; lastName: string };
 }
@@ -686,7 +690,18 @@ export default function MobileBlitz() {
               {requests.map((req) => (
                 <MobileCard key={req.id}>
                   <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{req.name}</p>
-                  <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    {req.type !== 'cancel' && req.location && (
+                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>
+                    )}
+                    {req.type !== 'cancel' && (
+                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 shrink-0" />{formatDate(req.startDate)} — {formatDate(req.endDate)}</span>
+                    )}
+                    {req.type !== 'cancel' && req.expectedHeadcount > 0 && (
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 shrink-0" />{req.expectedHeadcount} expected</span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'} by {req.requestedBy.firstName} {req.requestedBy.lastName}
                   </p>
                   <div className="flex items-center gap-2 mt-3">

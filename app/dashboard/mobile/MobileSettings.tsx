@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { DEFAULT_INSTALL_PAY_PCT, InstallerBaseline, InstallerRates, SOLARTECH_FAMILIES } from '../../../lib/data';
@@ -10,6 +10,7 @@ import {
   Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus, Sun,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
+import MobileBulkActionBar from './shared/MobileBulkActionBar';
 import MobileCard from './shared/MobileCard';
 import MobileListItem from './shared/MobileListItem';
 import MobileSection from './shared/MobileSection';
@@ -123,15 +124,26 @@ export default function MobileSettings() {
   const [activeSection, setActiveSection] = useState<SettingsSection | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [navKey, setNavKey] = useState(0);
+  const [pendingBack, setPendingBack] = useState(false);
+  const unsavedRef = useRef(false);
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function handleBack() {
+  function doBack() {
     setLeaving(true);
     setTimeout(() => {
       setActiveSection(null);
       setLeaving(false);
       setNavKey(k => k + 1);
+      unsavedRef.current = false;
     }, 255);
+  }
+
+  function handleBack() {
+    if (unsavedRef.current) {
+      setPendingBack(true);
+      return;
+    }
+    doBack();
   }
 
   // Admin guard — uses effectiveRole so View As respects what reps actually see.
@@ -169,7 +181,15 @@ export default function MobileSettings() {
         </h1>
 
         {/* Section content */}
-        <SectionContent section={activeSection} />
+        <SectionContent section={activeSection} onUnsavedChange={(v) => { unsavedRef.current = v; }} />
+        <ConfirmDialog
+          open={pendingBack}
+          title="Discard Changes?"
+          message="You have unsaved changes that will be lost. Go back without saving?"
+          confirmLabel="Discard"
+          onConfirm={() => { setPendingBack(false); doBack(); }}
+          onClose={() => setPendingBack(false)}
+        />
       </div>
     );
   }
@@ -208,7 +228,7 @@ export default function MobileSettings() {
 
 // ─── Section Content Router ─────────────────────────────────────────────────
 
-function SectionContent({ section }: { section: SettingsSection }) {
+function SectionContent({ section, onUnsavedChange }: { section: SettingsSection; onUnsavedChange: (v: boolean) => void }) {
   switch (section) {
     case 'installers': return <InstallersSection />;
     case 'financers': return <FinancersSection />;
@@ -216,7 +236,7 @@ function SectionContent({ section }: { section: SettingsSection }) {
     case 'project-managers': return <ProjectManagersSection />;
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
-    case 'baselines': return <MobileBaselinesSection />;
+    case 'baselines': return <MobileBaselinesSection onUnsavedChange={onUnsavedChange} />;
     case 'sub-dealers': return <SubDealersSection />;
     case 'customization': return <CustomizationSection />;
     case 'appearance': return <AppearanceSection />;
@@ -273,20 +293,65 @@ function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: bool
 
 function InstallersSection() {
   const { installers, setInstallerActive, installerPayConfigs } = useApp();
+  const { toast } = useToast();
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelect(name: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  }
+
+  function exitSelect() {
+    setSelectMode(false);
+    setSelected(new Set());
+  }
+
+  const selArray = [...selected];
+  const activeSelected = selArray.filter(n => installers.find(i => i.name === n)?.active);
+  const archivedSelected = selArray.filter(n => !installers.find(i => i.name === n)?.active);
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage installer companies. Full editing available on desktop.</p>
+        {installers.length > 0 && (
+          <button
+            onClick={() => selectMode ? exitSelect() : setSelectMode(true)}
+            className="text-base font-medium shrink-0 min-h-[44px] px-1 active:opacity-70 transition-colors"
+            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            {selectMode ? 'Cancel' : 'Select'}
+          </button>
+        )}
+      </div>
       {installers.length === 0 ? (
         <MobileEmptyState icon={Building2} title="No installers" />
       ) : (
         installers.map((inst) => {
           const payConfig = installerPayConfigs?.[inst.name];
           const installPct = payConfig?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+          const isSelected = selected.has(inst.name);
           return (
             <MobileCard key={inst.name}>
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-3">
+                {selectMode && (
+                  <button
+                    onClick={() => toggleSelect(inst.name)}
+                    className="shrink-0 p-1 active:opacity-70 transition-colors"
+                    style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
+                  >
+                    {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                  </button>
+                )}
+                <div
+                  className="flex-1 min-w-0"
+                  onClick={() => selectMode && toggleSelect(inst.name)}
+                  style={selectMode ? { cursor: 'pointer' } : undefined}
+                >
                   <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inst.name}</p>
                   <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Install Pay: <span style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{installPct}%</span></p>
                 </div>
@@ -301,16 +366,37 @@ function InstallersSection() {
                   >
                     {inst.active ? 'Active' : 'Inactive'}
                   </span>
-                  <Toggle
-                    value={inst.active}
-                    onChange={() => setInstallerActive(inst.name, !inst.active)}
-                    color="var(--accent-emerald-solid)"
-                  />
+                  {!selectMode && (
+                    <Toggle
+                      value={inst.active}
+                      onChange={() => setInstallerActive(inst.name, !inst.active)}
+                      color="var(--accent-emerald-solid)"
+                    />
+                  )}
                 </div>
               </div>
             </MobileCard>
           );
         })
+      )}
+
+      {selected.size > 0 && (
+        <MobileBulkActionBar
+          selectedCount={selected.size}
+          activeCount={activeSelected.length}
+          archivedCount={archivedSelected.length}
+          onArchive={() => {
+            activeSelected.forEach(n => setInstallerActive(n, false));
+            toast(`${activeSelected.length} installer${activeSelected.length !== 1 ? 's' : ''} archived`, 'info');
+            exitSelect();
+          }}
+          onRestore={() => {
+            archivedSelected.forEach(n => setInstallerActive(n, true));
+            toast(`${archivedSelected.length} installer${archivedSelected.length !== 1 ? 's' : ''} restored`, 'info');
+            exitSelect();
+          }}
+          onDismiss={exitSelect}
+        />
       )}
     </div>
   );
@@ -320,39 +406,109 @@ function InstallersSection() {
 
 function FinancersSection() {
   const { financers, setFinancerActive } = useApp();
+  const { toast } = useToast();
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const nonCash = financers.filter(fin => fin.name !== 'Cash');
+
+  function toggleSelect(name: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  }
+
+  function exitSelect() {
+    setSelectMode(false);
+    setSelected(new Set());
+  }
+
+  const selArray = [...selected];
+  const activeSelected = selArray.filter(n => financers.find(f => f.name === n)?.active);
+  const archivedSelected = selArray.filter(n => !financers.find(f => f.name === n)?.active);
 
   return (
     <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
-      {financers.filter(fin => fin.name !== 'Cash').length === 0 ? (
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Manage financing companies.</p>
+        {nonCash.length > 0 && (
+          <button
+            onClick={() => selectMode ? exitSelect() : setSelectMode(true)}
+            className="text-base font-medium shrink-0 min-h-[44px] px-1 active:opacity-70 transition-colors"
+            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            {selectMode ? 'Cancel' : 'Select'}
+          </button>
+        )}
+      </div>
+      {nonCash.length === 0 ? (
         <MobileEmptyState icon={Landmark} title="No financers" />
       ) : (
-        financers.filter(fin => fin.name !== 'Cash').map((fin) => (
-          <MobileCard key={fin.name}>
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{fin.name}</p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span
-                  className="text-base font-medium px-2 py-0.5 rounded-lg"
-                  style={{
-                    background: fin.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
-                    color: fin.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
-                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  }}
+        nonCash.map((fin) => {
+          const isSelected = selected.has(fin.name);
+          return (
+            <MobileCard key={fin.name}>
+              <div className="flex items-center justify-between gap-3">
+                {selectMode && (
+                  <button
+                    onClick={() => toggleSelect(fin.name)}
+                    className="shrink-0 p-1 active:opacity-70 transition-colors"
+                    style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
+                  >
+                    {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                  </button>
+                )}
+                <div
+                  className="flex-1 min-w-0"
+                  onClick={() => selectMode && toggleSelect(fin.name)}
+                  style={selectMode ? { cursor: 'pointer' } : undefined}
                 >
-                  {fin.active ? 'Active' : 'Inactive'}
-                </span>
-                <Toggle
-                  value={fin.active}
-                  onChange={() => setFinancerActive(fin.name, !fin.active)}
-                  color="var(--accent-emerald-solid)"
-                />
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{fin.name}</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span
+                    className="text-base font-medium px-2 py-0.5 rounded-lg"
+                    style={{
+                      background: fin.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                      color: fin.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    }}
+                  >
+                    {fin.active ? 'Active' : 'Inactive'}
+                  </span>
+                  {!selectMode && (
+                    <Toggle
+                      value={fin.active}
+                      onChange={() => setFinancerActive(fin.name, !fin.active)}
+                      color="var(--accent-emerald-solid)"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          </MobileCard>
-        ))
+            </MobileCard>
+          );
+        })
+      )}
+
+      {selected.size > 0 && (
+        <MobileBulkActionBar
+          selectedCount={selected.size}
+          activeCount={activeSelected.length}
+          archivedCount={archivedSelected.length}
+          onArchive={() => {
+            activeSelected.forEach(n => setFinancerActive(n, false));
+            toast(`${activeSelected.length} financer${activeSelected.length !== 1 ? 's' : ''} archived`, 'info');
+            exitSelect();
+          }}
+          onRestore={() => {
+            archivedSelected.forEach(n => setFinancerActive(n, true));
+            toast(`${archivedSelected.length} financer${archivedSelected.length !== 1 ? 's' : ''} restored`, 'info');
+            exitSelect();
+          }}
+          onDismiss={exitSelect}
+        />
       )}
     </div>
   );
@@ -883,7 +1039,7 @@ function CustomizationSection() {
 
 // ─── Baselines Section ──────────────────────────────────────────────────────
 
-function MobileBaselinesSection() {
+function MobileBaselinesSection({ onUnsavedChange }: { onUnsavedChange: (v: boolean) => void }) {
   const { productCatalogInstallerConfigs } = useApp();
   const [activeTab, setActiveTab] = useState<'standard' | 'solartech' | 'productcatalog'>('standard');
   const hasPCInstallers = Object.keys(productCatalogInstallerConfigs).length > 0;
@@ -901,20 +1057,24 @@ function MobileBaselinesSection() {
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as 'standard' | 'solartech' | 'productcatalog')}
       />
-      {activeTab === 'standard' && <StandardBaselines />}
+      {activeTab === 'standard' && <StandardBaselines onUnsavedChange={onUnsavedChange} />}
       {activeTab === 'solartech' && <SolarTechBaselines />}
       {activeTab === 'productcatalog' && <ProductCatalogBaselines />}
     </div>
   );
 }
 
-function StandardBaselines() {
+function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) => void }) {
   const { installerBaselines, updateInstallerBaseline, createNewInstallerVersion } = useApp();
   const { toast } = useToast();
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
   const [editVals, setEditVals] = useState({ closerPerW: '', kiloPerW: '', setterPerW: '', subDealerPerW: '' });
   const [newVersionFor, setNewVersionFor] = useState<string | null>(null);
   const [sheetLeaving, setSheetLeaving] = useState(false);
+
+  useEffect(() => {
+    onUnsavedChange(editingInstaller !== null || newVersionFor !== null);
+  }, [editingInstaller, newVersionFor]); // eslint-disable-line react-hooks/exhaustive-deps
   const [nvLabel, setNvLabel] = useState('');
   const [nvDate, setNvDate] = useState('');
   const [nvCloser, setNvCloser] = useState('');

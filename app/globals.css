@@ -1460,50 +1460,16 @@ select {
   .calc-row-6 { animation: fadeUpIn 280ms cubic-bezier(0.16, 1, 0.3, 1) 600ms both; }
 }
 
-@keyframes msChipGlowAmber {
-  0%   { box-shadow: none; }
-  45%  { box-shadow: 0 0 0 4px var(--accent-amber-glow), inset 0 0 8px var(--accent-amber-glow); }
-  100% { box-shadow: none; }
-}
-@keyframes msChipGlowEmerald {
-  0%   { box-shadow: none; }
-  45%  { box-shadow: 0 0 0 4px var(--accent-emerald-glow), inset 0 0 8px var(--accent-emerald-glow); }
-  100% { box-shadow: none; }
-}
-@keyframes msChipGlowCyan {
-  0%   { box-shadow: none; }
-  45%  { box-shadow: 0 0 0 4px var(--accent-cyan-glow), inset 0 0 8px var(--accent-cyan-glow); }
-  100% { box-shadow: none; }
-}
 @media (prefers-reduced-motion: no-preference) {
-  .calc-ms-1 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 340ms both, msChipGlowAmber   520ms ease-out 580ms both; }
-  .calc-ms-2 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 400ms both, msChipGlowEmerald 520ms ease-out 640ms both; }
-  .calc-ms-3 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 460ms both, msChipGlowCyan    520ms ease-out 700ms both; }
-  .calc-ms-4 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 520ms both, msChipGlowAmber   520ms ease-out 760ms both; }
-  .calc-ms-5 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 580ms both, msChipGlowEmerald 520ms ease-out 820ms both; }
-  .calc-ms-6 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 640ms both, msChipGlowCyan    520ms ease-out 880ms both; }
+  .calc-ms-1 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 340ms both; }
+  .calc-ms-2 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 400ms both; }
+  .calc-ms-3 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 460ms both; }
+  .calc-ms-4 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 520ms both; }
+  .calc-ms-5 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 580ms both; }
+  .calc-ms-6 { animation: fieldAppear 240ms cubic-bezier(0.16,1,0.3,1) 640ms both; }
 }
 @media (prefers-reduced-motion: reduce) {
   .calc-ms-1,.calc-ms-2,.calc-ms-3,.calc-ms-4,.calc-ms-5,.calc-ms-6 { animation: none; }
-}
-
-@keyframes zapBurst {
-  0%   { transform: scale(1);    filter: brightness(1);   }
-  35%  { transform: scale(1.65); filter: brightness(2.0); }
-  65%  { transform: scale(0.85); filter: brightness(1.2); }
-  100% { transform: scale(1);    filter: brightness(1);   }
-}
-.zap-burst { animation: zapBurst 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-@keyframes quickFillFlash {
-  0%   { box-shadow: none; }
-  40%  { box-shadow: 0 0 0 2px var(--accent-cyan-solid), 0 0 14px 4px var(--accent-cyan-glow); }
-  100% { box-shadow: none; }
-}
-.quick-fill-flash { animation: quickFillFlash 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .zap-burst, .quick-fill-flash { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

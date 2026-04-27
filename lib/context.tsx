@@ -818,7 +818,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // trainerRate on Trevor Schauwecker's deal showed ~$7–8k each on
     // mobile until app restart, 2026-04-22). Reconciling from the
     // response avoids the "fixes itself on reopen" ghost.
-    if (Object.keys(dbUpdates).length > 0) {
+    //
+    // pendingMilestonePersists collects milestone payroll entries to POST
+    // after the PATCH resolves. The server PATCH handler re-aligns existing
+    // Draft entries after recomputing commission; if the milestone POSTs
+    // race ahead of the PATCH, those new entries aren't in the DB yet and
+    // the re-alignment is a no-op, leaving stale amounts. Deferring the
+    // POSTs to the PATCH .finally ensures ordering when both fire together
+    // (e.g. admin edits netPPW and advances phase in one save).
+    const pendingMilestonePersists: PayrollEntry[] = [];
+    const hasPatch = Object.keys(dbUpdates).length > 0;
+    if (hasPatch) {
       persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -832,7 +842,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
           } catch { /* non-JSON response — leave optimistic state alone */ }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
+        });
     }
 
     // ── 5. Update local project state + phase-transition payroll ──
@@ -920,7 +933,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             computedM3Amount: null, deps: transitionDeps,
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
-            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
             setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
           }
         }
@@ -938,7 +951,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             computedM3Amount: null, deps: transitionDeps,
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
-            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
             setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
           }
         }
@@ -972,7 +985,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               computedM3Amount: m3AtInstalled, deps: transitionDeps,
             }, postRollbackEntries);
             if (m1m2Entries.length > 0) {
-              m1m2Entries.forEach((entry) => persistPayrollEntry(entry));
+              m1m2Entries.forEach((entry) => pendingMilestonePersists.push(entry));
               setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
               if (isInstalled) newlyCreatedM2Entries = m1m2Entries;
             }
@@ -986,7 +999,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           projectId: id, old, updatedProjects: updated, deps: transitionDeps,
         }, [...postRollbackEntries, ...newlyCreatedM2Entries]);
         if (m3Entries.length > 0) {
-          m3Entries.forEach((entry) => persistPayrollEntry(entry));
+          m3Entries.forEach((entry) => pendingMilestonePersists.push(entry));
           setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
         }
       }
@@ -994,6 +1007,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const finalUpdatedProject = updated.find((p) => p.id === id)!;
     setProjects((prev) => prev.map((p) => p.id === id ? finalUpdatedProject : p));
+
+    // No PATCH was queued, so the .finally handler never runs — fire immediately.
+    if (!hasPatch) {
+      pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
+    }
 
     // ── 6. Amount sync: patch Draft/Pending entries when amounts are edited ──
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined

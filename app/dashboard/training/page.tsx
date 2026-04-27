@@ -769,7 +769,82 @@ function TrainingPageInner() {
 
   if (!isHydrated) return <TrainingSkeleton />;
 
-  if (isMobile && effectiveRole !== 'admin') return <MobileTraining />;
+  if (isMobile) {
+    return (
+      <>
+        <MobileTraining
+          onNewAssignment={effectiveRole === 'admin' ? () => setShowNewAssignment(true) : undefined}
+          onEditAssignment={effectiveRole === 'admin' ? setEditAssignmentId : undefined}
+          onBackfill={effectiveRole === 'admin' ? setBackfillAssignmentId : undefined}
+          onDeleteAssignment={effectiveRole === 'admin' ? deleteAssignment : undefined}
+        />
+        {effectiveRole === 'admin' && showNewAssignment && (
+          <NewAssignmentModal
+            reps={reps}
+            prefillTraineeId={prefillTraineeId ?? undefined}
+            onClose={() => { setShowNewAssignment(false); setPrefillTraineeId(null); }}
+            onCreated={(assignment) => {
+              setTrainerAssignments((prev) => [...prev, assignment]);
+              setShowNewAssignment(false);
+              setPrefillTraineeId(null);
+              toast('Assignment created', 'success');
+            }}
+          />
+        )}
+        {effectiveRole === 'admin' && backfillAssignmentId && (() => {
+          const bfAssignment = trainerAssignments.find((a) => a.id === backfillAssignmentId);
+          if (!bfAssignment) return null;
+          return (
+            <BackfillWizard
+              assignment={bfAssignment}
+              reps={reps}
+              projects={projects}
+              payrollEntries={payrollEntries}
+              onClose={() => setBackfillAssignmentId(null)}
+              onComplete={async (created, skippedCount) => {
+                toast(`Created ${created} trainer entries${skippedCount > 0 ? `, skipped ${skippedCount}` : ''}`, 'success');
+                setBackfillAssignmentId(null);
+                try {
+                  const res = await fetch('/api/data');
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data?.payrollEntries) setPayrollEntries(data.payrollEntries);
+                  }
+                } catch { /* non-fatal */ }
+              }}
+            />
+          );
+        })()}
+        {effectiveRole === 'admin' && editAssignmentId && (() => {
+          const ea = trainerAssignments.find((a) => a.id === editAssignmentId);
+          if (!ea) return null;
+          return (
+            <EditAssignmentModal
+              assignment={ea}
+              reps={reps}
+              onClose={() => setEditAssignmentId(null)}
+              onSaved={(updated) => {
+                setTrainerAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+                setEditAssignmentId(null);
+                toast('Assignment updated', 'success');
+              }}
+            />
+          );
+        })()}
+        {deleteConfirm && (
+          <ConfirmDialog
+            open
+            onClose={() => setDeleteConfirm(null)}
+            onConfirm={confirmDeleteAssignment}
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            confirmLabel="Delete"
+            danger
+          />
+        )}
+      </>
+    );
+  }
 
   if (effectiveRole === 'project_manager') {
     return (

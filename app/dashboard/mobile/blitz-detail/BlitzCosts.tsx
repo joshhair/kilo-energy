@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, DollarSign, Loader2 } from 'lucide-react';
 import MobileEmptyState from '../shared/MobileEmptyState';
 import MobileBottomSheet from '../shared/MobileBottomSheet';
@@ -32,6 +32,11 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
   const [amount, setAmount] = useState('');
   const [desc, setDesc] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  useEffect(() => {
+    if (!showAdd) return;
+    setDate(new Date().toISOString().split('T')[0]);
+  }, [showAdd]);
+
   const [adding, setAdding] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);

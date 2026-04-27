@@ -6,8 +6,8 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square } from 'lucide-react';
-import { getTrainerOverrideRate } from '../../../lib/data';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square, Check, X, Plus } from 'lucide-react';
+import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../lib/data';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
@@ -84,6 +84,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [confirmConvert, setConfirmConvert] = useState<{ targetRole: 'rep' | 'sub-dealer'; targetLabel: string; msg: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
+  const [editingTiers, setEditingTiers] = useState(false);
+  const [draftTiers, setDraftTiers] = useState<TrainerOverrideTier[]>([]);
+  const [tierSaving, setTierSaving] = useState(false);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -623,46 +626,154 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </div>
 
           {trainerAssignment && (
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber, #f5a623)' }}>
-                  {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
+            <div className="py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber, #f5a623)' }}>
+                    {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {trainerRep ? trainerRep.name : 'Unknown trainer'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      ${currentOverrideRate.toFixed(2)}/W override rate
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {trainerRep ? trainerRep.name : 'Unknown trainer'}
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    ${currentOverrideRate.toFixed(2)}/W override rate
-                  </p>
+                <div className="flex items-center gap-1">
+                  {!editingTiers && (
+                    <button
+                      onClick={() => { setDraftTiers([...trainerAssignment.tiers]); setEditingTiers(true); }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-2"
+                      style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </button>
+                  )}
+                  {!editingTiers && (
+                    <button
+                      onClick={() => {
+                        const snapshot = trainerAssignment;
+                        const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
+                        setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
+                        fetch('/api/trainer-assignments', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: snapshot.id }),
+                        }).then((res) => {
+                          if (!res.ok) throw new Error();
+                        }).catch(() => {
+                          setTrainerAssignments((prev) => {
+                            const next = [...prev];
+                            const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
+                            next.splice(idx, 0, snapshot);
+                            return next;
+                          });
+                          toast('Failed to remove trainer assignment', 'error');
+                        });
+                      }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-2"
+                      style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  const snapshot = trainerAssignment;
-                  const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
-                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
-                  fetch('/api/trainer-assignments', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: snapshot.id }),
-                  }).then((res) => {
-                    if (!res.ok) throw new Error();
-                  }).catch(() => {
-                    setTrainerAssignments((prev) => {
-                      const next = [...prev];
-                      const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
-                      next.splice(idx, 0, snapshot);
-                      return next;
-                    });
-                    toast('Failed to remove trainer assignment', 'error');
-                  });
-                }}
-                className="flex items-center gap-1 text-xs min-h-[36px] px-2"
-                style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Remove
-              </button>
+
+              {editingTiers && (
+                <div className="mt-3 space-y-2">
+                  {draftTiers.map((tier, i) => (
+                    <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--surface-page)', border: '1px solid var(--border-subtle)' }}>
+                      <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>T{i + 1}</span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>Up to</span>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="∞"
+                          value={tier.upToDeal ?? ''}
+                          disabled={i === draftTiers.length - 1}
+                          onChange={(e) => setDraftTiers((prev) => prev.map((t, j) => j !== i ? t : { ...t, upToDeal: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+                          className="w-14 rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] outline-none disabled:opacity-40"
+                          style={{ background: 'var(--border-default)', border: '1px solid var(--border-subtle)' }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={tier.ratePerW}
+                          onChange={(e) => setDraftTiers((prev) => prev.map((t, j) => j !== i ? t : { ...t, ratePerW: parseFloat(e.target.value) || 0 }))}
+                          className="w-16 rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] outline-none"
+                          style={{ background: 'var(--border-default)', border: '1px solid var(--border-subtle)' }}
+                        />
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>/W</span>
+                      </div>
+                      <button
+                        disabled={draftTiers.length <= 1}
+                        onClick={() => setDraftTiers((prev) => {
+                          const next = prev.filter((_, j) => j !== i);
+                          if (next[next.length - 1].upToDeal !== null) {
+                            next[next.length - 1] = { ...next[next.length - 1], upToDeal: null };
+                          }
+                          return next;
+                        })}
+                        className="disabled:opacity-30"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setDraftTiers((prev) => {
+                      const updated = prev.map((t, i) => i === prev.length - 1 && t.upToDeal === null ? { ...t, upToDeal: completedDeals + 10 } : t);
+                      return [...updated, { upToDeal: null, ratePerW: 0.05 }];
+                    })}
+                    className="flex items-center gap-1 text-xs min-h-[36px]"
+                    style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add tier
+                  </button>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      disabled={tierSaving}
+                      onClick={async () => {
+                        if (tierSaving) return;
+                        setTierSaving(true);
+                        try {
+                          const res = await fetch('/api/trainer-assignments', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: trainerAssignment.id, tiers: draftTiers }),
+                          });
+                          if (!res.ok) { toast('Failed to save tiers', 'error'); return; }
+                          setTrainerAssignments((prev) => prev.map((a) => a.id === trainerAssignment.id ? { ...a, tiers: draftTiers } : a));
+                          setEditingTiers(false);
+                          toast('Trainer tiers updated');
+                        } finally {
+                          setTierSaving(false);
+                        }
+                      }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-3 rounded-xl font-semibold disabled:opacity-50"
+                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)', color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Check className="w-3.5 h-3.5" /> {tierSaving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingTiers(false); setDraftTiers([]); }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-3 rounded-xl"
+                      style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

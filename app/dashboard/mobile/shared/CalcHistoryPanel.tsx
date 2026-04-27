@@ -49,12 +49,8 @@ export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handl
           {calcHistory.map((entry, i) => (
             <div
               key={`${entry.timestamp}-${i}`}
-              className="mobile-list-item flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-              style={{
-                background: 'var(--surface-pressed)',
-                border: '1px solid var(--border-subtle)',
-                animationDelay: `${i * 55}ms`,
-              }}
+              className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+              style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>

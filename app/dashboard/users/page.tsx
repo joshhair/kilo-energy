@@ -1419,7 +1419,7 @@ function UsersPageInner() {
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${compareReps.length}, 1fr)` }}>
               {compareReps.map((rep) => {
                 const rp = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const dealsClosed = rp.length;
                 const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
@@ -1428,13 +1428,13 @@ function UsersPageInner() {
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= today).reduce((s, e) => s + e.amount, 0)
                   : 0;
                 const rpCancelled = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const cancelRate = (rp.length + rpCancelled.length) > 0 ? (rpCancelled.length / (rp.length + rpCancelled.length) * 100) : 0;
 
                 // Previous period stats
                 const prevDeals = ranges.prev
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
 
