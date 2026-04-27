@@ -70,7 +70,7 @@ function fmt$(n: number | null | undefined): string {
 
 export default function MobileCalculator() {
   const {
-    currentRepId,
+    effectiveRepId,
     effectiveRole,
     activeInstallers,
     installerPricingVersions,
@@ -121,14 +121,18 @@ export default function MobileCalculator() {
   useEffect(() => { setCalcHistory(loadCalcHistory()); }, []);
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────
+  // Scope by `effectiveRepId`. View-As makes `effectiveRole` 'rep' but
+  // `currentRepId` stays the admin's own (often null) id — matching null
+  // repIds against unassigned/Glide-imported projects leaks every other
+  // rep's customer name + PPW into the dropdown.
   const recentDeals = useMemo(() => {
     const filtered = effectiveRole === 'admin'
       ? projects
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
     return [...filtered]
       .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
-  }, [projects, currentRepId, effectiveRole]);
+  }, [projects, effectiveRepId, effectiveRole]);
 
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
@@ -210,7 +214,7 @@ export default function MobileCalculator() {
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
   // Closer trainer — mirrors desktop calculator logic
-  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  const effectiveCloserId = quickFillRepId ?? effectiveRepId;
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;

@@ -225,7 +225,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, effectiveRole, trainerAssignments, projects, payrollEntries, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
+  const { effectiveRepId, effectiveRole, trainerAssignments, projects, payrollEntries, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -286,14 +286,19 @@ function CalculatorPage() {
   };
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────────
+  // Scope by `effectiveRepId`, not `currentRepId`. When an admin uses
+  // View-As to model a rep's situation, `effectiveRole` becomes 'rep'
+  // but `currentRepId` is still the admin's own (often null) rep id —
+  // matching null repIds leaks every Glide-imported / unassigned deal
+  // (customer name + PPW) into the dropdown. Privacy gate parity.
   const recentDeals = useMemo(() => {
     const filtered = effectiveRole === 'admin'
       ? projects
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
     return [...filtered]
       .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
-  }, [projects, currentRepId, effectiveRole]);
+  }, [projects, effectiveRepId, effectiveRole]);
 
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
@@ -471,8 +476,10 @@ function CalculatorPage() {
     ? Math.round(trainerRate * kW * 1000 * 100) / 100
     : 0;
 
-  // Closer trainer assignment — use the Quick Fill rep when an admin models another rep's deal
-  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  // Closer trainer assignment — use the Quick Fill rep when an admin models another rep's deal,
+  // otherwise fall back to the View-As rep (or signed-in rep) so the trainer override
+  // reflects the right person's assignment, not the admin's.
+  const effectiveCloserId = quickFillRepId ?? effectiveRepId;
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
