@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/privacy-prober",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
