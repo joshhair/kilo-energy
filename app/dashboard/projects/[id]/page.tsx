@@ -1171,16 +1171,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 breakdown above already shows each milestone's status + amount
                 inside each RepCommissionCard; this footer exists only so admin
                 can flip the project-level m1Paid/m2Paid/m3Paid flags in one
-                tap. Edit amounts through the Edit Deal modal (recomputes via
-                server) or by tweaking netPPW / kW inputs on the project.
+                tap. Amount shown is the PROJECT total for that milestone
+                (closer + setter + co-parties) so the number isn't misread
+                as "$0 paid out at M1" when in fact the setter is owed $1,000.
+                Inline editor only targets the closer's portion, so we hide
+                it whenever a setter is present and route the admin to the
+                Edit Deal modal instead.
                 Dup Milestone Status block removed 2026-04-24 per Josh's ask. */}
             <div className="border-t border-[var(--border-subtle)] pt-4 flex flex-wrap gap-2">
-              {([
-                { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: project.m1Amount ?? 0 },
-                { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: project.m2Amount ?? 0 },
-                ...((project.m3Amount ?? 0) > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: project.m3Amount ?? 0 }] : []),
-              ]).map(({ stage, paid, toggle, amount }) => {
-                const isEditable = effectiveRole === 'admin' && !isPM && (stage === 'M1' || stage === 'M2');
+              {(() => {
+                const sumExtras = (key: 'm1Amount' | 'm2Amount' | 'm3Amount') =>
+                  ((project.additionalClosers ?? []).reduce((s, c) => s + (c[key] ?? 0), 0)) +
+                  ((project.additionalSetters ?? []).reduce((s, c) => s + (c[key] ?? 0), 0));
+                const m1Total = (project.m1Amount ?? 0) + (project.setterM1Amount ?? 0) + sumExtras('m1Amount');
+                const m2Total = (project.m2Amount ?? 0) + (project.setterM2Amount ?? 0) + sumExtras('m2Amount');
+                const m3Total = (project.m3Amount ?? 0) + (project.setterM3Amount ?? 0) + sumExtras('m3Amount');
+                return ([
+                  { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: m1Total, closerAmount: project.m1Amount ?? 0 },
+                  { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: m2Total, closerAmount: project.m2Amount ?? 0 },
+                  ...(m3Total > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: m3Total, closerAmount: project.m3Amount ?? 0 }] : []),
+                ]);
+              })().map(({ stage, paid, toggle, amount, closerAmount }) => {
+                const hasSetter = !!project.setterId;
+                const isEditable = effectiveRole === 'admin' && !isPM && !hasSetter && (stage === 'M1' || stage === 'M2');
                 const isEditing = stage === 'M1' ? editM1 : stage === 'M2' ? editM2 : false;
                 return (
                   <div key={stage} className="flex flex-col gap-1">
@@ -1198,7 +1211,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         {paid ? 'Paid' : 'Pending'}
                       </span>
                     </button>
-                    {isEditable && (
+                    {isEditable ? (
                       isEditing ? (
                         <div className="flex items-center gap-1 flex-wrap">
                           <input
@@ -1227,14 +1240,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       ) : (
                         <button
                           onClick={() => {
-                            if (stage === 'M1') { setM1Val(String(amount)); setEditM1(true); }
-                            else { setM2Val(String(amount)); setEditM2(true); }
+                            if (stage === 'M1') { setM1Val(String(closerAmount)); setEditM1(true); }
+                            else { setM2Val(String(closerAmount)); setEditM2(true); }
                           }}
                           className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 tabular-nums text-left"
+                          title="Click to edit closer's milestone amount"
                         >
                           ${amount.toLocaleString()}
                         </button>
                       )
+                    ) : (
+                      effectiveRole === 'admin' && !isPM ? (
+                        <span
+                          className="text-xs text-[var(--text-muted)] tabular-nums"
+                          title="Project total (closer + setter + co-parties). Edit via Edit Deal modal."
+                        >
+                          ${amount.toLocaleString()}
+                        </span>
+                      ) : null
                     )}
                   </div>
                 );
@@ -1681,8 +1704,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex gap-3 mt-6">
               <button onClick={saveEditModal}
-                className="flex-1 text-[var(--text-primary)] font-semibold py-2.5 rounded-xl transition-colors text-sm"
-                style={{ backgroundColor: 'var(--brand)' }}>
+                className="flex-1 font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>
                 Save Changes
               </button>
               <button onClick={() => { setShowEditModal(false); setEditErrors({}); }}
