@@ -103,6 +103,81 @@ const eslintConfig = defineConfig([
       "prefer-const": "warn",
     },
   },
+  {
+    // Privacy-gate enforcement: ban direct prisma imports outside of
+    // explicitly-allowed admin paths. New routes must use `db` from
+    // `@/lib/db-gated` so the visibility WHERE is injected automatically.
+    //
+    // Allowed locations for `import { prisma | dbAdmin } from '@/lib/db'`:
+    //   - lib/db-gated.ts            (the gate itself wraps prisma)
+    //   - lib/api-auth.ts            (foundational auth resolution)
+    //   - lib/audit-log.ts           (writer for the gate's audit trail)
+    //   - lib/audit.ts               (existing AuditLog writer)
+    //   - lib/admin-only/**          (future admin-only data layer)
+    //   - app/api/cron/**            (cron jobs run as system)
+    //   - app/api/data/route.ts      (bulk endpoint with inline filters)
+    //   - app/api/auth/**            (auth resolution paths)
+    //   - app/api/admin/**           (admin-only endpoints)
+    //   - app/api/import/**          (admin-only data import)
+    //   - scripts/**                 (one-off migrations)
+    //   - tests/**                   (test setup)
+    //   - prisma/**                  (seed scripts)
+    //
+    // Everywhere else: `import { db } from '@/lib/db-gated'`.
+    files: ["app/api/**/*.ts", "lib/**/*.ts"],
+    ignores: [
+      // Files that legitimately need raw prisma access.
+      "lib/db.ts",
+      "lib/db-gated.ts",
+      "lib/api-auth.ts",
+      "lib/audit-log.ts",
+      "lib/audit.ts",
+      "lib/admin-only/**",
+      "lib/admin-context.ts",
+      "lib/serialize.ts",
+      "lib/commission-server.ts",
+      "lib/rate-limit.ts",
+      "lib/email-helpers.ts",
+      "app/api/cron/**",
+      "app/api/data/route.ts",
+      "app/api/auth/**",
+      "app/api/admin/**",
+      "app/api/import/**",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          paths: [
+            {
+              name: "@/lib/db",
+              importNames: ["prisma", "dbAdmin"],
+              message:
+                "Direct prisma access bypasses the privacy gate. Use `db` from '@/lib/db-gated' instead. If this is a legitimate admin-only path, add the file to the allowlist in eslint.config.mjs.",
+            },
+            {
+              name: "../../../lib/db",
+              importNames: ["prisma", "dbAdmin"],
+              message:
+                "Direct prisma access bypasses the privacy gate. Use `db` from '@/lib/db-gated' instead.",
+            },
+            {
+              name: "../../../../lib/db",
+              importNames: ["prisma", "dbAdmin"],
+              message:
+                "Direct prisma access bypasses the privacy gate. Use `db` from '@/lib/db-gated' instead.",
+            },
+            {
+              name: "../../../../../lib/db",
+              importNames: ["prisma", "dbAdmin"],
+              message:
+                "Direct prisma access bypasses the privacy gate. Use `db` from '@/lib/db-gated' instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
