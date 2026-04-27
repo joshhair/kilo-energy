@@ -836,7 +836,7 @@ export default function MobileDashboard() {
           ); })()}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{periodActive.length}</p>
-            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Active Deals</p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Active</p>
           </div>
         </div>
       </MobileCard>
