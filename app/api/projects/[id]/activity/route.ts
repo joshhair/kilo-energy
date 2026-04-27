@@ -95,7 +95,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // entry entirely rather than scrub the detail — the meta field also
   // carries raw old/new values which devtools can read. Pagination
   // happens in JS post-filter so total matches what the viewer sees.
+  //
+  // Plus: ALL financial fields are admin/PM only in the activity log
+  // regardless of who's looking. The per-field visibility matrix lets
+  // closers see their own m2Amount on the project (they earn it), but
+  // exposing the change history (e.g. "M2 changed from 2406.56 to
+  // 4528.32") leaks admin edits / negotiation that the project payload
+  // never shows. Bryce Marsh viewing his own deal as a closer should
+  // see the current commission, not the audit trail of how it got
+  // there. Hard-blacklist the money fields here so they're hidden even
+  // when the viewer's relationship would normally pass them through.
+  const FINANCIAL_FIELDS = new Set([
+    'm1Amount', 'm2Amount', 'm3Amount',
+    'setterM1Amount', 'setterM2Amount', 'setterM3Amount',
+    'netPPW', 'kWSize',
+  ]);
   const isHidden = (field: string): boolean => {
+    if (FINANCIAL_FIELDS.has(field)) return true;
     const policy = ProjectFieldVisibility[field];
     if (!policy) return false;
     const action = policy[rel];
