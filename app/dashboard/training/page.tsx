@@ -35,6 +35,7 @@ import {
   ChevronDown,
   Home,
   MoreHorizontal,
+  Pencil,
   Pause,
   Play,
   Archive,
@@ -366,6 +367,7 @@ function TrainingPageInner() {
 
   // Backfill wizard — stores the assignment ID whose backfill is active
   const [backfillAssignmentId, setBackfillAssignmentId] = useState<string | null>(null);
+  const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -650,6 +652,13 @@ function TrainingPageInner() {
   const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed');
 
   const deleteAssignment = (id: string) => {
+    // Synthetic rows surfaced from per-project trainer overrides aren't
+    // backed by a TrainerAssignment record, so DELETE would 404 silently.
+    // Tell the admin where to actually go.
+    if (id.startsWith('direct-')) {
+      toast('This is a per-deal trainer override. Open the project to remove it.', 'info');
+      return;
+    }
     const assignment = trainerAssignments.find((a) => a.id === id);
     if (!assignment) return;
     const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'trainer';
@@ -1247,6 +1256,14 @@ function TrainingPageInner() {
                               <Archive className="w-3.5 h-3.5" /> Archive
                             </button>
                             <div className="border-t border-[var(--border-subtle)] my-1" />
+                            {!a.id.startsWith('direct-') && (
+                              <button
+                                onClick={() => { setOpenMenuId(null); setEditAssignmentId(a.id); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" /> Edit assignment
+                              </button>
+                            )}
                             <button
                               onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
@@ -1615,6 +1632,23 @@ function TrainingPageInner() {
           onClose={() => setSlideProjectId(null)}
         />
       )}
+
+      {editAssignmentId && (() => {
+        const ea = trainerAssignments.find((a) => a.id === editAssignmentId);
+        if (!ea) return null;
+        return (
+          <EditAssignmentModal
+            assignment={ea}
+            reps={reps}
+            onClose={() => setEditAssignmentId(null)}
+            onSaved={(updated) => {
+              setTrainerAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+              setEditAssignmentId(null);
+              toast('Assignment updated', 'success');
+            }}
+          />
+        );
+      })()}
 
       {deleteConfirm && (
         <ConfirmDialog
@@ -2410,6 +2444,260 @@ function NewAssignmentModal({
             </button>
           </div>
         </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Assignment Modal ───────────────────────────────────────────────────
+// Trainer + trainee are immutable on the API (changing either would require a
+// new TrainerAssignment row), so this modal only edits tiers + the active
+// flag. Mirrors NewAssignmentModal validation, hits PATCH /api/trainer-
+// assignments instead of POST.
+
+function EditAssignmentModal({
+  assignment,
+  reps,
+  onClose,
+  onSaved,
+}: {
+  assignment: TrainerAssignment;
+  reps: Rep[];
+  onClose: () => void;
+  onSaved: (updated: TrainerAssignment) => void;
+}) {
+  const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'Trainer';
+  const traineeName = reps.find((r) => r.id === assignment.traineeId)?.name ?? 'Trainee';
+
+  const [isActiveTraining, setIsActiveTraining] = useState<boolean>(assignment.isActiveTraining ?? true);
+  const [tiers, setTiers] = useState<TierRow[]>(() =>
+    (assignment.tiers.length > 0 ? assignment.tiers : [{ upToDeal: null, ratePerW: 0 }]).map((t) => ({
+      ratePerW: t.ratePerW.toString(),
+      upToDeal: t.upToDeal === null ? '' : t.upToDeal.toString(),
+      perpetuity: t.upToDeal === null,
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const addTier = () => setTiers((prev) => [...prev, { ratePerW: '0.10', upToDeal: '', perpetuity: true }]);
+  const removeTier = (idx: number) => setTiers((prev) => prev.filter((_, i) => i !== idx));
+  const updateTier = (idx: number, field: keyof TierRow, value: string | boolean) => {
+    setTiers((prev) => prev.map((t, i) => (i === idx ? { ...t, [field]: value } : t)));
+  };
+
+  const validate = (): string | null => {
+    if (tiers.length === 0) return 'At least one tier is required';
+    for (let i = 0; i < tiers.length; i++) {
+      const rate = parseFloat(tiers[i].ratePerW);
+      if (isNaN(rate) || rate < 0 || rate > MAX_TRAINER_RATE_PER_W) {
+        return `Tier ${i + 1}: rate must be $0–$${MAX_TRAINER_RATE_PER_W}/W`;
+      }
+      if (!tiers[i].perpetuity) {
+        const cap = parseInt(tiers[i].upToDeal);
+        if (isNaN(cap) || cap <= 0 || !Number.isInteger(cap)) {
+          return `Tier ${i + 1}: cap must be a positive integer or Perpetuity`;
+        }
+        if (i > 0 && tiers[i - 1].perpetuity) {
+          return `Tier ${i + 1}: no tiers can follow a perpetuity tier`;
+        }
+        if (i > 0 && !tiers[i - 1].perpetuity) {
+          const prevCap = parseInt(tiers[i - 1].upToDeal);
+          if (cap <= prevCap) {
+            return `Tier ${i + 1}: cap must be greater than tier ${i} cap (${prevCap})`;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleSave = async () => {
+    const validationError = validate();
+    if (validationError) { setError(validationError); return; }
+    setError('');
+    setSaving(true);
+
+    const payload = {
+      id: assignment.id,
+      isActiveTraining,
+      tiers: tiers.map((t) => ({
+        ratePerW: parseFloat(t.ratePerW),
+        upToDeal: t.perpetuity ? null : parseInt(t.upToDeal),
+      })),
+    };
+
+    try {
+      const res = await fetch('/api/trainer-assignments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? 'Failed to update assignment');
+        setSaving(false);
+        return;
+      }
+      const data = await res.json();
+      const updated: TrainerAssignment = {
+        id: data.id,
+        trainerId: data.trainerId,
+        traineeId: data.traineeId,
+        isActiveTraining: data.isActiveTraining ?? true,
+        tiers: (data.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({
+          upToDeal: t.upToDeal,
+          ratePerW: t.ratePerW,
+        })),
+      };
+      onSaved(updated);
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter' && !saving && (e.metaKey || e.ctrlKey)) handleSave();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiers, isActiveTraining, saving]);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="min-h-full grid place-items-center p-4">
+        <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 rounded-2xl p-6 w-full max-w-lg">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/15">
+                <Pencil className="w-5 h-5 text-[var(--accent-amber-text)]" />
+              </div>
+              <div>
+                <h2 className="text-[var(--text-primary)] font-semibold text-lg">Edit Assignment</h2>
+                <p className="text-sm text-[var(--text-muted)]">{trainerName} → {traineeName}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-[var(--surface-card)]/60 border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-xs text-[var(--text-muted)]">
+              Trainer and rep can&apos;t be changed on an existing assignment. Delete and recreate to reassign.
+            </div>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isActiveTraining}
+                onChange={(e) => setIsActiveTraining(e.target.checked)}
+                className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface-card)]"
+              />
+              <span className="text-base text-[var(--text-secondary)]">Active coaching</span>
+              <span className="text-xs text-[var(--text-muted)]">(uncheck for Residuals)</span>
+            </label>
+
+            <div>
+              <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-2">Tier Chain</label>
+              <div className="space-y-2">
+                {tiers.map((tier, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
+                    <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={MAX_TRAINER_RATE_PER_W}
+                          value={tier.ratePerW}
+                          onChange={(e) => updateTier(idx, 'ratePerW', e.target.value)}
+                          className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={tier.perpetuity}
+                              onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
+                              className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
+                            />
+                            <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
+                          </label>
+                        </div>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          value={tier.perpetuity ? '' : tier.upToDeal}
+                          disabled={tier.perpetuity}
+                          onChange={(e) => updateTier(idx, 'upToDeal', e.target.value)}
+                          placeholder={tier.perpetuity ? 'n/a' : ''}
+                          className={`w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                            tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                    {tiers.length > 1 && (
+                      <button
+                        onClick={() => removeTier(idx)}
+                        className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
+                        title="Remove tier"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={addTier}
+                className="mt-2 text-xs text-[var(--accent-amber-text)] hover:text-[var(--accent-amber-text)] transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Add tier
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-[var(--accent-red-text)] flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

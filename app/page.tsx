@@ -5,6 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useApp } from '../lib/context';
 
+/** Pop the deep-link path stashed by `dashboard/layout.tsx` when an
+ *  unauthenticated refresh bounced here, falling back to /dashboard.
+ *  Only honors paths under /dashboard so we never trust arbitrary input. */
+function consumePostAuthRedirect(): string {
+  if (typeof window === 'undefined') return '/dashboard';
+  try {
+    const stash = sessionStorage.getItem('postAuthRedirect');
+    sessionStorage.removeItem('postAuthRedirect');
+    if (stash && stash.startsWith('/dashboard')) return stash;
+  } catch {
+    // sessionStorage disabled — fall through.
+  }
+  return '/dashboard';
+}
+
 export default function LoginPage() {
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { signOut } = useClerk();
@@ -56,7 +71,7 @@ export default function LoginPage() {
             // (My Pay tab, rep-dropdown visibility) on the signed-in session.
             user.repType ?? null,
           );
-          router.push('/dashboard');
+          router.push(consumePostAuthRedirect());
         } else if (res.status === 404) {
           setError('Access denied — your account is not registered. Contact your administrator.');
           setLoading(false);

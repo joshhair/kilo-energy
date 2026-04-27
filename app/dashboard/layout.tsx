@@ -337,8 +337,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   useEffect(() => {
-    if (!currentRole) router.push('/');
-  }, [currentRole, router]);
+    if (!currentRole) {
+      // Stash the dashboard path the user was on so the role-resolution
+      // loop in `app/page.tsx` can return them here instead of dumping
+      // them on `/dashboard`. Without this, refresh on any dashboard
+      // route bounced to / → role resolves → push('/dashboard'), losing
+      // the deep-link.
+      if (typeof window !== 'undefined' && pathname?.startsWith('/dashboard')) {
+        try {
+          sessionStorage.setItem(
+            'postAuthRedirect',
+            pathname + (window.location.search ?? ''),
+          );
+        } catch {
+          // Private browsing / sessionStorage disabled — degrade to old behavior.
+        }
+      }
+      router.push('/');
+    }
+  }, [currentRole, router, pathname]);
 
   // Show / hide scroll-to-top button based on main scroll position
   useEffect(() => {
