@@ -663,8 +663,14 @@ export default function MobileCalculator() {
         )}
 
         {/* kW + PPW */}
+        {/*
+         * Each cell is a flex column with the input pushed to the
+         * bottom (`mt-auto`), so a wrapped label on one side ("System
+         * Size (kW)" → 2 lines on narrow phones) doesn't leave its
+         * input misaligned with the unwrapped neighbor's.
+         */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div className="flex flex-col">
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>System Size (kW)</label>
             <input
               type="number"
@@ -676,11 +682,11 @@ export default function MobileCalculator() {
               placeholder="e.g. 8.4"
               value={kWSize}
               onChange={(e) => setKWSize(e.target.value)}
-              className={inputCls}
+              className={inputCls + ' mt-auto'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
           </div>
-          <div>
+          <div className="flex flex-col">
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Net PPW ($)</label>
             <input
               type="number"
@@ -692,7 +698,7 @@ export default function MobileCalculator() {
               placeholder="e.g. 3.85"
               value={netPPW}
               onChange={(e) => setNetPPW(e.target.value)}
-              className={inputCls}
+              className={inputCls + ' mt-auto'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
           </div>
