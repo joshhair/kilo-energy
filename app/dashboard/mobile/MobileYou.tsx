@@ -78,6 +78,7 @@ export default function MobileYou() {
     effectiveRepName,
     reps,
     subDealers,
+    viewAsCandidates,
     trainerAssignments,
     isViewingAs,
     viewAsUser,
@@ -135,7 +136,7 @@ export default function MobileYou() {
     signOut({ redirectUrl: '/sign-in' });
   };
 
-  const handleViewAsPick = (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
+  const handleViewAsPick = (user: { id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId?: string | null }) => {
     setViewAsUser(user);
     setViewAsOpen(false);
     setViewAsSearch('');
@@ -287,7 +288,7 @@ export default function MobileYou() {
             }}
           >
             <Eye className="w-4 h-4 shrink-0" />
-            <span className="flex-1 text-left">View as rep&hellip;</span>
+            <span className="flex-1 text-left">View as user&hellip;</span>
             <ChevronRight
               className="w-3.5 h-3.5"
               style={{
@@ -311,45 +312,53 @@ export default function MobileYou() {
                   autoFocus
                   value={viewAsSearch}
                   onChange={(e) => setViewAsSearch(e.target.value)}
-                  placeholder="Search reps..."
+                  placeholder="Search users..."
                   className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] outline-none"
                   style={{ borderBottom: '1px solid var(--border-subtle)', fontFamily: FONT_BODY }}
                 />
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {[
+                {([
                   ...(reps || [])
                     .filter((r) => r.active !== false)
-                    .map((r) => ({ id: r.id, name: r.name, role: 'rep' as const })),
+                    .map((r) => ({ id: r.id, name: r.name, role: 'rep' as const, scopedInstallerId: null as string | null })),
                   ...(subDealers || [])
                     .filter((sd) => sd.active !== false)
-                    .map((sd) => ({ id: sd.id, name: sd.name, role: 'sub-dealer' as const })),
-                ]
+                    .map((sd) => ({ id: sd.id, name: sd.name, role: 'sub-dealer' as const, scopedInstallerId: null as string | null })),
+                  ...(viewAsCandidates || [])
+                    .map((c) => ({ id: c.id, name: c.name, role: c.role, scopedInstallerId: c.scopedInstallerId })),
+                ] as Array<{ id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId: string | null }>)
                   .filter(
                     (u) =>
                       !viewAsSearch.trim() ||
                       u.name.toLowerCase().includes(viewAsSearch.toLowerCase()),
                   )
-                  .map((u) => (
-                    <button
-                      key={`${u.role}-${u.id}`}
-                      onClick={() => handleViewAsPick(u)}
-                      className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] active:scale-[0.98] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
-                      style={{
-                        borderBottom: '1px solid var(--border-subtle)',
-                        fontFamily: FONT_BODY,
-                        WebkitTapHighlightColor: 'transparent',
-                      }}
-                    >
-                      <span className="truncate pr-3">{u.name}</span>
-                      <span
-                        className="text-xs capitalize shrink-0"
-                        style={{ color: 'var(--text-muted)' }}
+                  .map((u) => {
+                    const roleLabel = u.role === 'project_manager'
+                      ? (u.scopedInstallerId ? 'vendor PM' : 'PM')
+                      : u.role === 'sub-dealer' ? 'sub-dealer'
+                      : u.role;
+                    return (
+                      <button
+                        key={`${u.role}-${u.id}`}
+                        onClick={() => handleViewAsPick(u)}
+                        className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] active:scale-[0.98] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-[transform,background-color] duration-[75ms] flex items-center justify-between"
+                        style={{
+                          borderBottom: '1px solid var(--border-subtle)',
+                          fontFamily: FONT_BODY,
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
                       >
-                        {u.role}
-                      </span>
-                    </button>
-                  ))}
+                        <span className="truncate pr-3">{u.name}</span>
+                        <span
+                          className="text-xs shrink-0"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {roleLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}

@@ -261,6 +261,22 @@ export async function GET() {
       canCreateBlitz: u.canCreateBlitz ?? false,
     }));
 
+  // ─── View-As candidates: admins + project managers (admin only) ───
+  // Admins use this to impersonate PMs and admin colleagues from the View
+  // As picker. Reps + sub-dealers + PMs get an empty list — view-as is an
+  // admin-only privilege. PII (email/phone) is omitted; only id+name+role
+  // are needed for the picker.
+  const viewAsCandidates = isAdmin
+    ? users
+        .filter((u) => u.active && (u.role === 'admin' || u.role === 'project_manager'))
+        .map((u) => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          role: u.role as 'admin' | 'project_manager',
+          scopedInstallerId: u.scopedInstallerId ?? null,
+        }))
+    : [];
+
   const subDealers = users
     .filter((u) => u.role === 'sub-dealer')
     .map((u) => ({
@@ -583,6 +599,7 @@ export async function GET() {
   return NextResponse.json({
     reps,
     subDealers,
+    viewAsCandidates,
     installers: installerNames,
     financers: financerNames,
     installerPayConfigs,

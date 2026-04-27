@@ -163,10 +163,12 @@ function NavGroup({
 
 // ─── View As Selector (admin only) ──────────────────────────────────────────
 
-function ViewAsSelector({ reps, subDealers, onSelect, self }: {
+function ViewAsSelector({ reps, subDealers, candidates, onSelect, self }: {
   reps: Array<{ id: string; name: string }>;
   subDealers: Array<{ id: string; name: string }>;
-  onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  /** Pure admins + project managers — only populated for admin viewers. */
+  candidates: Array<{ id: string; name: string; role: 'admin' | 'project_manager'; scopedInstallerId: string | null }>;
+  onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId?: string | null }) => void;
   /** When the current admin also sells (has repType), pass their own
    *  identity so the picker offers "My Rep View" as a first-class
    *  option. Replaces Glide's two-account hack for selling admins. */
@@ -202,9 +204,10 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
     };
   }, [open, close]);
 
-  const allUsers = [
-    ...reps.map((r) => ({ ...r, role: 'rep' as const })),
-    ...subDealers.map((sd) => ({ ...sd, role: 'sub-dealer' as const })),
+  const allUsers: Array<{ id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId?: string | null }> = [
+    ...reps.map((r) => ({ id: r.id, name: r.name, role: 'rep' as const })),
+    ...subDealers.map((sd) => ({ id: sd.id, name: sd.name, role: 'sub-dealer' as const })),
+    ...candidates.map((c) => ({ id: c.id, name: c.name, role: c.role, scopedInstallerId: c.scopedInstallerId })),
   ];
 
   const filtered = search.trim()
@@ -228,7 +231,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search reps..."
+              placeholder="Search users..."
               className="flex-1 bg-transparent px-3 py-2 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dim)]"
             />
             <button
@@ -251,16 +254,22 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
             )}
             {filtered.length === 0 ? (
               <p className="text-xs text-[var(--text-dim)] p-3 text-center">No matches</p>
-            ) : filtered.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => { onSelect(u); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-between"
-              >
-                <span>{u.name}</span>
-                <span className="text-[10px] text-[var(--text-dim)] capitalize">{u.role}</span>
-              </button>
-            ))}
+            ) : filtered.map((u) => {
+              const roleLabel = u.role === 'project_manager'
+                ? (u.scopedInstallerId ? 'vendor PM' : 'PM')
+                : u.role === 'sub-dealer' ? 'sub-dealer'
+                : u.role;
+              return (
+                <button
+                  key={`${u.role}-${u.id}`}
+                  onClick={() => { onSelect(u); close(); }}
+                  className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-between"
+                >
+                  <span>{u.name}</span>
+                  <span className="text-[10px] text-[var(--text-dim)]">{roleLabel}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -271,7 +280,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
+  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers, viewAsCandidates } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
@@ -733,6 +742,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <ViewAsSelector
             reps={reps}
             subDealers={subDealers}
+            candidates={viewAsCandidates}
             onSelect={setViewAsUser}
             self={currentUserRepType && currentRepId && currentRepName ? { id: currentRepId, name: currentRepName } : null}
           />
@@ -819,6 +829,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* View As banner */}
         {isViewingAs && viewAsUser && (() => {
           const isSelfView = viewAsUser.id === currentRepId;
+          const roleLabel = viewAsUser.role === 'project_manager'
+            ? (viewAsUser.scopedInstallerId ? 'vendor PM' : 'project manager')
+            : viewAsUser.role === 'sub-dealer' ? 'sub-dealer'
+            : viewAsUser.role;
           return (
             <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -826,7 +840,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-[var(--accent-amber-text)] text-sm font-medium">
                   {isSelfView
                     ? <>My Rep View <span className="text-[var(--accent-amber-text)]/60">— same as any rep sees</span></>
-                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-[var(--accent-amber-text)]/60 capitalize">({viewAsUser.role})</span></>
+                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-[var(--accent-amber-text)]/60">({roleLabel})</span></>
                   }
                 </span>
               </div>

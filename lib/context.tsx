@@ -131,17 +131,44 @@ interface AppContextType {
   // Project Chatter — lightweight unread mention count for nav badge
   unreadMentionCount: number;
   refreshMentionCount: () => void;
-  // View As (admin impersonation)
-  viewAsUser: { id: string; name: string; role: 'rep' | 'sub-dealer' } | null;
-  setViewAsUser: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  // View As (admin impersonation) — supports all roles, not just rep/SD,
+  // so admins can preview what a PM or admin colleague sees.
+  viewAsUser: ViewAsUser | null;
+  setViewAsUser: (user: ViewAsUser) => void;
   clearViewAs: () => void;
   isViewingAs: boolean;
   effectiveRole: Role;
   effectiveRepId: string | null;
   effectiveRepName: string | null;
+  /** When viewing-as a vendor PM, the installer scope id. UI components
+   *  scoping by installer (Projects list) read this to mirror what the PM
+   *  actually sees. Null otherwise (admin / internal PM / rep / SD view). */
+  effectiveScopedInstallerId: string | null;
+  /** Same as `effectiveScopedInstallerId` but resolved to the installer
+   *  name (project DTOs use names, not ids). Null when not in vendor PM
+   *  view-as mode or when the id has no name mapping. */
+  effectiveScopedInstallerName: string | null;
+  /** Admin + project_manager candidates the admin can view-as. Populated
+   *  by /api/data only for admins; empty for everyone else. */
+  viewAsCandidates: ViewAsCandidate[];
   // PM permissions
   pmPermissions: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null;
 }
+
+export type ViewAsUser = {
+  id: string;
+  name: string;
+  role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager';
+  /** Set only for vendor PM impersonation — the installer they're scoped to. */
+  scopedInstallerId?: string | null;
+};
+
+export type ViewAsCandidate = {
+  id: string;
+  name: string;
+  role: 'admin' | 'project_manager';
+  scopedInstallerId: string | null;
+};
 
 const AppContext = createContext<AppContextType | null>(null);
 
@@ -192,7 +219,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dbReady, setDbReady] = useState(false);
   const [dataError, setDataError] = useState(false);
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
-  const [viewAsUser, setViewAsUserState] = useState<{ id: string; name: string; role: 'rep' | 'sub-dealer' } | null>(null);
+  const [viewAsUser, setViewAsUserState] = useState<ViewAsUser | null>(null);
+  const [viewAsCandidates, setViewAsCandidates] = useState<ViewAsCandidate[]>([]);
   const [pmPermissions, setPmPermissions] = useState<{ canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null>(null);
 
   // Maps temp client IDs (pay_${ts}_...) → Promise<realDbId> for in-flight payroll POSTs.
@@ -203,7 +231,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // addProductCatalogProduct awaits this when the installer ID isn't in idMaps yet.
   const pendingInstallerIdRef = useRef<Map<string, Promise<string>>>(new Map());
 
-  const setViewAsUser = useCallback((user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
+  const setViewAsUser = useCallback((user: ViewAsUser) => {
     setViewAsUserState(user);
   }, []);
   const clearViewAs = useCallback(() => { setViewAsUserState(null); }, []);
@@ -211,10 +239,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const effectiveRole: Role = isViewingAs ? viewAsUser!.role : currentRole;
   const effectiveRepId = isViewingAs ? viewAsUser!.id : currentRepId;
   const effectiveRepName = isViewingAs ? viewAsUser!.name : currentRepName;
+  // Only meaningful when viewing-as a vendor PM (PM with scopedInstallerId).
+  // Internal PMs, admins, reps, sub-dealers all yield null. UI components
+  // that mirror PM-installer scoping (Projects list) read this.
+  const effectiveScopedInstallerId = isViewingAs && viewAsUser?.role === 'project_manager'
+    ? (viewAsUser.scopedInstallerId ?? null)
+    : null;
   const [idMaps, setIdMaps] = useState<{
     installerNameToId: Record<string, string>;
     financerNameToId: Record<string, string>;
   }>({ installerNameToId: {}, financerNameToId: {} });
+  // Reverse-resolve installer id → name. Project DTOs use names, so UI
+  // filters that mirror server-side installer scoping need the name.
+  const effectiveScopedInstallerName = effectiveScopedInstallerId
+    ? Object.entries(idMaps.installerNameToId).find(([, id]) => id === effectiveScopedInstallerId)?.[0] ?? null
+    : null;
 
   // Hydrate all state from the database on mount.
   // Retry on transient auth failures: on a fresh sign-in the Clerk session
@@ -239,6 +278,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setReps(data.reps ?? []);
         setSubDealers(data.subDealers ?? []);
+        setViewAsCandidates(data.viewAsCandidates ?? []);
         setInstallers((data.installers ?? []).map((i: { name: string; active: boolean }) => ({ name: i.name, active: i.active })));
         setFinancers((data.financers ?? []).map((f: { name: string; active: boolean }) => ({ name: f.name, active: f.active })));
         setProjects(data.projects ?? []);
@@ -1360,6 +1400,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         effectiveRole,
         effectiveRepId,
         effectiveRepName,
+        effectiveScopedInstallerId,
+        effectiveScopedInstallerName,
+        viewAsCandidates,
         pmPermissions,
       }}
     >

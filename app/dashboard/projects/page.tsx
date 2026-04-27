@@ -24,7 +24,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveScopedInstallerName, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
@@ -123,12 +123,20 @@ function ProjectsPageInner() {
     || !!p.additionalClosers?.some((c) => c.userId === effectiveRepId)
     || !!p.additionalSetters?.some((s) => s.userId === effectiveRepId);
 
+  // Vendor-PM view-as: client-side mirror of the server's installer scope
+  // so admin previewing a vendor PM sees the same restricted project set.
+  // No-op for everyone else (effectiveScopedInstallerName is null unless
+  // admin is viewing-as a vendor PM).
+  const installerScoped = effectiveScopedInstallerName
+    ? projects.filter((p) => p.installer === effectiveScopedInstallerName)
+    : projects;
+
   const visibleProjects =
     effectiveRole === 'admin' || effectiveRole === 'project_manager'
-      ? (dealScope === 'mine' ? projects.filter(isOnDeal) : projects)
+      ? (dealScope === 'mine' ? installerScoped.filter(isOnDeal) : installerScoped)
       : isSubDealer
-        ? projects.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
-        : projects.filter(isOnDeal);
+        ? installerScoped.filter((p) => p.subDealerId === effectiveRepId || p.repId === effectiveRepId)
+        : installerScoped.filter(isOnDeal);
 
   const statusFiltered = applyStatusFilter(visibleProjects, statusFilter);
 

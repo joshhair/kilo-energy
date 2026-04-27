@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
@@ -1857,15 +1858,19 @@ function UsersPageInner() {
         )}
       </div>
       </>)}
-      {/* ── Add Rep Modal ────────────────────────────────────────────────── */}
-      {showAddModal && (
+      {/* ── Add Rep Modal ──────────────────────────────────────────────────
+           Portaled to document.body so the modal escapes any transformed/
+           filtered ancestor (which would otherwise become the containing
+           block for `position: fixed` and offset the overlay from the
+           viewport — that's the "page isn't opening correctly" symptom). */}
+      {showAddModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4 overflow-y-auto"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-start sm:items-center justify-center z-[60] p-4 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) resetAddModal(); }}
           role="dialog"
           aria-modal="true"
         >
-          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-[var(--text-primary)] font-bold text-lg">Add New User</h3>
               <button onClick={resetAddModal} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
@@ -2058,7 +2063,8 @@ function UsersPageInner() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <ConfirmDialog
