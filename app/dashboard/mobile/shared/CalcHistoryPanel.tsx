@@ -13,18 +13,15 @@ interface CalcHistoryPanelProps {
 export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handleClearHistory }: CalcHistoryPanelProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [bodyVisible, setBodyVisible] = useState(false);
-  const [bodyExiting, setBodyExiting] = useState(false);
 
   useEffect(() => {
     if (historyOpen) {
       setBodyVisible(true);
-      setBodyExiting(false);
-    } else if (bodyVisible) {
-      setBodyExiting(true);
-      const t = setTimeout(() => setBodyVisible(false), 200);
+    } else {
+      const t = setTimeout(() => setBodyVisible(false), 240);
       return () => clearTimeout(t);
     }
-  }, [historyOpen, bodyVisible]);
+  }, [historyOpen]);
 
   if (calcHistory.length === 0) return null;
 
@@ -45,12 +42,19 @@ export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handl
           : <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />}
       </button>
       {bodyVisible && (
-        <div className={`px-4 pb-4 space-y-2 ${bodyExiting ? 'history-exit' : 'history-reveal'}`}>
+        <div
+          className="px-4 pb-4 space-y-2"
+          style={{ opacity: historyOpen ? 1 : 0, transition: 'opacity 220ms ease' }}
+        >
           {calcHistory.map((entry, i) => (
             <div
               key={`${entry.timestamp}-${i}`}
-              className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-              style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}
+              className="mobile-list-item flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+              style={{
+                background: 'var(--surface-pressed)',
+                border: '1px solid var(--border-subtle)',
+                animationDelay: `${i * 55}ms`,
+              }}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>

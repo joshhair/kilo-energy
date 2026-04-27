@@ -114,6 +114,8 @@ export default function MobileCalculator() {
   const [quickFillSoldDate, setQuickFillSoldDate] = useState('');
   const [quickFillRepId, setQuickFillRepId] = useState<string | null>(null);
   const [calcHistory, setCalcHistory] = useState<CalcHistoryEntry[]>([]);
+  const [zapBursting, setZapBursting] = useState(false);
+  const [qfFlashing, setQfFlashing] = useState(false);
   const lastSavedHash = useRef('');
   const resultRef = useRef<HTMLDivElement>(null);
   const resultShownRef = useRef(false);
@@ -296,6 +298,9 @@ export default function MobileCalculator() {
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
     if (!projectId) { setQuickFillSoldDate(''); setQuickFillRepId(null); return; }
+    setZapBursting(true);
+    setQfFlashing(true);
+    setTimeout(() => { setZapBursting(false); setQfFlashing(false); }, 640);
     const proj = recentDeals.find((p) => p.id === projectId);
     if (!proj) return;
     setQuickFillSoldDate(proj.soldDate);
@@ -477,9 +482,9 @@ export default function MobileCalculator() {
 
       {/* ── Quick Fill ────────────────────────────────────────────────────── */}
       {recentDeals.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+        <div className={`rounded-2xl p-4${qfFlashing ? ' quick-fill-flash' : ''}`} style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-1.5 mb-3">
-            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />
+            <Zap className={`w-3.5 h-3.5 flex-shrink-0${zapBursting ? ' zap-burst' : ''}`} style={{ color: 'var(--accent-cyan-text)' }} />
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
           </div>
           <div className="flex items-center gap-2">
