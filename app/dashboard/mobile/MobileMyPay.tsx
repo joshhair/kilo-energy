@@ -559,7 +559,7 @@ export default function MobileMyPay() {
        * need to read their own note prominently here.
        */}
       {activeReimbs.length > 0 && (
-        <MobileSection title="Reimbursements" count={activeReimbs.length}>
+        <MobileSection title="Reimbursements" count={activeReimbs.length} collapsible defaultOpen={false}>
           <MobileCard>
             {activeReimbs.map((r, i) => {
               const desc = r.description ?? '';
