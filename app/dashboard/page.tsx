@@ -12,7 +12,7 @@ import {
   ACTIVE_PHASES,
   DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
 } from '../../lib/data';
-import { fmt$, formatCompactKW } from '../../lib/utils';
+import { fmt$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
 import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
 
@@ -1239,34 +1239,40 @@ export default function DashboardPage() {
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
     },
-    {
-      label: 'kW Sold',
-      value: formatCompactKW(totalKWSold),
-      sub: `${myProjects.length} projects this period`,
-      icon: Zap,
-      color: 'text-[var(--accent-amber-text)]',
-      accentGradient: 'from-yellow-500 to-yellow-400',
-      glowClass: 'stat-glow-yellow',
-      sparkData: systemSizeSparkData,
-      sparkStroke: 'var(--accent-amber-solid)',
-      pctChange: computePctChange(totalKWSold, prevTotalKWSold),
-      href: '/dashboard/projects',
-      tooltip: 'Total system size in kilowatts from all active deals',
-    },
-    {
-      label: 'kW Installed',
-      value: `${totalKWInstalled.toFixed(1)} kW`,
-      sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
-      icon: Zap,
-      color: 'text-[var(--accent-emerald-text)]',
-      accentGradient: 'from-emerald-500 to-emerald-400',
-      glowClass: 'stat-glow-emerald',
-      sparkData: installedSparkData,
-      sparkStroke: 'var(--accent-emerald-solid)',
-      pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
-      href: '/dashboard/projects',
-      tooltip: 'Total kilowatts from projects that have been physically installed',
-    },
+    (() => {
+      const sold = formatCompactKWParts(totalKWSold);
+      return {
+        label: `${sold.unit} Sold`,
+        value: `${sold.value} ${sold.unit}`,
+        sub: `${myProjects.length} projects this period`,
+        icon: Zap,
+        color: 'text-[var(--accent-amber-text)]',
+        accentGradient: 'from-yellow-500 to-yellow-400',
+        glowClass: 'stat-glow-yellow',
+        sparkData: systemSizeSparkData,
+        sparkStroke: 'var(--accent-amber-solid)',
+        pctChange: computePctChange(totalKWSold, prevTotalKWSold),
+        href: '/dashboard/projects',
+        tooltip: 'Total system size from all active deals (kW or MW when ≥1 MW)',
+      };
+    })(),
+    (() => {
+      const installed = formatCompactKWParts(totalKWInstalled);
+      return {
+        label: `${installed.unit} Installed`,
+        value: `${installed.value} ${installed.unit}`,
+        sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
+        icon: Zap,
+        color: 'text-[var(--accent-emerald-text)]',
+        accentGradient: 'from-emerald-500 to-emerald-400',
+        glowClass: 'stat-glow-emerald',
+        sparkData: installedSparkData,
+        sparkStroke: 'var(--accent-emerald-solid)',
+        pctChange: computePctChange(totalKWInstalled, prevTotalKWInstalled),
+        href: '/dashboard/projects',
+        tooltip: 'Total system size from physically-installed projects (kW or MW when ≥1 MW)',
+      };
+    })(),
     // Chargebacks tile only renders when there are actually outstanding
     // (Draft + Pending negative) entries. A rep with no chargebacks
     // doesn't need a permanent "$0 / No chargebacks" clutter tile —

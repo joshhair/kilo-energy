@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKWValue, formatCompactKWParts, localDateString } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
@@ -828,10 +828,12 @@ export default function MobileDashboard() {
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(animatedPipeline)}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
           </div>
-          <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{formatCompactKWValue(periodKW)}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>kW Sold</p>
-          </div>
+          {(() => { const t = formatCompactKWParts(periodKW); return (
+            <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
+              <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{t.value}</p>
+              <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>{t.unit} Sold</p>
+            </div>
+          ); })()}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{periodActive.length}</p>
             <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
