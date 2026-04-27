@@ -46,6 +46,14 @@ export default function MobileBottomSheet({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // Stash onClose in a ref so the focus/keydown effect can call the latest
+  // version without re-running every time the parent re-renders. Without
+  // this, callers passing an inline `onClose={() => ...}` (the common case)
+  // re-trigger the cleanup on every keystroke, which steals focus from the
+  // active input and dismisses the on-screen keyboard on mobile (Spencer
+  // McCrary edit-contact regression, 2026-04-27).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   // Render via portal to document.body so position:fixed anchors to the
   // viewport regardless of any ancestor's transform/filter/perspective.
@@ -86,7 +94,7 @@ export default function MobileBottomSheet({
 
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === 'Tab' && panelRef.current) {
@@ -120,7 +128,8 @@ export default function MobileBottomSheet({
       // jump the page back to align with the trigger button.
       previouslyFocusedRef.current?.focus?.({ preventScroll: true });
     };
-  }, [open, onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open || typeof document === 'undefined') return null;
 

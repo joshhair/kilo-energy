@@ -961,7 +961,69 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             </span>
             <h1 className="text-3xl font-black tracking-tight text-gradient-brand">{rep.name}</h1>
           </div>
-          <p className="text-[var(--text-secondary)] text-sm mt-1">{rep.email}</p>
+          {/* Email (editable for admin viewers) */}
+          <div className="text-[var(--text-secondary)] text-sm mt-1">
+            {editingField === 'email' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
+                  className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', minWidth: 280 }}
+                  autoFocus
+                />
+                <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
+                  <Check className="w-3.5 h-3.5" /> Save
+                </button>
+                <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
+                  <X className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span>{resolvedUser.email || <span style={{ color: 'var(--text-dim)' }}>No email</span>}</span>
+                {isAdminViewer && (
+                  <button onClick={() => startEdit('email')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit email">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Phone (editable for admin viewers) */}
+          <div className="text-[var(--text-secondary)] text-sm mt-1">
+            {editingField === 'phone' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
+                  placeholder="(555) 000-0000"
+                  className="rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 placeholder-slate-500"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', minWidth: 200 }}
+                  autoFocus
+                />
+                <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
+                  <Check className="w-3.5 h-3.5" /> Save
+                </button>
+                <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
+                  <X className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span>{resolvedUser.phone || <span style={{ color: 'var(--text-dim)' }}>No phone</span>}</span>
+                {isAdminViewer && (
+                  <button onClick={() => startEdit('phone')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit phone">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
