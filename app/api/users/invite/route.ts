@@ -38,13 +38,22 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseJsonBody(req, createUserInviteSchema);
   if (!parsed.ok) return parsed.response;
-  const { firstName, lastName, email, phone, role, repType } = parsed.data;
+  const { firstName, lastName, email, phone, role, repType, scopedInstallerId } = parsed.data;
 
   // Refuse if an internal user with this email already exists
   const existing = await prisma.user.findFirst({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 });
   }
+
+  // Vendor-PM scope only applies to project_manager role. Coerce empty
+  // string from the form layer to null so the privacy gate's "scoped
+  // when set" check works correctly — empty-string is truthy in JS and
+  // would silently route through the unscoped branch otherwise.
+  const effectiveScopedInstallerId =
+    role === 'project_manager' && scopedInstallerId && scopedInstallerId.length > 0
+      ? scopedInstallerId
+      : null;
 
   // 1. Create the internal User record first so we can stash its id in
   //    the Clerk invitation metadata. active=true so they can log in
@@ -58,6 +67,7 @@ export async function POST(req: NextRequest) {
       role,
       repType,
       active: true,
+      scopedInstallerId: effectiveScopedInstallerId,
     },
   });
 

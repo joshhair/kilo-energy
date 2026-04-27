@@ -217,5 +217,10 @@ export const createUserInviteSchema = z.object({
   phone: z.string().trim().max(50).optional().default(''),
   role: z.enum(['rep', 'sub-dealer', 'admin', 'project_manager']).optional().default('rep'),
   repType: z.enum(['closer', 'setter', 'both']).optional().default('both'),
+  // Vendor-PM scope. Only meaningful when role === 'project_manager'.
+  // Empty string is permitted from the form layer; the route coerces
+  // to undefined so we never persist an empty string (which would
+  // bypass the scoped-PM privacy gate).
+  scopedInstallerId: z.string().trim().max(100).optional(),
 });
 export type CreateUserInviteInput = z.infer<typeof createUserInviteSchema>;

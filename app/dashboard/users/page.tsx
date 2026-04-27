@@ -181,6 +181,12 @@ function UsersPageInner() {
   // Only reps use newRepType + trainer assignment; for other roles those
   // UI fields are hidden.
   const [newUserRole, setNewUserRole] = useState<'rep' | 'admin' | 'sub-dealer' | 'project_manager'>('rep');
+  // Vendor-PM installer scope. Optional. Only meaningful when role is
+  // project_manager — hidden for other roles. Match the singular
+  // schema (scopedInstallerId String?) used by the privacy gate so
+  // we don't introduce a divergent shape into the create flow.
+  const [newScopedInstallerId, setNewScopedInstallerId] = useState('');
+  const [installersForScope, setInstallersForScope] = useState<Array<{ id: string; name: string; active: boolean }>>([]);
   // When true, creating the rep also sends a Clerk invitation email.
   // Defaults to off so existing workflows (data import, pre-populating
   // reps without giving them app access) still work.
@@ -252,8 +258,25 @@ function UsersPageInner() {
     setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPhone('');
     setNewRepType('both'); setNewTrainerId(''); setSendInvite(false);
     setNewUserRole('rep');
+    setNewScopedInstallerId('');
     setShowAddModal(false); setIsAddingRep(false);
   };
+
+  // Lazy-load the active installer list when the Add User modal opens
+  // (only needed for the PM scope picker). Single fetch per open; cleared
+  // on close to avoid stale state if installers change between opens.
+  useEffect(() => {
+    if (!showAddModal) return;
+    let cancelled = false;
+    fetch('/api/installers')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data)) setInstallersForScope(data.filter((i: { active?: boolean }) => i.active));
+      })
+      .catch(() => { /* non-fatal — picker just shows "Full access" */ });
+    return () => { cancelled = true; };
+  }, [showAddModal]);
 
   // Escape key closes add-rep modal
   useEffect(() => {
@@ -299,6 +322,12 @@ function UsersPageInner() {
             role: newUserRole,
             // repType is only meaningful for rep accounts
             repType: isRepRole ? newRepType : undefined,
+            // scopedInstallerId is only meaningful for PM accounts.
+            // Empty string from the picker is normalized server-side.
+            scopedInstallerId:
+              newUserRole === 'project_manager' && newScopedInstallerId
+                ? newScopedInstallerId
+                : undefined,
           }),
         })
           .then(async (r) => {
@@ -1918,6 +1947,34 @@ function UsersPageInner() {
                 className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
+
+            {/* PM-specific fields — only shown when role === 'project_manager'.
+                Picking an installer here provisions them as a vendor PM
+                immediately on creation, so the privacy gate scopes them
+                from their first session — no brief unscoped state. */}
+            {newUserRole === 'project_manager' && (
+              <div className="mb-4">
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Installer scope <span className="text-[10px] opacity-70">(optional)</span>
+                </label>
+                <select
+                  value={newScopedInstallerId}
+                  onChange={(e) => setNewScopedInstallerId(e.target.value)}
+                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)]"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">— Full access (internal PM) —</option>
+                  {installersForScope.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
+                  ))}
+                </select>
+                {newScopedInstallerId && (
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--accent-amber-text)' }}>
+                    Vendor PM — only sees projects from this installer; no payroll, pricing, or rep directory.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Rep-specific fields — only shown when role === 'rep' */}
             {newUserRole === 'rep' && (
