@@ -42,6 +42,52 @@ import { isVendorPM, isInternalPM } from './api-auth';
 import { logger } from './logger';
 
 /**
+ * Compute the WHERE clause that scopes the PayrollEntry table.
+ *
+ * Policy:
+ *   - admin: see all
+ *   - internal PM (allowlisted): see all
+ *   - vendor PM: NONE (commission is closer/setter financial data; vendor
+ *     installer-side staff should never see internal pay)
+ *   - misconfigured PM: NONE (default-deny)
+ *   - rep / sub-dealer: only their own (repId match)
+ *   - unknown role: NONE (default-deny)
+ *
+ * Mirrors the inline policy in /api/data/route.ts for PayrollEntry —
+ * keep these two in lockstep. If you change one, change the other.
+ */
+export function payrollEntryVisibilityWhere(): Prisma.PayrollEntryWhereInput {
+  const user = requireEffectiveUser();
+
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  if (isVendorPM(user)) {
+    return { repId: '__deny_vendor_pm_no_payroll__' };
+  }
+  if (user.role === 'project_manager') {
+    logger.warn('gated_db_default_deny', {
+      userId: user.id,
+      role: user.role,
+      model: 'PayrollEntry',
+      reason: 'project_manager without scope or allowlist',
+    });
+    return { repId: '__deny_misconfigured_pm__' };
+  }
+  if (user.role === 'rep' || user.role === 'sub-dealer') {
+    return { repId: user.id };
+  }
+  logger.warn('gated_db_default_deny', {
+    userId: user.id,
+    role: user.role,
+    model: 'PayrollEntry',
+    reason: 'unknown role',
+  });
+  return { repId: '__deny_unknown_role__' };
+}
+
+/**
  * Compute the WHERE clause that scopes the Project table to what the
  * current effective user is allowed to see.
  *
@@ -105,13 +151,16 @@ export function projectVisibilityWhere(): Prisma.ProjectWhereInput {
  * Combine the caller's WHERE with the gate's visibility WHERE. Uses AND
  * so the gate is restrictive — a caller can only see records that are
  * BOTH a match for their query AND visible to them.
+ *
+ * Generic over the WhereInput type so each model's gate composes
+ * type-safely.
  */
-function intersectWhere<T extends Prisma.ProjectWhereInput | undefined>(
-  callerWhere: T,
-  gateWhere: Prisma.ProjectWhereInput,
-): Prisma.ProjectWhereInput {
+function intersectWhere<W extends Record<string, unknown>>(
+  callerWhere: W | undefined,
+  gateWhere: W,
+): W {
   if (!callerWhere || Object.keys(callerWhere).length === 0) return gateWhere;
-  return { AND: [callerWhere, gateWhere] };
+  return { AND: [callerWhere, gateWhere] } as unknown as W;
 }
 
 /**
@@ -178,6 +227,61 @@ export const db = prisma.$extends({
       },
       async groupBy({ args, query }) {
         const gate = projectVisibilityWhere();
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+    },
+    payrollEntry: {
+      async findMany({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const gate = payrollEntryVisibilityWhere();
+        const match = await prisma.payrollEntry.findFirst({
+          where: { AND: [{ id: result.id }, gate] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async findUniqueOrThrow({ args, query }) {
+        const result = await query(args);
+        const gate = payrollEntryVisibilityWhere();
+        const match = await prisma.payrollEntry.findFirst({
+          where: { AND: [{ id: result.id }, gate] },
+          select: { id: true },
+        });
+        if (!match) {
+          throw new Error('PayrollEntry not found or not visible to current user');
+        }
+        return result;
+      },
+      async count({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
+        args = args ?? {};
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+      async aggregate({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
+        args.where = intersectWhere(args.where, gate);
+        return query(args);
+      },
+      async groupBy({ args, query }) {
+        const gate = payrollEntryVisibilityWhere();
         args.where = intersectWhere(args.where, gate);
         return query(args);
       },
