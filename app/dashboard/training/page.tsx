@@ -292,17 +292,28 @@ function TrainingPageInner() {
   const [expandedTrainerIds, setExpandedTrainerIds] = useState<Set<string>>(new Set());
   const kebabButtonRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
 
   // Compute menu position anchored to the opened kebab button. Recomputes on
   // scroll/resize so the menu stays attached while the user moves the page.
+  // Flips upward when there's not enough space below — last few table rows
+  // would otherwise have the menu cropped off the viewport.
   useEffect(() => {
     if (!openMenuId) { setMenuPos(null); return; }
     const compute = () => {
       const btn = kebabButtonRefs.current.get(openMenuId);
       if (!btn) return;
       const r = btn.getBoundingClientRect();
-      setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      // Menu has 6 items + 2 dividers ≈ 280px. Use a slightly larger pad
+      // so we flip with a margin of comfort, not at the exact edge.
+      const ESTIMATED_MENU_HEIGHT = 300;
+      const spaceBelow = window.innerHeight - r.bottom;
+      const flipUp = spaceBelow < ESTIMATED_MENU_HEIGHT;
+      const right = window.innerWidth - r.right;
+      setMenuPos(flipUp
+        ? { bottom: window.innerHeight - r.top + 4, right }
+        : { top: r.bottom + 4, right }
+      );
     };
     compute();
     window.addEventListener('scroll', compute, { capture: true });
@@ -1199,7 +1210,7 @@ function TrainingPageInner() {
                           <div
                             ref={menuPanelRef}
                             className="fixed z-[9999] min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
-                            style={{ top: menuPos.top, right: menuPos.right }}
+                            style={{ ...menuPos }}
                           >
                             <Link
                               href={`/dashboard/users/${a.traineeId}`}
