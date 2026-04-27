@@ -55,9 +55,10 @@ const PM_ACTIONS: QuickAction[] = [PREFERENCES_ACTION];
 const ADMIN_ACTIONS: QuickAction[] = [
   { href: '/dashboard/new-deal', label: 'New Deal', icon: PlusCircle },
   { href: '/dashboard/blitz', label: 'Blitz', icon: Tent },
+  { href: '/dashboard/training', label: 'Training', icon: GraduationCap },
   { href: '/dashboard/incentives', label: 'Incentives', icon: Trophy },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/dashboard/calculator', label: 'Calculator', icon: Calculator },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 function resolveActions(role: string, isTrainer: boolean): QuickAction[] {
