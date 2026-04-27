@@ -53,7 +53,7 @@ interface ActivityEntry {
   createdAt: string;
 }
 
-export function ActivityTimeline({ projectId }: { projectId: string }) {
+export function ActivityTimeline({ projectId, viewAsUserId }: { projectId: string; viewAsUserId?: string }) {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -63,7 +63,8 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   const fetchActivities = useCallback((skip: number, append: boolean) => {
     setLoading(true);
     if (!append) setActivities([]);
-    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}`)
+    const viewAsParam = viewAsUserId ? `&viewAs=${encodeURIComponent(viewAsUserId)}` : '';
+    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}${viewAsParam}`)
       .then((res) => res.json())
       .then((data) => {
         setActivities((prev) => append ? [...prev, ...data.activities] : data.activities);
@@ -72,7 +73,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, viewAsUserId]);
 
   useEffect(() => {
     fetchActivities(0, false);

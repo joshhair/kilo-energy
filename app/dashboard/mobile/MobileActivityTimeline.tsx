@@ -87,7 +87,7 @@ function ActivityTimelineSkeleton() {
   );
 }
 
-export default function MobileActivityTimeline({ projectId }: { projectId: string }) {
+export default function MobileActivityTimeline({ projectId, viewAsUserId }: { projectId: string; viewAsUserId?: string }) {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,8 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
 
   const fetchActivities = useCallback((skip: number, append: boolean) => {
     setLoading(true);
-    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}`)
+    const viewAsParam = viewAsUserId ? `&viewAs=${encodeURIComponent(viewAsUserId)}` : '';
+    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}${viewAsParam}`)
       .then((res) => res.json())
       .then((data) => {
         setActivities((prev) => append ? [...prev, ...data.activities] : data.activities);
@@ -105,7 +106,7 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, viewAsUserId]);
 
   useEffect(() => { fetchActivities(0, false); }, [fetchActivities]);
 

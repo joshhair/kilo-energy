@@ -20,6 +20,13 @@ import { createProjectActivitySchema } from '../../../../../lib/schemas/business
 // returning them via the activity feed would bypass the same matrix. We
 // drop field_edit entries whose subject field is restricted for the
 // caller's relationship to the project.
+//
+// View-As impersonation: when an admin passes `?viewAs=<userId>`, the
+// endpoint resolves the relationship as if that user were the viewer.
+// This keeps the View-As feature honest — admins can verify what a real
+// rep would see, including the activity-feed redactions. The auth check
+// still runs as the admin (so unauthorized callers can't smuggle a
+// viewAs param to read projects they couldn't otherwise access).
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
@@ -28,6 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const url = new URL(req.url);
   const take = parseInt(url.searchParams.get('limit') ?? '20', 10);
   const skip = parseInt(url.searchParams.get('offset') ?? '0', 10);
+  const viewAsId = url.searchParams.get('viewAs');
 
   // Resolve the viewer's relationship so we know which field_edit entries
   // are safe to expose. Admin/PM passthrough; everyone else gets filtered.
@@ -40,8 +48,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  const chainTrainees = user.role === 'rep' ? await loadChainTrainees(user.id) : new Set<string>();
-  const rel = relationshipToProject(user, {
+
+  // If admin is viewing-as another user, swap in that user's identity for
+  // relationship resolution. Non-admins can't impersonate (the param is
+  // silently ignored — better than leaking that a user exists by 403'ing).
+  let effectiveViewer: { id: string; role: string; scopedInstallerId: string | null } = {
+    id: user.id, role: user.role, scopedInstallerId: user.scopedInstallerId,
+  };
+  if (viewAsId && user.role === 'admin') {
+    const target = await prisma.user.findUnique({
+      where: { id: viewAsId },
+      select: { id: true, role: true, scopedInstallerId: true },
+    });
+    if (target) {
+      effectiveViewer = { id: target.id, role: target.role, scopedInstallerId: target.scopedInstallerId };
+    }
+  }
+
+  const chainTrainees = effectiveViewer.role === 'rep' ? await loadChainTrainees(effectiveViewer.id) : new Set<string>();
+  const rel = relationshipToProject(effectiveViewer, {
     closerId: project.closerId,
     setterId: project.setterId,
     subDealerId: project.subDealerId,

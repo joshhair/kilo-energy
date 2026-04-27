@@ -32,7 +32,7 @@ import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -1301,7 +1301,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <ProjectChatter projectId={id} />
 
       {/* Activity Timeline */}
-      <ActivityTimeline projectId={id} />
+      <ActivityTimeline projectId={id} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
 
       {/* Edit Project Modal
           Portaled to document.body so fixed positioning is relative to the

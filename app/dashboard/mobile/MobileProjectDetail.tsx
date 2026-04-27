@@ -16,7 +16,6 @@ import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../lib/chargebacks';
 import MobileCard from './shared/MobileCard';
-import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
@@ -65,6 +64,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
+    isViewingAs, viewAsUser,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
@@ -1129,7 +1129,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                             }}
                           >{fmt$(stage.amount)}</span>
                         )}
-                        <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full whitespace-nowrap"
+                          style={{
+                            background: 'transparent',
+                            border: `1.5px solid ${stage.paid ? 'var(--accent-emerald-display)' : 'var(--accent-amber-display)'}`,
+                            color: stage.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                          }}
+                        >
+                          {stage.paid ? 'Paid' : 'Pending'}
+                        </span>
                         {(isEditableStage || isToggleableM3) && (
                           <button
                             onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
@@ -1193,7 +1203,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <ProjectChatter projectId={projectId} />
 
       {/* Activity Timeline */}
-      <MobileActivityTimeline projectId={projectId} />
+      <MobileActivityTimeline projectId={projectId} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
 
       {/* Sticky bottom action bar */}
       <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
