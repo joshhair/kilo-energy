@@ -817,6 +817,38 @@ model AuditLog {
   @@index([createdAt])
 }
 
+/// Read-side counterpart to AuditLog. Records who hit a sensitive
+/// endpoint and which model rows were returned, so a privacy leak
+/// can be diagnosed forensically (which user saw what, when, for
+/// how long). Distinct from AuditLog because reads are high-volume
+/// and one row carries N record IDs as a JSON array.
+///
+/// Retention: 90 days, enforced by a cleanup script run nightly.
+model DataAccessLog {
+  id              String   @id @default(cuid())
+  /// The authenticated user who made the request.
+  actorUserId     String
+  /// Optional view-as target — when admin is impersonating, this is
+  /// the user whose visibility rules were applied. Null otherwise.
+  effectiveUserId String?
+  /// Route path, e.g. "/api/data" or "/api/projects/[id]".
+  route           String
+  /// The model whose rows were exposed, e.g. "Project".
+  modelName       String
+  /// JSON array of record IDs returned to the caller. Capped to
+  /// the first 1000 ids per request — beyond that we just log
+  /// the count, since high-cardinality logs are noise.
+  recordIdsJson   String
+  /// Total number of records returned (== recordIds.length when
+  /// uncapped, > recordIds.length when truncated for log size).
+  recordCount     Int
+  createdAt       DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([modelName, createdAt])
+  @@index([createdAt])
+}
+
 model BlitzRequest {
   id            String @id @default(cuid())
   requestedById String
