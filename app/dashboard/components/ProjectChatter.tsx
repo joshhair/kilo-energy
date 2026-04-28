@@ -244,7 +244,9 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         setMessages((prev) => [...earlier, ...prev]);
         setTotalMessages(data.total ?? totalMessages);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[ProjectChatter] fetch earlier messages failed:', err instanceof Error ? err.message : err);
+      })
       .finally(() => setLoadingEarlier(false));
   }, [projectId, messages.length, totalMessages]);
 

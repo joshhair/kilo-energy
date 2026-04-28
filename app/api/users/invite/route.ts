@@ -5,6 +5,7 @@ import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { createUserInviteSchema } from '../../../../lib/schemas/business';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
+import { logger, errorContext } from '../../../../lib/logger';
 
 /**
  * POST /api/users/invite — Admin creates a new internal user AND sends
@@ -107,8 +108,17 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (err: unknown) {
-    // Roll back the internal user if the Clerk invitation fails
-    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    // Roll back the internal user if the Clerk invitation fails. If the
+    // rollback itself fails, surface BOTH errors — the orphaned user row
+    // is recoverable but admin needs to know to clean it up manually.
+    logger.error('user_invite_failed', { userId: user.id, ...errorContext(err) });
+    await prisma.user.delete({ where: { id: user.id } }).catch((rollbackErr) => {
+      logger.error('user_invite_rollback_failed', {
+        userId: user.id,
+        originalError: errorContext(err),
+        rollbackError: errorContext(rollbackErr),
+      });
+    });
     const message = err instanceof Error ? err.message : 'Unknown error sending invitation';
     return NextResponse.json({ error: `Invitation failed: ${message}` }, { status: 500 });
   }

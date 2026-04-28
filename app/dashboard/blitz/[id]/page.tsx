@@ -157,7 +157,10 @@ export default function BlitzDetailPage() {
     if (isAdmin || !effectiveRepId) return;
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       setCanRequestBlitz(u.canRequestBlitz ?? false);
-    }).catch(() => {});
+    }).catch((err) => {
+      // Falls through with default (no permission). Log for diagnostics.
+      console.warn('[blitz detail] perm load failed:', err instanceof Error ? err.message : err);
+    });
   }, [effectiveRepId, isAdmin]);
 
   // Computed metrics

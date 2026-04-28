@@ -82,13 +82,17 @@ export default function MobileReps() {
       .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
         setAdminUsers(data.map((u) => ({ ...u, role: 'admin' })));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] admin user load failed:', err instanceof Error ? err.message : err);
+      });
     fetch('/api/reps?role=project_manager')
       .then((r) => r.ok ? r.json() : [])
       .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
         setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] PM user load failed:', err instanceof Error ? err.message : err);
+      });
   }, [isAdmin, isPM]);
   const [showAddRep, setShowAddRep] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -120,7 +124,9 @@ export default function MobileReps() {
     fetch('/api/users/invitations')
       .then((r) => r.ok ? r.json() : { invitations: [] })
       .then((data) => setPendingInvitations(data.invitations ?? []))
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] pending invitations load failed:', err instanceof Error ? err.message : err);
+      });
   }, [isAdmin]);
 
   // Reactivating state per user
@@ -555,7 +561,10 @@ export default function MobileReps() {
                               confirmLabel: 'Convert',
                               onConfirm: () => convertUserRole(u.id, 'rep')
                                 .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
-                                .catch(() => {}),
+                                .catch((err) => {
+                                  toast(`Failed to convert ${u.firstName} ${u.lastName}`, 'error');
+                                  console.warn('[MobileReps] convertUserRole failed:', err instanceof Error ? err.message : err);
+                                }),
                             });
                           }}
                           title="Convert to Rep"

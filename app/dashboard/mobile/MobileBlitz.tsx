@@ -147,7 +147,9 @@ export default function MobileBlitz() {
       .then((u) => {
         if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileBlitz] perm load failed:', err instanceof Error ? err.message : err);
+      });
   }, [isAdmin, effectiveRepId]);
 
   const myBlitzes = useMemo(() => {

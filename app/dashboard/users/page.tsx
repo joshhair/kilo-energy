@@ -404,7 +404,12 @@ function UsersPageInner() {
             toast('Trainer assigned', 'success');
           })
           .catch(() => toast('Failed to assign trainer', 'error'));
-      }).catch(() => {});
+      }).catch((err) => {
+        // Outer catch: rep creation itself failed. The user-facing error
+        // toast was already shown by the rep-create flow; this just keeps
+        // the unhandled-rejection chain quiet. Log for diagnostics.
+        console.warn('[users/page] rep create promise rejected before trainer-assign:', err instanceof Error ? err.message : err);
+      });
     }
   };
 
@@ -1322,7 +1327,7 @@ function UsersPageInner() {
             ref={(el) => { filterTabRefs.current[i] = el; }}
             onClick={() => setFilterTab(t.value)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97]`}
-            style={{ color: filterTab === t.value ? '#000' : 'var(--text-muted)' }}
+            style={{ color: filterTab === t.value ? 'var(--text-on-accent)' : 'var(--text-muted)' }}
           >
             {t.label}
           </button>

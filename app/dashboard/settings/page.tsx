@@ -171,7 +171,9 @@ function SettingsPageInner() {
   useEffect(() => {
     fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).then((users: Array<{ id: string; firstName: string; lastName: string; email: string }>) => {
       setAdminUsers(users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('[settings/page] admin user count load failed:', err instanceof Error ? err.message : err);
+    });
   }, []);
 
   /** Check whether the user has unsaved inline edits or open version-creation modals */

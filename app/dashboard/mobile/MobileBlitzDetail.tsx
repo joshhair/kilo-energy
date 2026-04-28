@@ -47,7 +47,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     if (isAdmin || !effectiveRepId) return;
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       setCanRequestBlitz(u.canRequestBlitz ?? false);
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('[MobileBlitzDetail] perm load failed:', err instanceof Error ? err.message : err);
+    });
   }, [effectiveRepId, isAdmin]);
 
   const [showEdit, setShowEdit] = useState(false);

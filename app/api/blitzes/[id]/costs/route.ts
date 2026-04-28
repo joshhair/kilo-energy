@@ -5,7 +5,7 @@ import { parseJsonBody } from '../../../../../lib/api-validation';
 import { createBlitzCostSchema } from '../../../../../lib/schemas/business';
 import { serializeBlitzCost } from '../../../../../lib/serialize';
 import { fromDollars } from '../../../../../lib/money';
-import { logger } from '../../../../../lib/logger';
+import { logger, errorContext } from '../../../../../lib/logger';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +35,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       category: cost.category,
     });
     return NextResponse.json(serializeBlitzCost(cost), { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error('blitz_cost_create_failed', {
+      blitzId,
+      actorId: actor.id,
+      category: body.category,
+      amountCents: fromDollars(body.amount).cents,
+      ...errorContext(err),
+    });
     return NextResponse.json({ error: 'Failed to create cost' }, { status: 500 });
   }
 }

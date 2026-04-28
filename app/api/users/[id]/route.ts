@@ -213,7 +213,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const items = Array.isArray(list) ? list : list?.data ?? [];
         const pending = items.filter((i) => i.emailAddress.toLowerCase() === existing.email.toLowerCase());
         for (const inv of pending) {
-          await client.invitations.revokeInvitation(inv.id).catch(() => {});
+          await client.invitations.revokeInvitation(inv.id).catch((err) => {
+            logger.warn('clerk_revoke_invitation_individual_failed', {
+              userId: id, op: 'deactivate', invitationId: inv.id, ...errorContext(err),
+            });
+          });
         }
       } catch (err) {
         logger.error('clerk_revoke_invitations_failed', { userId: id, op: 'deactivate', ...errorContext(err) });
@@ -284,7 +288,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const items = Array.isArray(list) ? list : list?.data ?? [];
     const pending = items.filter((i) => i.emailAddress.toLowerCase() === user.email.toLowerCase());
     for (const inv of pending) {
-      await client.invitations.revokeInvitation(inv.id).catch(() => {});
+      await client.invitations.revokeInvitation(inv.id).catch((err) => {
+        logger.warn('clerk_revoke_invitation_individual_failed', {
+          userId: id, op: 'hard_delete', invitationId: inv.id, ...errorContext(err),
+        });
+      });
     }
   } catch (err) {
     logger.error('clerk_revoke_invitations_failed', { userId: id, op: 'hard_delete', ...errorContext(err) });

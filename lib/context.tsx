@@ -319,7 +319,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (Array.isArray(data)) setUnreadMentionCount(data.length);
       })
-      .catch(() => {});
+      .catch((err) => {
+        // Mention count is a non-critical badge; failure shouldn't toast
+        // every poll. Log for diagnostics so transient API breakage is
+        // visible during dev, not silent.
+        console.warn('[refreshMentionCount] failed:', err instanceof Error ? err.message : err);
+      });
   }, [effectiveRepId]);
 
   useEffect(() => {
@@ -880,9 +885,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const serverProject = await res.json();
             if (!serverProject || !serverProject.id) return;
             setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
-          } catch { /* non-JSON response — leave optimistic state alone */ }
+          } catch (parseErr) {
+            // Non-JSON response — leave optimistic state alone, but log
+            // because it usually means the server returned an HTML error
+            // page instead of JSON (API misconfig or proxy interception).
+            console.warn('[updateProject] non-JSON response from PATCH, keeping optimistic state:', parseErr);
+          }
         })
-        .catch(() => {})
+        .catch((err) => {
+          // Network failure on the server-state-sync PATCH. The optimistic
+          // state already applied — toast is fired by persistFetch above.
+          // We swallow here to keep the .finally() running; log for diag.
+          console.warn('[updateProject] server-sync fetch failed:', err instanceof Error ? err.message : err);
+        })
         .finally(() => {
           pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
         });
@@ -1135,7 +1150,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: newAmount }),
-        }, 'Failed to update payroll entry amount').catch(() => {});
+        }, 'Failed to update payroll entry amount').catch((err) => {
+          // persistFetch already toasted via emitPersistError. This swallow
+          // is just to prevent unhandled-rejection warnings on the inner
+          // .then() chain. Log for diagnostics so silent network blips
+          // affecting payroll amount sync are still traceable.
+          console.warn('[updateProject] payroll amount PATCH failed (toast already fired):',
+            entryId, err instanceof Error ? err.message : err);
+        });
       }
     }
   };

@@ -555,7 +555,11 @@ function BlitzPageInner() {
     if (!effectiveRepId) { setPermsLoaded(true); return; }
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
-    }).catch(() => {}).finally(() => setPermsLoaded(true));
+    }).catch((err) => {
+      // Permission load failure → fall through to defaults (no perms).
+      // Log so transient API breakage is visible.
+      console.warn('[blitz/page] permission load failed, defaulting to no perms:', err instanceof Error ? err.message : err);
+    }).finally(() => setPermsLoaded(true));
   }, [isAdmin, effectiveRepId]);
 
   // If a rep lands on ?tab=requests without canRequestBlitz (e.g. via shared link), redirect to blitzes
