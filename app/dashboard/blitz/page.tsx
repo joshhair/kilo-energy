@@ -986,7 +986,7 @@ function BlitzPageInner() {
 
       {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
         <div className="space-y-3">
-          {requests.length === 0 ? (
+          {requests.filter((r) => r.requestedBy.id === effectiveRepId).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
               <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
@@ -995,7 +995,7 @@ function BlitzPageInner() {
               </div>
             </div>
           ) : (
-            requests.map((req) => (
+            requests.filter((r) => r.requestedBy.id === effectiveRepId).map((req) => (
               <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0">

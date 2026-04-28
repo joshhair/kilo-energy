@@ -275,7 +275,7 @@ export default function BlitzDetailPage() {
       if (isSelfGen && !approvedParticipantIds.has(p.closer.id)) return s;
       if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-      const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
+      const setterCost = ((p.setter?.id && p.setter?.id !== p.closer?.id) || (!p.setter?.id && (p.additionalSetters ?? []).length > 0)) ? 0.10 * p.kWSize * 1000 : 0;
       return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- getBlitzProjectBaselines is a local closure over the same deps; adding it causes duplicate re-runs

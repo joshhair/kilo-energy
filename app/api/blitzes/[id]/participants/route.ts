@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAuth } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
+import { deriveBlitzStatus } from '../../../../../lib/blitzStatus';
 import {
   createBlitzParticipantSchema,
   patchBlitzParticipantSchema,
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
-  if (blitz.status === 'cancelled' || blitz.status === 'completed') {
+  const effectiveStatus = deriveBlitzStatus(blitz);
+  if (effectiveStatus === 'cancelled' || effectiveStatus === 'completed') {
     return NextResponse.json({ error: 'Cannot join a cancelled or completed blitz' }, { status: 409 });
   }
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId && caller.id !== body.userId) {

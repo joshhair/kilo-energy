@@ -192,8 +192,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
       });
       for (const project of coRoleProjects) {
-        const primaryIds = [project.closerId, project.setterId].filter((pid): pid is string => pid !== null);
-        if (primaryIds.some(pid => approvedParticipantIds.includes(pid))) {
+        const isAdditionalCloser = project.additionalClosers.some(ac => ac.userId === userId);
+        const isAdditionalSetter = project.additionalSetters.some(as => as.userId === userId);
+        const shouldLink =
+          (isAdditionalCloser && project.setterId !== null && approvedParticipantIds.includes(project.setterId)) ||
+          (isAdditionalSetter && project.closerId !== null && approvedParticipantIds.includes(project.closerId));
+        if (shouldLink) {
           await prisma.project.update({ where: { id: project.id }, data: { blitzId: id } });
         }
       }
