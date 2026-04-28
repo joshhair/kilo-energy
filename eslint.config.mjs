@@ -35,9 +35,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Exclude orphan debug scripts — they reference modules not in
-    // package.json (sqlite3 etc.) and would break lint every run.
-    "scripts/find-timothy.mts",
+    // Local-only scratch / backup paths. find-timothy.mts and
+    // backfill-project-expected.mts were deleted in PR cleanup; the
+    // other globs are kept so future scratchwork doesn't fail lint.
     "scripts/.local/**",
     "scripts/*.mts.bak",
   ]),
@@ -90,6 +90,38 @@ const eslintConfig = defineConfig([
       "react-hooks/refs": "off",
       "react-hooks/purity": "off",
       "react-hooks/immutability": "off",
+
+      // ── Regression-prevention gates (PR 6) ──────────────────────────
+      // Empty catch blocks silently swallow errors. The Trainer Hub
+      // light-mode regression class came from auto-correction loops
+      // restoring patterns we'd already fixed; ensuring every catch is
+      // observable shrinks the silent-failure surface. allowEmptyCatch
+      // is the legacy permissive default — disable it.
+      // Status: warn for now, promote to error after one cleanup pass
+      // (any remaining `catch {}` should carry an inline disable
+      // comment with rationale).
+      "no-empty": ["warn", { allowEmptyCatch: false }],
+
+      // Hardcoded color literals in JSX style={{ ... }}. Matches hex
+      // (#xxx, #xxxxxx) and the strings 'white' / 'black'. Misses some
+      // patterns (color-mix(in srgb, #xxx ...) inside template strings),
+      // but catches the cycle-861 `'white'` and trainer-hub `#000`
+      // classes that have caused multiple regressions.
+      // Always use CSS custom properties (var(--text-primary), etc.)
+      // so the value tracks light/dark theme switches.
+      // Exempt files: SVG icon attributes, OG-image generators, and
+      // globals.css token definitions live elsewhere or take literals.
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "Property[key.name='color'] > Literal[value=/^(white|black|#[0-9a-fA-F]{3,8})$/]",
+          message: "Hardcoded color literal — use a theme token (var(--text-primary), var(--accent-*-text), etc.) so it tracks light/dark mode.",
+        },
+        {
+          selector: "Property[key.name='background'] > Literal[value=/^(white|black|#[0-9a-fA-F]{3,8})$/]",
+          message: "Hardcoded background literal — use a theme token (var(--surface-card), --surface-inset-subtle, etc.).",
+        },
+      ],
     },
   },
   {
@@ -101,6 +133,16 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "prefer-const": "warn",
+    },
+  },
+  {
+    // OG image generators run in an isolated context where CSS custom
+    // properties can't resolve — Vercel's @vercel/og renders these in
+    // a Satori subprocess that doesn't see globals.css. Hardcoded hex
+    // is the only option here.
+    files: ["app/icon.tsx", "app/apple-icon.tsx", "app/opengraph-image.tsx", "app/twitter-image.tsx"],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
   {

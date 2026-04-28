@@ -820,7 +820,7 @@ function PayrollPageInner() {
             {(['All', 'Deal', 'Bonus'] as const).map((t) => (
               <button key={t} onClick={() => setRepTypeFilter(t)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
-                style={repTypeFilter === t ? { background: '#2563eb', color: 'var(--text-primary)' } : { color: 'var(--text-muted)' }}>
+                style={repTypeFilter === t ? { background: 'var(--accent-blue-solid)', color: 'var(--text-on-accent)' } : { color: 'var(--text-muted)' }}>
                 {t}
               </button>
             ))}
@@ -833,7 +833,7 @@ function PayrollPageInner() {
                   ? s === 'Paid' ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)' }
                     : s === 'Pending' ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }
                     : s === 'Draft' ? { background: 'color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)', color: 'var(--accent-blue-text)' }
-                    : { background: '#2563eb', color: 'var(--text-primary)' }
+                    : { background: 'var(--accent-blue-solid)', color: 'var(--text-on-accent)' }
                   : { color: 'var(--text-muted)' }}>
                 {s}
               </button>
