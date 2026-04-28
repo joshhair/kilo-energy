@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:tokens": "node scripts/check-design-tokens.mjs",
+    "check:schema": "node scripts/check-schema-drift.mjs",
+    "snapshot:turso-schema": "tsx scripts/snapshot-turso-schema.mts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

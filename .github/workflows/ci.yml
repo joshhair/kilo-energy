@@ -25,6 +25,20 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Schema drift (Prisma vs turso-schema.sql snapshot)
+        # Compares scalar columns in prisma/schema.prisma against the
+        # checked-in turso-schema.sql snapshot. Catches drift like the
+        # cycle-861 repType bug and the BlitzCost.amount/amountCents
+        # mismatch before they ship. If the snapshot is stale, refresh
+        # locally with `npm run snapshot:turso-schema` (needs Turso env
+        # vars) and re-check.
+        # NOTE: marked continue-on-error until the initial snapshot
+        # refresh lands — the current snapshot is months stale and
+        # would block all merges. Flip to required once snapshot is
+        # current and historical drift is resolved.
+        continue-on-error: true
+        run: npm run check:schema
+
       - name: Typecheck
         run: npm run typecheck
 
