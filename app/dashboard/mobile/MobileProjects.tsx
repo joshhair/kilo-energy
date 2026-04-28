@@ -397,7 +397,7 @@ export default function MobileProjects() {
               className="relative z-10 shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-medium active:scale-[0.92]"
               style={{
                 background: 'transparent',
-                color: isActive ? '#000' : 'var(--text-muted)',
+                color: isActive ? 'var(--text-on-accent)' : 'var(--text-muted)',
                 border: isActive ? 'none' : '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 transition: 'color 200ms ease, transform 75ms cubic-bezier(0.34,1.56,0.64,1)',
@@ -406,8 +406,8 @@ export default function MobileProjects() {
               {phase}
               {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
                 <span style={{
-                  background: isActive ? 'color-mix(in srgb, #000 20%, transparent)' : 'var(--border-subtle)',
-                  color: isActive ? '#000' : 'var(--text-muted)',
+                  background: isActive ? 'color-mix(in srgb, var(--text-on-accent) 20%, transparent)' : 'var(--border-subtle)',
+                  color: isActive ? 'var(--text-on-accent)' : 'var(--text-muted)',
                   borderRadius: 999,
                   fontSize: '0.68rem',
                   fontWeight: 700,

@@ -864,7 +864,7 @@ export default function MobileMyPay() {
                 Accept images + PDF to mirror the desktop modal + server whitelist. */}
             <label
               className="flex items-center gap-2 w-full min-h-[48px] cursor-pointer"
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px dashed color-mix(in srgb, var(--text-primary) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? '#fff' : 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px dashed color-mix(in srgb, var(--text-primary) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
             >
               <span className="truncate">{reimbFile ? reimbFile.name : 'Attach photo or PDF…'}</span>
               <input

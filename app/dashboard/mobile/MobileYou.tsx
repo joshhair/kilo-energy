@@ -179,7 +179,7 @@ export default function MobileYou() {
             fontFamily: FONT_BODY,
             fontSize: '1.75rem',
             fontWeight: 700,
-            color: '#000',
+            color: 'var(--text-on-accent)',
           }}
         >
           {initials}

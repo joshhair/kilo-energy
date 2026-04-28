@@ -77,7 +77,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             style={{
               background: 'transparent',
               border: 'none',
-              color: isActive ? '#000' : 'var(--text-muted)',
+              color: isActive ? 'var(--text-on-accent)' : 'var(--text-muted)',
               transition: 'color 200ms ease',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
