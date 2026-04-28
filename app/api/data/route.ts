@@ -398,6 +398,13 @@ export async function GET() {
       setterId: raw.setterId,
       subDealerId: raw.subDealerId,
       trainerId: raw.trainerId,
+      // Required for the vendor_pm branch in relationshipToProject —
+      // without this, vendor PMs silently degrade to 'none'. The
+      // field-visibility actions for 'vendor_pm' and 'none' happen to be
+      // identical today, so this was a latent bug rather than an active
+      // leak. Wiring it up removes the silent-fail and makes intent
+      // explicit if the matrix ever diverges.
+      installerId: raw.installerId,
       additionalClosers: raw.additionalClosers.map((c) => ({ userId: c.userId })),
       additionalSetters: raw.additionalSetters.map((s) => ({ userId: s.userId })),
     }, chainTrainees);

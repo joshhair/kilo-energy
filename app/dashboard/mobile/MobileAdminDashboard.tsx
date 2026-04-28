@@ -13,8 +13,7 @@ import {
 } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
 import { MyTasksSection, type MentionItem } from '../page';
-import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle, CheckCircle, Banknote, UserPlus, PlusCircle, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle, CheckCircle } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
@@ -385,31 +384,6 @@ export default function MobileAdminDashboard() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* ── Quick-action toolbar ── */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {[
-          { label: 'Run Payroll', Icon: Banknote,   accent: 'var(--accent-emerald-solid)', text: 'var(--accent-emerald-text)', href: '/dashboard/payroll'  },
-          { label: 'Add User',    Icon: UserPlus,   accent: 'var(--accent-purple-solid)',  text: 'var(--accent-purple-text)',  href: '/dashboard/users'    },
-          { label: 'New Deal',    Icon: PlusCircle, accent: 'var(--accent-cyan-solid)',    text: 'var(--accent-cyan-text)',    href: '/dashboard/new-deal' },
-          { label: 'Settings',    Icon: Settings,   accent: 'var(--accent-amber-solid)',   text: 'var(--accent-amber-text)',   href: '/dashboard/settings' },
-        ].map(({ label, Icon, accent, text, href }) => (
-          <Link
-            key={label}
-            href={href}
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 border font-bold text-sm transition-colors min-h-[48px] touch-manipulation"
-            style={{
-              fontFamily: FONT_BODY,
-              background: `color-mix(in srgb, ${accent} 10%, var(--surface-card))`,
-              borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
-              color: text,
-            }}
-          >
-            <Icon className="w-[15px] h-[15px] flex-shrink-0" />
-            {label}
-          </Link>
-        ))}
       </div>
 
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}

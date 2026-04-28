@@ -1,18 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireAdmin, requireInternalUser } from '../../../lib/api-auth';
+import { requireAdmin, requireInternalUser, isVendorPM, isInternalPM } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createRepSchema } from '../../../lib/schemas/business';
+import { logger } from '../../../lib/logger';
 
 // GET /api/reps — List users by role.
 // - admin: full records (PII included)
-// - everyone else: PII (email, phone) is stripped
-// Reps/SDs/PMs all need the list for pickers (setter dropdown, new deal
-// form, etc.), but no one except admin needs contact info.
+// - internal PM: stripped records (no PII)
+// - rep / sub-dealer: stripped records (no PII)
+// - vendor PM: empty list (no rep directory — they don't need other
+//   installers' staff, and the directory was a name-leak surface)
+// - misconfigured PM: empty list (default-deny)
+//
+// Reps/SDs/internal PMs need the list for pickers (setter dropdown, new
+// deal form, etc.), but no one except admin needs contact info.
 export async function GET(req: NextRequest) {
   let viewer;
   try { viewer = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const role = req.nextUrl.searchParams.get('role') || 'rep';
+
+  // Vendor PM and misconfigured PM: hard-deny the directory. Mirrors the
+  // /api/data policy where these roles get an empty users array. Without
+  // this, /api/reps was a parallel name-leak surface.
+  if (isVendorPM(viewer)) {
+    return NextResponse.json([]);
+  }
+  if (viewer.role === 'project_manager' && !isInternalPM(viewer)) {
+    logger.warn('reps_list_denied_misconfigured_pm', {
+      userId: viewer.id,
+      email: viewer.email,
+      reason: 'project_manager without scope or allowlist',
+    });
+    return NextResponse.json([]);
+  }
 
   // Admins see all users (active + inactive). Non-admins only see active.
   const users = await prisma.user.findMany({
