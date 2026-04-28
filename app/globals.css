@@ -71,6 +71,12 @@
   --accent-amber-text: #f5a623;
   --accent-amber-display: #f5a623;
 
+  /* Gold — decorative-only (trophies, leaderboard ranks, achievement
+     badges). Distinct from amber, which is reserved for paused/warning
+     state semantics. Use --accent-gold-text for icons; in light mode it
+     darkens to a still-gold-feeling brown for ≥4.5:1 contrast on white. */
+  --accent-gold-text: #fbbf24;
+
   --accent-purple-solid: #b47dff;
   --accent-purple-soft: rgba(180, 125, 255, 0.10);
   --accent-purple-glow: rgba(180, 125, 255, 0.30);
@@ -174,6 +180,7 @@
   --accent-blue-text: #1758b0;     /* ≥4.5:1 on blue-soft  (was #1d6fe5 → 4.11:1) */
   --accent-red-text: #c0312f;
   --accent-amber-text: #8e5400;    /* ≥4.5:1 on amber-soft (was #b87012 → 3.54:1) */
+  --accent-gold-text: #8a5a00;     /* ≥4.5:1 on white card; dark amber that still feels gold */
   --accent-purple-text: #7c4cd6;
   --accent-teal-text: #017068;     /* ≥4.5:1 on teal-soft  (was #018a83 → 3.80:1) */
 
@@ -236,6 +243,7 @@
   --accent-amber-glow: rgba(245, 166, 35, 0.30);
   --accent-amber-text: #f5a623;
   --accent-amber-display: #f5a623;
+  --accent-gold-text: #fbbf24;
   --accent-purple-soft: rgba(180, 125, 255, 0.10);
   --accent-purple-glow: rgba(180, 125, 255, 0.30);
   --accent-purple-text: #b47dff;

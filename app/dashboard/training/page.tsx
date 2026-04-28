@@ -1093,7 +1093,7 @@ function TrainingPageInner() {
                   <Link
                     href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: '#fbbf24', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
+                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                   >
                     View payments
                     <ArrowRight className="w-3.5 h-3.5" />

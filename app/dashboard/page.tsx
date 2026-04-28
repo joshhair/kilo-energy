@@ -1581,7 +1581,7 @@ export default function DashboardPage() {
                       className="h-1.5 rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
+                        background: pct >= 100 ? 'linear-gradient(90deg,var(--accent-amber-solid),var(--accent-gold-text))' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
                       }}
                     />
                   </div>

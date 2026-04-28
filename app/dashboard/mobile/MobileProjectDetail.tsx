@@ -1144,7 +1144,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           <button
                             onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
                             className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
-                            style={{ background: stage.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : '#f59e0b' }}
+                            style={{ background: stage.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--accent-amber-text)' }}
                           >
                             {stage.paid ? 'Mark Unpaid' : 'Mark Paid'}
                           </button>

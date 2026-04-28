@@ -667,7 +667,7 @@ export default function MobileReps() {
                         <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald-solid)' : '#f87171', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
+                            <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald-solid)' : 'var(--accent-red-text)', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
                           )}
                         </span>
                       </div>
@@ -685,7 +685,7 @@ export default function MobileReps() {
                       </div>
                       <div className="flex justify-between gap-2">
                         <span style={{ color: 'var(--text-muted)' }}>Cancel</span>
-                        <span className="font-semibold" style={{ color: cancelRate > 20 ? '#f87171' : 'var(--text-muted)' }}>{cancelRate.toFixed(0)}%</span>
+                        <span className="font-semibold" style={{ color: cancelRate > 20 ? 'var(--accent-red-text)' : 'var(--text-muted)' }}>{cancelRate.toFixed(0)}%</span>
                       </div>
                     </div>
                   </div>

@@ -71,7 +71,7 @@ export default function BlitzProfitability({
   ];
 
   const toneColor = (t: 'emerald' | 'amber' | 'red') =>
-    t === 'emerald' ? 'var(--accent-emerald-solid)' : t === 'amber' ? '#f59e0b' : '#f87171';
+    t === 'emerald' ? 'var(--accent-emerald-solid)' : t === 'amber' ? 'var(--accent-amber-text)' : 'var(--accent-red-text)';
 
   return (
     <div className="space-y-4">
@@ -142,7 +142,7 @@ export default function BlitzProfitability({
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>Margin</p>
-                    <p className="text-sm font-bold tabular-nums" style={{ color: margin >= 0 ? 'var(--accent-emerald-solid)' : '#f87171', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(margin))}</p>
+                    <p className="text-sm font-bold tabular-nums" style={{ color: margin >= 0 ? 'var(--accent-emerald-solid)' : 'var(--accent-red-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(margin))}</p>
                   </div>
                 </button>
               );
@@ -154,7 +154,9 @@ export default function BlitzProfitability({
       {approvedParticipants.length > 0 && leaderboard.length > 0 && (() => {
         const repStats = leaderboard.map((r) => ({ user: r.user, deals: r.deals, kw: r.kW, payout: r.payout }));
         const maxKW = Math.max(...repStats.map((r) => r.kw), 1);
-        const barColors = ['#f59e0b', 'var(--text-dim)', '#ea580c', 'var(--text-dim)'];
+        // Rank 1 = bright amber (top performer); rank 3 = darker amber.
+        // Ranks 2 & 4+ collapse to dim so the gold/bronze podium reads.
+        const barColors = ['var(--accent-amber-solid)', 'var(--text-dim)', 'var(--accent-amber-display)', 'var(--text-dim)'];
         return (
           <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Performance</p>
@@ -165,7 +167,7 @@ export default function BlitzProfitability({
                     <div className="flex items-center gap-2 min-w-0">
                       <div
                         className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                        style={{ background: idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? '#fcd34d' : 'var(--text-muted)', border: `1px solid ${idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' : 'var(--border-subtle)'}` }}
+                        style={{ background: idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' : 'rgba(68,85,119,0.3)', color: idx === 0 ? 'var(--accent-gold-text)' : 'var(--text-muted)', border: `1px solid ${idx === 0 ? 'color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' : 'var(--border-subtle)'}` }}
                       >
                         {idx + 1}
                       </div>

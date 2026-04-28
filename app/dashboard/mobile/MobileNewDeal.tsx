@@ -1859,7 +1859,7 @@ export default function MobileNewDeal() {
               />
               <div className="flex items-center justify-between mt-1">
                 <p className="text-base italic" style={{ color: 'var(--text-muted)' }}>Internal notes only</p>
-                <p className="text-base" style={{ color: form.notes.length >= 500 ? '#f87171' : form.notes.length >= 400 ? '#fbbf24' : 'var(--text-muted)' }}>
+                <p className="text-base" style={{ color: form.notes.length >= 500 ? 'var(--accent-red-text)' : form.notes.length >= 400 ? 'var(--accent-amber-text)' : 'var(--text-muted)' }}>
                   {form.notes.length}/500
                 </p>
               </div>

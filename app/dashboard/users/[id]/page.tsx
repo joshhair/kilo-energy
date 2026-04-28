@@ -760,7 +760,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <button
                   onClick={() => setMetaRefreshKey((k) => k + 1)}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.3)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)', border: '1px solid color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
                 >
                   Retry
                 </button>
@@ -787,7 +787,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     disabled={hasRelations}
                     title={userMetaError ? 'Failed to load user data — use Retry to reload' :!userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                     className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
+                    style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                   >
                     Delete permanently
                   </button>
@@ -1511,7 +1511,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <button
                 onClick={() => setMetaRefreshKey((k) => k + 1)}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110"
-                style={{ background: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.3)' }}
+                style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)', border: '1px solid color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
               >
                 Retry
               </button>
@@ -1524,7 +1524,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   disabled={hasRelations}
                   title={userMetaError ? 'Failed to load user data — use Retry to reload' : !userMeta ? 'Loading user data…' : hasRelations ? `Has ${userMeta?.relationCount} related record(s) — deactivate instead` : 'Permanently delete this user (irreversible)'}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: 'var(--accent-red-soft)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
+                  style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                 >
                   Delete permanently
                 </button>

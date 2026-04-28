@@ -20,7 +20,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   const router = useRouter();
   if (entries.length === 0) return (
     <div className="rounded-2xl p-5 text-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-      <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#fbbf24', opacity: 0.2 }} />
+      <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--accent-gold-text)', opacity: 0.2 }} />
       <p className="text-sm font-semibold text-[var(--text-primary)]">No deals yet</p>
       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Rankings appear once reps start closing.</p>
     </div>
@@ -32,7 +32,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
   return (
     <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="flex items-center gap-2 mb-3">
-        <Trophy className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
+        <Trophy className="w-3.5 h-3.5" style={{ color: 'var(--accent-gold-text)' }} />
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Leaderboard</span>
       </div>
       <div className="space-y-1.5">

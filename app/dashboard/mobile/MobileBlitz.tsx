@@ -478,7 +478,7 @@ export default function MobileBlitz() {
               )}
               {participationLabel && !canJoin && !isBlitzOwner && (
                 <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
-                  color: participationLabel === 'Joined' ? 'var(--accent-emerald-solid)' : participationLabel === 'Declined' ? 'var(--accent-red-solid)' : '#f59e0b',
+                  color: participationLabel === 'Joined' ? 'var(--accent-emerald-solid)' : participationLabel === 'Declined' ? 'var(--accent-red-solid)' : 'var(--accent-amber-text)',
                   background: participationLabel === 'Joined' ? 'var(--accent-emerald-soft)' : participationLabel === 'Declined' ? 'var(--accent-red-soft)' : 'var(--accent-amber-soft)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}>
@@ -721,7 +721,7 @@ export default function MobileBlitz() {
                           onClick={() => handleDenyRequest(req.id)}
                           disabled={processingRequest.has(req.id)}
                           className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                          style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: '#f87171', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                          style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                         >
                           <XCircle className="w-3 h-3" /> Deny
                         </button>
