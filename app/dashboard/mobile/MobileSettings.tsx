@@ -939,7 +939,7 @@ function ExportSection() {
           <span
             className="text-base font-semibold capitalize"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'white',
+              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'var(--text-primary)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               transition: 'color 300ms ease',
             }}

@@ -421,7 +421,7 @@ export default function MobileTraining({
 
         {/* Stats strip */}
         {adminStats && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
             {[
               { label: 'Lifetime Paid', value: fmt$(adminStats.lifetimeTrainerPaid), accent: true },
               { label: 'Active / Total', value: `${adminStats.activeTrainingCount}/${adminStats.totalAssignments}`, accent: false },
@@ -432,7 +432,7 @@ export default function MobileTraining({
                 <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
                 <p
                   className="text-2xl font-bold tabular-nums leading-none"
-                  style={{ color: stat.accent ? 'var(--accent-amber-solid)' : 'white', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                  style={{ color: stat.accent ? 'var(--accent-amber-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                 >
                   {stat.value}
                 </p>
@@ -445,7 +445,7 @@ export default function MobileTraining({
         {onNewAssignment && (
           <button
             onClick={onNewAssignment}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-semibold text-sm"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-semibold text-sm motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out active:scale-[0.985] touch-manipulation"
             style={{
               background: 'var(--accent-amber-soft)',
               color: 'var(--accent-amber-text)',
@@ -468,14 +468,14 @@ export default function MobileTraining({
             className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm focus:outline-none"
             style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           />
-          {adminSearch && (
-            <button
-              onClick={() => setAdminSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-            </button>
-          )}
+          <button
+            onClick={() => setAdminSearch('')}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 motion-safe:transition-opacity motion-safe:duration-150 ${adminSearch ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            aria-hidden={!adminSearch}
+            tabIndex={adminSearch ? 0 : -1}
+          >
+            <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          </button>
         </div>
 
         {/* Status filter chips */}
@@ -507,22 +507,24 @@ export default function MobileTraining({
 
         {/* Assignment list */}
         {filteredAdminRows.length === 0 ? (
-          <MobileCard>
-            <MobileEmptyState
-              icon={Users}
-              title="No assignments match"
-              subtitle="Try a different search or filter"
-            />
-          </MobileCard>
+          <div className="motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]">
+            <MobileCard>
+              <MobileEmptyState
+                icon={Users}
+                title="No assignments match"
+                subtitle="Try a different search or filter"
+              />
+            </MobileCard>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {groupedByTrainer.map((group) => {
+          <div key={`${adminStatusFilter}-${adminSearch}`} className="space-y-3">
+            {groupedByTrainer.map((group, gIdx) => {
               const isExpanded = expandedTrainerIds.has(group.trainerId);
               return (
                 <div
                   key={group.trainerId}
-                  className="rounded-2xl overflow-hidden"
-                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
+                  className="rounded-2xl overflow-hidden motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', animationDelay: `${Math.min(gIdx, 5) * 45}ms` }}
                 >
                   {/* Trainer header — tap to expand/collapse */}
                   <button
@@ -559,6 +561,12 @@ export default function MobileTraining({
                   </button>
 
                   {/* Trainee rows */}
+                  <div
+                    className={`grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+                      isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
                   {isExpanded && (
                     <div style={{ borderTop: '1px solid var(--border-subtle)' }}>
                       {group.rows.map((row, idx) => {
@@ -590,8 +598,8 @@ export default function MobileTraining({
                               <StatusChip status={row.status} />
                               <button
                                 onClick={() => setOpenActionMenuId(isMenuOpen ? null : row.assignment.id)}
-                                className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
-                                style={{ color: 'var(--text-muted)' }}
+                                className="p-1.5 rounded-lg flex-shrink-0 motion-safe:transition motion-safe:duration-150 active:scale-90 touch-manipulation"
+                                style={{ color: 'var(--text-secondary)' }}
                                 aria-label="Row actions"
                               >
                                 <MoreVertical className="w-4 h-4" />
@@ -599,6 +607,12 @@ export default function MobileTraining({
                             </div>
 
                             {/* Inline action strip */}
+                            <div
+                              className={`grid motion-safe:transition-[grid-template-rows] motion-safe:duration-200 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+                                isMenuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                              }`}
+                            >
+                              <div className="overflow-hidden">
                             {isMenuOpen && (
                               <div
                                 className="px-4 pb-3 flex flex-wrap gap-2"
@@ -662,11 +676,15 @@ export default function MobileTraining({
                                 )}
                               </div>
                             )}
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -681,13 +699,15 @@ export default function MobileTraining({
     return (
       <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Training" />
-        <MobileCard>
-          <MobileEmptyState
-            icon={GraduationCap}
-            title="No trainees yet"
-            subtitle="You'll appear here once assigned a trainee"
-          />
-        </MobileCard>
+        <div className="motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both]">
+          <MobileCard>
+            <MobileEmptyState
+              icon={GraduationCap}
+              title="No trainees yet"
+              subtitle="You'll appear here once assigned a trainee"
+            />
+          </MobileCard>
+        </div>
       </div>
     );
   }
@@ -704,7 +724,7 @@ export default function MobileTraining({
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
-            <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: stat.accent ? 'var(--accent-emerald-solid)' : 'white', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+            <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: stat.accent ? 'var(--accent-emerald-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               {stat.value}
             </p>
           </div>
