@@ -259,7 +259,7 @@ export default function MobileCalculator() {
   const trainerTotal = isPaired && trainerRate > 0 && kW > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
 
   // ── Save to history when a full result is displayed ──────────────────────
-  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}`;
+  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}|${quickFillSoldDate}|${pricingDate}`;
 
   useEffect(() => {
     if (!hasInput || soldPPW <= 0 || closerTotal <= 0) return;

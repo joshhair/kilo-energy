@@ -377,6 +377,12 @@ export default function MobileNewDeal() {
   const update = (field: string, value: string) => {
     const coPartyReset = (field === 'kWSize' || field === 'netPPW') ? { additionalClosers: [], additionalSetters: [] } : {};
     setForm((prev) => ({ ...prev, [field]: value, ...coPartyReset }));
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      next[field] = '';
+      return next;
+    });
   };
 
   const handleBlur = (field: string) => {

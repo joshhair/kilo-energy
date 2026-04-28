@@ -13,6 +13,7 @@ import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { useToast } from '../../../lib/toast';
 import { todayLocalDateStr } from '../../../lib/utils';
+import { CalculatorSkeleton } from './CalculatorSkeleton';
 
 // ─── Calc History ──────────────────────────────────────────────────────────────
 const CALC_HISTORY_KEY = 'kilo-calc-history';
@@ -136,64 +137,6 @@ function FieldTooltip({ text }: { text: string }) {
         <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-slate-700" />
       </span>
     </span>
-  );
-}
-
-// ─── Commission Bar ────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- WIP visualization, keep for future page wire-up
-function CommissionBar({
-  closer,
-  setter,
-  trainer,
-  kilo,
-  showKilo,
-}: {
-  closer: number;
-  setter: number;
-  trainer: number;
-  kilo: number;
-  showKilo: boolean;
-}) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // One rAF so the browser paints width:0% first, then transitions to real widths
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  const total = closer + setter + trainer + (showKilo ? kilo : 0);
-  if (total <= 0) return null;
-
-  const pct = (v: number) => `${(v / total) * 100}%`;
-
-  const segments = [
-    { key: 'closer',  value: closer,  colorClass: 'bg-[var(--accent-emerald-solid)]',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-[var(--accent-cyan-solid)]', label: 'Setter'   },
-    { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
-    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[var(--text-muted)]', label: 'Kilo Rev' }] : []),
-  ].filter((s) => s.value > 0);
-
-  return (
-    <div className="mt-4 space-y-2">
-      <div className="h-3 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] overflow-hidden flex">
-        {segments.map((seg) => (
-          <div
-            key={seg.key}
-            className={`${seg.colorClass} transition-all duration-700 ease-out`}
-            style={{ width: mounted ? pct(seg.value) : '0%' }}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-4 flex-wrap">
-        {segments.map((seg) => (
-          <div key={seg.key} className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${seg.colorClass}`} />
-            <span className="text-[var(--text-muted)] text-xs">{seg.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -1229,75 +1172,3 @@ function CalculatorPage() {
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function CalculatorSkeleton() {
-  return (
-    <div className="p-4 md:p-8 max-w-2xl">
-      {/* Page header shimmer */}
-      <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" />
-        <div className="flex items-center gap-3 mb-1">
-          <div
-            className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton"
-            style={{ animationDelay: '50ms' }}
-          />
-          <div
-            className="h-8 w-56 bg-[var(--surface-card)] rounded animate-skeleton"
-            style={{ animationDelay: '100ms' }}
-          />
-        </div>
-        <div
-          className="h-3 w-72 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1"
-          style={{ animationDelay: '150ms' }}
-        />
-      </div>
-
-      {/* Form section — 4 input field placeholders (label + input bar) */}
-      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible">
-        {[
-          { labelW: 'w-16', delay: 0 },
-          { labelW: 'w-24', delay: 75 },
-          { labelW: 'w-20', delay: 150 },
-          { labelW: 'w-20', delay: 225 },
-        ].map(({ labelW, delay }, i) => (
-          <div key={i}>
-            <div
-              className={`h-3 ${labelW} bg-[var(--border)]/70 rounded animate-skeleton mb-2`}
-              style={{ animationDelay: `${delay}ms` }}
-            />
-            <div
-              className="h-10 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton"
-              style={{ animationDelay: `${delay + 30}ms` }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Results panel — 3 stat-card-sized shimmer blocks */}
-      <div className="space-y-4">
-        {[
-          { delay: 0,   bodyH: 'h-16' },
-          { delay: 75,  bodyH: 'h-24' },
-          { delay: 150, bodyH: 'h-16' },
-        ].map(({ delay, bodyH }, i) => (
-          <div
-            key={i}
-            className="card-surface rounded-2xl p-5"
-          >
-            {/* Card label row */}
-            <div
-              className="h-3 w-28 bg-[var(--border)]/50 rounded animate-skeleton mb-4"
-              style={{ animationDelay: `${delay}ms` }}
-            />
-            {/* Card body shimmer */}
-            <div
-              className={`${bodyH} w-full bg-[var(--surface-card)]/70 rounded-xl animate-skeleton`}
-              style={{ animationDelay: `${delay + 50}ms` }}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
