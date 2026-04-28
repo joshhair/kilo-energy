@@ -98,7 +98,7 @@ export default function SignInPage() {
           {/* Tagline */}
           <p
             className="text-center text-sm md:text-base"
-            style={{ color: '#8891a8', fontFamily: "'DM Sans', sans-serif" }}
+            style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}
           >
             Solar sales, run on real numbers.
           </p>
@@ -128,10 +128,10 @@ export default function SignInPage() {
 
         {/* Footer line */}
         <div className="flex flex-col items-center gap-1 mt-2 text-center">
-          <p className="text-[10px] sm:text-xs uppercase whitespace-nowrap" style={{ color: '#525c72', letterSpacing: '0.04em' }}>
+          <p className="text-[10px] sm:text-xs uppercase whitespace-nowrap" style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
             Track commission · pipeline · payouts
           </p>
-          <p className="text-[10px] sm:text-[11px]" style={{ color: '#3a4358' }}>
+          <p className="text-[10px] sm:text-[11px]" style={{ color: 'var(--text-dim)' }}>
             © {year} Kilo Energy · <a href="/legal/privacy" className="hover:text-[var(--text-primary)]/70 transition-colors">Privacy</a> · <a href="/legal/terms" className="hover:text-[var(--text-primary)]/70 transition-colors">Terms</a>
           </p>
         </div>

@@ -597,7 +597,7 @@ export default function MobileAdminDashboard() {
           </div>
           <div className="space-y-2">
             {cancellationReasons.map(([reason, count]) => (
-              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
+              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{reason}</span>
                 <span className="font-semibold tabular-nums text-sm" style={{ color: DANGER }}>{count}</span>
               </div>

@@ -1353,7 +1353,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
           {/* Per-project trainer override — admin only. */}
           {isAdmin && (
-            <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--text-primary) 3%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 8%, transparent)' }}>
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Per-project trainer</span>
                 {editDraft.trainerId && (

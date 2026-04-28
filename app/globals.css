@@ -93,6 +93,17 @@
   --text-on-accent: #000;       /* black text on solid accent buttons */
   --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
 
+  /* ── Inset surfaces ──────────────────────────────────────────────────────
+     Subtle / strong "well" backgrounds for nested sections, divider
+     blocks, hover states. The 4-7% color-mix surfaces that were
+     previously inlined throughout mobile pages were invisible against
+     light-mode --surface-card (#fff). These tokens use a higher base
+     percentage tuned for visibility in BOTH modes:
+       subtle = section dividers, hover wells, disabled inputs
+       strong = inline notes, expanded action strips, chip backdrops */
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 12%, transparent);
+
   /* ── Legacy mobile aliases ──────────────────────────────────────────────
      A handful of mobile-only components (BottomNav, MobileRepDetail)
      still reference the pre-tokenization --*-mobile
@@ -201,6 +212,13 @@
      White on these accents was 1.65–2.72:1 — failed AA. Black on
      emerald is ~10:1, on amber ~10:1, on cyan ~7:1. */
   --text-on-accent: #000000;
+
+  /* Light-mode inset wells — bumped vs. dark to read on white card.
+     8% / 14% chosen so subtle dividers stay quiet but visible against
+     surface-card (#fff). Strong is used for chip backdrops + admin-
+     notes editor where the previous 2-4% was effectively transparent. */
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 14%, transparent);
 }
 
 /* ── Force-dark scope ───────────────────────────────────────────────────────
@@ -244,6 +262,8 @@
   --accent-amber-text: #f5a623;
   --accent-amber-display: #f5a623;
   --accent-gold-text: #fbbf24;
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 12%, transparent);
   --accent-purple-soft: rgba(180, 125, 255, 0.10);
   --accent-purple-glow: rgba(180, 125, 255, 0.30);
   --accent-purple-text: #b47dff;

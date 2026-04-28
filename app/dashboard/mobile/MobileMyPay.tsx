@@ -501,7 +501,7 @@ export default function MobileMyPay() {
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
           <div className="space-y-2">
             {projectedM1 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' }}>
                     <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
@@ -515,7 +515,7 @@ export default function MobileMyPay() {
               </div>
             )}
             {projectedM2 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' }}>
                     <span style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
@@ -529,7 +529,7 @@ export default function MobileMyPay() {
               </div>
             )}
             {projectedM3 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-teal-solid) 12%, transparent)' }}>
                     <span style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
@@ -668,8 +668,8 @@ export default function MobileMyPay() {
           minHeight: '52px',
           padding: '14px 18px',
           borderRadius: '16px',
-          background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)',
-          border: '0.5px solid color-mix(in srgb, var(--text-primary) 8%, transparent)',
+          background: 'var(--surface-inset-subtle)',
+          border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)',
           transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           fontFamily: FONT_BODY,
         }}
