@@ -100,29 +100,64 @@ function parsePrisma(src) {
 
 function parseTurso(src) {
   const tables = new Map();
-  const tableRe = /CREATE TABLE\s+"([^"]+)"\s*\(([\s\S]*?)\n\);/g;
+  // Match the first `);` after the opening `(`. Schemas that grew via
+  // ALTER TABLE ADD COLUMN end up with multiple columns on a single
+  // line just before the close, so we can't anchor on `\n);`. Use a
+  // non-greedy capture and stop at the first `);` we hit.
+  const tableRe = /CREATE TABLE\s+"([^"]+)"\s*\(([\s\S]*?)\)\s*;/g;
   let m;
   while ((m = tableRe.exec(src)) !== null) {
     const tableName = m[1];
     const body = m[2];
     const cols = new Map();
-    for (const rawLine of body.split('\n')) {
-      const line = rawLine.trim().replace(/,$/, '');
+    // Tables built up via ALTER TABLE ADD COLUMN can have multiple
+    // column defs on a single line, separated by commas. Split on
+    // top-level commas (not commas inside parens like DEFAULT '...').
+    const segments = splitTopLevelCommas(body);
+    for (const rawSeg of segments) {
+      const line = rawSeg.trim();
       if (!line) continue;
       if (/^CONSTRAINT\b/i.test(line)) continue;
       if (/^PRIMARY KEY\s*\(/i.test(line)) continue;
       if (/^UNIQUE\s*\(/i.test(line)) continue;
-      // "name" TYPE [NOT NULL] [DEFAULT ...] [PRIMARY KEY]
-      const colRe = /^"([^"]+)"\s+(\w+)(.*)$/;
+      if (/^FOREIGN KEY\b/i.test(line)) continue;
+      // Optional quotes around column name (Turso emits some unquoted)
+      const colRe = /^"?([\w]+)"?\s+(\w+)(.*)$/;
       const cm = line.match(colRe);
       if (!cm) continue;
       const [, name, sqlType, modifiers] = cm;
-      const nullable = !/\bNOT NULL\b/i.test(modifiers);
+      // SQLite quirk: only INTEGER PRIMARY KEY implies NOT NULL. For
+      // TEXT primary keys, NULLs are technically allowed unless NOT NULL
+      // is explicit. But Prisma always populates id columns via @id +
+      // @default(cuid()), so treat PRIMARY KEY as NOT NULL here to match
+      // the app-level contract instead of SQLite's permissive default.
+      const isPrimary = /\bPRIMARY KEY\b/i.test(modifiers);
+      const nullable = !(/\bNOT NULL\b/i.test(modifiers) || isPrimary);
       cols.set(name, { sqlType: sqlType.toUpperCase(), nullable });
     }
     tables.set(tableName, cols);
   }
   return tables;
+}
+
+// Split a CREATE TABLE body on commas that are at depth 0 (not inside
+// nested parens like `DEFAULT (datetime('now'))`).
+function splitTopLevelCommas(body) {
+  const out = [];
+  let depth = 0;
+  let buf = '';
+  for (const ch of body) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (ch === ',' && depth === 0) {
+      out.push(buf);
+      buf = '';
+    } else {
+      buf += ch;
+    }
+  }
+  if (buf.trim()) out.push(buf);
+  return out;
 }
 
 // ── Diff ────────────────────────────────────────────────────────────────
