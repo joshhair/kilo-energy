@@ -722,7 +722,7 @@ export default function TableView({
 
       {/* ── Desktop table view (md+) ─────────────────────────────────── */}
       <div className="hidden md:block card-surface rounded-2xl overflow-x-auto scroll-smooth">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm projects-table">
             <thead className="sticky top-0 z-10" style={{ background: 'var(--surface-card)' }}>
               <tr>
                 {isAdmin && !readOnly && (
@@ -788,7 +788,7 @@ export default function TableView({
                     borderBottom: '1px solid var(--border)',
                     background: selectedProjectIds.has(proj.id)
                       ? 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)'
-                      : i % 2 === 0 ? 'var(--surface)' : '#191c24',
+                      : i % 2 === 0 ? 'var(--surface)' : 'color-mix(in srgb, var(--surface-card) 35%, var(--surface-page))',
                     borderLeft: proj.flagged
                       ? '3px solid var(--accent-red-solid)'
                       : isMyRow

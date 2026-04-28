@@ -1677,3 +1677,13 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .animate-info-row-enter { animation: none; }
 }
+
+/* ── Projects table hover ────────────────────────────────────────────────── */
+.projects-table tbody tr:hover {
+  background: var(--surface-card) !important;
+  transition: background 120ms ease;
+}
+.projects-table tbody tr:has(input[type='checkbox']:checked) {
+  /* preserve selected-row blue tint — !important wins on hover too */
+  background: color-mix(in srgb, var(--accent-blue-solid) 8%, transparent) !important;
+}

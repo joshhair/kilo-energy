@@ -1320,7 +1320,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isVendorPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager' && !!viewAsUser.scopedInstallerId;
   const isAnyPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager';
   const visibleProjects = useMemo(() => {
-    if (isVendorPmViewAs && effectiveScopedInstallerName) {
+    if (isVendorPmViewAs) {
+      if (!effectiveScopedInstallerName) return [];
       return projects.filter((p) => p.installer === effectiveScopedInstallerName);
     }
     return projects;

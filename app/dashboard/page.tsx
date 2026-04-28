@@ -183,7 +183,7 @@ export function NeedsAttentionSection({
 
   const capped = items.slice(0, 5);
   const hasMore = items.length > 5;
-  const totalCount = items.length + (payrollAttentionCount > 0 ? 1 : 0);
+  const totalCount = items.length + payrollAttentionCount;
 
   return (
     <div
