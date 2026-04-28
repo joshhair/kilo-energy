@@ -1447,7 +1447,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 label="Co-setters"
                 rows={editVals.additionalSetters}
                 primaryUserId={editVals.setterId}
-                excludeUserIds={[editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+                excludeUserIds={[project.repId, editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
                 repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
                 reps={reps}
                 onChange={(rows) => setEditVals((v) => ({ ...v, additionalSetters: rows }))}

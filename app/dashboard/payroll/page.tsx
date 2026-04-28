@@ -1129,9 +1129,9 @@ function PayrollPageInner() {
               <option value="all">Include archived</option>
               <option value="only">Archived only</option>
             </select>
-            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
+            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending' || showArchivedReim !== false) && (
               <button
-                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
+                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); setShowArchivedReim(false); }}
                 className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline transition-colors"
               >
                 Clear

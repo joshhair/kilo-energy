@@ -836,9 +836,6 @@ export default function MobilePayroll() {
           const ids = filtered.map((e) => e.id);
           try {
             await markForPayroll(ids);
-            setPayrollEntries((prev) =>
-              prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p)),
-            );
             toast('All draft entries moved to Pending', 'success');
             setStatusTab('Pending');
           } catch {
@@ -982,7 +979,7 @@ export default function MobilePayroll() {
               >
                 <option value="">Select project...</option>
                 {projects
-                  .filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold')
+                  .filter((p) => paymentForm.type === 'Chargeback' ? p.phase === 'Cancelled' : p.phase !== 'Cancelled' && p.phase !== 'On Hold')
                   .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId || p.additionalClosers?.some((c) => c.userId === paymentForm.repId) || p.additionalSetters?.some((s) => s.userId === paymentForm.repId))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.customerName}</option>

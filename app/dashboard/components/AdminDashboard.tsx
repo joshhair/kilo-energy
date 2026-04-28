@@ -11,6 +11,7 @@ import { formatDate, fmt$, fmtCompact$, formatCompactKW, todayLocalDateStr } fro
 import { sumPaid } from '../../../lib/aggregators';
 import { DollarSign, CheckCircle, Zap, Users, BarChart2, FolderKanban, ChevronRight, ChevronUp, ChevronDown, PlusCircle, Banknote, UserPlus, Settings, AlertCircle, HelpCircle, Trophy } from 'lucide-react';
 import { PaginationBar } from './PaginationBar';
+import { InlineBar } from './InlineBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
 import { NeedsAttentionSection, MyTasksSection, type MentionItem, PhaseBadge, StatusDot } from '../page';
 
@@ -524,21 +525,27 @@ export function AdminDashboard({
           <div className={`collapsible-panel ${topRepsExpanded ? 'open' : ''}`}>
             <div className="collapsible-inner">
               <div className="mt-4 space-y-2">
-                {topReps.map((r) => (
-                  <div key={r.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
-                    <span
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums"
-                      style={{
-                        background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
-                        color: r.rank === 1 ? 'var(--accent-emerald-solid)' : r.rank === 2 ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
-                      }}
-                    >
-                      {r.rank}
-                    </span>
-                    <span className="flex-1 text-[var(--text-primary)] text-sm font-medium">{r.name}</span>
-                    <span className="text-[var(--text-secondary)] text-sm font-semibold tabular-nums">{r.count} deal{r.count === 1 ? '' : 's'}</span>
-                  </div>
-                ))}
+                {topReps.map((r) => {
+                  const maxCount = topReps[0]?.count ?? 1;
+                  return (
+                    <div key={r.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
+                      <span
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums shrink-0"
+                        style={{
+                          background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+                          color: r.rank === 1 ? 'var(--accent-emerald-solid)' : r.rank === 2 ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {r.rank}
+                      </span>
+                      <span className="flex-1 text-[var(--text-primary)] text-sm font-medium truncate">{r.name}</span>
+                      <div className="w-24 shrink-0">
+                        <InlineBar value={r.count} max={maxCount} fillClass="bg-[var(--accent-emerald-solid)]/70" />
+                      </div>
+                      <span className="text-[var(--text-secondary)] text-sm font-semibold tabular-nums shrink-0">{r.count} deal{r.count === 1 ? '' : 's'}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -593,9 +600,7 @@ export function AdminDashboard({
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <div className="w-full h-3 rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] overflow-hidden">
-                              <div className="h-full rounded-full bg-amber-500/70 transition-all duration-500" style={{ width: `${(inst.deals / maxDeals) * 100}%` }} />
-                            </div>
+                            <InlineBar value={inst.deals} max={maxDeals} fillClass="bg-amber-500/70" />
                           </td>
                         </tr>
                       ))}
