@@ -49,7 +49,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 
 describe('myCommissionOnProject — closer view', () => {
   it('returns full projected total even when only M1 payroll entry exists', () => {
-    const project = makeProject({ setterId: null, m1Amount: 1000, m2Amount: 2500, m3Amount: 500 });
+    const project = makeProject({ setterId: undefined, m1Amount: 1000, m2Amount: 2500, m3Amount: 500 });
     const payroll: PayrollEntry[] = [
       { id: 'p1', projectId: 'p1', repId: 'closer-1', paymentStage: 'M1', status: 'Draft', amount: 1000, date: '2026-04-01', type: 'Deal' } as PayrollEntry,
     ];
@@ -60,7 +60,7 @@ describe('myCommissionOnProject — closer view', () => {
   });
 
   it('marks the drafted M1 as NOT paid until it is actually Paid', () => {
-    const project = makeProject({ setterId: null });
+    const project = makeProject({ setterId: undefined });
     const payroll: PayrollEntry[] = [
       { id: 'p1', projectId: 'p1', repId: 'closer-1', paymentStage: 'M1', status: 'Draft', amount: 1000, date: '2026-04-01', type: 'Deal' } as PayrollEntry,
     ];
@@ -70,7 +70,7 @@ describe('myCommissionOnProject — closer view', () => {
   });
 
   it('flips stage.paid=true when the payroll entry for that stage is Paid', () => {
-    const project = makeProject({ setterId: null });
+    const project = makeProject({ setterId: undefined });
     const payroll: PayrollEntry[] = [
       { id: 'p1', projectId: 'p1', repId: 'closer-1', paymentStage: 'M1', status: 'Paid', amount: 1000, date: '2026-04-01', type: 'Deal' } as PayrollEntry,
     ];
