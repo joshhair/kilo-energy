@@ -559,7 +559,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
 
   return (
-    <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
       {/* Breadcrumb + Prev/Next */}
       <div className="flex items-center justify-between mb-6">
         <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-[var(--text-secondary)] bg-[var(--surface)]/60 backdrop-blur-md border border-[var(--border-subtle)]/60 rounded-xl px-4 py-2.5">
@@ -653,7 +653,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {(effectiveRole === 'admin' || isPM) ? (
-          <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2">
+          <div className="flex flex-col md:flex-row md:flex-nowrap items-stretch md:items-center gap-2 md:whitespace-nowrap">
             {!isPM && (
               <button
                 onClick={openEditModal}
