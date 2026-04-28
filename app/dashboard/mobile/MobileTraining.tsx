@@ -432,7 +432,7 @@ export default function MobileTraining({
                 <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
                 <p
                   className="text-2xl font-bold tabular-nums leading-none"
-                  style={{ color: stat.accent ? 'var(--accent-amber-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                  style={{ color: stat.accent ? 'var(--accent-emerald-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                 >
                   {stat.value}
                 </p>
@@ -447,9 +447,9 @@ export default function MobileTraining({
             onClick={onNewAssignment}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-semibold text-sm motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out active:scale-[0.985] touch-manipulation"
             style={{
-              background: 'var(--accent-amber-soft)',
-              color: 'var(--accent-amber-text)',
-              border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)',
+              background: 'var(--accent-emerald-soft)',
+              color: 'var(--accent-emerald-text)',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)',
             }}
           >
             <Plus className="w-4 h-4" />
@@ -489,9 +489,9 @@ export default function MobileTraining({
                 onClick={() => setAdminStatusFilter(s)}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
                 style={{
-                  background: isActive ? 'var(--accent-amber-soft)' : 'var(--surface-card)',
-                  color: isActive ? 'var(--accent-amber-text)' : 'var(--text-muted)',
-                  border: `1px solid ${isActive ? 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)' : 'var(--border-subtle)'}`,
+                  background: isActive ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                  color: isActive ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                  border: `1px solid ${isActive ? 'color-mix(in srgb, var(--accent-emerald-solid) 40%, transparent)' : 'var(--border-subtle)'}`,
                 }}
               >
                 {label}
@@ -539,7 +539,7 @@ export default function MobileTraining({
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                        style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)' }}
+                        style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
                       >
                         {getInitials(group.trainerName)}
                       </div>
