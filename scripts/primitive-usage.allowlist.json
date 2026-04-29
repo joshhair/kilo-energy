@@ -1,0 +1,63 @@
+{
+  "$schema": "Per-section budget for raw `<input>` and `<button>` elements that have NOT been migrated to the shared components/ui primitives. The number is the count, captured at the end of PR 9. The check fails when a section's count goes UP (drift toward inline) OR DOWN (progress unrecorded — drop the threshold to lock in the win).",
+
+  "AdminUsersSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 0,
+    "reason": "Fully migrated in PR 2 (pilot). All form inputs use FormField + TextInput, all buttons use PrimaryButton / IconButton."
+  },
+
+  "AppearanceSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 1,
+    "reason": "Theme-toggle cards use a single aria-pressed `<button>` per option. ToggleCard primitive would have one consumer; not extracted."
+  },
+
+  "BaselinesSection.tsx": {
+    "rawInputs": 44,
+    "rawButtons": 49,
+    "reason": "Largest Settings section (1948 LOC) with deeply custom UI: per-tier rate inputs, version timeline, refresh-pricing modal, archived-tab swap, bulk-tier-adjust dialog, and the SolarTech ↔ Product Catalog parity surfaces. PR 1 wired the inline validateProductName to the shared validateName; full primitive migration is deferred to a dedicated multi-PR effort because the surface is too risky to migrate in one shot."
+  },
+
+  "BlitzPermissionsSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 5,
+    "reason": "PR 8 migrated the search bar. Remaining buttons: 4 role-filter pills (custom segmented control with gradient highlight), 2 toggle switches per row (custom 9x5 switch UI), 2 bulk-action subtle-tinted buttons (Grant/Revoke). All are custom patterns with one consumer each."
+  },
+
+  "CustomizationSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 0,
+    "reason": "PR 5 fully migrated. Number inputs use TextInput type=number; primary/secondary actions use PrimaryButton/SecondaryButton."
+  },
+
+  "ExportSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 5,
+    "reason": "PR 8 migrated the date inputs and the Download CSV button. Remaining: 4 selectable export-cards (custom multi-select with hover-lift) and 1 'Clear dates' subtle text-button. SelectableCard would have one consumer."
+  },
+
+  "FinancersSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 5,
+    "reason": "PR 6 migrated the add-form, search, and row-hover icon buttons. Remaining: select-mode toggle button, 'Select all' link in the active+archived list headers, archived-section disclosure ChevronDown button. All custom multi-select choreography."
+  },
+
+  "InstallersSection.tsx": {
+    "rawInputs": 4,
+    "rawButtons": 19,
+    "reason": "PR 9 migrated the add-form, search, and empty state. Remaining 4 inputs: 3 micro-text (text-xs) inline-edit inputs in the prepaid-options panel and pay-schedule edit, 1 family-name input in the PC-mode add form. Remaining buttons: standard/PC segmented selector (2), select-mode toggle (1), select-all (1), archived-section disclosure (1), row-hover icon stagger (4 per active row, 2 per archived row), prepaid-options expansion add/edit/save/cancel/delete (5), pay-schedule expansion (varies). All custom patterns deferred to a follow-up if InstallersSection ever sees another major rewrite."
+  },
+
+  "PMSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 1,
+    "reason": "PR 7 migrated the add-form and row-delete. Remaining 1 button: 3 permission-toggle pills per PM row (Create Deals / Blitz / Export); these are custom toggle-pill UI."
+  },
+
+  "SubDealersSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 0,
+    "reason": "PR 5 fully migrated."
+  }
+}
