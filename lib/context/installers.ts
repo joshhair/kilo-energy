@@ -412,13 +412,28 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
-  const addProductCatalogProduct = (product: ProductCatalogProduct) => {
+  const addProductCatalogProduct = (
+    product: ProductCatalogProduct,
+    options?: { effectiveFrom?: string; versionLabel?: string; idempotencyKey?: string; reason?: string },
+  ) => {
     setProductCatalogProducts((prev) => [...prev, product]);
     const doPost = (installerId: string) => {
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installerId, family: product.family, name: product.name, tiers: product.tiers }),
+        body: JSON.stringify({
+          installerId,
+          family: product.family,
+          name: product.name,
+          tiers: product.tiers,
+          // Pass through the new optional fields; the API endpoint
+          // (/api/products POST) handles them. Maintains parity with
+          // addSolarTechProduct.
+          effectiveFrom: options?.effectiveFrom,
+          versionLabel: options?.versionLabel,
+          idempotencyKey: options?.idempotencyKey,
+          reason: options?.reason,
+        }),
       }).then((res) => res.json()).then((data: { id?: string }) => {
         if (data?.id && data.id !== product.id) {
           setProductCatalogProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, id: data.id as string } : p));

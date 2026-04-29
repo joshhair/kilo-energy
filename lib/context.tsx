@@ -106,7 +106,10 @@ interface AppContextType {
   productCatalogProducts: ProductCatalogProduct[];
   addProductCatalogInstaller: (name: string, config: ProductCatalogInstallerConfig) => void;
   updateProductCatalogInstallerConfig: (name: string, config: Partial<ProductCatalogInstallerConfig>) => void;
-  addProductCatalogProduct: (product: ProductCatalogProduct) => void;
+  addProductCatalogProduct: (
+    product: ProductCatalogProduct,
+    options?: { effectiveFrom?: string; versionLabel?: string; idempotencyKey?: string; reason?: string },
+  ) => void;
   addSolarTechProduct: (input: {
     tempId: string;
     family: string;

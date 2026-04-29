@@ -112,6 +112,11 @@ export function BaselinesSection({
     { closerPerW: '', kiloPerW: '' },
     { closerPerW: '', kiloPerW: '' },
   ]);
+  // Effective-from + reason fields — match the SolarTech "Add Product"
+  // form so PC has parity. Both flow through the same /api/products
+  // endpoint via addProductCatalogProduct(product, options).
+  const [newProductEffectiveFrom, setNewProductEffectiveFrom] = useState('');
+  const [newProductReason, setNewProductReason] = useState('');
 
   // SolarTech tab "Add Product" state. The form is mounted only when
   // addingSolarTechProductInFamily is non-null. The non-null value is
@@ -143,6 +148,7 @@ export function BaselinesSection({
   // main /api/data hydration payload to keep that minimal — fetched
   // on-demand via GET /api/products?archived=1.
   const [stShowArchived, setStShowArchived] = useState(false);
+  const [pcShowArchived, setPcShowArchived] = useState(false);
   type ArchivedProduct = { id: string; name: string; family: string; installerName: string; projectRefs: number; versionCount: number; latestVersion: { label: string; effectiveFrom: string; effectiveTo: string | null } | null };
   const [archivedProducts, setArchivedProducts] = useState<ArchivedProduct[]>([]);
   const [archivedLoading, setArchivedLoading] = useState(false);
@@ -837,6 +843,27 @@ export function BaselinesSection({
                       >
                         <Copy className="w-3.5 h-3.5" /> Duplicate All as New Version
                       </button>
+                      <button
+                        onClick={() => {
+                          const products = productCatalogProducts.filter((p) => p.installer === installerName && p.family === currentFamily);
+                          const initialTiers: Record<string, Array<{ closerPerW: string; kiloPerW: string }>> = {};
+                          products.forEach((p) => {
+                            initialTiers[p.id] = p.tiers.map((t) => ({
+                              closerPerW: String(t.closerPerW),
+                              kiloPerW: String(t.kiloPerW),
+                            }));
+                          });
+                          setBulkVersionScope({ kind: 'productcatalog', installer: installerName, family: currentFamily });
+                          setBulkVersionLabel(suggestVersionLabel());
+                          setBulkVersionEffectiveFrom('');
+                          setBulkVersionReason('');
+                          setBulkVersionTiers(initialTiers);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
+                        title="Refresh pricing for this family in one shot — set effective date, edit each product's tiers, submit"
+                      >
+                        <GitBranch className="w-3.5 h-3.5" /> Refresh Family Pricing
+                      </button>
                     </>
                   )}
                   {!isViewingArchive && (
@@ -999,6 +1026,14 @@ export function BaselinesSection({
                             <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                           </span>
                         </button>
+                        <button
+                          onClick={() => { const next = !pcShowArchived; setPcShowArchived(next); if (next) refreshArchived(); }}
+                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors shrink-0 ${pcShowArchived ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                          title={pcShowArchived ? 'Hide archived products' : 'Show archived products from this family'}
+                        >
+                          {pcShowArchived ? <X className="w-3.5 h-3.5" /> : <History className="w-3.5 h-3.5" />}
+                          <span>{pcShowArchived ? 'Hide archived' : 'Archived'}</span>
+                        </button>
                         <div className="relative">
                           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
                           <input type="text" placeholder="Search products..." value={pcProductSearch} onChange={(e) => setPcProductSearch(e.target.value)}
@@ -1098,6 +1133,59 @@ export function BaselinesSection({
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Archived products view — mirrors the SolarTech tab.
+                      Toggled by "Archived" button in the action bar.
+                      Pulls archivedProducts (lazy-loaded) and filters
+                      to current installer + family. Each row gets a
+                      Restore action. */}
+                  {pcShowArchived && !pcIsArchive && (
+                    <div className="px-5 py-4 border-t border-[var(--border-subtle)]/50 motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Archived in {installerName} — {currentFamily}</p>
+                        {archivedLoading && <span className="text-[var(--text-muted)] text-[10px]">Loading…</span>}
+                      </div>
+                      {(() => {
+                        const archivedHere = archivedProducts.filter((a) => a.installerName === installerName && a.family === currentFamily);
+                        if (!archivedLoading && archivedHere.length === 0) {
+                          return <p className="text-[var(--text-muted)] text-xs italic">No archived products in {currentFamily}.</p>;
+                        }
+                        return (
+                          <div className="space-y-2">
+                            {archivedHere.map((a) => (
+                              <div key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg" style={{ background: 'var(--surface-inset-subtle)', border: '1px solid var(--border-subtle)' }}>
+                                <div className="min-w-0">
+                                  <p className="text-[var(--text-primary)] text-sm font-medium truncate">{a.name}</p>
+                                  <p className="text-[var(--text-dim)] text-[10px]">
+                                    {a.versionCount} version{a.versionCount === 1 ? '' : 's'}
+                                    {a.projectRefs > 0 && ` · ${a.projectRefs} project${a.projectRefs === 1 ? '' : 's'} reference this`}
+                                    {a.latestVersion && ` · last active ${a.latestVersion.effectiveFrom}${a.latestVersion.effectiveTo ? ` → ${a.latestVersion.effectiveTo}` : ''}`}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await restoreProduct(a.id);
+                                      toast(`Restored "${a.name}"`, 'success');
+                                      setArchivedProducts((prev) => prev.filter((p) => p.id !== a.id));
+                                      refreshArchived();
+                                    } catch (err) {
+                                      toast(err instanceof Error ? err.message : 'Failed to restore product', 'error');
+                                    }
+                                  }}
+                                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium motion-safe:transition-transform active:scale-[0.985] touch-manipulation"
+                                  style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" /> Restore
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
                   <div className="px-5 py-3 border-t border-[var(--border-subtle)]/50 bg-[var(--surface-card)]/20">
                     <p className="text-xs text-[var(--text-dim)]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
                   </div>
@@ -1105,34 +1193,92 @@ export function BaselinesSection({
               );
             })()}
 
-            {/* Add product */}
+            {/* Add product \u2014 mirrors the SolarTech Add Product form for
+                consistency. Effective-from picker, sanity-check
+                warnings (red border on loss-making tiers), reason
+                field, motion-safe entrance animation. */}
             <div className="mt-4 max-w-3xl">
               {addingProductFor === installerName ? (
-                <div className="card-surface rounded-xl p-4">
-                  <p className="text-[var(--text-primary)] text-sm font-medium mb-3">Add Product to {installerName}</p>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div><label className="block text-xs text-[var(--text-secondary)] mb-1">Product name</label><input type="text" placeholder="e.g. SunPower 400W" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" /></div>
-                    <div><label className="block text-xs text-[var(--text-secondary)] mb-1">Family</label><select value={newProductFamily || currentFamily} onChange={(e) => setNewProductFamily(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">{config.families.map((f) => <option key={f} value={f}>{f}</option>)}</select></div>
-                  </div>
-                  <div className="mb-3">
-                    <p className="text-xs text-[var(--text-secondary)] mb-2">Tier Pricing ($/W)</p>
-                    <div className="space-y-2">
-                      {[{ label: '1\u20135 kW', idx: 0, cPlaceholder: '2.90', kPlaceholder: '2.35' }, { label: '5\u201310 kW', idx: 1, cPlaceholder: '2.85', kPlaceholder: '2.30' }, { label: '10\u201313 kW', idx: 2, cPlaceholder: '2.80', kPlaceholder: '2.25' }, { label: '13+ kW', idx: 3, cPlaceholder: '2.75', kPlaceholder: '2.20' }].map(({ label, idx, cPlaceholder, kPlaceholder }) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs text-[var(--text-muted)] w-16 flex-shrink-0">{label}</span>
-                          <div className="flex items-center gap-1 flex-1"><span className="text-[10px] text-[var(--text-dim)]">Closer</span><input type="number" step="0.01" min="0" placeholder={cPlaceholder} value={newProductTiers[idx].closerPerW} onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, closerPerW: e.target.value } : t))} className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" /></div>
-                          <div className="flex items-center gap-1 flex-1"><span className="text-[10px] text-[var(--text-dim)]">Kilo</span><input type="number" step="0.01" min="0" placeholder={kPlaceholder} value={newProductTiers[idx].kiloPerW} onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, kiloPerW: e.target.value } : t))} className="w-20 bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" /></div>
-                        </div>
-                      ))}
+                <div className="card-surface rounded-xl p-4 motion-safe:animate-[fadeUpIn_220ms_cubic-bezier(0.16,1,0.3,1)_both]">
+                  <p className="text-[var(--text-primary)] text-sm font-semibold mb-3">Add product to <span className="text-[var(--accent-emerald-text)]">{installerName}</span> \u2014 {newProductFamily || currentFamily}</p>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Product name</label>
+                      <input autoFocus type="text" placeholder="e.g. SunPower 400W" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Family</label>
+                      <select value={newProductFamily || currentFamily} onChange={(e) => setNewProductFamily(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]">{config.families.map((f) => <option key={f} value={f}>{f}</option>)}</select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Effective from <span className="text-[var(--text-dim)] normal-case">(blank = today)</span></label>
+                      <input type="date" value={newProductEffectiveFrom} onChange={(e) => setNewProductEffectiveFrom(e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
                     </div>
                   </div>
+                  <p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider mb-1.5">Tiers (closer / kilo $/W)</p>
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {[
+                      { label: '1\u20135 kW', idx: 0, cPlaceholder: '2.90', kPlaceholder: '2.35' },
+                      { label: '5\u201310 kW', idx: 1, cPlaceholder: '2.85', kPlaceholder: '2.30' },
+                      { label: '10\u201313 kW', idx: 2, cPlaceholder: '2.80', kPlaceholder: '2.25' },
+                      { label: '13+ kW', idx: 3, cPlaceholder: '2.75', kPlaceholder: '2.20' },
+                    ].map(({ label, idx, cPlaceholder, kPlaceholder }) => {
+                      const closerVal = parseFloat(newProductTiers[idx].closerPerW || cPlaceholder);
+                      const kiloVal = parseFloat(newProductTiers[idx].kiloPerW || kPlaceholder);
+                      const isLossMaking = closerVal > 0 && kiloVal > 0 && closerVal <= kiloVal;
+                      return (
+                        <div key={idx}>
+                          <p className="text-[10px] text-[var(--text-muted)] mb-1 text-center">{label}</p>
+                          <input type="number" step="0.01" min="0" placeholder={cPlaceholder} value={newProductTiers[idx].closerPerW} onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, closerPerW: e.target.value } : t))} className={`w-full bg-[var(--surface-card)] border ${isLossMaking ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--accent-emerald-text)] rounded px-2 py-1 text-xs text-center mb-1 focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]`} />
+                          <input type="number" step="0.01" min="0" placeholder={kPlaceholder} value={newProductTiers[idx].kiloPerW} onChange={(e) => setNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, kiloPerW: e.target.value } : t))} className={`w-full bg-[var(--surface-card)] border ${isLossMaking ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--accent-emerald-text)]/80 rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]`} />
+                          {isLossMaking && <p className="text-[9px] text-[var(--accent-red-text)] mt-1 text-center">closer \u2264 kilo</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Reason <span className="text-[var(--text-dim)] normal-case">(optional, audit-logged)</span></label>
+                    <input type="text" value={newProductReason} onChange={(e) => setNewProductReason(e.target.value)} placeholder="e.g. New panel from installer" maxLength={500} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                  </div>
                   <div className="flex gap-3">
-                    <button onClick={() => { const name = newProductName.trim(); if (!name) return; const family = newProductFamily || currentFamily; const defaultCloser = [2.90, 2.85, 2.80, 2.75]; const defaultKilo = [2.35, 2.30, 2.25, 2.20]; const closerArr = newProductTiers.map((t, i) => t.closerPerW ? parseFloat(t.closerPerW) : defaultCloser[i]); const kiloArr = newProductTiers.map((t, i) => t.kiloPerW ? parseFloat(t.kiloPerW) : defaultKilo[i]); addProductCatalogProduct({ id: `pc_${installerName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`, installer: installerName, family, name, tiers: makeProductCatalogTiers(closerArr, kiloArr) }); toast('Product added', 'success'); setNewProductName(''); setNewProductFamily(''); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); setAddingProductFor(null); setPcFamily((prev) => ({ ...prev, [installerName]: family })); }} className="flex-1 py-2 rounded-xl text-sm font-medium text-[var(--text-primary)] transition-colors" style={{ backgroundColor: 'var(--brand)' }}>Add Product</button>
-                    <button onClick={() => { setAddingProductFor(null); setNewProductName(''); setNewProductFamily(''); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); }} className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors">Cancel</button>
+                    <button
+                      onClick={() => {
+                        const trimmed = newProductName.trim();
+                        const family = newProductFamily || currentFamily;
+                        const siblings = productCatalogProducts.filter((p) => p.installer === installerName && p.family === family);
+                        const validation = validateProductName(trimmed, '__NEW__', siblings, '__NEW__');
+                        if (!validation.ok) { toast(validation.reason, 'error'); return; }
+                        const defaultCloser = [2.90, 2.85, 2.80, 2.75];
+                        const defaultKilo = [2.35, 2.30, 2.25, 2.20];
+                        const closerArr = newProductTiers.map((t, i) => t.closerPerW ? parseFloat(t.closerPerW) : defaultCloser[i]);
+                        const kiloArr = newProductTiers.map((t, i) => t.kiloPerW ? parseFloat(t.kiloPerW) : defaultKilo[i]);
+                        for (let i = 0; i < closerArr.length; i++) {
+                          if (closerArr[i] <= kiloArr[i]) { toast(`Tier ${i + 1}: closer ($${closerArr[i]}) must be greater than kilo ($${kiloArr[i]}) \u2014 would be loss-making.`, 'error'); return; }
+                        }
+                        addProductCatalogProduct(
+                          { id: `pc_${installerName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`, installer: installerName, family, name: validation.name, tiers: makeProductCatalogTiers(closerArr, kiloArr) },
+                          {
+                            effectiveFrom: newProductEffectiveFrom || undefined,
+                            idempotencyKey: `pc-add-${Date.now()}`,
+                            reason: newProductReason.trim() || undefined,
+                          },
+                        );
+                        toast(`Product "${validation.name}" added to ${installerName} / ${family}${newProductEffectiveFrom ? ` (effective ${newProductEffectiveFrom})` : ''}`, 'success');
+                        setNewProductName(''); setNewProductFamily(''); setNewProductEffectiveFrom(''); setNewProductReason('');
+                        setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]);
+                        setAddingProductFor(null);
+                        setPcFamily((prev) => ({ ...prev, [installerName]: family }));
+                      }}
+                      className="flex-1 py-2 rounded-xl text-sm font-medium motion-safe:transition-transform active:scale-[0.985] touch-manipulation"
+                      style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
+                    >
+                      Add Product
+                    </button>
+                    <button onClick={() => { setAddingProductFor(null); setNewProductName(''); setNewProductFamily(''); setNewProductEffectiveFrom(''); setNewProductReason(''); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); }} className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors">Cancel</button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => { setAddingProductFor(installerName); setNewProductFamily(currentFamily); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); }} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm transition-colors"><Plus className="w-4 h-4" /> Add product to {installerName}</button>
+                <button onClick={() => { setAddingProductFor(installerName); setNewProductFamily(currentFamily); setNewProductEffectiveFrom(''); setNewProductReason(''); setNewProductTiers([{ closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' }]); }} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm transition-colors active:scale-[0.985]"><Plus className="w-4 h-4" /> Add product to {installerName}</button>
               )}
             </div>
           </div>
