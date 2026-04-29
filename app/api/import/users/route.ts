@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
+import { logChange } from '../../../../lib/audit';
 
 /**
  * POST /api/import/users — Bulk user import endpoint.
@@ -131,7 +132,8 @@ function validateRow(row: UserRow): { errors: string[]; normalized: NormalizedUs
 }
 
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   let body: { users?: unknown; commit?: unknown };
   try {
@@ -250,6 +252,23 @@ export async function POST(req: NextRequest) {
         }),
       ),
     );
+
+    // Single batch-summary audit entry per import run (see import/projects
+     // for the same rationale — per-row audit would drown the signal).
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'user_bulk_import',
+      entityType: 'User',
+      entityId: created[0]?.id ?? 'no_created',
+      detail: {
+        total: input.length,
+        createdCount: created.length,
+        skippedCount: wouldSkip.length,
+        errorCount: wouldError.length,
+        firstCreatedId: created[0]?.id ?? null,
+        lastCreatedId: created[created.length - 1]?.id ?? null,
+      },
+    });
 
     return NextResponse.json({
       ...base,

@@ -6,6 +6,7 @@ import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../lib/serialize';
 import { logger } from '../../../lib/logger';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -244,6 +245,31 @@ export async function POST(req: NextRequest) {
     m1Cents: project.m1AmountCents,
     m2Cents: project.m2AmountCents,
     m3Cents: project.m3AmountCents,
+  });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'project_create',
+    entityType: 'Project',
+    entityId: project.id,
+    detail: {
+      actorRole: user.role,
+      customerName: project.customerName,
+      closerId: project.closerId,
+      setterId: project.setterId,
+      subDealerId: project.subDealerId,
+      installerId: project.installerId,
+      financerId: project.financerId,
+      productId: project.productId,
+      kWSize: project.kWSize,
+      netPPW: project.netPPW,
+      m1AmountCents: project.m1AmountCents,
+      m2AmountCents: project.m2AmountCents,
+      m3AmountCents: project.m3AmountCents,
+      blitzId: project.blitzId,
+      soldDate: project.soldDate,
+      additionalCloserCount: project.additionalClosers.length,
+      additionalSetterCount: project.additionalSetters.length,
+    },
   });
   return NextResponse.json(scrubProjectForViewer(dto, rel), { status: 201 });
 }

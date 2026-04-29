@@ -5,10 +5,5 @@
   "app/api/projects/[id]/messages/[messageId]/route.ts": "Chat-volume exempt — paired with messages POST.",
   "app/api/projects/[id]/notes/route.ts": "Rep-note volume exempt — high-frequency UX, not commission-affecting.",
   "app/api/projects/[id]/notes/[noteId]/route.ts": "Rep-note volume exempt — paired with notes POST.",
-  "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular.",
-
-  "app/api/projects/route.ts": "TODO PR 14a — new-deal create flow. Project mutations on subsequent edits ARE audited via /projects/[id]/route.ts; the initial create needs a custom shaped logChange call that captures the full project shape. Deferred to its own PR because the new-deal handler is large and high-risk to touch.",
-
-  "app/api/import/projects/route.ts": "TODO PR 14a — bulk Glide import. Per-project audit lines would be 50k+ rows on a full import; needs a batch-summary log entry shape that the audit viewer can expand. Design pending.",
-  "app/api/import/users/route.ts": "TODO PR 14a — bulk user import; same batch-summary design as import/projects."
+  "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular."
 }
