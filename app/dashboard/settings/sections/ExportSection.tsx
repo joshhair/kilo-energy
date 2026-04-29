@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
 import { SectionHeader } from '../components/SectionHeader';
+import { PrimaryButton, TextInput, FormField } from '@/components/ui';
 
 export function ExportSection() {
   const {
@@ -44,18 +45,12 @@ export function ExportSection() {
       <div className="card-surface rounded-2xl p-5 mb-6">
         <h2 className="text-[var(--text-primary)] font-semibold mb-3">Date Range Filter</h2>
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">From</label>
-            <input type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">To</label>
-            <input type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
-            />
-          </div>
+          <FormField label="From">
+            <TextInput type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)} />
+          </FormField>
+          <FormField label="To">
+            <TextInput type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)} />
+          </FormField>
         </div>
         {(exportDateFrom || exportDateTo) && (
           <button onClick={() => { setExportDateFrom(''); setExportDateTo(''); }}
@@ -167,7 +162,8 @@ export function ExportSection() {
                 </p>
               </div>
             </div>
-            <button
+            <PrimaryButton
+              className="whitespace-nowrap"
               onClick={() => {
                 const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
                 const toCSV = (headers: string[], rows: string[][]) =>
@@ -241,11 +237,10 @@ export function ExportSection() {
                 }
                 toast(`Export started — ${exportSelected.size} file${exportSelected.size > 1 ? 's' : ''} downloading`, 'info');
               }}
-              className="flex items-center gap-2 bg-[var(--accent-emerald-solid)] hover:bg-[var(--accent-emerald-solid)] active:scale-[0.97] text-black text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
               Download CSV{exportSelected.size > 1 ? 's' : ''}
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       )}

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { PaginationBar } from '../../components/PaginationBar';
+import { SearchInput } from '@/components/ui';
 
 export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; name: string; repType: string; canRequestBlitz?: boolean; canCreateBlitz?: boolean }> }) {
   const { toast } = useToast();
@@ -135,17 +135,12 @@ export function BlitzPermissionsSection({ reps }: { reps: Array<{ id: string; na
       <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">Blitz Permissions</h2>
       <p className="text-sm text-[var(--text-muted)] mb-5">Control which reps can request or create blitzes.</p>
 
-      {/* Search bar */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-        <input
-          type="text"
-          placeholder="Search reps..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-xl pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none input-focus-glow transition-colors"
-        />
-      </div>
+      <SearchInput
+        className="mb-4"
+        placeholder="Search reps..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
       {searchTerm && (
         <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-card)] px-2 py-0.5 rounded-full mb-3 inline-block">{filteredReps.length} result{filteredReps.length !== 1 ? 's' : ''}</span>
       )}
