@@ -14,16 +14,6 @@
 
   "app/api/reimbursements/[id]/receipt/route.ts": "TODO PR 3a — receipt attach/remove; deferring (file metadata, not amount).",
 
-  "app/api/blitzes/route.ts": "TODO PR 3a — blitz create.",
-  "app/api/blitzes/[id]/route.ts": "TODO PR 3a — blitz edit/delete.",
-  "app/api/blitzes/[id]/participants/route.ts": "TODO PR 3a — blitz participant add/remove/update.",
-  "app/api/blitz-requests/route.ts": "TODO PR 3a — blitz request submit.",
-  "app/api/blitz-requests/[id]/route.ts": "TODO PR 3a — blitz request approve/reject.",
-
-  "app/api/trainer-assignments/[id]/backfill/route.ts": "TODO PR 3a — trainer override backfill; touches historical commission.",
-
-  "app/api/prepaid-options/by-name/route.ts": "TODO PR 3a — by-name lookup-and-mutate adapter; deferring to consolidate with /prepaid-options/[id].",
-
   "app/api/import/projects/route.ts": "TODO PR 3a — bulk Glide import; emits per-project audit lines is the right answer but would be 50k+ rows on a full import; design a batch-summary log entry instead.",
   "app/api/import/users/route.ts": "TODO PR 3a — bulk user import; same reasoning as import/projects.",
 

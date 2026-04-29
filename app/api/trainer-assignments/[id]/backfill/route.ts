@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { backfillTrainerSchema } from '../../../../../lib/schemas/trainer-assignment';
 import { resolveTrainerRate, type TrainerResolverAssignment, type TrainerResolverPayrollEntry } from '../../../../../lib/commission';
+import { logChange } from '../../../../../lib/audit';
 
 // POST /api/trainer-assignments/[id]/backfill
 // Creates Trainer PayrollEntries for historical projects that were never attributed.
@@ -11,7 +12,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   const { id } = await params;
   const parsed = await parseJsonBody(req, backfillTrainerSchema);
@@ -220,6 +222,20 @@ export async function POST(
     }
   }
 
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'trainer_backfill',
+    entityType: 'TrainerAssignment',
+    entityId: id,
+    detail: {
+      requestedProjectIds: projectIds,
+      createdCount: created.length,
+      skippedCount: skipped.length,
+      statusForMilestones,
+      trainerId: assignment.trainerId,
+      traineeId: assignment.traineeId,
+    },
+  });
   return NextResponse.json({
     created: created.length,
     skipped,

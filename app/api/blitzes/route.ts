@@ -5,6 +5,7 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
 import { serializeProject, serializeBlitzCost, serializeProjectParty, scrubProjectForViewer } from '../../../lib/serialize';
 import { logger } from '../../../lib/logger';
+import { logChange } from '../../../lib/audit';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
@@ -200,6 +201,21 @@ export async function POST(req: NextRequest) {
     ownerId,
     startDate: blitz.startDate,
     endDate: blitz.endDate,
+  });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'blitz_create',
+    entityType: 'Blitz',
+    entityId: blitz.id,
+    detail: {
+      name: blitz.name,
+      location: blitz.location,
+      ownerId,
+      startDate: blitz.startDate,
+      endDate: blitz.endDate,
+      status: blitz.status,
+      backfilledProjectCount: blitzWithProjects.projects.length,
+    },
   });
   return NextResponse.json(serialized, { status: 201 });
 }

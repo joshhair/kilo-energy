@@ -8,6 +8,7 @@ import {
   createBlitzParticipantSchema,
   patchBlitzParticipantSchema,
 } from '../../../../../lib/schemas/business';
+import { logChange } from '../../../../../lib/audit';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -147,6 +148,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     throw e;
   }
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_add',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: { addedUserId: body.userId, joinStatus },
+  });
   return NextResponse.json(participant, { status: 201 });
 }
 
@@ -283,6 +291,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_update',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: {
+      affectedUserId: body.userId,
+      joinStatusBefore: existing.joinStatus,
+      joinStatusAfter: updated.joinStatus,
+      attendanceStatusAfter: updated.attendanceStatus,
+    },
+  });
   return NextResponse.json(updated);
 }
 
@@ -349,5 +369,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
   }
 
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_remove',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: { removedUserId: userId },
+  });
   return NextResponse.json({ success: true });
 }

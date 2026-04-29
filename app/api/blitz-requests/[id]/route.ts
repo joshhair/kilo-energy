@@ -3,10 +3,12 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzRequestSchema } from '../../../../lib/schemas/business';
+import { logChange } from '../../../../lib/audit';
 
 // PATCH /api/blitz-requests/[id] — Approve/deny a request (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchBlitzRequestSchema);
@@ -117,5 +119,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'blitz_request_update',
+    entityType: 'BlitzRequest',
+    entityId: id,
+    detail: {
+      newStatus: request.status,
+      type: request.type,
+      blitzId: request.blitzId,
+      adminNotes: request.adminNotes,
+    },
+  });
   return NextResponse.json(request);
 }

@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzRequestSchema } from '../../../lib/schemas/business';
+import { logChange } from '../../../lib/audit';
 
 // GET /api/blitz-requests — List blitz requests scoped to role.
 // Admin: all requests. Everyone else: only their own requests.
@@ -66,6 +67,20 @@ export async function POST(req: NextRequest) {
       expectedHeadcount: body.expectedHeadcount ?? 0,
     },
     include: { requestedBy: true, blitz: true },
+  });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'blitz_request_create',
+    entityType: 'BlitzRequest',
+    entityId: request.id,
+    detail: {
+      type: request.type,
+      blitzId: request.blitzId,
+      name: request.name,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      expectedHeadcount: request.expectedHeadcount,
+    },
   });
   return NextResponse.json(request, { status: 201 });
 }
