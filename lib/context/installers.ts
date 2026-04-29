@@ -423,7 +423,9 @@ export function createInstallerActions(deps: InstallerDeps) {
         if (data?.id && data.id !== product.id) {
           setProductCatalogProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, id: data.id as string } : p));
         }
-      }).catch(console.error);
+      }).catch((err) => {
+        console.warn('[addProductCatalogProduct] persist failed:', err instanceof Error ? err.message : err);
+      });
     };
     const installerId = getIdMaps().installerNameToId[product.installer];
     if (installerId) {
@@ -431,9 +433,84 @@ export function createInstallerActions(deps: InstallerDeps) {
     } else {
       const pending = pendingInstallerIdRef.current.get(product.installer);
       if (pending) {
-        pending.then(doPost).catch(console.error);
+        pending.then(doPost).catch((err) => {
+          console.warn('[addProductCatalogProduct] installer-id resolve failed:', err instanceof Error ? err.message : err);
+        });
       }
     }
+  };
+
+  /**
+   * Create a new SolarTech-family product (Goodleap, Enfin, Lightreach,
+   * Cash/HDM/PE). Same DB endpoint as Product Catalog (POST /api/products);
+   * different local state (`solarTechProducts`) because the UI partitions
+   * the two views.
+   *
+   * Optionally accepts an `effectiveFrom` date — passed through to the
+   * server, used as the initial pricing version's effectiveFrom. Default
+   * (omitted) = today.
+   *
+   * Returns a Promise resolving to the new server-issued ID, or rejecting
+   * with the API error. Caller responsible for surfacing toasts.
+   */
+  const addSolarTechProduct = async (input: {
+    tempId: string;
+    family: string;
+    financer: string;
+    name: string;
+    tiers: SolarTechProduct['tiers'];
+    effectiveFrom?: string;
+    versionLabel?: string;
+    idempotencyKey?: string;
+    reason?: string;
+  }): Promise<string> => {
+    // Optimistic local insert
+    const optimistic: SolarTechProduct = {
+      id: input.tempId,
+      family: input.family,
+      financer: input.financer,
+      name: input.name,
+      tiers: input.tiers,
+    };
+    setSolarTechProducts((prev) => [...prev, optimistic]);
+
+    const doPost = async (installerId: string): Promise<string> => {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          installerId,
+          family: input.family,
+          name: input.name,
+          tiers: input.tiers,
+          effectiveFrom: input.effectiveFrom,
+          versionLabel: input.versionLabel,
+          idempotencyKey: input.idempotencyKey,
+          reason: input.reason,
+        }),
+      });
+      if (!res.ok) {
+        // Roll back optimistic insert on server reject
+        setSolarTechProducts((prev) => prev.filter((p) => p.id !== input.tempId));
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Product create failed: ${res.status} ${errText}`);
+      }
+      const data = await res.json() as { id?: string };
+      if (data?.id && data.id !== input.tempId) {
+        setSolarTechProducts((prev) => prev.map((p) => p.id === input.tempId ? { ...p, id: data.id as string } : p));
+        return data.id;
+      }
+      return input.tempId;
+    };
+
+    const installerId = getIdMaps().installerNameToId['SolarTech'];
+    if (installerId) return doPost(installerId);
+    const pending = pendingInstallerIdRef.current.get('SolarTech');
+    if (pending) {
+      const resolvedId = await pending;
+      return doPost(resolvedId);
+    }
+    throw new Error('SolarTech installer not found');
   };
 
   const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) => {
@@ -702,6 +779,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     addProductCatalogInstaller,
     updateProductCatalogInstallerConfig,
     addProductCatalogProduct,
+    addSolarTechProduct,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,

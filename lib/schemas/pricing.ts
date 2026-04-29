@@ -57,6 +57,20 @@ export const createProductSchema = z.object({
   family: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
   tiers: z.array(productPricingTierSchema).max(20).optional(),
+  /** Effective date for the initial pricing version. Defaults to today.
+   *  Admin can pick a future date so the product is created now but
+   *  doesn't apply to deals until that date arrives — perfect for
+   *  pre-staging next-quarter pricing. Past dates are blocked at the
+   *  endpoint level (would silently rewrite paid commission). */
+  effectiveFrom: z.string().min(1).max(20).optional(),
+  /** Initial pricing version label. Defaults to 'v1'. */
+  versionLabel: z.string().min(1).max(50).optional(),
+  /** Idempotency key to prevent accidental double-creates from
+   *  duplicate clicks. Server dedupes within a 60s window. */
+  idempotencyKey: z.string().max(100).optional(),
+  /** Optional admin note: why this product is being created. Stored
+   *  on the AuditLog entry; useful for forensic review. */
+  reason: z.string().max(500).optional(),
 });
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 

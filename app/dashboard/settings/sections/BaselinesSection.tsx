@@ -10,6 +10,7 @@ import { useToast } from '../../../../lib/toast';
 import {
   SOLARTECH_FAMILIES, SolarTechFamily, InstallerRates,
   ProductCatalogTier, makeProductCatalogTiers,
+  SOLARTECH_FAMILY_FINANCER,
 } from '../../../../lib/data';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { SectionHeader } from '../components/SectionHeader';
@@ -40,7 +41,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -111,6 +112,31 @@ export function BaselinesSection({
     { closerPerW: '', kiloPerW: '' },
     { closerPerW: '', kiloPerW: '' },
   ]);
+
+  // SolarTech tab "Add Product" state. The form is mounted only when
+  // addingSolarTechProductInFamily is non-null. The non-null value is
+  // the family the form was opened from (e.g. 'Enfin'); we capture it
+  // up front so a tab switch doesn't repurpose the form mid-edit.
+  const [addingSolarTechProductInFamily, setAddingSolarTechProductInFamily] = useState<string | null>(null);
+  const [stNewProductName, setStNewProductName] = useState('');
+  const [stNewProductEffectiveFrom, setStNewProductEffectiveFrom] = useState(''); // YYYY-MM-DD; '' = today
+  const [stNewProductReason, setStNewProductReason] = useState('');
+  const [stNewProductTiers, setStNewProductTiers] = useState([
+    { closerPerW: '', kiloPerW: '' },
+    { closerPerW: '', kiloPerW: '' },
+    { closerPerW: '', kiloPerW: '' },
+    { closerPerW: '', kiloPerW: '' },
+  ]);
+  const [stNewProductSubmitting, setStNewProductSubmitting] = useState(false);
+  const resetStNewProduct = () => {
+    setStNewProductName(''); setStNewProductEffectiveFrom(''); setStNewProductReason('');
+    setStNewProductTiers([
+      { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' },
+      { closerPerW: '', kiloPerW: '' }, { closerPerW: '', kiloPerW: '' },
+    ]);
+    setStNewProductSubmitting(false);
+    setAddingSolarTechProductInFamily(null);
+  };
 
   // PC pricing version state
   const [pcNewVersionLabel, setPcNewVersionLabel] = useState('');
@@ -1180,6 +1206,118 @@ export function BaselinesSection({
                     </tbody>
                   </table>
                 </div>
+
+                {/* Add Product to {stFamily} — admin-only flow.
+                    Posts to /api/products with the SolarTech installer's id;
+                    the row is the same shape as a Product Catalog product but
+                    appears in the SolarTech tab via the family filter. */}
+                {!stIsArchive && (
+                  <div className="px-5 py-4 border-t border-[var(--border-subtle)]/50">
+                    {addingSolarTechProductInFamily === stFamily ? (
+                      <div className="rounded-2xl p-4 motion-safe:animate-[fadeUpIn_220ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ background: 'var(--surface-inset-subtle)', border: '1px solid var(--border-subtle)' }}>
+                        <p className="text-[var(--text-primary)] text-sm font-semibold mb-3">Add product to <span className="text-[var(--accent-emerald-text)]">{stFamily}</span> ({SOLARTECH_FAMILY_FINANCER[stFamily] ?? stFamily})</p>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <label className="block text-[var(--text-secondary)] text-[10px] uppercase tracking-wider mb-1">Product name</label>
+                            <input autoFocus type="text" value={stNewProductName} onChange={(e) => setStNewProductName(e.target.value)} placeholder="e.g. Q.Peak DUO ML-G11+ 425" className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                          </div>
+                          <div>
+                            <label className="block text-[var(--text-secondary)] text-[10px] uppercase tracking-wider mb-1">Effective from <span className="text-[var(--text-dim)] normal-case">(blank = today)</span></label>
+                            <input type="date" value={stNewProductEffectiveFrom} onChange={(e) => setStNewProductEffectiveFrom(e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
+                          </div>
+                        </div>
+                        <p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider mb-1.5">Tiers (closer / kilo $/W)</p>
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                          {[
+                            { label: '1–5 kW', idx: 0, cPlaceholder: '2.90', kPlaceholder: '2.35' },
+                            { label: '5–10 kW', idx: 1, cPlaceholder: '2.85', kPlaceholder: '2.30' },
+                            { label: '10–13 kW', idx: 2, cPlaceholder: '2.80', kPlaceholder: '2.25' },
+                            { label: '13+ kW', idx: 3, cPlaceholder: '2.75', kPlaceholder: '2.20' },
+                          ].map(({ label, idx, cPlaceholder, kPlaceholder }) => {
+                            const closerVal = parseFloat(stNewProductTiers[idx].closerPerW || cPlaceholder);
+                            const kiloVal = parseFloat(stNewProductTiers[idx].kiloPerW || kPlaceholder);
+                            const isLossMaking = closerVal > 0 && kiloVal > 0 && closerVal <= kiloVal;
+                            return (
+                              <div key={idx}>
+                                <p className="text-[10px] text-[var(--text-muted)] mb-1 text-center">{label}</p>
+                                <input type="number" step="0.01" min="0" placeholder={cPlaceholder} value={stNewProductTiers[idx].closerPerW} onChange={(e) => setStNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, closerPerW: e.target.value } : t))} className={`w-full bg-[var(--surface-card)] border ${isLossMaking ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--accent-emerald-text)] rounded px-2 py-1 text-xs text-center mb-1 focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]`} />
+                                <input type="number" step="0.01" min="0" placeholder={kPlaceholder} value={stNewProductTiers[idx].kiloPerW} onChange={(e) => setStNewProductTiers((prev) => prev.map((t, i) => i === idx ? { ...t, kiloPerW: e.target.value } : t))} className={`w-full bg-[var(--surface-card)] border ${isLossMaking ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--accent-emerald-text)]/80 rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]`} />
+                                {isLossMaking && <p className="text-[9px] text-[var(--accent-red-text)] mt-1 text-center">closer ≤ kilo</p>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mb-3">
+                          <label className="block text-[var(--text-secondary)] text-[10px] uppercase tracking-wider mb-1">Reason <span className="text-[var(--text-dim)] normal-case">(optional, audit-logged)</span></label>
+                          <input type="text" value={stNewProductReason} onChange={(e) => setStNewProductReason(e.target.value)} placeholder="e.g. New panel from SolarTech" maxLength={500} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={stNewProductSubmitting}
+                            onClick={async () => {
+                              const trimmed = stNewProductName.trim();
+                              const validation = validateProductName(trimmed, '__NEW__', stAllFamilyProducts, '__NEW__');
+                              if (!validation.ok) { toast(validation.reason, 'error'); return; }
+                              const closerArr = stNewProductTiers.map((t, i) => parseFloat(t.closerPerW) || [2.90, 2.85, 2.80, 2.75][i]);
+                              const kiloArr = stNewProductTiers.map((t, i) => parseFloat(t.kiloPerW) || [2.35, 2.30, 2.25, 2.20][i]);
+                              for (let i = 0; i < closerArr.length; i++) {
+                                if (closerArr[i] <= kiloArr[i]) { toast(`Tier ${i + 1}: closer ($${closerArr[i]}) must be greater than kilo ($${kiloArr[i]}) — would be loss-making.`, 'error'); return; }
+                              }
+                              setStNewProductSubmitting(true);
+                              try {
+                                const breaks = [1, 5, 10, 13];
+                                const tiersForApi = closerArr.map((c, i) => ({
+                                  minKW: breaks[i],
+                                  maxKW: i < breaks.length - 1 ? breaks[i + 1] : null,
+                                  closerPerW: c,
+                                  setterPerW: Math.round((c + 0.10) * 100) / 100,
+                                  kiloPerW: kiloArr[i],
+                                }));
+                                const tiersForLocal = closerArr.map((c, i) => ({
+                                  minKW: breaks[i],
+                                  maxKW: i < breaks.length - 1 ? breaks[i + 1] : null,
+                                  closerPerW: c,
+                                  setterPerW: Math.round((c + 0.10) * 100) / 100,
+                                  kiloPerW: kiloArr[i],
+                                }));
+                                await addSolarTechProduct({
+                                  tempId: `st_new_${Date.now()}`,
+                                  family: stFamily,
+                                  financer: SOLARTECH_FAMILY_FINANCER[stFamily] ?? stFamily,
+                                  name: validation.name,
+                                  tiers: tiersForLocal,
+                                  effectiveFrom: stNewProductEffectiveFrom || undefined,
+                                  idempotencyKey: `st-add-${Date.now()}`,
+                                  reason: stNewProductReason.trim() || undefined,
+                                });
+                                // tiersForApi is unused here — local state already
+                                // matches what we sent, so we don't need it now.
+                                // Keeping the variable would cause a lint warning.
+                                void tiersForApi;
+                                toast(`Product "${validation.name}" added to ${stFamily}${stNewProductEffectiveFrom ? ` (effective ${stNewProductEffectiveFrom})` : ''}`, 'success');
+                                resetStNewProduct();
+                              } catch (err) {
+                                const msg = err instanceof Error ? err.message : 'Failed to add product';
+                                toast(msg, 'error');
+                                setStNewProductSubmitting(false);
+                              }
+                            }}
+                            className="flex-1 py-2 rounded-xl text-sm font-medium transition-all motion-safe:transition-transform active:scale-[0.985] disabled:opacity-50 touch-manipulation"
+                            style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
+                          >
+                            {stNewProductSubmitting ? 'Adding…' : 'Add Product'}
+                          </button>
+                          <button onClick={resetStNewProduct} disabled={stNewProductSubmitting} className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors disabled:opacity-50">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setAddingSolarTechProductInFamily(stFamily); resetStNewProduct(); setAddingSolarTechProductInFamily(stFamily); }} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm transition-colors active:scale-[0.985]">
+                        <Plus className="w-4 h-4" /> Add product to {stFamily}
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="px-5 py-3 border-t border-[var(--border-subtle)]/50 bg-[var(--surface-card)]/20"><p className="text-xs text-[var(--text-dim)]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p></div>
               </div>
             );

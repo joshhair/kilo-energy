@@ -107,6 +107,17 @@ interface AppContextType {
   addProductCatalogInstaller: (name: string, config: ProductCatalogInstallerConfig) => void;
   updateProductCatalogInstallerConfig: (name: string, config: Partial<ProductCatalogInstallerConfig>) => void;
   addProductCatalogProduct: (product: ProductCatalogProduct) => void;
+  addSolarTechProduct: (input: {
+    tempId: string;
+    family: string;
+    financer: string;
+    name: string;
+    tiers: SolarTechProduct['tiers'];
+    effectiveFrom?: string;
+    versionLabel?: string;
+    idempotencyKey?: string;
+    reason?: string;
+  }) => Promise<string>;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
   updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   removeProductCatalogProduct: (id: string) => Promise<void>;
@@ -1166,7 +1177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const {
     updateInstallerBaseline, addInstallerBaseline,
     addInstallerPricingVersion, updateInstallerPricingVersion, createNewInstallerVersion,
-    updateSolarTechProduct, updateSolarTechTier,
+    updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
     addProductCatalogInstaller, updateProductCatalogInstallerConfig,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -1412,6 +1423,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addProductCatalogInstaller,
         updateProductCatalogInstallerConfig,
         addProductCatalogProduct,
+        addSolarTechProduct,
         updateProductCatalogProduct,
         updateProductCatalogTier,
         removeProductCatalogProduct,
