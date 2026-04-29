@@ -6,6 +6,7 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { createUserInviteSchema } from '../../../../lib/schemas/business';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { logger, errorContext } from '../../../../lib/logger';
+import { logChange } from '../../../../lib/audit';
 
 /**
  * POST /api/users/invite — Admin creates a new internal user AND sends
@@ -86,6 +87,20 @@ export async function POST(req: NextRequest) {
         role,
       },
       notify: true,
+    });
+
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'user_invite',
+      entityType: 'AdminInvitation',
+      entityId: user.id,
+      detail: {
+        invitedEmail: user.email,
+        role: user.role,
+        repType: user.repType,
+        scopedInstallerId: user.scopedInstallerId,
+        clerkInvitationId: invitation.id,
+      },
     });
 
     return NextResponse.json(

@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createInstallerSchema } from '../../../lib/schemas/pricing';
+import { logChange } from '../../../lib/audit';
 
 // GET /api/installers — admin only.
 //   - ?name=X: look up a single installer by name
@@ -21,7 +22,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/installers — Create a new installer (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createInstallerSchema);
   if (!parsed.ok) return parsed.response;
@@ -69,6 +71,19 @@ export async function POST(req: NextRequest) {
     });
     pricingVersionId = pricingVersion.id;
   }
+
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'installer_create',
+    entityType: 'Installer',
+    entityId: installer.id,
+    detail: {
+      name: installer.name,
+      installPayPct: installer.installPayPct,
+      usesProductCatalog: installer.usesProductCatalog,
+      pricingVersionId,
+    },
+  });
 
   return NextResponse.json({ ...installer, pricingVersionId }, { status: 201 });
 }

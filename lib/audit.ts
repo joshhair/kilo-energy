@@ -49,10 +49,42 @@ function diffFields(
   return { oldV, newV };
 }
 
+/**
+ * Closed set of entity types we audit. Adding to this list is a
+ * deliberate act — every new entity needs a corresponding `logChange`
+ * call wired into the routes that mutate it, and (preferably) an
+ * AUDITED_FIELDS entry for diff-based change detection.
+ *
+ * If you find yourself wanting a new entity type and tempted to skip
+ * the audit-coverage gate, ask whether the mutation actually warrants
+ * an audit record (chat messages and notes don't; financer/installer
+ * config absolutely does — those touch commission resolution).
+ */
+export type AuditEntityType =
+  | "Project"
+  | "PayrollEntry"
+  | "User"
+  | "Blitz"
+  | "Installer"
+  | "Financer"
+  | "InstallerPricingVersion"
+  | "ProductPricingVersion"
+  | "Product"
+  | "SubDealer"
+  | "ProjectManager"
+  | "Reimbursement"
+  | "BlitzRequest"
+  | "BlitzCost"
+  | "Incentive"
+  | "TrainerAssignment"
+  | "PrepaidOption"
+  | "AdminInvitation"
+  | "ProductCatalogConfig";
+
 export async function logChange(params: {
   actor: AuditActor;
   action: string;
-  entityType: "Project" | "PayrollEntry" | "User" | "Blitz" | "Installer" | "Financer" | "InstallerPricingVersion" | "ProductPricingVersion" | "Product";
+  entityType: AuditEntityType;
   entityId: string;
   before?: Record<string, unknown>;
   after?: Record<string, unknown>;
@@ -118,6 +150,12 @@ export const AUDITED_FIELDS = {
     "financerId",
     "cancellationReason",
   ] as const,
-  User: ["role", "repType", "active", "email", "firstName", "lastName"] as const,
+  User: ["role", "repType", "active", "email", "firstName", "lastName", "scopedInstallerId"] as const,
   PayrollEntry: ["status", "amountCents", "paymentStage"] as const,
+  Installer: ["name", "active", "installPayPct", "usesProductCatalog"] as const,
+  Financer: ["name", "active"] as const,
+  SubDealer: ["name", "active"] as const,
+  Reimbursement: ["amountCents", "status", "category"] as const,
+  Incentive: ["name", "active", "amountCents"] as const,
+  PrepaidOption: ["name", "active", "amountCents"] as const,
 } as const;

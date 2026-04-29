@@ -1,0 +1,49 @@
+{
+  "$schema": "Inventory of mutating /api routes that do NOT call logChange. Each entry is either (a) a permanent volume exemption (chat/note/activity self-log) or (b) a TODO scheduled for a follow-up audit-coverage PR. Removing an entry is fine once the route either calls logChange or is deleted. Adding an entry requires a one-sentence reason that would survive code review.",
+
+  "app/api/projects/[id]/messages/route.ts": "Chat-volume exempt — every project conversation message would drown the audit signal. Messages are immutable + visible in the project timeline anyway.",
+  "app/api/projects/[id]/messages/[messageId]/route.ts": "Chat-volume exempt — paired with messages POST.",
+  "app/api/projects/[id]/notes/route.ts": "Rep-note volume exempt — high-frequency UX, not commission-affecting.",
+  "app/api/projects/[id]/notes/[noteId]/route.ts": "Rep-note volume exempt — paired with notes POST.",
+  "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular.",
+
+  "app/api/projects/route.ts": "TODO PR 3a — new-deal create flow needs logChange; project mutations are ALREADY audited via /projects/[id]/route.ts on subsequent edits, but the initial create currently isn't logged.",
+
+  "app/api/projects/[id]/admin-notes/route.ts": "TODO PR 3a — admin notes are admin-only and should be audited; deferring to keep PR 3 scope focused.",
+  "app/api/projects/[id]/admin-notes/[noteId]/route.ts": "TODO PR 3a — paired with admin-notes POST.",
+
+  "app/api/payroll/[id]/route.ts": "TODO PR 3a — single-entry payroll edits; batch payroll IS already audited via /payroll/route.ts.",
+  "app/api/installer-pricing/[id]/route.ts": "TODO PR 3a — version edit/delete; version create IS already audited via /installer-pricing/route.ts.",
+  "app/api/product-pricing/[id]/route.ts": "TODO PR 3a — version delete; create IS already audited via /product-pricing/route.ts.",
+  "app/api/installers/[id]/config/route.ts": "TODO PR 3a — ProductCatalogConfig edit; not yet wired.",
+
+  "app/api/reps/route.ts": "TODO PR 3a — rep create; partial coverage exists via /users/invite for the email-invite path.",
+  "app/api/reps/[id]/route.ts": "TODO PR 3a — rep update; user-update IS audited via /users/[id]/route.ts but rep-shape adapter isn't.",
+  "app/api/users/[id]/route.ts": "TODO PR 3a — user role/active flips; high priority for compliance.",
+  "app/api/users/[id]/invite/route.ts": "TODO PR 3a — re-send invitation flow.",
+  "app/api/users/invitations/[id]/route.ts": "TODO PR 3a — invitation revoke.",
+
+  "app/api/reimbursements/route.ts": "TODO PR 3a — reimbursement create; touches money, must be audited.",
+  "app/api/reimbursements/[id]/route.ts": "TODO PR 3a — reimbursement approve/reject/edit; touches money.",
+  "app/api/reimbursements/[id]/receipt/route.ts": "TODO PR 3a — receipt attach/remove; deferring (file metadata, not amount).",
+
+  "app/api/incentives/route.ts": "TODO PR 3a — incentive create.",
+  "app/api/incentives/[id]/route.ts": "TODO PR 3a — incentive edit/delete.",
+
+  "app/api/blitzes/route.ts": "TODO PR 3a — blitz create.",
+  "app/api/blitzes/[id]/route.ts": "TODO PR 3a — blitz edit/delete.",
+  "app/api/blitzes/[id]/costs/route.ts": "TODO PR 3a — blitz cost add/remove; touches money.",
+  "app/api/blitzes/[id]/participants/route.ts": "TODO PR 3a — blitz participant add/remove/update.",
+  "app/api/blitz-requests/route.ts": "TODO PR 3a — blitz request submit.",
+  "app/api/blitz-requests/[id]/route.ts": "TODO PR 3a — blitz request approve/reject.",
+
+  "app/api/trainer-assignments/route.ts": "TODO PR 3a — trainer assignment create/update/delete; affects override commission tier.",
+  "app/api/trainer-assignments/[id]/backfill/route.ts": "TODO PR 3a — trainer override backfill; touches historical commission.",
+
+  "app/api/prepaid-options/by-name/route.ts": "TODO PR 3a — by-name lookup-and-mutate adapter; deferring to consolidate with /prepaid-options/[id].",
+
+  "app/api/import/projects/route.ts": "TODO PR 3a — bulk Glide import; emits per-project audit lines is the right answer but would be 50k+ rows on a full import; design a batch-summary log entry instead.",
+  "app/api/import/users/route.ts": "TODO PR 3a — bulk user import; same reasoning as import/projects.",
+
+  "app/api/admin/retention/route.ts": "TODO PR 3a — retention policy job trigger; admin-only operational endpoint."
+}
