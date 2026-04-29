@@ -758,6 +758,102 @@ export function createInstallerActions(deps: InstallerDeps) {
    * bulk-adjust's response. The 30-second window is policy-only —
    * server happily restores anytime as long as the actor is admin.
    */
+  /**
+   * Create new pricing versions for many products in one shot. Wraps
+   * the corresponding bulk endpoint, which runs all close-old + create-
+   * new operations in a single Prisma transaction. On success, applies
+   * an optimistic local update: closes the current version per affected
+   * product (sets effectiveTo to the day before the new effectiveFrom)
+   * and inserts a new active version with the supplied tiers.
+   */
+  const applyBulkVersionCreate = async (input: {
+    effectiveFrom: string;
+    label: string;
+    reason?: string;
+    retroactive?: boolean;
+    products: ReadonlyArray<{
+      productId: string;
+      tiers: ReadonlyArray<{
+        minKW: number; maxKW: number | null;
+        closerPerW: number; setterPerW: number;
+        kiloPerW: number; subDealerPerW?: number | null;
+      }>;
+    }>;
+  }): Promise<{ created: Array<{ id: string; productId: string; label: string; effectiveFrom: string }> }> => {
+    const res = await fetch('/api/baselines/bulk-version-create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Bulk version create failed: ${res.status} ${text}`);
+    }
+    const data = await res.json() as { created: Array<{ id: string; productId: string; label: string; effectiveFrom: string }> };
+
+    // Optimistic local mirror: close each product's current version and
+    // insert the new one. Because both PC and SolarTech reads come from
+    // the same /api/data productCatalogPricingVersions slice (filtered
+    // by installer name in render), updating that slice covers both UIs.
+    const prevDate = new Date(`${input.effectiveFrom}T00:00:00Z`);
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const closeAs = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}-${String(prevDate.getUTCDate()).padStart(2, '0')}`;
+    const productIdsTouched = new Set(input.products.map((p) => p.productId));
+    const inputByProductId = new Map(input.products.map((p) => [p.productId, p.tiers]));
+
+    setProductCatalogPricingVersions((prev) => {
+      // Close all currently-active versions for affected products.
+      const closed = prev.map((v) => productIdsTouched.has(v.productId) && v.effectiveTo === null
+        ? { ...v, effectiveTo: closeAs }
+        : v,
+      );
+      // Append the new versions returned from the server.
+      const newVersions = data.created.map((nv) => ({
+        id: nv.id,
+        productId: nv.productId,
+        label: nv.label,
+        effectiveFrom: nv.effectiveFrom,
+        effectiveTo: null as string | null,
+        tiers: (inputByProductId.get(nv.productId) ?? []).map((t) => ({
+          minKW: t.minKW,
+          maxKW: t.maxKW,
+          closerPerW: t.closerPerW,
+          setterPerW: t.setterPerW,
+          kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
+        })),
+      }));
+      return [...closed, ...newVersions];
+    });
+
+    // Update solarTechProducts and productCatalogProducts so the table
+    // tier inputs reflect the new active values immediately.
+    const tierEntriesByProduct = (productId: string) => {
+      const tiers = inputByProductId.get(productId);
+      if (!tiers) return null;
+      return tiers.map((t) => ({
+        minKW: t.minKW,
+        maxKW: t.maxKW,
+        closerPerW: t.closerPerW,
+        setterPerW: t.setterPerW,
+        kiloPerW: t.kiloPerW,
+        subDealerPerW: t.subDealerPerW ?? undefined,
+      }));
+    };
+    setSolarTechProducts((prev) => prev.map((p) => {
+      if (!productIdsTouched.has(p.id)) return p;
+      const newTiers = tierEntriesByProduct(p.id);
+      return newTiers ? { ...p, tiers: newTiers } : p;
+    }));
+    setProductCatalogProducts((prev) => prev.map((p) => {
+      if (!productIdsTouched.has(p.id)) return p;
+      const newTiers = tierEntriesByProduct(p.id);
+      return newTiers ? { ...p, tiers: newTiers as typeof p.tiers } : p;
+    }));
+
+    return { created: data.created };
+  };
+
   const undoBulkTierAdjust = async (
     restorePoints: ReadonlyArray<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>,
   ): Promise<{ restored: number }> => {
@@ -1022,6 +1118,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     restoreProduct,
     applyBulkTierAdjust,
     undoBulkTierAdjust,
+    applyBulkVersionCreate,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,

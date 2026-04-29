@@ -41,7 +41,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust, applyBulkVersionCreate,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -118,6 +118,24 @@ export function BaselinesSection({
   // the family the form was opened from (e.g. 'Enfin'); we capture it
   // up front so a tab switch doesn't repurpose the form mid-edit.
   const [addingSolarTechProductInFamily, setAddingSolarTechProductInFamily] = useState<string | null>(null);
+
+  // "Bulk Edit & Create Versions" modal — shared between SolarTech and
+  // Product Catalog. When non-null, modal renders for the named scope.
+  // Pre-fills per-product tier inputs from current values; admin edits
+  // inline; submit creates new versions for ALL products in one
+  // transaction via POST /api/baselines/bulk-version-create.
+  const [bulkVersionScope, setBulkVersionScope] = useState<{ kind: 'solartech'; family: string } | { kind: 'productcatalog'; installer: string; family: string } | null>(null);
+  const [bulkVersionLabel, setBulkVersionLabel] = useState('');
+  const [bulkVersionEffectiveFrom, setBulkVersionEffectiveFrom] = useState('');
+  const [bulkVersionReason, setBulkVersionReason] = useState('');
+  // Per-product tier inputs: { [productId]: [{ closer, kilo }, ...] }
+  // Initialized from current product tiers when the modal opens.
+  const [bulkVersionTiers, setBulkVersionTiers] = useState<Record<string, Array<{ closerPerW: string; kiloPerW: string }>>>({});
+  const [bulkVersionSubmitting, setBulkVersionSubmitting] = useState(false);
+  const resetBulkVersion = () => {
+    setBulkVersionScope(null); setBulkVersionLabel(''); setBulkVersionEffectiveFrom('');
+    setBulkVersionReason(''); setBulkVersionTiers({}); setBulkVersionSubmitting(false);
+  };
 
   // SolarTech "Show archived" toggle + lazy-loaded archived list.
   // When toggled on, the table swaps to show archived products of the
@@ -1158,6 +1176,161 @@ export function BaselinesSection({
         ) : null;
       })()}
 
+      {/* Refresh Family Pricing modal — bulk-create new pricing versions
+          for an entire family in a single transaction. Pre-fills tier
+          inputs from current values; admin edits per-product as needed;
+          submit closes all current versions + creates new ones with
+          the supplied effective date. Adapter for the user's actual
+          workflow: "I just got new pricing for all 9 Enfin products,
+          let me refresh them all in one shot." */}
+      {bulkVersionScope && (() => {
+        const scope = bulkVersionScope;
+        const targetProducts = scope.kind === 'solartech'
+          ? solarTechProducts.filter((p) => p.family === scope.family)
+          : productCatalogProducts.filter((p) => p.installer === scope.installer && p.family === scope.family);
+        const familyLabel = scope.kind === 'solartech' ? scope.family : `${scope.installer} — ${scope.family}`;
+        const todayISO = new Date().toISOString().split('T')[0];
+        const isPast = bulkVersionEffectiveFrom !== '' && bulkVersionEffectiveFrom < todayISO;
+
+        const submit = async () => {
+          if (!bulkVersionLabel.trim() || !bulkVersionEffectiveFrom) return;
+          if (isPast) {
+            toast('Effective date is in the past — past-dated versions are blocked. Use a future date or today.', 'error');
+            return;
+          }
+          const breaks = [1, 5, 10, 13];
+          const maxBreaks: (number | null)[] = [5, 10, 13, null];
+          const productsPayload = targetProducts.map((p) => {
+            const inputs = bulkVersionTiers[p.id] ?? [];
+            const tiers = inputs.map((t, i) => {
+              const fallback = p.tiers[i];
+              const closerPerW = t.closerPerW.trim() === '' ? fallback.closerPerW : parseFloat(t.closerPerW);
+              const kiloPerW = t.kiloPerW.trim() === '' ? fallback.kiloPerW : parseFloat(t.kiloPerW);
+              return {
+                minKW: breaks[i],
+                maxKW: maxBreaks[i],
+                closerPerW: isNaN(closerPerW) ? fallback.closerPerW : closerPerW,
+                setterPerW: Math.round(((isNaN(closerPerW) ? fallback.closerPerW : closerPerW) + 0.10) * 100) / 100,
+                kiloPerW: isNaN(kiloPerW) ? fallback.kiloPerW : kiloPerW,
+              };
+            });
+            return { productId: p.id, tiers };
+          });
+
+          // Sanity-check before sending: any tier with closer <= kilo is rejected
+          for (const p of productsPayload) {
+            for (const [ti, t] of p.tiers.entries()) {
+              if (t.closerPerW <= t.kiloPerW) {
+                const product = targetProducts.find((tp) => tp.id === p.productId);
+                toast(`${product?.name ?? 'Product'} tier ${ti + 1}: closer ($${t.closerPerW}) must be greater than kilo ($${t.kiloPerW}) — would be loss-making.`, 'error');
+                return;
+              }
+            }
+          }
+
+          setBulkVersionSubmitting(true);
+          try {
+            const result = await applyBulkVersionCreate({
+              effectiveFrom: bulkVersionEffectiveFrom,
+              label: bulkVersionLabel.trim(),
+              reason: bulkVersionReason.trim() || undefined,
+              products: productsPayload,
+            });
+            toast(`New "${bulkVersionLabel.trim()}" version created for ${result.created.length} product${result.created.length === 1 ? '' : 's'} effective ${bulkVersionEffectiveFrom}`, 'success');
+            resetBulkVersion();
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Bulk version create failed';
+            toast(msg.includes('step_up_required') ? 'Re-authentication required — sign out and back in, then retry.' : msg, 'error');
+            setBulkVersionSubmitting(false);
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 motion-safe:animate-[fadeIn_180ms_ease-out_both]" style={{ backgroundColor: 'var(--surface-overlay)' }}>
+            <div className="bg-[var(--surface)] border border-[var(--border)]/80 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/40 motion-safe:animate-modal-panel">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-[var(--text-primary)] font-bold">Refresh Family Pricing</h3>
+                  <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                    Create new pricing versions for {targetProducts.length} product{targetProducts.length === 1 ? '' : 's'} in {familyLabel}.
+                    Old versions stay intact for historical commission lookups.
+                  </p>
+                </div>
+                <button onClick={resetBulkVersion} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><X className="w-5 h-5" /></button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div>
+                  <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Version label</label>
+                  <input type="text" value={bulkVersionLabel} onChange={(e) => setBulkVersionLabel(e.target.value)} placeholder="e.g. Q3 2026 Pricing" className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Effective from</label>
+                  <input type="date" value={bulkVersionEffectiveFrom} onChange={(e) => setBulkVersionEffectiveFrom(e.target.value)} min={todayISO} className={`w-full bg-[var(--surface-card)] border ${isPast ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]`} />
+                  {isPast && <p className="text-[10px] text-[var(--accent-red-text)] mt-1">Past dates blocked</p>}
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Reason (optional)</label>
+                  <input type="text" value={bulkVersionReason} onChange={(e) => setBulkVersionReason(e.target.value)} placeholder="e.g. New Q.TRON pricing" maxLength={500} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--border-subtle)] overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-[var(--surface-card)]">
+                    <tr className="border-b border-[var(--border-subtle)]">
+                      <th className="text-left px-3 py-2 text-[var(--text-secondary)] font-medium">Product</th>
+                      {['1–5 kW', '5–10 kW', '10–13 kW', '13+ kW'].map((label) => (
+                        <th key={label} className="text-center px-2 py-2 text-[var(--text-secondary)] font-medium">{label}<br /><span className="text-[10px] text-[var(--text-dim)] font-normal">closer / kilo</span></th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {targetProducts.map((product) => {
+                      const productTiers = bulkVersionTiers[product.id] ?? [];
+                      return (
+                        <tr key={product.id} className="border-b border-[var(--border-subtle)]/50">
+                          <td className="px-3 py-2 text-[var(--text-primary)] truncate max-w-[200px]">{product.name}</td>
+                          {[0, 1, 2, 3].map((ti) => {
+                            const t = productTiers[ti] ?? { closerPerW: '', kiloPerW: '' };
+                            const cur = product.tiers[ti];
+                            return (
+                              <td key={ti} className="px-2 py-2 text-center">
+                                <div className="flex flex-col gap-0.5 items-center">
+                                  <input type="number" step="0.01" min="0" value={t.closerPerW} placeholder={String(cur?.closerPerW ?? '')}
+                                    onChange={(e) => setBulkVersionTiers((prev) => ({ ...prev, [product.id]: (prev[product.id] ?? []).map((tt, i) => i === ti ? { ...tt, closerPerW: e.target.value } : tt) }))}
+                                    className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)] rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
+                                  <input type="number" step="0.01" min="0" value={t.kiloPerW} placeholder={String(cur?.kiloPerW ?? '')}
+                                    onChange={(e) => setBulkVersionTiers((prev) => ({ ...prev, [product.id]: (prev[product.id] ?? []).map((tt, i) => i === ti ? { ...tt, kiloPerW: e.target.value } : tt) }))}
+                                    className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-[var(--text-dim)] mt-2">Empty inputs keep the current value. Setter auto-derives as closer + $0.10/W.</p>
+
+              <div className="flex gap-3 mt-5">
+                <button onClick={resetBulkVersion} disabled={bulkVersionSubmitting} className="flex-1 py-2 rounded-xl text-sm font-medium bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors disabled:opacity-50">Cancel</button>
+                <button
+                  onClick={submit}
+                  disabled={!bulkVersionLabel.trim() || !bulkVersionEffectiveFrom || isPast || targetProducts.length === 0 || bulkVersionSubmitting}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]"
+                  style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
+                >
+                  {bulkVersionSubmitting ? 'Creating…' : `Create Versions for ${targetProducts.length} Product${targetProducts.length === 1 ? '' : 's'}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Duplicate All as New Version Modal */}
       {dupAllOpen && (() => {
         const isSt = dupAllOpen === 'solartech';
@@ -1207,7 +1380,31 @@ export function BaselinesSection({
                   {stSortedGroups.map(([key, g]) => (<option key={key} value={key}>{g.label} &mdash; {g.effectiveFrom}</option>))}
                 </select>
                 {stIsArchive && (<><span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[var(--accent-amber-text)] text-[10px] font-medium"><History className="w-3 h-3" />Viewing archived version{(() => { const g = stVersionGroups.get(stCurrentView); return g ? ` \u00b7 ${g.effectiveFrom} \u2192 ${g.effectiveTo}` : ''; })()}</span><button onClick={() => { const [label, effectiveFrom] = stCurrentView.split('|'); setConfirmAction({ title: 'Delete Pricing Version', message: 'Delete this pricing version? This cannot be undone.', onConfirm: () => { const idsToDelete = productCatalogPricingVersions.filter((v) => stFamilyProductIds.has(v.productId) && v.label === label && v.effectiveFrom === effectiveFrom).map((v) => v.id); deleteProductCatalogPricingVersions(idsToDelete); setStVersionView((prev) => ({ ...prev, [stFamily]: 'current' })); toast('Pricing version deleted', 'success'); setConfirmAction(null); } }); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] hover:bg-red-500/20 hover:text-[var(--accent-red-text)] transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete Version</button></>)}
-                {!stIsArchive && (<><button onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(suggestVersionLabel()); setDupAllEffectiveFrom(''); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"><Copy className="w-3.5 h-3.5" /> Duplicate All as New Version</button><button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button></>)}
+                {!stIsArchive && (<>
+                  <button onClick={() => { setDupAllOpen('solartech'); setDupAllLabel(suggestVersionLabel()); setDupAllEffectiveFrom(''); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"><Copy className="w-3.5 h-3.5" /> Duplicate All as New Version</button>
+                  <button
+                    onClick={() => {
+                      const products = solarTechProducts.filter((p) => p.family === stFamily);
+                      const initialTiers: Record<string, Array<{ closerPerW: string; kiloPerW: string }>> = {};
+                      products.forEach((p) => {
+                        initialTiers[p.id] = p.tiers.map((t) => ({
+                          closerPerW: String(t.closerPerW),
+                          kiloPerW: String(t.kiloPerW),
+                        }));
+                      });
+                      setBulkVersionScope({ kind: 'solartech', family: stFamily });
+                      setBulkVersionLabel(suggestVersionLabel());
+                      setBulkVersionEffectiveFrom('');
+                      setBulkVersionReason('');
+                      setBulkVersionTiers(initialTiers);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
+                    title="Refresh pricing for the entire family in one shot — set effective date, edit each product's tiers, submit"
+                  >
+                    <GitBranch className="w-3.5 h-3.5" /> Refresh Family Pricing
+                  </button>
+                  <button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button>
+                </>)}
               </div>
             );
           })()}
