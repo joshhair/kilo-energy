@@ -3,10 +3,12 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchIncentiveSchema } from '../../../../lib/schemas/business';
+import { logChange } from '../../../../lib/audit';
 
 // PATCH /api/incentives/[id] — Update an incentive (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchIncentiveSchema);
@@ -23,6 +25,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.startDate !== undefined) data.startDate = body.startDate;
   if (body.type !== undefined) data.type = body.type;
   if (body.targetRepId !== undefined) data.targetRepId = body.targetRepId;
+
+  const before = await prisma.incentive.findUnique({
+    where: { id },
+    include: { milestones: true },
+  });
 
   let incentive;
   if (body.milestones !== undefined) {
@@ -57,13 +64,38 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       include: { milestones: true },
     });
   }
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'incentive_update',
+    entityType: 'Incentive',
+    entityId: id,
+    detail: {
+      fieldsChanged: Object.keys(data),
+      milestonesChanged: body.milestones !== undefined,
+      milestoneCountBefore: before?.milestones.length,
+      milestoneCountAfter: incentive.milestones.length,
+      activeBefore: before?.active,
+      activeAfter: incentive.active,
+    },
+  });
   return NextResponse.json(incentive);
 }
 
 // DELETE /api/incentives/[id] (admin only)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+  const before = await prisma.incentive.findUnique({ where: { id } });
   await prisma.incentive.delete({ where: { id } });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'incentive_delete',
+    entityType: 'Incentive',
+    entityId: id,
+    detail: before
+      ? { title: before.title, type: before.type, active: before.active, targetRepId: before.targetRepId }
+      : { id },
+  });
   return NextResponse.json({ success: true });
 }

@@ -3,10 +3,12 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createIncentiveSchema } from '../../../lib/schemas/incentive';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/incentives — Create an incentive (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createIncentiveSchema);
   if (!parsed.ok) return parsed.response;
@@ -32,6 +34,23 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { milestones: true },
+  });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'incentive_create',
+    entityType: 'Incentive',
+    entityId: incentive.id,
+    detail: {
+      title: incentive.title,
+      type: incentive.type,
+      metric: incentive.metric,
+      period: incentive.period,
+      startDate: incentive.startDate,
+      endDate: incentive.endDate,
+      targetRepId: incentive.targetRepId,
+      blitzId: incentive.blitzId,
+      milestoneCount: incentive.milestones.length,
+    },
   });
   return NextResponse.json(incentive, { status: 201 });
 }

@@ -6,6 +6,7 @@ import { createBlitzCostSchema } from '../../../../../lib/schemas/business';
 import { serializeBlitzCost } from '../../../../../lib/serialize';
 import { fromDollars } from '../../../../../lib/money';
 import { logger, errorContext } from '../../../../../lib/logger';
+import { logChange } from '../../../../../lib/audit';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -34,6 +35,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       amountCents: cost.amountCents,
       category: cost.category,
     });
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'blitz_cost_create',
+      entityType: 'BlitzCost',
+      entityId: cost.id,
+      detail: {
+        blitzId,
+        category: cost.category,
+        amountCents: cost.amountCents,
+        description: cost.description,
+        date: cost.date,
+      },
+    });
     return NextResponse.json(serializeBlitzCost(cost), { status: 201 });
   } catch (err) {
     logger.error('blitz_cost_create_failed', {
@@ -55,7 +69,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const costId = req.nextUrl.searchParams.get('costId');
   if (!costId) return NextResponse.json({ error: 'costId required' }, { status: 400 });
 
+  const before = await prisma.blitzCost.findUnique({ where: { id: costId } });
   await prisma.blitzCost.delete({ where: { id: costId, blitzId } });
   logger.info('blitz_cost_deleted', { costId, blitzId, actorId: actor.id });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'blitz_cost_delete',
+    entityType: 'BlitzCost',
+    entityId: costId,
+    detail: before
+      ? { blitzId, category: before.category, amountCents: before.amountCents, description: before.description }
+      : { blitzId, costId },
+  });
   return NextResponse.json({ success: true });
 }

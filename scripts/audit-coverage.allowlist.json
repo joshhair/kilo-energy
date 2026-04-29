@@ -12,21 +12,10 @@
   "app/api/projects/[id]/admin-notes/route.ts": "TODO PR 3a — admin notes are admin-only and should be audited; deferring to keep PR 3 scope focused.",
   "app/api/projects/[id]/admin-notes/[noteId]/route.ts": "TODO PR 3a — paired with admin-notes POST.",
 
-  "app/api/installers/[id]/config/route.ts": "TODO PR 3a — ProductCatalogConfig edit; not yet wired.",
-
-  "app/api/reps/route.ts": "TODO PR 3a — rep create; partial coverage exists via /users/invite for the email-invite path.",
-  "app/api/reps/[id]/route.ts": "TODO PR 3a — rep update; user-update IS audited via /users/[id]/route.ts but rep-shape adapter isn't.",
-  "app/api/users/[id]/invite/route.ts": "TODO PR 3a — re-send invitation flow.",
-  "app/api/users/invitations/[id]/route.ts": "TODO PR 3a — invitation revoke.",
-
   "app/api/reimbursements/[id]/receipt/route.ts": "TODO PR 3a — receipt attach/remove; deferring (file metadata, not amount).",
-
-  "app/api/incentives/route.ts": "TODO PR 3a — incentive create.",
-  "app/api/incentives/[id]/route.ts": "TODO PR 3a — incentive edit/delete.",
 
   "app/api/blitzes/route.ts": "TODO PR 3a — blitz create.",
   "app/api/blitzes/[id]/route.ts": "TODO PR 3a — blitz edit/delete.",
-  "app/api/blitzes/[id]/costs/route.ts": "TODO PR 3a — blitz cost add/remove; touches money.",
   "app/api/blitzes/[id]/participants/route.ts": "TODO PR 3a — blitz participant add/remove/update.",
   "app/api/blitz-requests/route.ts": "TODO PR 3a — blitz request submit.",
   "app/api/blitz-requests/[id]/route.ts": "TODO PR 3a — blitz request approve/reject.",

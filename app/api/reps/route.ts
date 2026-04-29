@@ -4,6 +4,7 @@ import { requireAdmin, requireInternalUser, isVendorPM, isInternalPM } from '../
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createRepSchema } from '../../../lib/schemas/business';
 import { logger } from '../../../lib/logger';
+import { logChange } from '../../../lib/audit';
 
 // GET /api/reps — List users by role.
 // - admin: full records (PII included)
@@ -60,7 +61,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/reps — Create a new rep (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createRepSchema);
   if (!parsed.ok) return parsed.response;
@@ -98,6 +100,18 @@ export async function POST(req: NextRequest) {
       role: body.role,
       repType: body.repType,
       scopedInstallerId,
+    },
+  });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'user_create_via_reps',
+    entityType: 'User',
+    entityId: user.id,
+    detail: {
+      email: user.email,
+      role: user.role,
+      repType: user.repType,
+      scopedInstallerId: user.scopedInstallerId,
     },
   });
   return NextResponse.json({

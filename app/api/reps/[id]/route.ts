@@ -4,6 +4,7 @@ import { requireAdmin, requireInternalUser, isVendorPM, isInternalPM } from '../
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchRepSchema } from '../../../../lib/schemas/business';
 import { logger } from '../../../../lib/logger';
+import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 
 // GET /api/reps/[id] — Fetch a single user by id, regardless of role.
 // Used by the unified Users detail page to look up admins / PMs who
@@ -64,7 +65,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 // PATCH /api/reps/[id] — Update rep (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   const parsed = await parseJsonBody(req, patchRepSchema);
@@ -79,7 +81,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.phone !== undefined) data.phone = body.phone;
   if (body.active !== undefined) data.active = body.active;
 
+  const before = await prisma.user.findUnique({ where: { id } });
   const user = await prisma.user.update({ where: { id }, data });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'user_update_via_reps',
+    entityType: 'User',
+    entityId: id,
+    before: before ?? undefined, after: user,
+    fields: AUDITED_FIELDS.User,
+  });
   return NextResponse.json({
     id: user.id,
     firstName: user.firstName,
