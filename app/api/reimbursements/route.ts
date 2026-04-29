@@ -8,6 +8,7 @@ import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 import { serializeReimbursement } from '../../../lib/serialize';
 import { fromDollars } from '../../../lib/money';
 import { logger } from '../../../lib/logger';
+import { logChange } from '../../../lib/audit';
 
 // POST /api/reimbursements — Create a reimbursement request
 export async function POST(req: NextRequest) {
@@ -46,6 +47,19 @@ export async function POST(req: NextRequest) {
     actorId: internalUser.id,
     repId: reimbursement.repId,
     amountCents: reimbursement.amountCents,
+  });
+  await logChange({
+    actor: { id: internalUser.id, email: internalUser.email },
+    action: 'reimbursement_create',
+    entityType: 'Reimbursement',
+    entityId: reimbursement.id,
+    detail: {
+      repId: reimbursement.repId,
+      amountCents: reimbursement.amountCents,
+      description: reimbursement.description,
+      date: reimbursement.date,
+      status: reimbursement.status,
+    },
   });
   return NextResponse.json(serializeReimbursement(reimbursement), { status: 201 });
 }

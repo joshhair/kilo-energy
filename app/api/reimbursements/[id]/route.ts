@@ -7,6 +7,7 @@ import { patchReimbursementSchema } from '../../../../lib/schemas/reimbursement'
 import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
 import { logger, errorContext } from '../../../../lib/logger';
 import { serializeReimbursement } from '../../../../lib/serialize';
+import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 
 // PATCH /api/reimbursements/[id] — Admin only. Updates status (approve /
 // deny / paid / reset to pending) and/or archive flag. receiptUrl /
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
   }
 
+  const before = await prisma.reimbursement.findUnique({ where: { id } });
   const reimbursement = await prisma.reimbursement.update({
     where: { id },
     data,
@@ -40,6 +42,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     actorId: actor.id,
     fieldsChanged: Object.keys(data),
     newStatus: reimbursement.status,
+  });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'reimbursement_update',
+    entityType: 'Reimbursement',
+    entityId: id,
+    before: before ?? undefined, after: reimbursement,
+    fields: AUDITED_FIELDS.Reimbursement,
   });
   return NextResponse.json(serializeReimbursement(reimbursement));
 }
@@ -70,6 +80,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   await prisma.reimbursement.delete({ where: { id } });
   logger.info('reimbursement_deleted', { reimbursementId: id, actorId: viewer.id });
+  await logChange({
+    actor: { id: viewer.id, email: viewer.email },
+    action: 'reimbursement_delete',
+    entityType: 'Reimbursement',
+    entityId: id,
+    detail: { repId: existing.repId, amountCents: existing.amountCents, status: existing.status, description: existing.description },
+  });
   return NextResponse.json({ success: true });
 }
 

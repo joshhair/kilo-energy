@@ -11,6 +11,7 @@ import {
 } from '../../../../lib/user-guardrails';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchUserSchema } from '../../../../lib/schemas/user';
+import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 
 /**
  * GET /api/users/[id] — Single user. Admins see everything; a non-admin
@@ -243,6 +244,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     fieldsChanged: Object.keys(data),
     activeChanged: activeChanged ? body.active : undefined,
   });
+  await logChange({
+    actor: { id: viewer.id, email: viewer.email },
+    action: activeChanged ? (body.active === false ? 'user_deactivate' : 'user_reactivate') : 'user_update',
+    entityType: 'User',
+    entityId: id,
+    before: existing, after: user,
+    fields: AUDITED_FIELDS.User,
+  });
   return NextResponse.json({
     ...user,
     hasClerkAccount: !!user.clerkUserId,
@@ -300,5 +309,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   await prisma.user.delete({ where: { id } });
   logger.info('user_deleted', { userId: id, actorId: viewer.id, email: user.email });
+  await logChange({
+    actor: { id: viewer.id, email: viewer.email },
+    action: 'user_delete',
+    entityType: 'User',
+    entityId: id,
+    detail: { email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
+  });
   return NextResponse.json({ success: true });
 }
