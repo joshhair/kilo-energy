@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import {
-  Plus, EyeOff, Eye, Trash2, Search, ChevronDown,
+  Plus, EyeOff, Eye, Trash2, ChevronDown,
   ListChecks, CheckSquare, Square, Landmark,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
-import { useToast } from '../../../../lib/toast';
+import { useToast as _useToast } from '../../../../lib/toast';
+import { validateName } from '../../../../lib/validation';
+import { EmptyState } from '../../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
+import { PrimaryButton, IconButton, TextInput, FormField, SearchInput } from '@/components/ui';
 
 export interface FinancersSectionProps {
   hiddenFinancers: Set<string>;
@@ -27,7 +30,7 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
   // should never be archived or deleted by an admin (doing so breaks Cash
   // deal saves). Removed from the listing entirely so it can't be touched.
   const financers = ctx.financers.filter((f) => f.name !== 'Cash');
-  const { toast: _toast } = useToast();
+  const { toast: _toast } = _useToast();
 
   const [newFinancer, setNewFinancer] = useState('');
   const [financerSearch, setFinancerSearch] = useState('');
@@ -41,47 +44,50 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
       <div className="card-surface rounded-2xl p-5 mb-4">
         <h2 className="text-[var(--text-primary)] font-semibold mb-3">Add Financer</h2>
         {(() => {
-          const financerDup = newFinancer.trim().length > 0 && (newFinancer.trim().toLowerCase() === 'cash' || financers.some((f) => f.name.toLowerCase() === newFinancer.trim().toLowerCase()));
-          return (<>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <input
-              type="text" placeholder="Financer name"
-              value={newFinancer}
-              onChange={(e) => setNewFinancer(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); }
-              }}
-              className={`w-full bg-[var(--surface-card)] border ${financerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
-            />
-            {financerDup && <p className="text-[var(--accent-red-text)] text-[10px] mt-1">Already exists</p>}
-          </div>
-          <button
-            disabled={!newFinancer.trim() || financerDup}
-            onClick={() => { if (newFinancer.trim() && !financerDup) { addFinancer(newFinancer.trim()); setNewFinancer(''); } }}
-            className="btn-primary text-black px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-        </>); })()}
+          // 'Cash' is reserved as a system-managed financer (see filter above);
+          // refuse it explicitly so the validateName dup-check doesn't have
+          // to know about it.
+          const reservedConflict = newFinancer.trim().toLowerCase() === 'cash';
+          const validation = newFinancer.trim().length > 0
+            ? (reservedConflict
+                ? { ok: false as const, reason: '"Cash" is reserved' }
+                : validateName(newFinancer, { siblings: financers.map((f) => ({ id: f.name, name: f.name })) }))
+            : null;
+          const canSubmit = validation?.ok === true;
+          const submit = () => {
+            if (!canSubmit) return;
+            addFinancer(validation.value);
+            setNewFinancer('');
+          };
+          return (
+            <div className="flex gap-3 items-start">
+              <FormField
+                className="flex-1"
+                error={validation && !validation.ok ? validation.reason : undefined}
+              >
+                <TextInput
+                  placeholder="Financer name"
+                  value={newFinancer}
+                  onChange={(e) => setNewFinancer(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+                  invalid={validation?.ok === false}
+                />
+              </FormField>
+              <PrimaryButton onClick={submit} disabled={!canSubmit} aria-label="Add financer">
+                <Plus className="w-4 h-4" />
+              </PrimaryButton>
+            </div>
+          );
+        })()}
       </div>
 
       {financers.filter((f) => !hiddenFinancers.has(f.name)).length === 0 && (
-        <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
-              <Landmark className="w-4 h-4 text-[var(--accent-emerald-text)]" />
-            </div>
-            <div>
-              <p className="text-[var(--text-primary)] font-medium text-sm mb-1">No financers yet</p>
-              <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                Financers are the lending partners that fund solar installations. Add your first financer above to make it available in the deal form.
-              </p>
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          icon={Landmark}
+          title="No financers yet"
+          description="Financers are the lending partners that fund solar installations. Add your first financer above to make it available in the deal form."
+          variant="inline"
+        />
       )}
 
       {financers.some((f) => f.active && !hiddenFinancers.has(f.name)) && (() => {
@@ -121,15 +127,12 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
               </button>
             </div>
           )}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
-            <input
-              type="text" placeholder="Search financers..."
-              value={financerSearch}
-              onChange={(e) => setFinancerSearch(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
-            />
-          </div>
+          <SearchInput
+            className="mb-3"
+            placeholder="Search financers..."
+            value={financerSearch}
+            onChange={(e) => setFinancerSearch(e.target.value)}
+          />
           <div className="grid grid-cols-2 gap-2">
             {filteredActiveFinancers.map((fin) => (
               <div key={fin.name} className={`card-surface rounded-xl px-4 py-3 flex items-center justify-between group ${financerSelectMode && selectedFinancers.has(fin.name) ? 'ring-1 ring-[var(--accent-emerald-solid)]/40' : ''}`}>
@@ -179,14 +182,18 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                 </div>
                 {!financerSelectMode && (
                 <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setFinancerActive(fin.name, false)}
+                  <IconButton
+                    variant="warning"
+                    aria-label={`Archive ${fin.name}`}
                     title="Archive financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-amber-text)] transition-colors"
+                    onClick={() => setFinancerActive(fin.name, false)}
                   >
                     <EyeOff className="w-3.5 h-3.5" />
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton
+                    variant="danger"
+                    aria-label={`Delete ${fin.name}`}
+                    title="Delete financer"
                     onClick={() => {
                       const projectCount = projects.filter((p) => p.financer === fin.name).length;
                       setDeleteConfirm({
@@ -198,11 +205,9 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                           : 'This financer has no associated projects and will be permanently deleted.',
                       });
                     }}
-                    title="Delete financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </IconButton>
                 </div>
                 )}
               </div>
@@ -283,14 +288,18 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                 </div>
                 {!financerSelectMode && (
                 <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setFinancerActive(fin.name, true)}
+                  <IconButton
+                    variant="success"
+                    aria-label={`Restore ${fin.name}`}
                     title="Restore financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"
+                    onClick={() => setFinancerActive(fin.name, true)}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton
+                    variant="danger"
+                    aria-label={`Delete ${fin.name}`}
+                    title="Delete financer"
                     onClick={() => {
                       const projectCount = projects.filter((p) => p.financer === fin.name).length;
                       setDeleteConfirm({
@@ -302,11 +311,9 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                           : 'This financer has no associated projects and will be permanently deleted.',
                       });
                     }}
-                    title="Delete financer"
-                    className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </IconButton>
                 </div>
                 )}
               </div>
