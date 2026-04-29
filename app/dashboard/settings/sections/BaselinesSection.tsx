@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect, Fragment } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Fragment } from 'react';
 import {
-  Plus, Pencil, Check, X, Trash2, Search, History, GitBranch, Copy,
+  Plus, Pencil, Check, X, Trash2, Search, History, GitBranch, Copy, RotateCcw,
   ChevronDown, ChevronUp, Sliders,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
@@ -41,7 +41,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -118,6 +118,30 @@ export function BaselinesSection({
   // the family the form was opened from (e.g. 'Enfin'); we capture it
   // up front so a tab switch doesn't repurpose the form mid-edit.
   const [addingSolarTechProductInFamily, setAddingSolarTechProductInFamily] = useState<string | null>(null);
+
+  // SolarTech "Show archived" toggle + lazy-loaded archived list.
+  // When toggled on, the table swaps to show archived products of the
+  // current family with a Restore action per row. Lives outside the
+  // main /api/data hydration payload to keep that minimal — fetched
+  // on-demand via GET /api/products?archived=1.
+  const [stShowArchived, setStShowArchived] = useState(false);
+  type ArchivedProduct = { id: string; name: string; family: string; installerName: string; projectRefs: number; versionCount: number; latestVersion: { label: string; effectiveFrom: string; effectiveTo: string | null } | null };
+  const [archivedProducts, setArchivedProducts] = useState<ArchivedProduct[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const refreshArchived = useCallback(async () => {
+    setArchivedLoading(true);
+    try {
+      const res = await fetch('/api/products?archived=1');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { products: ArchivedProduct[] };
+      setArchivedProducts(data.products ?? []);
+    } catch (err) {
+      console.warn('[archived products] fetch failed:', err instanceof Error ? err.message : err);
+      toast('Failed to load archived products', 'error');
+    } finally {
+      setArchivedLoading(false);
+    }
+  }, [toast]);
   const [stNewProductName, setStNewProductName] = useState('');
   const [stNewProductEffectiveFrom, setStNewProductEffectiveFrom] = useState(''); // YYYY-MM-DD; '' = today
   const [stNewProductReason, setStNewProductReason] = useState('');
@@ -1154,6 +1178,14 @@ export function BaselinesSection({
                     <div><h2 className="text-[var(--text-primary)] font-semibold">{stFamily}</h2><p className="text-[var(--text-muted)] text-xs mt-0.5">{stIsArchive ? 'Viewing archived version (read-only)' : 'Click any value to edit \u00b7 Setter = Closer + $0.10/W auto-calculated'}</p></div>
                     <div className="flex items-center gap-3">
                       <button onClick={() => setShowSubDealerRates((v) => !v)} className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0"><span>SD Rate</span><span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${showSubDealerRates ? 'bg-amber-500' : 'bg-[var(--border)]'}`}><span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform duration-200 ${showSubDealerRates ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} /></span></button>
+                      <button
+                        onClick={() => { const next = !stShowArchived; setStShowArchived(next); if (next) refreshArchived(); }}
+                        className={`flex items-center gap-1.5 text-xs font-medium transition-colors shrink-0 ${stShowArchived ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                        title={stShowArchived ? 'Hide archived products' : 'Show archived products from this family'}
+                      >
+                        {stShowArchived ? <X className="w-3.5 h-3.5" /> : <History className="w-3.5 h-3.5" />}
+                        <span>{stShowArchived ? 'Hide archived' : 'Archived'}</span>
+                      </button>
                       <div className="relative"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" /><input type="text" placeholder="Search products..." value={stProductSearch} onChange={(e) => setStProductSearch(e.target.value)} className="w-48 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" /></div>
                     </div>
                   </div>
@@ -1333,6 +1365,62 @@ export function BaselinesSection({
                         <Plus className="w-4 h-4" /> Add product to {stFamily}
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Archived products view — only rendered when the
+                    "Archived" toggle in the action bar is on. Pulls
+                    from GET /api/products?archived=1 (admin-only) and
+                    filters to SolarTech rows of the current family.
+                    Each row gets a Restore action that POSTs to
+                    /api/products/[id]/restore; the product reappears
+                    in the active table on next reload. */}
+                {stShowArchived && (
+                  <div className="px-5 py-4 border-t border-[var(--border-subtle)]/50 motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Archived in {stFamily}</p>
+                      {archivedLoading && <span className="text-[var(--text-muted)] text-[10px]">Loading…</span>}
+                    </div>
+                    {(() => {
+                      const archivedHere = archivedProducts.filter((a) => a.installerName === 'SolarTech' && a.family === stFamily);
+                      if (!archivedLoading && archivedHere.length === 0) {
+                        return <p className="text-[var(--text-muted)] text-xs italic">No archived products in {stFamily}.</p>;
+                      }
+                      return (
+                        <div className="space-y-2">
+                          {archivedHere.map((a) => (
+                            <div key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg" style={{ background: 'var(--surface-inset-subtle)', border: '1px solid var(--border-subtle)' }}>
+                              <div className="min-w-0">
+                                <p className="text-[var(--text-primary)] text-sm font-medium truncate">{a.name}</p>
+                                <p className="text-[var(--text-dim)] text-[10px]">
+                                  {a.versionCount} version{a.versionCount === 1 ? '' : 's'}
+                                  {a.projectRefs > 0 && ` · ${a.projectRefs} project${a.projectRefs === 1 ? '' : 's'} reference this`}
+                                  {a.latestVersion && ` · last active ${a.latestVersion.effectiveFrom}${a.latestVersion.effectiveTo ? ` → ${a.latestVersion.effectiveTo}` : ''}`}
+                                </p>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await restoreProduct(a.id);
+                                    toast(`Restored "${a.name}"`, 'success');
+                                    setArchivedProducts((prev) => prev.filter((p) => p.id !== a.id));
+                                    // The active table will pick up the row on next /api/data refresh.
+                                    // Trigger a fresh archived-list fetch to keep counts in sync.
+                                    refreshArchived();
+                                  } catch (err) {
+                                    toast(err instanceof Error ? err.message : 'Failed to restore product', 'error');
+                                  }
+                                }}
+                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium motion-safe:transition-transform active:scale-[0.985] touch-manipulation"
+                                style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Restore
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
