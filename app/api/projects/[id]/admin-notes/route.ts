@@ -4,6 +4,7 @@ import { prisma } from '../../../../../lib/db';
 import { requireInternalUser, userCanAccessProject, isVendorPM, isInternalPM } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
+import { logChange } from '../../../../../lib/audit';
 
 // Admin notes are internal-only: admin + internal PM can read/write;
 // vendor PMs, reps, trainers, sub-dealers get 403. Belt-and-suspenders
@@ -75,6 +76,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       authorName: `${user.firstName} ${user.lastName}`.trim() || user.email,
       text: parsed.data.text,
     },
+  });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'project_admin_note_create',
+    entityType: 'Project',
+    entityId: id,
+    detail: { noteId: note.id, textLength: note.text.length, authorName: note.authorName },
   });
   return NextResponse.json(note, { status: 201 });
 }

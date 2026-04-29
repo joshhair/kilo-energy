@@ -5,6 +5,7 @@ import { requireInternalUser } from '../../../../../lib/api-auth';
 import { REP_PUBLIC_SELECT } from '../../../../../lib/redact';
 import { serializeReimbursement } from '../../../../../lib/serialize';
 import { logger, errorContext } from '../../../../../lib/logger';
+import { logChange } from '../../../../../lib/audit';
 
 // POST /api/reimbursements/[id]/receipt — Upload a receipt file.
 // Multipart: `file` field, max 10 MB, images + PDF.
@@ -125,6 +126,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     fileName: file.name,
     size: file.size,
   });
+  await logChange({
+    actor: { id: viewer.id, email: viewer.email },
+    action: 'reimbursement_receipt_upload',
+    entityType: 'Reimbursement',
+    entityId: id,
+    detail: {
+      fileName: file.name,
+      contentType: file.type,
+      size: file.size,
+      replacedPriorReceipt: !!existing.receiptUrl,
+    },
+  });
   return NextResponse.json(serializeReimbursement(updated));
 }
 
@@ -155,6 +168,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     where: { id },
     data: { receiptUrl: null, receiptName: null },
     include: { rep: { select: REP_PUBLIC_SELECT } },
+  });
+  await logChange({
+    actor: { id: viewer.id, email: viewer.email },
+    action: 'reimbursement_receipt_delete',
+    entityType: 'Reimbursement',
+    entityId: id,
+    detail: { previousReceiptName: existing.receiptName },
   });
   return NextResponse.json(serializeReimbursement(updated));
 }

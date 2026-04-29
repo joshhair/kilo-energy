@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/db';
 import { requireInternalUser, userCanAccessProject, isVendorPM, isInternalPM as isInternalPMHelper } from '../../../../../../lib/api-auth';
+import { logChange } from '../../../../../../lib/audit';
 
 // DELETE /api/projects/[id]/admin-notes/[noteId] — delete an admin note.
 // Policy: admin can delete any note. Internal PM can delete their own.
@@ -38,5 +39,12 @@ export async function DELETE(
     return NextResponse.json({ error: 'Forbidden — can only delete own notes' }, { status: 403 });
   }
   await prisma.projectAdminNote.delete({ where: { id: noteId } });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'project_admin_note_delete',
+    entityType: 'Project',
+    entityId: id,
+    detail: { noteId, originalAuthorId: note.authorId, originalAuthorName: note.authorName },
+  });
   return NextResponse.json({ ok: true });
 }
