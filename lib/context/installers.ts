@@ -602,6 +602,152 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
+  /**
+   * Apply a bulk tier-level adjustment via the new transaction-wrapped
+   * endpoint. Either every selected tier updates or none do — partial
+   * failure is impossible. Returns per-tier undoData the caller can
+   * stash for a 30-second "Undo" toast.
+   *
+   * Optimistic updates: applies the change locally first, then awaits
+   * the server. On 4xx/5xx, rolls back to the captured before-state.
+   *
+   * Operations:
+   *   adjust  — add a constant to every selected tier's closer (setter
+   *             auto-derives as closer + 0.10).
+   *   spread  — set closer = kilo + spread per tier index.
+   */
+  type BulkSelection = { productId: string; tierIndex: number; isSolarTech: boolean };
+  type BulkAdjustResult = {
+    affected: number;
+    skipped: Array<{ productId: string; tierIndex: number; reason: string }>;
+    undoData: Array<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>;
+  };
+  const applyBulkTierAdjust = async (
+    op:
+      | { operation: 'adjust'; adjustment: number }
+      | { operation: 'spread'; spreadByTierIndex: Record<string, number> },
+    selections: ReadonlyArray<BulkSelection>,
+  ): Promise<BulkAdjustResult> => {
+    if (selections.length === 0) {
+      return { affected: 0, skipped: [], undoData: [] };
+    }
+
+    // Snapshot pre-change state so we can roll back optimistic updates
+    // on server reject. Pulled from current local state — not the API
+    // response — so rollback is instant.
+    const localBefore = new Map<string, { closerPerW: number; setterPerW: number; kiloPerW: number }>();
+    for (const sel of selections) {
+      const key = `${sel.productId}::${sel.tierIndex}`;
+      const sources = sel.isSolarTech
+        ? deps.setSolarTechProducts // we'll read via state below
+        : null;
+      // For PC, we don't have direct getter; reading via setter callback.
+      // Instead: pull from the pricing version arrays below.
+      void sources;
+      // Snapshot will be filled in via the optimistic update step below.
+      void key;
+    }
+
+    // Optimistic local update + capture before-state in one pass.
+    const applyLocal = (tier: { closerPerW: number; setterPerW: number; kiloPerW: number }): { closerPerW: number; setterPerW: number; kiloPerW: number } => {
+      let newCloser: number;
+      if (op.operation === 'adjust') {
+        newCloser = Math.round((tier.closerPerW + op.adjustment) * 100) / 100;
+      } else {
+        // For 'spread' the caller is responsible for tier-index→spread map; fallback no-op
+        newCloser = tier.closerPerW;
+      }
+      return {
+        closerPerW: newCloser,
+        setterPerW: Math.round((newCloser + 0.10) * 100) / 100,
+        kiloPerW: tier.kiloPerW,
+      };
+    };
+
+    // Apply optimistic updates per state slice.
+    const stTouched = selections.filter((s) => s.isSolarTech);
+    const pcTouched = selections.filter((s) => !s.isSolarTech);
+
+    if (stTouched.length > 0) {
+      setSolarTechProducts((prev) => prev.map((p) => {
+        const matchingSels = stTouched.filter((s) => s.productId === p.id);
+        if (matchingSels.length === 0) return p;
+        const newTiers = p.tiers.map((t, i) => {
+          const sel = matchingSels.find((s) => s.tierIndex === i);
+          if (!sel) return t;
+          localBefore.set(`${p.id}::${i}`, { closerPerW: t.closerPerW, setterPerW: t.setterPerW ?? t.closerPerW + 0.10, kiloPerW: t.kiloPerW });
+          if (op.operation === 'spread') {
+            const spread = op.spreadByTierIndex[String(i)];
+            if (typeof spread !== 'number') return t;
+            const newCloser = Math.round((t.kiloPerW + spread) * 100) / 100;
+            return { ...t, closerPerW: newCloser, setterPerW: Math.round((newCloser + 0.10) * 100) / 100 };
+          }
+          const next = applyLocal({ closerPerW: t.closerPerW, setterPerW: t.setterPerW ?? t.closerPerW + 0.10, kiloPerW: t.kiloPerW });
+          return { ...t, closerPerW: next.closerPerW, setterPerW: next.setterPerW };
+        });
+        return { ...p, tiers: newTiers };
+      }));
+    }
+    if (pcTouched.length > 0) {
+      setProductCatalogProducts((prev) => prev.map((p) => {
+        const matchingSels = pcTouched.filter((s) => s.productId === p.id);
+        if (matchingSels.length === 0) return p;
+        const newTiers = p.tiers.map((t, i) => {
+          const sel = matchingSels.find((s) => s.tierIndex === i);
+          if (!sel) return t;
+          localBefore.set(`${p.id}::${i}`, { closerPerW: t.closerPerW, setterPerW: t.setterPerW, kiloPerW: t.kiloPerW });
+          if (op.operation === 'spread') {
+            const spread = op.spreadByTierIndex[String(i)];
+            if (typeof spread !== 'number') return t;
+            const newCloser = Math.round((t.kiloPerW + spread) * 100) / 100;
+            return { ...t, closerPerW: newCloser, setterPerW: Math.round((newCloser + 0.10) * 100) / 100 };
+          }
+          const next = applyLocal({ closerPerW: t.closerPerW, setterPerW: t.setterPerW, kiloPerW: t.kiloPerW });
+          return { ...t, closerPerW: next.closerPerW, setterPerW: next.setterPerW };
+        });
+        return { ...p, tiers: newTiers };
+      }));
+    }
+
+    // POST to the batch endpoint.
+    const body = op.operation === 'adjust'
+      ? { operation: 'adjust', adjustment: op.adjustment, selections: selections.map((s) => ({ productId: s.productId, tierIndex: s.tierIndex })) }
+      : { operation: 'spread', spreadByTierIndex: op.spreadByTierIndex, selections: selections.map((s) => ({ productId: s.productId, tierIndex: s.tierIndex })) };
+
+    const res = await fetch('/api/baselines/bulk-tier-adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      // Roll back optimistic updates from the captured snapshot.
+      const rollback = (productId: string, tierIndex: number, before: { closerPerW: number; setterPerW: number; kiloPerW: number }) => {
+        const isSt = stTouched.some((s) => s.productId === productId && s.tierIndex === tierIndex);
+        if (isSt) {
+          setSolarTechProducts((prev) => prev.map((p) => p.id !== productId ? p : {
+            ...p,
+            tiers: p.tiers.map((t, i) => i !== tierIndex ? t : { ...t, closerPerW: before.closerPerW, setterPerW: before.setterPerW }),
+          }));
+        } else {
+          setProductCatalogProducts((prev) => prev.map((p) => p.id !== productId ? p : {
+            ...p,
+            tiers: p.tiers.map((t, i) => i !== tierIndex ? t : { ...t, closerPerW: before.closerPerW, setterPerW: before.setterPerW }),
+          }));
+        }
+      };
+      for (const [key, before] of localBefore.entries()) {
+        const [productId, tierIndexStr] = key.split('::');
+        rollback(productId, parseInt(tierIndexStr, 10), before);
+      }
+      const text = await res.text().catch(() => '');
+      throw new Error(`Bulk adjust failed: ${res.status} ${text}`);
+    }
+
+    const result = await res.json() as BulkAdjustResult;
+    return result;
+  };
+
   const addProductCatalogPricingVersion = (version: ProductCatalogPricingVersion) =>
     setProductCatalogPricingVersions((prev) => [...prev, version]);
 
@@ -816,6 +962,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     addSolarTechProduct,
     removeSolarTechProduct,
     restoreProduct,
+    applyBulkTierAdjust,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,

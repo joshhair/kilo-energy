@@ -120,6 +120,14 @@ interface AppContextType {
   }) => Promise<string>;
   removeSolarTechProduct: (id: string) => Promise<void>;
   restoreProduct: (id: string) => Promise<void>;
+  applyBulkTierAdjust: (
+    op: { operation: 'adjust'; adjustment: number } | { operation: 'spread'; spreadByTierIndex: Record<string, number> },
+    selections: ReadonlyArray<{ productId: string; tierIndex: number; isSolarTech: boolean }>,
+  ) => Promise<{
+    affected: number;
+    skipped: Array<{ productId: string; tierIndex: number; reason: string }>;
+    undoData: Array<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>;
+  }>;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
   updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   removeProductCatalogProduct: (id: string) => Promise<void>;
@@ -1180,7 +1188,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updateInstallerBaseline, addInstallerBaseline,
     addInstallerPricingVersion, updateInstallerPricingVersion, createNewInstallerVersion,
     updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
-    removeSolarTechProduct, restoreProduct,
+    removeSolarTechProduct, restoreProduct, applyBulkTierAdjust,
     addProductCatalogInstaller, updateProductCatalogInstallerConfig,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -1429,6 +1437,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addSolarTechProduct,
         removeSolarTechProduct,
         restoreProduct,
+        applyBulkTierAdjust,
         updateProductCatalogProduct,
         updateProductCatalogTier,
         removeProductCatalogProduct,
