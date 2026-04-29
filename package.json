@@ -11,6 +11,7 @@
     "check:schema": "node scripts/check-schema-drift.mjs",
     "check:sensitivity": "node scripts/check-sensitivity-coverage.mjs",
     "check:audit": "node scripts/check-audit-coverage.mjs",
+    "check:privacy-gate": "node scripts/check-privacy-gate-coverage.mjs",
     "snapshot:turso-schema": "tsx scripts/snapshot-turso-schema.mts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

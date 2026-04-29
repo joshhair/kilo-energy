@@ -199,6 +199,9 @@ export function projectMessageVisibilityWhere(): Prisma.ProjectMessageWhereInput
 export function projectActivityVisibilityWhere(): Prisma.ProjectActivityWhereInput {
   return projectScopedWhere();
 }
+export function projectNoteVisibilityWhere(): Prisma.ProjectNoteWhereInput {
+  return projectScopedWhere();
+}
 export function projectMentionVisibilityWhere(): Prisma.ProjectMentionWhereInput {
   // Mentions also filter on the message (which lives on a project), but
   // mention rows are per-user, so a user only sees mentions targeted at
@@ -515,6 +518,30 @@ export const db = prisma.$extends({
       },
       async aggregate({ args, query }) {
         args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectNote: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectNoteVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectNoteVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectNote.findFirst({
+          where: { AND: [{ id: result.id }, projectNoteVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectNoteVisibilityWhere());
         return query(args);
       },
     },
