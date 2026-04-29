@@ -2,14 +2,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Plus, Pencil, Check, X, EyeOff, Eye, Trash2, Search,
+  Plus, Pencil, Check, X, EyeOff, Eye, Trash2,
   ChevronRight, ChevronDown, CreditCard, DollarSign,
   ListChecks, CheckSquare, Square, Building2,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
+import { validateName } from '../../../../lib/validation';
 import { ProductCatalogInstallerConfig, DEFAULT_INSTALL_PAY_PCT } from '../../../../lib/data';
+import { EmptyState } from '../../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
+import { PrimaryButton, TextInput, FormField, SearchInput } from '@/components/ui';
 
 export interface InstallersSectionProps {
   editingPrepaid: string | null;
@@ -67,15 +70,22 @@ export function InstallersSection({
       <div className="card-surface rounded-2xl p-5 mb-4">
         <h2 className="text-[var(--text-primary)] font-semibold mb-3">Add Installer</h2>
         {(() => {
-          const installerDup = newInstaller.trim().length > 0 && installers.some((i) => i.name.toLowerCase() === newInstaller.trim().toLowerCase());
+          const validation = newInstaller.trim().length > 0
+            ? validateName(newInstaller, { siblings: installers.map((i) => ({ id: i.name, name: i.name })) })
+            : null;
+          const installerDup = validation?.ok === false;
           return (<>
-        <input
-          type="text" placeholder="Installer name"
-          value={newInstaller}
-          onChange={(e) => setNewInstaller(e.target.value)}
-          className={`w-full ${installerDup ? 'mb-1' : 'mb-3'} bg-[var(--surface-card)] border ${installerDup ? 'border-red-500 focus:ring-red-500' : 'border-[var(--border)] focus:ring-[var(--accent-emerald-solid)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 placeholder-[var(--text-dim)]`}
-        />
-        {installerDup && <p className="text-[var(--accent-red-text)] text-[10px] mb-2">Already exists</p>}
+        <FormField
+          className="mb-3"
+          error={validation && !validation.ok ? validation.reason : undefined}
+        >
+          <TextInput
+            placeholder="Installer name"
+            value={newInstaller}
+            onChange={(e) => setNewInstaller(e.target.value)}
+            invalid={installerDup}
+          />
+        </FormField>
         {/* Pricing structure selector */}
         <div className="flex gap-2 mb-3">
           {(['standard', 'product-catalog'] as const).map((s) => (
@@ -94,20 +104,26 @@ export function InstallersSection({
         </div>
         {newInstallerStructure === 'standard' ? (
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs text-[var(--text-muted)] mb-1">Closer $/W</label>
-              <input type="number" step="0.01" min="0" placeholder="2.90"
-                value={newInstallerCloser} onChange={(e) => setNewInstallerCloser(e.target.value)}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
+            <FormField label="Closer $/W">
+              <TextInput
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="2.90"
+                value={newInstallerCloser}
+                onChange={(e) => setNewInstallerCloser(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--text-muted)] mb-1">Kilo $/W</label>
-              <input type="number" step="0.01" min="0" placeholder="2.35"
-                value={newInstallerKilo} onChange={(e) => setNewInstallerKilo(e.target.value)}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
+            </FormField>
+            <FormField label="Kilo $/W">
+              <TextInput
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="2.35"
+                value={newInstallerKilo}
+                onChange={(e) => setNewInstallerKilo(e.target.value)}
               />
-            </div>
+            </FormField>
           </div>
         ) : (
           <div className="mb-3 space-y-2">
@@ -135,11 +151,12 @@ export function InstallersSection({
             </button>
           </div>
         )}
-        <button
+        <PrimaryButton
+          className="w-full"
           disabled={!newInstaller.trim() || installerDup || (newInstallerStructure === 'product-catalog' && newPcFamilies.filter((f) => f.trim()).length === 0)}
           onClick={() => {
-            if (!newInstaller.trim() || installerDup) return;
-            const name = newInstaller.trim();
+            if (!newInstaller.trim() || installerDup || !validation?.ok) return;
+            const name = validation.value;
             if (newInstallerStructure === 'standard') {
               const closerRate = parseFloat(newInstallerCloser) || 2.90;
               const kiloRate = parseFloat(newInstallerKilo) || 2.35;
@@ -158,29 +175,20 @@ export function InstallersSection({
             setNewInstallerStructure('standard');
             setNewPcFamilies(['']);
           }}
-          className="w-full flex items-center justify-center gap-2 text-[var(--text-primary)] text-sm font-medium py-2 rounded-xl active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ backgroundColor: 'var(--brand)' }}
         >
           <Plus className="w-4 h-4" /> Add Installer
-        </button>
+        </PrimaryButton>
         <p className="text-xs text-[var(--text-dim)] mt-2">Standard: flat rate · Product Catalog: SolarTech-style per-product pricing</p>
         </>); })()}
       </div>
 
       {installers.length === 0 && (
-        <div className="card-surface rounded-2xl p-5 border border-[var(--border-subtle)]/60">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10 flex-shrink-0">
-              <Building2 className="w-4 h-4 text-[var(--accent-emerald-text)]" />
-            </div>
-            <div>
-              <p className="text-[var(--text-primary)] font-medium text-sm mb-1">No installers yet</p>
-              <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                Installers are the companies that handle solar panel installation. Add your first installer above to start configuring pricing baselines and creating deals.
-              </p>
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="No installers yet"
+          description="Installers are the companies that handle solar panel installation. Add your first installer above to start configuring pricing baselines and creating deals."
+          variant="inline"
+        />
       )}
 
       {installers.some((i) => i.active) && (() => {
@@ -220,15 +228,12 @@ export function InstallersSection({
               </button>
             </div>
           )}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
-            <input
-              type="text" placeholder="Search installers..."
-              value={installerSearch}
-              onChange={(e) => setInstallerSearch(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]"
-            />
-          </div>
+          <SearchInput
+            className="mb-3"
+            placeholder="Search installers..."
+            value={installerSearch}
+            onChange={(e) => setInstallerSearch(e.target.value)}
+          />
           <div className="space-y-2">
             {filteredActive.map((inst) => {
               const instPrepaid = getInstallerPrepaidOptions(inst.name);
