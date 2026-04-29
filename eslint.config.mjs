@@ -172,6 +172,23 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // Strict a11y for the shared UI primitives (PR 2 + PR 18).
+    // These primitives ship to every Settings panel — a11y bugs there
+    // are amplified across the app. Promote the next/jsx-a11y rules
+    // that aren't in the default curated set to ERROR level here only,
+    // so new primitives are forced to be keyboard-accessible from day 1.
+    // The rest of the codebase keeps the next-curated warn-level rules.
+    files: ["components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-static-element-interactions": "error",
+      "jsx-a11y/no-noninteractive-element-interactions": "error",
+      "jsx-a11y/label-has-associated-control": "error",
+      "jsx-a11y/no-autofocus": "error",
+      "jsx-a11y/anchor-is-valid": "error",
+    },
+  },
+  {
     // Privacy-gate enforcement: ban direct prisma imports outside of
     // explicitly-allowed admin paths. New routes must use `db` from
     // `@/lib/db-gated` so the visibility WHERE is injected automatically.
