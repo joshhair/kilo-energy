@@ -41,7 +41,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkTierAdjust,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -855,7 +855,21 @@ export function BaselinesSection({
                 try {
                   const result = await applyBulkTierAdjust({ operation: 'adjust', adjustment: adjVal }, selections);
                   if (result.skipped.length > 0) console.warn('[bulk-adjust] skipped:', result.skipped);
-                  toast(`Closer adjusted by $${adjVal >= 0 ? '+' : ''}${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`, 'success');
+                  toast(
+                    `Closer ${adjVal >= 0 ? '+' : ''}$${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`,
+                    'success',
+                    result.affected > 0 ? {
+                      label: 'Undo',
+                      onClick: async () => {
+                        try {
+                          await undoBulkTierAdjust(result.undoData);
+                          toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
+                        } catch (err) {
+                          toast(err instanceof Error ? err.message : 'Undo failed', 'error');
+                        }
+                      },
+                    } : undefined,
+                  );
                   setBulkRateAdj('');
                 } catch (err) {
                   const msg = err instanceof Error ? err.message : 'Bulk adjust failed';
@@ -871,7 +885,21 @@ export function BaselinesSection({
                 try {
                   const result = await applyBulkTierAdjust({ operation: 'spread', spreadByTierIndex }, selections);
                   if (result.skipped.length > 0) console.warn('[bulk-spread] skipped:', result.skipped);
-                  toast(`Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`, 'success');
+                  toast(
+                    `Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`,
+                    'success',
+                    result.affected > 0 ? {
+                      label: 'Undo',
+                      onClick: async () => {
+                        try {
+                          await undoBulkTierAdjust(result.undoData);
+                          toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
+                        } catch (err) {
+                          toast(err instanceof Error ? err.message : 'Undo failed', 'error');
+                        }
+                      },
+                    } : undefined,
+                  );
                   setBulkSpreadInputs(['', '', '', '']);
                 } catch (err) {
                   toast(err instanceof Error ? err.message : 'Bulk spreads failed', 'error');
@@ -1204,9 +1232,23 @@ export function BaselinesSection({
               const selections = targetProducts.flatMap((p) => p.tiers.map((_t, ti) => ({ productId: p.id, tierIndex: ti, isSolarTech: true })));
               try {
                 const result = await applyBulkTierAdjust({ operation: 'adjust', adjustment: adjVal }, selections);
-                const skippedNote = result.skipped.length > 0 ? ` (${result.skipped.length} skipped — see browser console)` : '';
+                const skippedNote = result.skipped.length > 0 ? ` (${result.skipped.length} skipped)` : '';
                 if (result.skipped.length > 0) console.warn('[bulk-adjust] skipped:', result.skipped);
-                toast(`Closer adjusted by $${adjVal >= 0 ? '+' : ''}${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}${skippedNote}`, 'success');
+                toast(
+                  `Closer ${adjVal >= 0 ? '+' : ''}$${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}${skippedNote}`,
+                  'success',
+                  result.affected > 0 ? {
+                    label: 'Undo',
+                    onClick: async () => {
+                      try {
+                        await undoBulkTierAdjust(result.undoData);
+                        toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
+                      } catch (err) {
+                        toast(err instanceof Error ? err.message : 'Undo failed', 'error');
+                      }
+                    },
+                  } : undefined,
+                );
                 setBulkRateAdj('');
               } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Bulk adjust failed';
@@ -1226,7 +1268,21 @@ export function BaselinesSection({
               try {
                 const result = await applyBulkTierAdjust({ operation: 'spread', spreadByTierIndex }, selections);
                 if (result.skipped.length > 0) console.warn('[bulk-spread] skipped:', result.skipped);
-                toast(`Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}`, 'success');
+                toast(
+                  `Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}`,
+                  'success',
+                  result.affected > 0 ? {
+                    label: 'Undo',
+                    onClick: async () => {
+                      try {
+                        await undoBulkTierAdjust(result.undoData);
+                        toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
+                      } catch (err) {
+                        toast(err instanceof Error ? err.message : 'Undo failed', 'error');
+                      }
+                    },
+                  } : undefined,
+                );
                 setBulkSpreadInputs(['', '', '', '']);
               } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Bulk spreads failed';

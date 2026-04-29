@@ -49,6 +49,17 @@ const bulkAdjustSchema = z.discriminatedUnion('operation', [
     selections: z.array(tierSelectionSchema).min(1).max(500),
     spreadByTierIndex: z.record(z.string(), z.number().finite().min(0).max(10)),
   }),
+  // Restore operation — replays the exact before-state from a previous
+  // bulk apply's undoData. Used to implement the 30-second "Undo"
+  // toast on the client. Same authorization gating as adjust/spread.
+  z.object({
+    operation: z.literal('restore'),
+    restorePoints: z.array(z.object({
+      tierId: z.string().min(1),
+      closerPerW: z.number().finite().min(0).max(20),
+      setterPerW: z.number().finite().min(0).max(20),
+    })).min(1).max(500),
+  }),
 ]);
 
 // Magnitude thresholds for step-up requirements. A bulk op above any of
@@ -69,13 +80,48 @@ export async function POST(req: NextRequest) {
   const body = parsed.data;
 
   // Magnitude guard — step-up auth for large or high-impact ops.
-  const isLarge = body.selections.length > MAGNITUDE_THRESHOLDS.selectionCount;
+  // Restore ops are exempt (they're an undo, the threshold was already
+  // checked when the original bulk apply landed).
+  const selectionCount = body.operation === 'restore' ? body.restorePoints.length : body.selections.length;
+  const isLarge = body.operation !== 'restore' && selectionCount > MAGNITUDE_THRESHOLDS.selectionCount;
   const isHighSwing = body.operation === 'adjust' && Math.abs(body.adjustment) > MAGNITUDE_THRESHOLDS.adjustmentMagnitude;
   if (isLarge || isHighSwing) {
     try {
       await requireFreshAdmin(600);
     } catch (r) {
       return r as NextResponse;
+    }
+  }
+
+  // Restore-operation short circuit: skip the per-tier compute / sanity
+  // check since we're explicitly setting back to known-good prior values.
+  if (body.operation === 'restore') {
+    try {
+      await prisma.$transaction(
+        body.restorePoints.map((rp) => prisma.productPricingTier.update({
+          where: { id: rp.tierId },
+          data: { closerPerW: rp.closerPerW, setterPerW: rp.setterPerW },
+        })),
+      );
+      for (const rp of body.restorePoints) {
+        await logChange({
+          actor: { id: actor.id, email: actor.email },
+          action: 'bulk_tier_undo',
+          entityType: 'ProductPricingVersion',
+          entityId: rp.tierId,
+          after: { closerPerW: rp.closerPerW, setterPerW: rp.setterPerW },
+        });
+      }
+      recordAdminAction({
+        actorId: actor.id,
+        action: 'baseline.tier.bulk_undo',
+        severity: 'normal',
+        target: { tiersRestored: body.restorePoints.length },
+      });
+      return NextResponse.json({ success: true, restored: body.restorePoints.length });
+    } catch (err) {
+      logger.error('bulk_tier_restore_failed', { actorId: actor.id, ...errorContext(err) });
+      return NextResponse.json({ error: 'Bulk restore failed' }, { status: 500 });
     }
   }
 

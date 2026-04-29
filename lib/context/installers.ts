@@ -748,6 +748,64 @@ export function createInstallerActions(deps: InstallerDeps) {
     return result;
   };
 
+  /**
+   * Replay an explicit set of (tierId, closerPerW, setterPerW) tuples
+   * to undo a previous bulk operation. Server wraps in a single
+   * transaction. Local optimistic update mirrors the restore values
+   * across both PC and SolarTech state slices.
+   *
+   * Caller responsible for passing the restorePoints from a recent
+   * bulk-adjust's response. The 30-second window is policy-only —
+   * server happily restores anytime as long as the actor is admin.
+   */
+  const undoBulkTierAdjust = async (
+    restorePoints: ReadonlyArray<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>,
+  ): Promise<{ restored: number }> => {
+    if (restorePoints.length === 0) return { restored: 0 };
+
+    // Optimistic local rollback to before-state.
+    setSolarTechProducts((prev) => prev.map((p) => {
+      const matchingRPs = restorePoints.filter((rp) => rp.productId === p.id);
+      if (matchingRPs.length === 0) return p;
+      return {
+        ...p,
+        tiers: p.tiers.map((t, i) => {
+          const rp = matchingRPs.find((r) => r.tierIndex === i);
+          return rp ? { ...t, closerPerW: rp.before.closerPerW, setterPerW: rp.before.setterPerW } : t;
+        }),
+      };
+    }));
+    setProductCatalogProducts((prev) => prev.map((p) => {
+      const matchingRPs = restorePoints.filter((rp) => rp.productId === p.id);
+      if (matchingRPs.length === 0) return p;
+      return {
+        ...p,
+        tiers: p.tiers.map((t, i) => {
+          const rp = matchingRPs.find((r) => r.tierIndex === i);
+          return rp ? { ...t, closerPerW: rp.before.closerPerW, setterPerW: rp.before.setterPerW } : t;
+        }),
+      };
+    }));
+
+    const res = await fetch('/api/baselines/bulk-tier-adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        operation: 'restore',
+        restorePoints: restorePoints.map((rp) => ({
+          tierId: rp.tierId,
+          closerPerW: rp.before.closerPerW,
+          setterPerW: rp.before.setterPerW,
+        })),
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Undo failed: ${res.status} ${text}`);
+    }
+    return await res.json() as { restored: number };
+  };
+
   const addProductCatalogPricingVersion = (version: ProductCatalogPricingVersion) =>
     setProductCatalogPricingVersions((prev) => [...prev, version]);
 
@@ -963,6 +1021,7 @@ export function createInstallerActions(deps: InstallerDeps) {
     removeSolarTechProduct,
     restoreProduct,
     applyBulkTierAdjust,
+    undoBulkTierAdjust,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,
