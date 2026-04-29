@@ -230,6 +230,12 @@ export async function GET() {
       include: { tiers: true },
       orderBy: { effectiveFrom: 'desc' },
     }),
+    // Active products only by default. Archived products (active=false)
+    // are surfaced via the dedicated /api/products?archived=1 admin
+    // endpoint or by the Archived-tab toggle in the Baselines UI, which
+    // calls the existing list endpoints. Keeping the main hydration
+    // payload free of archived rows means rep / sub-dealer / vendor PM
+    // contexts never see soft-deleted products.
     prisma.product.findMany({
       where: { active: true },
       include: {

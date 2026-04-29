@@ -118,6 +118,8 @@ interface AppContextType {
     idempotencyKey?: string;
     reason?: string;
   }) => Promise<string>;
+  removeSolarTechProduct: (id: string) => Promise<void>;
+  restoreProduct: (id: string) => Promise<void>;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
   updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   removeProductCatalogProduct: (id: string) => Promise<void>;
@@ -1178,6 +1180,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updateInstallerBaseline, addInstallerBaseline,
     addInstallerPricingVersion, updateInstallerPricingVersion, createNewInstallerVersion,
     updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
+    removeSolarTechProduct, restoreProduct,
     addProductCatalogInstaller, updateProductCatalogInstallerConfig,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -1424,6 +1427,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateProductCatalogInstallerConfig,
         addProductCatalogProduct,
         addSolarTechProduct,
+        removeSolarTechProduct,
+        restoreProduct,
         updateProductCatalogProduct,
         updateProductCatalogTier,
         removeProductCatalogProduct,

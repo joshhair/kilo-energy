@@ -33,6 +33,46 @@ function lookupIdempotency(key: string): string | null {
   return hit.productId;
 }
 
+// GET /api/products?archived=1 — List archived products (admin only).
+// Used by the Baselines "Archived" tab to render restore-eligible
+// products without polluting the main hydration payload at /api/data.
+export async function GET(req: NextRequest) {
+  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  const archived = req.nextUrl.searchParams.get('archived') === '1';
+  const where = archived ? { active: false } : { active: true };
+  const rows = await prisma.product.findMany({
+    where,
+    include: {
+      installer: { select: { name: true } },
+      pricingVersions: {
+        include: { tiers: true },
+        orderBy: { effectiveFrom: 'desc' },
+      },
+    },
+    orderBy: [{ family: 'asc' }, { name: 'asc' }],
+  });
+  // Project-reference counts surface in the UI's cascade-analysis modal
+  // and the hard-delete eligibility check.
+  const refCounts = await Promise.all(rows.map((p) =>
+    prisma.project.count({ where: { productId: p.id } }).then((n) => [p.id, n] as const),
+  ));
+  const refMap = Object.fromEntries(refCounts);
+  return NextResponse.json({
+    products: rows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      family: p.family,
+      installerName: p.installer.name,
+      active: p.active,
+      projectRefs: refMap[p.id] ?? 0,
+      versionCount: p.pricingVersions.length,
+      latestVersion: p.pricingVersions[0]
+        ? { label: p.pricingVersions[0].label, effectiveFrom: p.pricingVersions[0].effectiveFrom, effectiveTo: p.pricingVersions[0].effectiveTo }
+        : null,
+    })),
+  });
+}
+
 // POST /api/products — Create a new product (Product Catalog OR SolarTech).
 // Admin-only. The product lives in the same table regardless of which
 // installer family it belongs to; the SolarTech-vs-PC distinction is just

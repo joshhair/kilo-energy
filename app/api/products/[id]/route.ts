@@ -3,6 +3,8 @@ import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProductSchema } from '../../../../lib/schemas/pricing';
+import { logChange } from '../../../../lib/audit';
+import { recordAdminAction } from '../../../../lib/anomaly-detector';
 
 // PATCH /api/products/[id] — Update product name or replace active version tiers (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -74,11 +76,50 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 // DELETE /api/products/[id] — Soft-archive a product (admin only).
-// Hard delete is intentionally avoided: existing projects reference this product via
-// installerProductId; deleting it would orphan those FKs and break commission recompute.
+//
+// Sets active=false. Existing projects that reference this product via
+// productId continue to resolve historical commission lookups (the row
+// stays in the DB; the version chain stays intact). The Baselines UI
+// hides archived products from the active tab; an "Archived" tab toggle
+// surfaces them with a Restore action (POST /api/products/[id]/restore).
+//
+// Hard-delete is a separate endpoint with stricter gating — see the
+// hard-delete handler below.
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const before = await prisma.product.findUnique({
+    where: { id },
+    select: { id: true, name: true, family: true, installerId: true, active: true },
+  });
+  if (!before) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+  // Cascade analysis — surface project / version counts so the caller
+  // can decide. Does not block archive; archive is always safe (the
+  // row is preserved). Used by the UI to render the confirmation modal.
+  const [projectRefs, pricingVersions] = await Promise.all([
+    prisma.project.count({ where: { productId: id } }),
+    prisma.productPricingVersion.count({ where: { productId: id } }),
+  ]);
+
   await prisma.product.update({ where: { id }, data: { active: false } });
-  return NextResponse.json({ success: true });
+
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'archive',
+    entityType: 'Product',
+    entityId: id,
+    before: { active: before.active, name: before.name, family: before.family },
+    after: { active: false },
+  });
+  recordAdminAction({
+    actorId: actor.id,
+    action: 'baseline.product.archive',
+    severity: 'normal',
+    target: { productId: id, family: before.family, projectRefs, pricingVersions },
+  });
+
+  return NextResponse.json({ success: true, archived: true, projectRefs, pricingVersions });
 }

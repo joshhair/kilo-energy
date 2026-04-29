@@ -41,7 +41,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -1198,7 +1198,25 @@ export function BaselinesSection({
                             {stIsArchive ? (archiveVersion ? archiveVersion.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-1 items-center"><span className="text-[var(--accent-emerald-text)]/60 font-medium text-xs">${tier.closerPerW.toFixed(2)}</span><span className="text-[var(--accent-emerald-text)]/50 text-xs">${tier.kiloPerW.toFixed(2)}</span>{showSubDealerRates && <span className="text-[var(--accent-amber-text)]/50 text-xs">{(tier as { subDealerPerW?: number | null }).subDealerPerW != null ? `$${(tier as { subDealerPerW: number }).subDealerPerW.toFixed(2)}` : '\u2014'}</span>}</div></td>)) : <td colSpan={4} className="px-4 py-3 text-center text-[var(--text-dim)] text-xs">No version data</td>) : (
                               product.tiers.map((tier, ti) => (<td key={ti} className="px-2 py-2 text-center"><div className="flex flex-col gap-0.5 items-center"><input ref={(el) => setTierInputRef(`${product.id}-${ti}-closer`, el)} type="number" step="0.01" min="0" value={tier.closerPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { closerPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'closer')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)] font-medium rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'closer', tier.closerPerW)}<input ref={(el) => setTierInputRef(`${product.id}-${ti}-kilo`, el)} type="number" step="0.01" min="0" value={tier.kiloPerW} onFocus={(e) => e.target.select()} onChange={(e) => updateSolarTechTier(product.id, ti, { kiloPerW: parseFloat(e.target.value) || 0 })} onKeyDown={(e) => handleTierKeyDown(e, stDisplayProductIds, product.id, ti, 'kilo')} className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--accent-emerald-text)]/80 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]" />{renderDeltaBadge(product.id, ti, 'kilo', tier.kiloPerW)}{showSubDealerRates && <input type="number" step="0.01" min="0" value={tier.subDealerPerW ?? ''} placeholder="\u2014" onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value === '' ? undefined : parseFloat(e.target.value) || 0; updateSolarTechTier(product.id, ti, { subDealerPerW: val }); }} className="w-16 bg-[var(--surface-card)] border border-amber-700/50 text-[var(--accent-amber-text)] rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-amber-500" />}</div></td>))
                             )}
-                            <td className="px-4 py-3 text-center">{!stIsArchive && (<div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button></div>)}</td>
+                            <td className="px-4 py-3 text-center">{!stIsArchive && (
+                              <div className="flex items-center gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => { setPcNewVersionFor(product.id); setPcNewVersionLabel(suggestVersionLabel()); setPcNewVersionEffectiveFrom(''); setPcNewVersionTiers(product.tiers.map((t) => ({ closerPerW: String(t.closerPerW), kiloPerW: String(t.kiloPerW) }))); }} title="Create new pricing version" className="text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] transition-colors"><GitBranch className="w-3.5 h-3.5" /></button>
+                                <button
+                                  onClick={() => setConfirmAction({
+                                    title: `Archive "${product.name}"?`,
+                                    message: `This product will be hidden from the active ${stFamily} tab. Existing projects that reference it will continue to resolve commission lookups against the historical pricing version. You can restore it from the Archived tab.`,
+                                    onConfirm: async () => {
+                                      try { await removeSolarTechProduct(product.id); toast(`Archived "${product.name}"`, 'success'); }
+                                      catch (err) { toast(err instanceof Error ? err.message : 'Failed to archive product', 'error'); }
+                                    },
+                                  })}
+                                  title="Archive product"
+                                  className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}</td>
                           </tr>
                         );
                       })}

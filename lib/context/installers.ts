@@ -568,6 +568,40 @@ export function createInstallerActions(deps: InstallerDeps) {
     setProductCatalogProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
+  /**
+   * Soft-archive a SolarTech product. Sets the underlying Product row's
+   * active=false (same DELETE endpoint as Product Catalog — they share
+   * the Product table). The row stays in the DB so historical projects
+   * referencing it via productId still resolve. The UI hides archived
+   * products from the active SolarTech tab; an "Archived" tab toggle
+   * (rendered separately) surfaces them with a Restore action.
+   *
+   * Note: hard-delete is intentionally not supported here. To permanently
+   * remove a product, an admin must (a) verify zero project references,
+   * (b) ack via the hard-delete API endpoint with step-up auth. That
+   * flow lives outside this context action.
+   */
+  const removeSolarTechProduct = async (id: string) => {
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete product: ${res.status}`);
+    setSolarTechProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  /**
+   * Restore an archived product (PC or SolarTech) by setting active=true.
+   * Caller passes a fresh product payload (we don't have the row in
+   * memory once archived); after the API confirms, the product reappears
+   * in /api/data on the next reload. Local-state insertion is best-effort
+   * and not strictly required — the context will rehydrate from server.
+   */
+  const restoreProduct = async (id: string): Promise<void> => {
+    const res = await fetch(`/api/products/${id}/restore`, { method: 'POST' });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to restore product: ${res.status} ${text}`);
+    }
+  };
+
   const addProductCatalogPricingVersion = (version: ProductCatalogPricingVersion) =>
     setProductCatalogPricingVersions((prev) => [...prev, version]);
 
@@ -780,6 +814,8 @@ export function createInstallerActions(deps: InstallerDeps) {
     updateProductCatalogInstallerConfig,
     addProductCatalogProduct,
     addSolarTechProduct,
+    removeSolarTechProduct,
+    restoreProduct,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,
