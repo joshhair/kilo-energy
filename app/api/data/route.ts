@@ -4,6 +4,10 @@ import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM, 
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
+import {
+  canViewKiloOnBaselineTier,
+  canViewKiloOnProjectOverride,
+} from '../../../lib/baseline-visibility';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -17,6 +21,12 @@ export async function GET() {
   const isPM = user.role === 'project_manager';
   const isRep = user.role === 'rep';
   const isSubDealer = user.role === 'sub-dealer';
+  // Routed through lib/baseline-visibility helpers so the privacy
+  // contract has one source of truth (tested in
+  // tests/unit/baseline-visibility.test.ts). DO NOT inline new
+  // role-based pricing-visibility checks — extend the helpers instead.
+  const showKiloOnTier = canViewKiloOnBaselineTier({ role: user.role });
+  const showKiloOnProjectOverride = canViewKiloOnProjectOverride({ role: user.role });
   // Vendor PM (role=project_manager AND scopedInstallerId set): sees only
   // projects whose installerId matches their scope. No payroll, no
   // reimbursements, no trainer assignments, no incentives, no rep
@@ -351,7 +361,7 @@ export async function GET() {
     baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? (() => {
       let bo: Record<string, unknown> | undefined;
       try { bo = JSON.parse(p.baselineOverrideJson); } catch { bo = undefined; }
-      if (!isAdmin && bo) { delete bo.kiloPerW; }
+      if (!showKiloOnProjectOverride && bo) { delete bo.kiloPerW; }
       return bo;
     })() : undefined),
     prepaidSubType: p.prepaidSubType ?? undefined,
@@ -497,7 +507,7 @@ export async function GET() {
               maxKW: t.maxKW ?? undefined,
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
-              ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+              ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
               subDealerPerW: t.subDealerPerW ?? undefined,
             })),
           }
@@ -505,7 +515,7 @@ export async function GET() {
             type: 'flat' as const,
             closerPerW: v.tiers[0].closerPerW,
             setterPerW: v.tiers[0].setterPerW ?? undefined,
-            ...(isAdmin || isSubDealer ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
+            ...(showKiloOnTier ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
             subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
           },
     }];
@@ -536,7 +546,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+          ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -558,7 +568,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+          ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -589,7 +599,7 @@ export async function GET() {
       maxKW: t.maxKW ?? null,
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
-      ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+      ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
       subDealerPerW: t.subDealerPerW ?? undefined,
     })),
   }));
