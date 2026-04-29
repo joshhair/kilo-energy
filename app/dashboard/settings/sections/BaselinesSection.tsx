@@ -14,6 +14,7 @@ import {
 } from '../../../../lib/data';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { SectionHeader } from '../components/SectionHeader';
+import { validateName } from '../../../../lib/validation';
 
 export interface BaselinesSectionProps {
   editingInstaller: string | null;
@@ -56,43 +57,24 @@ export function BaselinesSection({
   const productNameSavedRef = useRef(false);
 
   // ── Validation: product-name rename ────────────────────────────────────────
-  // Common safety rules for any place that lets an admin set a product name:
-  // - trim and Unicode-NFC-normalize so visually-identical strings collapse
-  // - reject empty or whitespace-only
-  // - reject control characters (\x00–\x1F, \x7F) — not visible, can corrupt
-  //   downstream rendering / CSV exports / log lines
-  // - reject zero-width spaces / joiners / BOM (​–‍, ﻿) which
-  //   are invisible to humans but make duplicate-name detection trivially
-  //   bypassable
-  // - reject duplicate within the same installer+family scope (case-insensitive
-  //   after NFC normalization) — admins setting "SunPower 400" twice in Enfin
-  //   was a real issue, downstream commission lookup picks one at random
-  // Returns the cleaned name on success, or a reason string on failure.
+  // Adapter over the shared validateName helper. See lib/validation.ts for
+  // the canonical rules (NFC + length + invisible-char + dup detection).
   const validateProductName = (
     raw: string,
     currentName: string,
     siblings: ReadonlyArray<{ id: string; name: string }>,
     productId: string,
   ): { ok: true; name: string } | { ok: false; reason: string } => {
-    // NFC normalize first so that combining-char vs precomposed don't slip past
-    const normalized = raw.normalize('NFC').trim();
-    if (!normalized) return { ok: false, reason: 'Name cannot be empty' };
-    // Control characters (including \r\n which would split CSV cells)
-    if (/[\u0000-\u001F\u007F]/.test(normalized)) {
-      return { ok: false, reason: 'Name contains invisible control characters' };
-    }
-    // Zero-width spaces / joiners / BOM — invisible, defeat dedup
-    if (/[\u200B-\u200D\uFEFF]/.test(normalized)) {
-      return { ok: false, reason: 'Name contains zero-width characters' };
-    }
-    // No-op rename — silently accept (caller will skip the API call)
-    if (normalized === currentName) return { ok: true, name: normalized };
-    // Duplicate detection within the sibling scope (case-insensitive
-    // after NFC normalization). Skip self.
-    const lower = normalized.toLowerCase();
-    const dup = siblings.find((s) => s.id !== productId && s.name.normalize('NFC').toLowerCase() === lower);
-    if (dup) return { ok: false, reason: `Another product is already named "${normalized}"` };
-    return { ok: true, name: normalized };
+    // Thin adapter over shared validateName in lib/validation. Call sites
+    // pass '__NEW__' as currentName/productId for Add-Product flows to opt
+    // out of no-op-rename short-circuit.
+    const result = validateName(raw, {
+      currentName: currentName === '__NEW__' ? undefined : currentName,
+      siblings,
+      currentId: productId,
+    });
+    if (!result.ok) return result;
+    return { ok: true, name: result.value };
   };
 
   // Version state
