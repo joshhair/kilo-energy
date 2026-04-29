@@ -38,14 +38,14 @@ const mockAdminUser = {
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: a logged-in admin with a valid Clerk session.
-  (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
     userId: 'clerk_123',
     sessionClaims: { auth_time: NOW_UNIX - 60 }, // 60 seconds ago = fresh
   });
-  (currentUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (currentUser as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
     emailAddresses: [{ emailAddress: 'admin@example.com' }],
   });
-  (prisma.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockAdminUser);
+  (prisma.user.findFirst as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockAdminUser);
 });
 
 describe('requireFreshAdmin', () => {
@@ -57,7 +57,7 @@ describe('requireFreshAdmin', () => {
   });
 
   it('rejects with step_up_required when session is older than maxAge', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: 'clerk_123',
       sessionClaims: { auth_time: NOW_UNIX - 1200 }, // 20 minutes ago
     });
@@ -68,7 +68,7 @@ describe('requireFreshAdmin', () => {
   });
 
   it('rejects with step_up_required when auth_time claim is missing', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: 'clerk_123',
       sessionClaims: {}, // no auth_time
     });
@@ -79,7 +79,7 @@ describe('requireFreshAdmin', () => {
   });
 
   it('respects custom maxAge — strict 60s threshold', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: 'clerk_123',
       sessionClaims: { auth_time: NOW_UNIX - 90 }, // 90s old
     });
