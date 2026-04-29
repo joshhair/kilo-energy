@@ -121,7 +121,33 @@ const eslintConfig = defineConfig([
           selector: "Property[key.name='background'] > Literal[value=/^(white|black|#[0-9a-fA-F]{3,8})$/]",
           message: "Hardcoded background literal — use a theme token (var(--surface-card), --surface-inset-subtle, etc.).",
         },
+        // AuditLog append-only enforcement. SQLite has no GRANT/REVOKE,
+        // so we enforce immutability at the code-write boundary: any
+        // call to auditLog.update*/delete*/upsert is forbidden outside
+        // an explicit allowlist (retention sweep + GDPR erasure).
+        // Bypass requires adding the file to the allowlist below with
+        // an explicit justification — surfaces accidental mutations
+        // before they merge.
+        {
+          selector: "CallExpression[callee.object.property.name='auditLog'][callee.property.name=/^(update|updateMany|updateManyAndReturn|delete|deleteMany|upsert)$/]",
+          message: "AuditLog is append-only. Updates and deletes are forbidden outside the retention sweep (app/api/admin/retention) and GDPR erasure (app/api/users/[id]/erase). If your use case is legitimate, add the file to the allowlist in eslint.config.mjs with a justification.",
+        },
       ],
+    },
+  },
+  {
+    // AuditLog mutation allowlist: retention cleanup of stale entries
+    // and GDPR-style anonymization of erased users. Both are admin-only
+    // routes, audited separately. Square brackets in `[id]` need escaping
+    // because the glob matcher treats `[...]` as a character class.
+    // Also allow scripts/wipe-dummy-data — admin-run dev cleanup tool.
+    files: [
+      "app/api/admin/retention/route.ts",
+      "app/api/users/\\[id\\]/erase/route.ts",
+      "scripts/wipe-dummy-data.mts",
+    ],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
   {

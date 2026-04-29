@@ -25,6 +25,13 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Sensitivity coverage (no leaks of @sensitivity admin fields)
+        # Static gate — every reference to a kiloPerW / subDealerPerW
+        # field must live in an allowlisted admin-only path. Catches new
+        # code that bypasses the privacy gate before it merges. See
+        # scripts/check-sensitivity-coverage.mjs for the full allowlist.
+        run: npm run check:sensitivity
+
       - name: Schema drift (Prisma vs turso-schema.sql snapshot)
         # Compares scalar columns in prisma/schema.prisma against the
         # checked-in turso-schema.sql snapshot. Catches drift like the

@@ -25,12 +25,28 @@ const PII_KEYS = new Set([
   "authorization", "auth", "sessionToken", "secret", "ssn", "dob",
 ]);
 
+// Sensitive business-data keys that must never appear in production logs.
+// Pricing data is the company's competitive moat — leaking kilo cost or
+// tier values into Vercel logs/Sentry/log drains would expose margins.
+// Override per-call with explicit DEBUG_BASELINES=1 env when investigating.
+const SENSITIVE_BUSINESS_KEYS = new Set([
+  "kiloperw", "closerperw", "setterperw", "subdealerperw",
+  "amount", "amountcents", "tiers",
+]);
+
 function scrubValue(key: string, value: unknown): unknown {
   const lower = key.toLowerCase();
   if (PII_KEYS.has(lower) || lower.endsWith("token") || lower.endsWith("secret")) {
     if (value == null) return value;
     if (typeof value === "string") return `<${lower}:${value.length}c>`;
     return "<redacted>";
+  }
+  // Sensitive business data — redact unless DEBUG_BASELINES is explicitly
+  // set (used during local investigation only). Never log raw tier values
+  // or pricing in production by default.
+  if (SENSITIVE_BUSINESS_KEYS.has(lower) && !process.env.DEBUG_BASELINES) {
+    if (value == null) return value;
+    return `<${lower}:redacted>`;
   }
   return value;
 }

@@ -175,8 +175,10 @@ model InstallerPricingTier {
   maxKW      Float?  /// null = no upper limit
   closerPerW Float
   setterPerW Float?  /// null = auto (closerPerW + 0.10)
+  /// @sensitivity admin — company cost; never expose to non-admin viewers
   kiloPerW   Float
 
+  /// @sensitivity admin — sub-dealer payment rate; admin-only
   /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this installer/tier)
   subDealerPerW Float?
 
@@ -251,8 +253,10 @@ model ProductPricingTier {
   maxKW      Float?  /// null = no upper limit
   closerPerW Float
   setterPerW Float   /// explicit (usually closerPerW + 0.10)
+  /// @sensitivity admin — company cost; never expose to non-admin viewers
   kiloPerW   Float
 
+  /// @sensitivity admin — sub-dealer payment rate; admin-only
   /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this product/tier)
   subDealerPerW Float?
 
