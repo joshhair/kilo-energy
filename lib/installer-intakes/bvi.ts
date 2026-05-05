@@ -112,113 +112,19 @@ export function parseBviIntake(json: string | null | undefined): BviIntake {
   }
 }
 
-// ─── PDF coordinate map ──────────────────────────────────────────────────
+// PDF rendering uses AcroForm fields by name (see lib/pdf/installer-handoff.ts).
+// Field names in lib/forms/bvi-intake.pdf must match the constants in
+// renderBviPdf(). Current BVI field names:
+//   Text:     salesRepName, customerName, customerPhone, customerEmail,
+//             customerAddress, financeProduct, existingSystemInfo,
+//             batteryOther, gateCode, additionalNotes
+//   Checkbox: exportTypeNem3, exportTypeNonExport, siteSurveyYes,
+//             siteSurveyNo, batteryInsideGarage, batteryOutsideGarage,
+//             dogsYes, dogsNo, lockedGatesYes, lockedGatesNo
 //
-// PRELIMINARY COORDINATES — derived from visual layout of the BVI template.
-// Phase 7 testing must visually verify and recalibrate.
-//
-// PDF coordinate space:
-//   - Origin (0,0) is BOTTOM-LEFT of the page
-//   - X grows rightward, Y grows UPWARD
-//   - Page is US Letter 612 × 792 points (8.5" × 11" at 72 dpi)
-//
-// Layout reading from top of page:
-//   - Header band ends ~y=720 (top of page minus header height)
-//   - SALES REPRESENTATIVE band      — ~y=685
-//   - CUSTOMER INFORMATION band      — ~y=620
-//   - SYSTEM DETAILS band            — ~y=510
-//   - SITE SURVEY band               — ~y=380
-//   - ADDITIONAL NOTES band          — ~y=200
-//
-// Three-column layout uses x offsets:
-//   - Column 1: x=85 (left margin)
-//   - Column 2: x=245
-//   - Column 3: x=405
-//   - Full-width fields: x=85 extending to x=540
-
-export interface PdfCoord {
-  x: number;
-  y: number;
-  /** Optional max width for text wrapping (long-text fields). */
-  maxWidth?: number;
-  /** Font size; defaults to 10pt. */
-  size?: number;
-}
-
-/**
- * Map of BVI form fields to (x, y) draw positions on the master template.
- * Keys are NOT the same as BviIntake keys — they include both intake
- * fields AND project-derived fields (rep name, customer info, etc.).
- */
-export interface BviCoordMap {
-  // Sales Representative section
-  salesRepName: PdfCoord;
-  salesRepPhone: PdfCoord;
-  salesRepEmail: PdfCoord;
-
-  // Customer Information section
-  customerName: PdfCoord;
-  customerPhone: PdfCoord;
-  customerEmail: PdfCoord;
-  customerAddress: PdfCoord;
-
-  // System Details section
-  exportTypeNem3Box: PdfCoord;
-  exportTypeNonExportBox: PdfCoord;
-  financeProduct: PdfCoord;
-  existingSystemInfo: PdfCoord;
-
-  // Site Survey & Installation Notes section
-  siteSurveyYesBox: PdfCoord;
-  siteSurveyNoBox: PdfCoord;
-  batteryLocationInsideGarageBox: PdfCoord;
-  batteryLocationOutsideGarageBox: PdfCoord;
-  batteryLocationOther: PdfCoord;
-  dogsYesBox: PdfCoord;
-  dogsNoBox: PdfCoord;
-  lockedGatesYesBox: PdfCoord;
-  lockedGatesNoBox: PdfCoord;
-  gateCode: PdfCoord;
-
-  // Additional Notes & Feedback section
-  additionalNotes: PdfCoord;
-}
-
-/**
- * Coordinate offsets for the BVI template at lib/forms/bvi-intake.pdf.
- *
- * NOTE: These are first-pass estimates. To recalibrate, render a test PDF
- * with sample data via Phase 7 verification + adjust by visual inspection.
- * Add a debug-grid mode to the renderer if recalibration becomes frequent.
- */
-export const BVI_PDF_COORDS: BviCoordMap = {
-  salesRepName:  { x: 90, y: 668, maxWidth: 145 },
-  salesRepPhone: { x: 250, y: 668, maxWidth: 145 },
-  salesRepEmail: { x: 410, y: 668, maxWidth: 145 },
-
-  customerName:    { x: 90, y: 595, maxWidth: 145 },
-  customerPhone:   { x: 250, y: 595, maxWidth: 145 },
-  customerEmail:   { x: 410, y: 595, maxWidth: 145 },
-  customerAddress: { x: 90, y: 558, maxWidth: 460 },
-
-  exportTypeNem3Box:      { x: 96, y: 484 },
-  exportTypeNonExportBox: { x: 188, y: 484 },
-  financeProduct:    { x: 90, y: 448, maxWidth: 460 },
-  existingSystemInfo:{ x: 90, y: 410, maxWidth: 460 },
-
-  siteSurveyYesBox: { x: 96, y: 332 },
-  siteSurveyNoBox:  { x: 156, y: 332 },
-  batteryLocationInsideGarageBox:  { x: 96, y: 296 },
-  batteryLocationOutsideGarageBox: { x: 234, y: 296 },
-  batteryLocationOther:            { x: 388, y: 296, maxWidth: 165 },
-  dogsYesBox:       { x: 96, y: 260 },
-  dogsNoBox:        { x: 156, y: 260 },
-  lockedGatesYesBox:{ x: 96, y: 222 },
-  lockedGatesNoBox: { x: 156, y: 222 },
-  gateCode:         { x: 90, y: 188, maxWidth: 460 },
-
-  additionalNotes: { x: 90, y: 130, maxWidth: 460, size: 9 },
-};
+// To update field positions or add fields: edit lib/forms/bvi-intake.pdf
+// in Acrobat Pro (Tools → Prepare Form), save in place. No code changes
+// needed unless field names change.
 
 /**
  * Filename used when this PDF is generated and attached to the handoff

@@ -4,17 +4,15 @@ import { renderInstallerHandoffPdf, type HandoffPdfPayload } from '@/lib/pdf/ins
 import { EMPTY_BVI_INTAKE } from '@/lib/installer-intakes/bvi';
 
 /**
- * Smoke tests for the BVI handoff PDF renderer. We don't assert visual
- * correctness here — coordinate calibration is a Phase 7 visual task.
- * What we DO assert: the renderer produces a valid, non-empty PDF that
- * pdf-lib can re-load (proving we didn't corrupt the template).
+ * Smoke tests for the BVI handoff PDF renderer. The renderer fills the
+ * named AcroForm fields in lib/forms/bvi-intake.pdf and flattens. We
+ * verify: the output is a valid non-empty PDF that re-loads, and that
+ * the form has been flattened (no live form fields remain).
  */
 
 const BASE_PAYLOAD: HandoffPdfPayload = {
   installerSlug: 'bvi',
   salesRepName: 'Jane Smith',
-  salesRepPhone: '555-0100',
-  salesRepEmail: 'jane@kiloenergies.com',
   customerName: 'John Homeowner',
   financeProduct: 'Goodleap',
   intake: {
@@ -38,13 +36,15 @@ describe('renderInstallerHandoffPdf', () => {
     expect(bytes.byteLength).toBeGreaterThan(1000);
   });
 
-  it('output PDF is valid (re-loadable by pdf-lib)', async () => {
+  it('output PDF is valid (re-loadable by pdf-lib) and has been flattened', async () => {
     const bytes = await renderInstallerHandoffPdf(BASE_PAYLOAD);
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
+    // After flatten(), there should be no remaining form fields.
+    expect(doc.getForm().getFields().length).toBe(0);
   });
 
-  it('renders successfully with an empty intake (all-null booleans, no checkmarks)', async () => {
+  it('renders successfully with an empty intake (no checkmarks, blank text)', async () => {
     const payload: HandoffPdfPayload = {
       ...BASE_PAYLOAD,
       intake: { ...EMPTY_BVI_INTAKE, customerPhone: '', customerEmail: '', customerAddress: '' },
@@ -53,13 +53,20 @@ describe('renderInstallerHandoffPdf', () => {
     expect(bytes.byteLength).toBeGreaterThan(1000);
   });
 
-  it('renders successfully with debugGrid option enabled', async () => {
-    const bytes = await renderInstallerHandoffPdf(BASE_PAYLOAD, { debugGrid: true });
-    const doc = await PDFDocument.load(bytes);
-    expect(doc.getPageCount()).toBe(1);
+  it('renders Other battery location with custom text', async () => {
+    const payload: HandoffPdfPayload = {
+      ...BASE_PAYLOAD,
+      intake: {
+        ...BASE_PAYLOAD.intake,
+        batteryLocation: 'Other',
+        batteryLocationOther: 'Side yard, north fence',
+      },
+    };
+    const bytes = await renderInstallerHandoffPdf(payload);
+    expect(bytes.byteLength).toBeGreaterThan(1000);
   });
 
-  it('handles long additionalNotes by wrapping (does not throw)', async () => {
+  it('handles long additionalNotes (does not throw)', async () => {
     const longText = 'lorem ipsum dolor sit amet '.repeat(50);
     const payload: HandoffPdfPayload = {
       ...BASE_PAYLOAD,

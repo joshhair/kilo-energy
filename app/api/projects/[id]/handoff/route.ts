@@ -134,8 +134,6 @@ export const POST = withApiHandler<{ id: string }>(async (req, { params, user })
   const pdfPayload: HandoffPdfPayload = {
     installerSlug: 'bvi',
     salesRepName: repName,
-    salesRepPhone: project.closer.phone || '',
-    salesRepEmail: project.closer.email,
     customerName: project.customerName,
     financeProduct: project.financer.name,
     intake,
