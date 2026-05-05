@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2,
   ChevronRight, ChevronDown, CreditCard, DollarSign,
-  ListChecks, CheckSquare, Square, Building2,
+  ListChecks, CheckSquare, Square, Building2, Mail,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
@@ -13,6 +13,7 @@ import { ProductCatalogInstallerConfig, DEFAULT_INSTALL_PAY_PCT } from '../../..
 import { EmptyState } from '../../components/EmptyState';
 import { SectionHeader } from '../components/SectionHeader';
 import { PrimaryButton, TextInput, FormField, SearchInput } from '@/components/ui';
+import { InstallerHandoffPanel } from './InstallerHandoffPanel';
 
 export interface InstallersSectionProps {
   editingPrepaid: string | null;
@@ -44,7 +45,9 @@ export function InstallersSection({
     getInstallerPrepaidOptions, addInstallerPrepaidOption, updateInstallerPrepaidOption, removeInstallerPrepaidOption,
     addProductCatalogInstaller,
     installerPayConfigs, updateInstallerPayConfig,
+    getIdMaps,
   } = useApp();
+  const installerNameToId = getIdMaps().installerNameToId;
   const { toast } = useToast();
 
   const [newInstaller, setNewInstaller] = useState('');
@@ -55,6 +58,7 @@ export function InstallersSection({
   const [installerSearch, setInstallerSearch] = useState('');
   const [archivedInstallersOpen, setArchivedInstallersOpen] = useState(false);
   const [prepaidInstallerExpanded, setPrepaidInstallerExpanded] = useState<string | null>(null);
+  const [handoffExpanded, setHandoffExpanded] = useState<string | null>(null);
   const [newPrepaidOption, setNewPrepaidOption] = useState('');
   const [editPrepaidVal, setEditPrepaidVal] = useState('');
   const [editPayPct, setEditPayPct] = useState('');
@@ -288,6 +292,7 @@ export function InstallersSection({
                             const pct = installerPayConfigs[inst.name]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
                             setEditPayPct(String(pct));
                             setPrepaidInstallerExpanded(null);
+                            setHandoffExpanded(null);
                           }
                         }}
                         title="Configure pay schedule"
@@ -296,11 +301,22 @@ export function InstallersSection({
                         <DollarSign className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => { setPrepaidInstallerExpanded(isExpanded ? null : inst.name); setNewPrepaidOption(''); setEditingPrepaid(null); setPayScheduleExpanded(null); }}
+                        onClick={() => { setPrepaidInstallerExpanded(isExpanded ? null : inst.name); setNewPrepaidOption(''); setEditingPrepaid(null); setPayScheduleExpanded(null); setHandoffExpanded(null); }}
                         title="Configure prepaid options"
                         className={`transition-colors ${isExpanded ? 'text-[var(--accent-purple-text)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-purple-text)] opacity-0 group-hover:opacity-100'}`}
                       >
                         <CreditCard className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setHandoffExpanded(handoffExpanded === inst.name ? null : inst.name);
+                          setPrepaidInstallerExpanded(null);
+                          setPayScheduleExpanded(null);
+                        }}
+                        title="Configure handoff email"
+                        className={`transition-colors ${handoffExpanded === inst.name ? 'text-[var(--accent-cyan-text)]' : 'text-[var(--text-dim)] hover:text-[var(--accent-cyan-text)] opacity-0 group-hover:opacity-100'}`}
+                      >
+                        <Mail className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setInstallerActive(inst.name, false)}
@@ -399,6 +415,14 @@ export function InstallersSection({
                         <p className="text-[10px] text-[var(--text-dim)] mt-1.5">No prepaid options yet. Add one to enable prepaid tracking for this installer.</p>
                       )}
                     </div>
+                  )}
+
+                  {/* Expandable handoff config panel */}
+                  {handoffExpanded === inst.name && installerNameToId[inst.name] && (
+                    <InstallerHandoffPanel
+                      installerId={installerNameToId[inst.name]}
+                      installerName={inst.name}
+                    />
                   )}
 
                   {/* Expandable pay schedule panel */}

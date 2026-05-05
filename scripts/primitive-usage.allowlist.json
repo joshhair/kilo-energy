@@ -27,8 +27,8 @@
 
   "CustomizationSection.tsx": {
     "rawInputs": 0,
-    "rawButtons": 0,
-    "reason": "PR 5 fully migrated. Number inputs use TextInput type=number; primary/secondary actions use PrimaryButton/SecondaryButton."
+    "rawButtons": 1,
+    "reason": "PR 5 migrated everything to primitives; +1 button bump in 2026-04-29 added a custom toggle switch for the stalled-digest enable flag (same pattern as InstallerHandoffPanel toggle; no shared toggle primitive yet)."
   },
 
   "ExportSection.tsx": {
@@ -45,8 +45,14 @@
 
   "InstallersSection.tsx": {
     "rawInputs": 4,
-    "rawButtons": 19,
-    "reason": "PR 9 migrated the add-form, search, and empty state. Remaining 4 inputs: 3 micro-text (text-xs) inline-edit inputs in the prepaid-options panel and pay-schedule edit, 1 family-name input in the PC-mode add form. Remaining buttons: standard/PC segmented selector (2), select-mode toggle (1), select-all (1), archived-section disclosure (1), row-hover icon stagger (4 per active row, 2 per archived row), prepaid-options expansion add/edit/save/cancel/delete (5), pay-schedule expansion (varies). All custom patterns deferred to a follow-up if InstallersSection ever sees another major rewrite."
+    "rawButtons": 20,
+    "reason": "PR 9 migrated the add-form, search, and empty state. Remaining 4 inputs: 3 micro-text (text-xs) inline-edit inputs in the prepaid-options panel and pay-schedule edit, 1 family-name input in the PC-mode add form. Remaining buttons: standard/PC segmented selector (2), select-mode toggle (1), select-all (1), archived-section disclosure (1), row-hover icon stagger (5 per active row including the new BVI-handoff Mail button, 2 per archived row), prepaid-options expansion add/edit/save/cancel/delete (5), pay-schedule expansion (varies). +1 button bump in 2026-04-29 added the Mail icon for handoff config."
+  },
+
+  "InstallerHandoffPanel.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 1,
+    "reason": "Per-installer handoff email config editor (added 2026-04-29 for BVI integration). Inputs/textarea use TextInput/FormField primitives. The 1 raw button is a custom toggle switch (handoffEnabled on/off) — same pattern as BlitzPermissionsSection toggle pills; no shared toggle primitive yet."
   },
 
   "PMSection.tsx": {
