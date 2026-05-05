@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/db';
-import { requireInternalUser, userCanAccessProject, isVendorPM } from '../../../../../lib/api-auth';
+import { requireInternalUser, userCanAccessProject, isVendorPM, isInternalPM } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
+import { logChange } from '../../../../../lib/audit';
 
 // Admin notes are internal-only: admin + internal PM can read/write;
 // vendor PMs, reps, trainers, sub-dealers get 403. Belt-and-suspenders
 // gate — the field-visibility matrix already scrubs the legacy
 // adminNotes string to undefined for everyone except admin/pm.
-function requireInternalAdminOrPM(user: { role: string; scopedInstallerId: string | null }) {
+//
+// Internal PM = unscoped PM whose email is on the INTERNAL_PM_EMAILS
+// allowlist. A previous version treated *any* unscoped PM as internal,
+// which let a misconfigured vendor PM (no installer scope set) read +
+// modify admin notes — closing that hole here.
+function requireInternalAdminOrPM(user: { role: string; email: string; scopedInstallerId: string | null }) {
   if (user.role === 'admin') return null;
-  if (user.role === 'project_manager' && !user.scopedInstallerId) return null;
+  if (isInternalPM(user)) return null;
   return NextResponse.json(
     { error: 'Forbidden — admin notes are internal-only' },
     { status: 403 },
@@ -70,6 +76,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       authorName: `${user.firstName} ${user.lastName}`.trim() || user.email,
       text: parsed.data.text,
     },
+  });
+  await logChange({
+    actor: { id: user.id, email: user.email },
+    action: 'project_admin_note_create',
+    entityType: 'Project',
+    entityId: id,
+    detail: { noteId: note.id, textLength: note.text.length, authorName: note.authorName },
   });
   return NextResponse.json(note, { status: 201 });
 }

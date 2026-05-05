@@ -37,8 +37,8 @@ export default function MobilePillTabs({ items, activeId, onChange }: MobilePill
           style={{
             left: indicator.left,
             width: indicator.width,
-            background: 'var(--accent-emerald)',
-            boxShadow: '0 0 12px rgba(0,229,160,0.35)',
+            background: 'var(--accent-emerald-solid)',
+            boxShadow: '0 0 12px var(--accent-emerald-glow)',
           }}
         />
       )}
@@ -51,7 +51,7 @@ export default function MobilePillTabs({ items, activeId, onChange }: MobilePill
           style={{
             background: 'transparent',
             border: 'none',
-            color: activeId === id ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+            color: activeId === id ? 'var(--text-on-accent)' : 'var(--text-muted)',
             transition: 'color 200ms ease',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}

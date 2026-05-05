@@ -185,12 +185,12 @@ export function SearchableSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--surface-card)] border text-left transition-all text-sm
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
           input-focus-glow active:scale-[0.99]
           ${error ? 'border-red-500' : 'border-[var(--border)]'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500/60 hover:bg-[var(--border)]/80 cursor-pointer'}`}
       >
-        <span className={`flex-1 truncate ${selectedLabel ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+        <span className={`flex-1 truncate ${selectedLabel ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
           {selectedLabel ?? placeholder}
         </span>
         {/* Chevron */}
@@ -227,7 +227,7 @@ export function SearchableSelect({
                   value={searchRaw}
                   onChange={(e) => setSearchRaw(e.target.value)}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
                 />
               </div>
             </div>
@@ -259,14 +259,14 @@ export function SearchableSelect({
                     } ${isHighlighted ? 'bg-[var(--border)]/50' : ''} hover:bg-[var(--border)]/50`}
                   >
                     <div className="flex-1 min-w-0">
-                      <span className={`text-sm truncate block ${isSelected ? 'text-white font-medium' : 'text-[var(--text-secondary)]'}`}>
+                      <span className={`text-sm truncate block ${isSelected ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-secondary)]'}`}>
                         {opt.label}
                       </span>
                       {opt.sub && (
                         <span className="text-[10px] text-[var(--text-muted)] truncate block">{opt.sub}</span>
                       )}
                     </div>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
                   </button>
                 );
               })

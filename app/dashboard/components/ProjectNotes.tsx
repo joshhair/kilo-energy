@@ -130,7 +130,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
           rows={2}
           maxLength={5000}
           placeholder="Add a note…"
-          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500 resize-none"
+          className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500 resize-none"
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
               e.preventDefault();
@@ -144,7 +144,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
             onClick={handleAdd}
             disabled={!draft.trim() || adding}
             className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
           >
             {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post note'}
           </button>
@@ -167,12 +167,12 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
                 style={{ opacity: deleting ? 0.5 : 1 }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan)]/20 text-[var(--accent-cyan)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[var(--accent-cyan-solid)]/20 text-[var(--accent-cyan-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                     {getInitials(note.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-white text-sm font-semibold">{note.authorName}</span>
+                      <span className="text-[var(--text-primary)] text-sm font-semibold">{note.authorName}</span>
                       <span className="text-[11px] text-[var(--text-muted)]">{relativeTime(note.createdAt)}</span>
                     </div>
                     <p className="text-[var(--text-secondary)] text-sm leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
@@ -183,7 +183,7 @@ export function ProjectNotes({ projectId, kind = 'public' }: { projectId: string
                     <button
                       onClick={() => handleDelete(note.id)}
                       disabled={deleting}
-                      className="opacity-0 group-hover/note:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="opacity-0 group-hover/note:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Delete note"
                       title="Delete note"
                     >

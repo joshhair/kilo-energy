@@ -77,6 +77,9 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   // trainerId clears the override (rate is meaningless without trainer).
   if ('trainerId' in updates) dbUpdates.trainerId = updates.trainerId ?? null;
   if ('trainerRate' in updates) dbUpdates.trainerRate = updates.trainerRate ?? null;
+  // Admin's "remove all trainers" flag — suppresses chain trainer
+  // visibility + commission. Set true by the project sheet's Clear button.
+  if ('noChainTrainer' in updates) dbUpdates.noChainTrainer = updates.noChainTrainer ?? false;
   return dbUpdates;
 }
 
@@ -188,7 +191,7 @@ export function handleChargebacks(
 ): ChargebackResult {
   // Remove Draft/Pending entries immediately
   const draftOrPendingEntries = prevEntries.filter(
-    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.paymentStage !== 'Trainer' && (e.status === 'Draft' || e.status === 'Pending')
+    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && (e.status === 'Draft' || e.status === 'Pending')
   );
   const toDeleteIds = draftOrPendingEntries.map((e) => e.id);
 
@@ -204,7 +207,7 @@ export function handleChargebacks(
     : prevEntries;
 
   const paidEntries = remaining.filter(
-    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.paymentStage !== 'Trainer' && e.status === 'Paid'
+    (e) => e.projectId === projectId && e.amount > 0 && e.type === 'Deal' && e.status === 'Paid'
   );
   if (paidEntries.length === 0) return { toAdd: [], toDeleteIds };
 

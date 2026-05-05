@@ -7,6 +7,7 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
+import { resolveTrainerRate } from '../../../lib/commission';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp, Calendar } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -18,11 +19,14 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, var(--accent-emerald))';
-const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
-const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
-const DIM = 'var(--m-text-dim, #445577)';
-const WARNING = 'var(--m-warning, #f5a623)';
+const ACCENT = 'var(--accent-emerald-solid)';          // for accent strips / icons / labels
+const ACCENT_DISP = 'var(--accent-emerald-display)';   // ≥18pt secondary stat values
+const ACCENT2_DISP = 'var(--accent-cyan-display)';
+const MUTED = 'var(--text-muted)';
+const DIM = 'var(--text-dim)';
+const WARNING = 'var(--accent-amber-solid)';
+const WARNING_DISP = 'var(--accent-amber-display)';
+const HERO_NUM = 'var(--text-primary)';                // BIG hero numbers — near-black for max readability
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -91,11 +95,15 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements, trainerAssignments } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
   const [reimbFile, setReimbFile] = useState<File | undefined>(undefined);
+  // Per-row expand state for long reimbursement descriptions. Long notes
+  // (admin-facing context like "as discussed with Josh, here are…") used
+  // to dominate the card. Now collapsed to 2 lines with tap-to-expand.
+  const [expandedReimbId, setExpandedReimbId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>('all');
@@ -227,7 +235,22 @@ export default function MobileMyPay() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
-  const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
+  // Forward-looking trainer pipeline. Trainer entries fire alongside M2
+  // milestones, so we count un-paid trainer totals on deals still in
+  // pre-Install phases. Uses the canonical resolveTrainerRate so both
+  // per-project overrides and rep-level assignment-chain trainers are
+  // included — same source of truth as the payroll math.
+  const projectedTrainer = useMemo(() => {
+    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    return projects.reduce((s, p) => {
+      if (!preInstalled.includes(p.phase)) return s;
+      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      if (res.trainerId !== effectiveRepId) return s;
+      return s + res.rate * (p.kWSize ?? 0) * 1000;
+    }, 0);
+  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
+
+  const pipelineTotal = projectedM1 + projectedM2 + projectedM3 + projectedTrainer;
 
   // ── Annual Projection ──
   const annualProjection = useMemo(() => {
@@ -242,7 +265,16 @@ export default function MobileMyPay() {
       const isSetterRole = p.setterId === effectiveRepId;
       const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
       const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      return s + m1 + m2;
+      // Add trainer override when this rep resolves as the trainer
+      // for the deal. resolveTrainerRate handles both the per-project
+      // override path and the rep-level assignment-chain path, so a
+      // rep who's both closer and trainer (or both setter and trainer)
+      // gets credited for both income streams on the same deal.
+      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      const trainerEarn = trainerRes.trainerId === effectiveRepId
+        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
+        : 0;
+      return s + m1 + m2 + trainerEarn;
     }, 0) / totalDeals;
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
     const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / (1000 * 60 * 60 * 24), 1);
@@ -268,10 +300,10 @@ export default function MobileMyPay() {
       basis = 'pace';
       details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
     }
-    const pipelineBoost = Math.round((projectedM1 + projectedM2) * 0.15);
+    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15);
     annual += pipelineBoost;
     return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2]);
+  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -375,7 +407,7 @@ export default function MobileMyPay() {
   // ── PM guard ──
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>You don&apos;t have permission to view this page.</p>
@@ -388,7 +420,7 @@ export default function MobileMyPay() {
   const adminMaySellCheck = effectiveRole === 'admin' && !!currentUserRepType;
   if (effectiveRole !== 'rep' && effectiveRole !== 'sub-dealer' && !adminMaySellCheck) {
     return (
-      <div className="px-5 pt-4 pb-24" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>My Pay is only available in the rep view.</p>
@@ -398,38 +430,45 @@ export default function MobileMyPay() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       <MobilePageHeader title="My Pay" />
 
       {/* ── Consolidated hero — Next Payout (primary) + Pending/Pipeline
            (secondary) + Lifetime (footnote). Tells the story future → past
            in one dominant card so the rep sees the whole money picture at
-           a glance without scattered sibling cards. ── */}
+           a glance without scattered sibling cards.
+           Hero numbers use --text-primary (near-black) for max readability
+           on white in light mode. Brand color lives in the small uppercase
+           label above the number — gives the card its emerald identity
+           without forcing the digits to do the contrast work. ── */}
       <MobileCard hero>
         {/* ─ Primary: Next Payout ─ */}
-        <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-        <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.05 }}>{fmt$(displayNext)}</p>
+        <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+        <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.05 }}>{fmt$(displayNext)}</p>
         <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.4rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
         </p>
 
-        {/* ─ Secondary: Pending + Pipeline (money in motion) ─ */}
-        <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        {/* ─ Secondary: Pending + Pipeline (money in motion) ─
+             These are smaller (~1.5rem) so the colored display token still
+             has decent visual weight. Keeps amber/cyan identity for the
+             status semantics (in-flight vs locked-in). */}
+        <div className="mt-5 pt-4 space-y-2.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pending</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(displayPending)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING_DISP, lineHeight: 1.1 }}>{fmt$(displayPending)}</span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pipeline</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2_DISP, lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
           </div>
         </div>
 
         {/* ─ Footnote: Lifetime earned (cumulative context) ─ */}
-        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.65rem', fontWeight: 500 }}>Lifetime Earned</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: '#e5e7eb', lineHeight: 1.1 }}>{fmt$(displayLifetime)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 5.5vw, 1.5rem)', color: 'var(--text-secondary)', lineHeight: 1.1 }}>{fmt$(displayLifetime)}</span>
           </div>
         </div>
       </MobileCard>
@@ -438,10 +477,10 @@ export default function MobileMyPay() {
       {annualProjection.annual > 0 && (
         <MobileCard>
           <div className="flex items-center justify-between mb-1">
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>On Pace For {new Date().getFullYear()}</p>
-            <TrendingUp size={14} color={WARNING} />
+            <p className="tracking-widest uppercase" style={{ color: WARNING_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>On Pace For {new Date().getFullYear()}</p>
+            <TrendingUp size={14} color={WARNING_DISP} />
           </div>
-          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: WARNING, lineHeight: 1.1 }}>{fmt$(annualProjection.annual)}</p>
+          <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(annualProjection.annual)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginTop: '0.25rem' }}>
             {annualProjection.basis === 'blended'
               ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
@@ -462,13 +501,13 @@ export default function MobileMyPay() {
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
           <div className="space-y-2">
             {projectedM1 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(29,233,182,0.12)' }}>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' }}>
                     <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
                   </div>
                   <div>
-                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M1</p>
+                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M1</p>
                     <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Acceptance</p>
                   </div>
                 </div>
@@ -476,31 +515,31 @@ export default function MobileMyPay() {
               </div>
             )}
             {projectedM2 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
-                    <span style={{ color: '#a78bfa', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' }}>
+                    <span style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
                   </div>
                   <div>
-                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M2</p>
+                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M2</p>
                     <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Installation</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: '#a78bfa', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
+                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
               </div>
             )}
             {projectedM3 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(20,184,166,0.12)' }}>
-                    <span style={{ color: '#2dd4bf', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-teal-solid) 12%, transparent)' }}>
+                    <span style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
                   </div>
                   <div>
-                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M3</p>
+                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M3</p>
                     <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting PTO</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: '#2dd4bf', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
+                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
               </div>
             )}
           </div>
@@ -508,25 +547,82 @@ export default function MobileMyPay() {
       )}
 
       {/* ── Active reimbursements (only if any) ── */}
+      {/*
+       * Card hierarchy: amount + status are the headline (what the rep
+       * scans for). Description is secondary — clamped to 2 lines with a
+       * tap-to-expand affordance because rep-authored notes can run
+       * paragraphs long ("as discussed with Josh, here are the travel
+       * expenses incurred by my brother and me for the…"). Without the
+       * clamp those notes used to push the amount/status off-screen.
+       * Date + receipt sit at the bottom in muted small. Admin reviews
+       * full descriptions on the desktop earnings table; the rep doesn't
+       * need to read their own note prominently here.
+       */}
       {activeReimbs.length > 0 && (
-        <MobileSection title="Reimbursements" count={activeReimbs.length}>
+        <MobileSection title="Reimbursements" count={activeReimbs.length} collapsible defaultOpen={false}>
           <MobileCard>
-            {activeReimbs.map((r, i) => (
-              <div
-                key={r.id}
-                className={`flex items-center justify-between py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
-                style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
-              >
-                <div>
-                  <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.description}</p>
-                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{formatDate(r.date)}</p>
+            {activeReimbs.map((r, i) => {
+              const desc = r.description ?? '';
+              const isLong = desc.length > 80 || desc.split('\n').length > 2;
+              const isExpanded = expandedReimbId === r.id;
+              return (
+                <div
+                  key={r.id}
+                  className={`py-3 ${i < activeReimbs.length - 1 ? 'border-b' : ''}`}
+                  style={{ borderColor: 'var(--border-subtle)' }}
+                >
+                  {/* Headline row: amount + status */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.25rem', fontWeight: 700 }}>{fmt$(r.amount)}</span>
+                    <MobileBadge value={r.status} variant="status" />
+                  </div>
+                  {/* Description: clamped by default */}
+                  {desc && (
+                    <>
+                      <p
+                        className={isExpanded ? '' : 'line-clamp-2'}
+                        style={{
+                          color: 'var(--text-primary)',
+                          fontFamily: FONT_BODY,
+                          fontSize: '0.9375rem',
+                          lineHeight: 1.4,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {desc}
+                      </p>
+                      {isLong && (
+                        <button
+                          onClick={() => setExpandedReimbId(isExpanded ? null : r.id)}
+                          style={{
+                            color: ACCENT,
+                            fontFamily: FONT_BODY,
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            marginTop: '4px',
+                            minHeight: '24px',
+                          }}
+                        >
+                          {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {/* Footer: date + receipt name */}
+                  <p
+                    style={{
+                      color: MUTED,
+                      fontFamily: FONT_BODY,
+                      fontSize: '0.8125rem',
+                      marginTop: '6px',
+                    }}
+                  >
+                    {formatDate(r.date)}
+                    {r.receiptName ? ` · ${r.receiptName}` : ''}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(r.amount)}</span>
-                  <MobileBadge value={r.status} variant="status" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </MobileCard>
         </MobileSection>
       )}
@@ -542,7 +638,7 @@ export default function MobileMyPay() {
               <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem', marginBottom: '0.75rem' }}>
                 Amounts to be clawed back from a future paycheck.
               </p>
-              <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+              <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                 <span className="tracking-widest uppercase" style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600 }}>Total</span>
                 <span className="tabular-nums font-bold" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.3rem' }}>-{fmt$(pendingChargebackTotal)}</span>
               </div>
@@ -550,10 +646,10 @@ export default function MobileMyPay() {
                 <div
                   key={e.id}
                   className={`flex items-center justify-between py-3 ${i < pendingEntries.length - 1 ? 'border-b' : ''}`}
-                  style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                  style={{ borderColor: 'var(--border-subtle)' }}
                 >
                   <div>
-                    <p style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{e.customerName || '(no project)'}</p>
+                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{e.customerName || '(no project)'}</p>
                     <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{e.paymentStage} · {e.status} · {e.date}</p>
                   </div>
                   <p className="font-bold tabular-nums" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{fmt$(e.amount)}</p>
@@ -572,8 +668,8 @@ export default function MobileMyPay() {
           minHeight: '52px',
           padding: '14px 18px',
           borderRadius: '16px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '0.5px solid rgba(255,255,255,0.08)',
+          background: 'var(--surface-inset-subtle)',
+          border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)',
           transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           fontFamily: FONT_BODY,
         }}
@@ -595,7 +691,7 @@ export default function MobileMyPay() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 36px 12px 40px', color: '#fff', fontFamily: FONT_BODY, fontSize: '0.95rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 36px 12px 40px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.95rem', minHeight: '44px' }}
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
@@ -608,7 +704,7 @@ export default function MobileMyPay() {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as typeof filterType)}
             className="flex-1 outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Types</option>
             {effectiveRole !== 'sub-dealer' && <option value="M1">M1</option>}
@@ -621,7 +717,7 @@ export default function MobileMyPay() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
             className="flex-1 outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
+            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -630,18 +726,24 @@ export default function MobileMyPay() {
           </select>
         </div>
         <div className="flex gap-2">
-          <input
-            type="date"
-            value={payFilterFrom}
-            onChange={(e) => setPayFilterFrom(e.target.value)}
-            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
-          />
-          <input
-            type="date"
-            value={payFilterTo}
-            onChange={(e) => setPayFilterTo(e.target.value)}
-            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? '#fff' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
-          />
+          <label className="flex-1 flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>From</span>
+            <input
+              type="date"
+              value={payFilterFrom}
+              onChange={(e) => setPayFilterFrom(e.target.value)}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            />
+          </label>
+          <label className="flex-1 flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>To</span>
+            <input
+              type="date"
+              value={payFilterTo}
+              onChange={(e) => setPayFilterTo(e.target.value)}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+            />
+          </label>
         </div>
         {(searchQuery || filterType !== 'all' || filterStatus !== 'all' || payFilterFrom || payFilterTo) && (
           <button
@@ -666,11 +768,11 @@ export default function MobileMyPay() {
             {payPeriods.map((period) => (
               <MobileCard key={period.friday}>
                 {/* Friday group header */}
-                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
-                  <p className="font-bold text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9rem' }}>
+                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <p className="font-bold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9rem' }}>
                     {formatFridayLabel(period.friday)}
                   </p>
-                  <p className="tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(period.total)}</p>
+                  <p className="tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(period.total)}</p>
                 </div>
 
                 {/* Entries */}
@@ -683,13 +785,13 @@ export default function MobileMyPay() {
                     const labelEl = entry.projectId ? (
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
-                        className="font-semibold text-white active:opacity-70 transition-opacity"
-                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)', textUnderlineOffset: '3px' }}
+                        className="font-semibold text-[var(--text-primary)] active:opacity-70 transition-opacity"
+                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'color-mix(in srgb, var(--text-primary) 15%, transparent)', textUnderlineOffset: '3px' }}
                       >
                         {label}
                       </Link>
                     ) : (
-                      <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
+                      <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
                         {label}
                       </p>
                     );
@@ -697,7 +799,7 @@ export default function MobileMyPay() {
                       <div
                         key={entry.id}
                         className={`flex items-center justify-between py-3 ${i < period.entries.length - 1 ? 'border-b' : ''}`}
-                        style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                        style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <div>
                           {labelEl}
@@ -722,7 +824,7 @@ export default function MobileMyPay() {
       <MobileBottomSheet open={showReimbSheet} onClose={() => setShowReimbSheet(false)} title="Request Reimbursement">
         <form onSubmit={handleSubmitReimb} className="px-5 space-y-5 pb-2">
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
             <input
               type="number"
               step="0.01"
@@ -731,11 +833,11 @@ export default function MobileMyPay() {
               onChange={(e) => setReimbForm((f) => ({ ...f, amount: e.target.value }))}
               placeholder="0.00"
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Description</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Description</label>
             <input
               type="text"
               required
@@ -743,26 +845,26 @@ export default function MobileMyPay() {
               onChange={(e) => setReimbForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="e.g. Gas mileage — site visits"
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Date</label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Date</label>
             <input
               type="date"
               value={reimbForm.date}
               onChange={(e) => setReimbForm((f) => ({ ...f, date: e.target.value }))}
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px 18px', color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '16px 18px', color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}
             />
           </div>
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Receipt <span className="normal-case" style={{ color: 'rgba(255,255,255,0.3)' }}>(optional)</span></label>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Receipt <span className="normal-case" style={{ color: 'var(--text-dim)' }}>(optional)</span></label>
             {/* Native file picker triggers the camera on iOS when `accept="image/*"` is honored.
                 Accept images + PDF to mirror the desktop modal + server whitelist. */}
             <label
               className="flex items-center gap-2 w-full min-h-[48px] cursor-pointer"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px dashed rgba(255,255,255,0.15)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? '#fff' : 'rgba(255,255,255,0.4)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px dashed color-mix(in srgb, var(--text-primary) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', color: reimbFile ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.95rem' }}
             >
               <span className="truncate">{reimbFile ? reimbFile.name : 'Attach photo or PDF…'}</span>
               <input
@@ -776,7 +878,7 @@ export default function MobileMyPay() {
           <button
             type="submit"
             className="w-full active:opacity-80 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: 500, color: '#fff', fontFamily: FONT_BODY }}
+            style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: 500, color: 'var(--text-primary)', fontFamily: FONT_BODY }}
           >
             Submit Request
           </button>

@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createFinancerSchema } from '../../../lib/schemas/business';
+import { logChange } from '../../../lib/audit';
 
 // GET /api/financers?name=X — Look up a single financer by name (admin only)
 export async function GET(req: NextRequest) {
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/financers — Create a new financer (admin only)
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   const parsed = await parseJsonBody(req, createFinancerSchema);
   if (!parsed.ok) return parsed.response;
@@ -24,6 +26,13 @@ export async function POST(req: NextRequest) {
 
   const financer = await prisma.financer.create({
     data: { name: body.name },
+  });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'financer_create',
+    entityType: 'Financer',
+    entityId: financer.id,
+    detail: { name: financer.name, active: financer.active },
   });
   return NextResponse.json(financer, { status: 201 });
 }

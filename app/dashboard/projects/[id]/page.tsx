@@ -25,6 +25,11 @@ import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { ProjectNotes } from '../../components/ProjectNotes';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
+import { EquipmentSnapshot } from '../components/detail/EquipmentSnapshot';
+import { InstallerFiles } from '../components/detail/InstallerFiles';
+import { SiteSurveyLinks } from '../components/detail/SiteSurveyLinks';
+import { InstallerNotes } from '../components/detail/InstallerNotes';
+import { HandoffStatusCard } from '../components/detail/HandoffStatusCard';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
@@ -32,7 +37,7 @@ import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const router = useRouter();
@@ -48,6 +53,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
+  // Optional reason attached to amount edits — shows alongside the
+  // resulting field_edit entry in the activity feed so future readers
+  // know why this number changed.
+  const [editReason, setEditReason] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
@@ -78,6 +87,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // values instead of the chain.
     trainerId: '',
     trainerRate: '',
+    // Admin's "remove all trainers" flag — true means chain trainer is
+    // suppressed for this deal (deal disappears from chain trainer's view
+    // and they no longer earn override). Only set true via the Clear button.
+    noChainTrainer: false,
     solarTechProductId: '',
   });
 
@@ -159,7 +172,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)]">
         Project not found.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -178,7 +191,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -190,15 +203,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="p-4 md:p-8 text-center text-[var(--text-muted)] text-sm">
         You don&apos;t have permission to view this project.{' '}
-        <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:underline">
+        <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:underline">
           Back to Projects
         </Link>
       </div>
     );
   }
 
-  const updateProject = (updates: Partial<typeof project>) => {
-    ctxUpdateProject(id, updates);
+  const updateProject = (updates: Partial<typeof project>, opts?: { editReason?: string }) => {
+    ctxUpdateProject(id, updates, opts);
   };
 
   const handleCancel = () => {
@@ -311,8 +324,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const saveM1 = () => {
     const val = parseFloat(m1Val);
-    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
-    else { toast('Invalid amount', 'error'); }
+    if (!isNaN(val)) {
+      updateProject({ m1Amount: val }, { editReason });
+      toast('M1 amount updated', 'success');
+      setEditM1(false);
+      setEditReason('');
+    } else { toast('Invalid amount', 'error'); }
   };
 
   const saveM2 = () => {
@@ -328,13 +345,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
         ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
-      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 }, { editReason });
       if (originalM2 === 0 && project.setterId) {
         toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled.', 'error');
       } else {
         toast('M2 amount updated', 'success');
       }
       setEditM2(false);
+      setEditReason('');
     } else { toast('Invalid amount', 'error'); }
   };
 
@@ -366,6 +384,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       })),
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
+      noChainTrainer: project.noChainTrainer ?? false,
       solarTechProductId: project.solarTechProductId ?? '',
     });
     setEditErrors({});
@@ -485,6 +504,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
+      noChainTrainer: editVals.noChainTrainer,
       solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
       ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
     });
@@ -550,7 +570,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
 
   return (
-    <div className="px-3 pt-2 pb-4 md:p-8 max-w-3xl">
+    <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
       {/* Breadcrumb + Prev/Next */}
       <div className="flex items-center justify-between mb-6">
         <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-[var(--text-secondary)] bg-[var(--surface)]/60 backdrop-blur-md border border-[var(--border-subtle)]/60 rounded-xl px-4 py-2.5">
@@ -558,7 +578,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <span className="text-[var(--text-dim)] mx-1">/</span>
           <Link href="/dashboard/projects" className="hover:bg-[var(--surface-card)]/50 hover:text-[var(--text-secondary)] transition-colors px-2 py-1 rounded-lg">Projects</Link>
           <span className="text-[var(--text-dim)] mx-1">/</span>
-          <span className="text-white font-medium bg-[var(--accent-green)]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
+          <span className="text-[var(--text-primary)] font-medium bg-[var(--accent-emerald-solid)]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
         </nav>
 
         {/* Prev / Next project buttons */}
@@ -568,7 +588,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Link
                 href={`/dashboard/projects/${prevProjectId}`}
                 title="Previous project (←)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Link>
@@ -581,7 +601,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Link
                 href={`/dashboard/projects/${nextProjectId}`}
                 title="Next project (→)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </Link>
@@ -597,6 +617,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Pipeline stage tracker */}
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
+      {/* Equipment Snapshot — non-sensitive, visible to all roles */}
+      <div className="mb-4">
+        <EquipmentSnapshot projectId={id} />
+      </div>
+
       {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
       {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
         const phaseIdx = PIPELINE_STEPS.indexOf(project.phase as typeof PIPELINE_STEPS[number]);
@@ -607,7 +632,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {prevStep ? (
               <button
                 onClick={() => handlePhaseChange(prevStep)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-amber-500/50 transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50 transition-colors"
               >
                 ← {prevStep}
               </button>
@@ -615,7 +640,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {nextStep && (
               <button
                 onClick={() => handlePhaseChange(nextStep)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--accent-green)]/50 transition-colors ml-auto"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-emerald-solid)]/50 transition-colors ml-auto"
               >
                 {nextStep} →
               </button>
@@ -629,9 +654,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">{project.customerName}</h1>
+            <h1 className="text-2xl md:text-4xl font-black text-[var(--text-primary)] tracking-tight">{project.customerName}</h1>
             {project.flagged && (
-              <span className="flex items-center gap-1 bg-red-900/40 border border-red-500/30 text-red-400 text-xs px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-xs px-2 py-0.5 rounded-full">
                 <AlertTriangle className="w-3 h-3" />
                 Flagged
               </span>
@@ -644,11 +669,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {(effectiveRole === 'admin' || isPM) ? (
-          <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2">
+          <div className="flex flex-col md:flex-row md:flex-nowrap items-stretch md:items-center gap-2 md:whitespace-nowrap">
             {!isPM && (
               <button
                 onClick={openEditModal}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-green)]/30 text-[var(--accent-green)] hover:bg-blue-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-blue-soft)] transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
@@ -657,8 +682,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               onClick={handleFlag}
               className={`flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border transition-colors ${
                 project.flagged
-                  ? 'border-red-500/40 text-red-400 hover:bg-red-900/20'
-                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'
+                  ? 'border-red-500/40 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)]'
+                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
               }`}
             >
               {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
@@ -667,7 +692,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -675,7 +700,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
               >
                 Cancel
               </button>
@@ -683,7 +708,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {!isPM && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -694,7 +719,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {(currentRepId === project.repId) && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
@@ -702,7 +727,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {(currentRepId === project.repId) && project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
+                className="bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
               >
                 Cancel Project
               </button>
@@ -713,7 +738,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Details grid */}
       <div className="card-surface rounded-2xl p-6 mb-5">
-        <h2 className="text-white font-semibold mb-4">Project Details</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-4">Project Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
           {[
             ['Rep', project.repName],
@@ -727,19 +752,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ].map(([label, value]) => (
             <div key={label}>
               <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">{label}</p>
-              <p className="text-white">{value}</p>
+              <p className="text-[var(--text-primary)]">{value}</p>
             </div>
           ))}
           {project.setterId && (
             <div>
               <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Setter</p>
-              <p className="text-white">{project.setterName}</p>
+              <p className="text-[var(--text-primary)]">{project.setterName}</p>
             </div>
           )}
           {project.leadSource && (
             <div>
               <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Lead Source</p>
-              <p className="text-white capitalize">{project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource}</p>
+              <p className="text-[var(--text-primary)] capitalize">{project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource}</p>
             </div>
           )}
         </div>
@@ -750,7 +775,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <select
               value={project.phase}
               onChange={(e) => handlePhaseChange(e.target.value as Phase)}
-              className="bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+              className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
             >
               {PHASES.map((ph) => (
                 <option key={ph} value={ph}>{ph}</option>
@@ -766,7 +791,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
         return (
         <div className="card-surface rounded-2xl p-6 mb-5">
-          <h2 className="text-white font-semibold mb-4">{isTrainerOnDeal ? 'My Commission (Trainer)' : 'My Commission'}</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold mb-4">{isTrainerOnDeal ? 'My Commission (Trainer)' : 'My Commission'}</h2>
           {(() => {
             // Compute the rep's total once so both the payroll view and the
             // "projected" view use the same hero number. Matches the
@@ -790,11 +815,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const myTotal = trainerEntries.length > 0 ? (paidTotal + pendingTotal) : projected;
               return myTotal > 0 ? (
                 <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                     style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                   <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                       style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                       style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
-                  <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                  <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
                     ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-[var(--text-secondary)] text-sm mt-1">
@@ -811,11 +836,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0);
             return myTotal > 0 ? (
               <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                   style={{ background: 'linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,180,216,0.06))', border: '1px solid rgba(0,229,160,0.25)' }}>
+                   style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                     style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)' }} />
+                     style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                 <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
-                <p className="text-[var(--accent-green)] text-4xl font-black tabular-nums">
+                <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
                   ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[var(--text-secondary)] text-sm mt-1">Projected earnings on this deal</p>
@@ -836,11 +861,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                        entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                        entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                        entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                        entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                         'bg-[var(--border)] text-[var(--text-secondary)]'
                       }`}>{entry.status}</span>
-                      <span className="text-[var(--accent-green)] font-bold">${entry.amount.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-text)] font-bold">${entry.amount.toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -863,13 +888,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                      entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                      entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                      entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                       'bg-[var(--border)] text-[var(--text-secondary)]'
                     }`}>
                       {entry.status}
                     </span>
-                    <span className="text-[var(--accent-green)] font-bold">${entry.amount.toLocaleString()}</span>
+                    <span className="text-[var(--accent-emerald-text)] font-bold">${entry.amount.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -891,16 +916,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4 mb-4">
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[var(--accent-green)] font-bold">${expM1.toLocaleString()}</p>
+                  <p className="text-[var(--accent-emerald-text)] font-bold">${expM1.toLocaleString()}</p>
                 </div>
                 <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                   <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[var(--accent-green)] font-bold">${expM2.toLocaleString()}</p>
+                  <p className="text-[var(--accent-emerald-text)] font-bold">${expM2.toLocaleString()}</p>
                 </div>
                 {expM3 > 0 && (
                   <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
                     <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
-                    <p className="text-teal-400 font-bold">${expM3.toLocaleString()}</p>
+                    <p className="text-[var(--accent-teal-text)] font-bold">${expM3.toLocaleString()}</p>
                   </div>
                 )}
               </div>
@@ -923,23 +948,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Commission breakdown (admin) */}
       {effectiveRole === 'admin' && !isPM && (
         <div className="card-surface rounded-2xl p-6 mb-5">
-          <h2 className="text-white font-semibold mb-1">Commission Breakdown</h2>
+          <h2 className="text-[var(--text-primary)] font-semibold mb-1">Commission Breakdown</h2>
 
           {/* Baseline rates summary */}
           <div className="flex flex-wrap gap-3 mb-4 mt-2">
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Closer baseline: <span className="text-[var(--accent-cyan)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
+              Closer baseline: <span className="text-[var(--accent-cyan-text)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
             </span>
             {project.setterId && (
               <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-                Setter baseline: <span className="text-[var(--accent-cyan)] font-semibold">${setterPerW.toFixed(3)}/W</span>
+                Setter baseline: <span className="text-[var(--accent-cyan-text)] font-semibold">${setterPerW.toFixed(3)}/W</span>
               </span>
             )}
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Kilo cost: <span className="text-purple-300 font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
+              Kilo cost: <span className="text-[var(--accent-purple-text)] font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
             </span>
             <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Sold: <span className="text-white font-semibold">${project.netPPW.toFixed(3)}/W</span>
+              Sold: <span className="text-[var(--text-primary)] font-semibold">${project.netPPW.toFixed(3)}/W</span>
             </span>
           </div>
 
@@ -972,7 +997,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               />
             ) : (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                <p className="text-white text-sm font-semibold mb-0.5">{project.repName} <span className="text-[var(--text-muted)] font-normal text-xs">(self-gen)</span></p>
+                <p className="text-[var(--text-primary)] text-sm font-semibold mb-0.5">{project.repName} <span className="text-[var(--text-muted)] font-normal text-xs">(self-gen)</span></p>
                 <p className="text-[var(--text-muted)] text-xs">M1 flat goes to closer — no setter on this deal</p>
               </div>
             )}
@@ -987,18 +1012,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div key={`cc-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-white text-sm font-semibold">{co.userName}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">{co.userName}</p>
                       <p className="text-[var(--text-muted)] text-xs">Co-closer · #{co.position}</p>
                     </div>
                     <div className="text-right space-y-0.5">
                       {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
                       )}
                       {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
                       )}
                       {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
                       )}
                     </div>
                   </div>
@@ -1009,11 +1034,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -1028,18 +1053,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div key={`cs-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-white text-sm font-semibold">{co.userName}</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">{co.userName}</p>
                       <p className="text-[var(--text-muted)] text-xs">Co-setter · #{co.position}</p>
                     </div>
                     <div className="text-right space-y-0.5">
                       {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
                       )}
                       {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
                       )}
                       {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-green)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
+                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
                       )}
                     </div>
                   </div>
@@ -1050,11 +1075,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                              entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -1073,10 +1098,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-white text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
                     <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
                     {trainerTotalExpected > 0 && (
-                      <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                      <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     )}
                   </div>
                 </div>
@@ -1091,11 +1116,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                            entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                            entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                            entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                             'bg-[var(--border)] text-[var(--text-secondary)]'
                           }`}>{entry.status}</span>
-                          <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                         </div>
                       </div>
                     ))}
@@ -1121,11 +1146,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                          entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                          entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                          entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                           'bg-[var(--border)] text-[var(--text-secondary)]'
                         }`}>{entry.status}</span>
-                        <span className="text-[var(--accent-green)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                        <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
@@ -1140,16 +1165,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               if (eligiblePaidEntries.length === 0) return null;
               return (
                 <div className="border-t border-[var(--border-subtle)] pt-4">
-                  <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between gap-3 bg-[var(--accent-amber-soft)] border border-amber-500/30 rounded-xl p-4">
                     <div>
-                      <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+                      <p className="text-[var(--accent-amber-text)] text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
                       <p className="text-[var(--text-muted)] text-xs mt-0.5">
                         {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback. Record a clawback so payroll totals stay net-correct.
                       </p>
                     </div>
                     <button
                       onClick={() => setShowRecordChargeback(true)}
-                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors"
+                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/40 transition-colors"
                     >
                       Record Chargeback
                     </button>
@@ -1162,16 +1187,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 breakdown above already shows each milestone's status + amount
                 inside each RepCommissionCard; this footer exists only so admin
                 can flip the project-level m1Paid/m2Paid/m3Paid flags in one
-                tap. Edit amounts through the Edit Deal modal (recomputes via
-                server) or by tweaking netPPW / kW inputs on the project.
+                tap. Amount shown is the PROJECT total for that milestone
+                (closer + setter + co-parties) so the number isn't misread
+                as "$0 paid out at M1" when in fact the setter is owed $1,000.
+                Inline editor only targets the closer's portion, so we hide
+                it whenever a setter is present and route the admin to the
+                Edit Deal modal instead.
                 Dup Milestone Status block removed 2026-04-24 per Josh's ask. */}
             <div className="border-t border-[var(--border-subtle)] pt-4 flex flex-wrap gap-2">
-              {([
-                { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: project.m1Amount ?? 0 },
-                { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: project.m2Amount ?? 0 },
-                ...((project.m3Amount ?? 0) > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: project.m3Amount ?? 0 }] : []),
-              ]).map(({ stage, paid, toggle, amount }) => {
-                const isEditable = effectiveRole === 'admin' && !isPM && (stage === 'M1' || stage === 'M2');
+              {(() => {
+                const sumExtras = (key: 'm1Amount' | 'm2Amount' | 'm3Amount') =>
+                  ((project.additionalClosers ?? []).reduce((s, c) => s + (c[key] ?? 0), 0)) +
+                  ((project.additionalSetters ?? []).reduce((s, c) => s + (c[key] ?? 0), 0));
+                const m1Total = (project.m1Amount ?? 0) + (project.setterM1Amount ?? 0) + sumExtras('m1Amount');
+                const m2Total = (project.m2Amount ?? 0) + (project.setterM2Amount ?? 0) + sumExtras('m2Amount');
+                const m3Total = (project.m3Amount ?? 0) + (project.setterM3Amount ?? 0) + sumExtras('m3Amount');
+                return ([
+                  { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: m1Total, closerAmount: project.m1Amount ?? 0 },
+                  { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: m2Total, closerAmount: project.m2Amount ?? 0 },
+                  ...(m3Total > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: m3Total, closerAmount: project.m3Amount ?? 0 }] : []),
+                ]);
+              })().map(({ stage, paid, toggle, amount, closerAmount }) => {
+                const hasSetter = !!project.setterId;
+                const isEditable = effectiveRole === 'admin' && !isPM && !hasSetter && (stage === 'M1' || stage === 'M2');
                 const isEditing = stage === 'M1' ? editM1 : stage === 'M2' ? editM2 : false;
                 return (
                   <div key={stage} className="flex flex-col gap-1">
@@ -1179,39 +1217,63 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={toggle}
                       className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
                         paid
-                          ? 'bg-emerald-900/30 text-[var(--accent-green)] border-[var(--accent-green)]/30 hover:bg-emerald-900/40'
+                          ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30 hover:bg-[var(--accent-emerald-soft)]'
                           : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
                       }`}
                       title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
                     >
                       <span>{stage}</span>
-                      <span className={paid ? 'text-[var(--accent-green)]' : 'text-yellow-400'}>
+                      <span className={paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}>
                         {paid ? 'Paid' : 'Pending'}
                       </span>
                     </button>
-                    {isEditable && (
+                    {isEditable ? (
                       isEditing ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap">
                           <input
                             type="number"
                             value={stage === 'M1' ? m1Val : m2Val}
                             onChange={(e) => stage === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
-                            className="w-24 text-xs rounded px-2 py-1 text-white bg-[var(--surface-card)] border border-[var(--border)]"
+                            className="w-24 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
                           />
-                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-green)] font-medium">Save</button>
-                          <button onClick={() => stage === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-xs text-[var(--text-muted)]">Cancel</button>
+                          <input
+                            type="text"
+                            value={editReason}
+                            onChange={(e) => setEditReason(e.target.value)}
+                            placeholder="Reason (optional)"
+                            maxLength={200}
+                            className="w-44 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
+                          />
+                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-emerald-text)] font-medium">Save</button>
+                          <button
+                            onClick={() => {
+                              if (stage === 'M1') setEditM1(false); else setEditM2(false);
+                              setEditReason('');
+                            }}
+                            className="text-xs text-[var(--text-muted)]"
+                          >Cancel</button>
                         </div>
                       ) : (
                         <button
                           onClick={() => {
-                            if (stage === 'M1') { setM1Val(String(amount)); setEditM1(true); }
-                            else { setM2Val(String(amount)); setEditM2(true); }
+                            if (stage === 'M1') { setM1Val(String(closerAmount)); setEditM1(true); }
+                            else { setM2Val(String(closerAmount)); setEditM2(true); }
                           }}
-                          className="text-xs text-[var(--text-muted)] hover:text-white underline underline-offset-2 tabular-nums text-left"
+                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 tabular-nums text-left"
+                          title="Click to edit closer's milestone amount"
                         >
                           ${amount.toLocaleString()}
                         </button>
                       )
+                    ) : (
+                      effectiveRole === 'admin' && !isPM ? (
+                        <span
+                          className="text-xs text-[var(--text-muted)] tabular-nums"
+                          title="Project total (closer + setter + co-parties). Edit via Edit Deal modal."
+                        >
+                          ${amount.toLocaleString()}
+                        </span>
+                      ) : null
                     )}
                   </div>
                 );
@@ -1226,7 +1288,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           Project.notes content was migrated into ProjectNote rows by
           scripts/migrate-add-project-notes-table.mjs. */}
       <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-3">Notes</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Notes</h2>
         <ProjectNotes projectId={id} />
       </div>
 
@@ -1236,10 +1298,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           than leaked data. Replaced the single-textarea
           AdminNotesEditor on 2026-04-23. */}
       {(effectiveRole === 'admin' || isPM) && (
-        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)', border: '1px solid rgba(245,158,11,0.2)' }}>
+        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 4%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-white font-semibold">Admin Notes</h2>
-            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
+            <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
+            <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
               Admin · PM Only
             </span>
           </div>
@@ -1250,12 +1312,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
+      {/* Installer-handoff surfaces — admin + PM only (gate uses
+          effectiveRole, not currentRole, so admin View-As-Rep correctly
+          hides these per project_kilo_client_filter_leaks.md). Server's
+          privacy gate is the load-bearing enforcement; this client-side
+          gate prevents reps from seeing the section headers at all. */}
+      {(effectiveRole === 'admin' || isPM) && (
+        <>
+          <HandoffStatusCard
+            projectId={id}
+            canResend={effectiveRole === 'admin' || (isPM && !viewAsUser?.scopedInstallerId)}
+          />
+          <InstallerFiles
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+          <SiteSurveyLinks
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+          <InstallerNotes
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+        </>
+      )}
+
       {/* Chatter — above Activity so in-project discussion is the
           primary surface, with the activity log reachable just below. */}
       <ProjectChatter projectId={id} />
 
       {/* Activity Timeline */}
-      <ActivityTimeline projectId={id} />
+      <ActivityTimeline projectId={id} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
 
       {/* Edit Project Modal
           Portaled to document.body so fixed positioning is relative to the
@@ -1268,12 +1356,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-900/30">
-                  <Pencil className="w-5 h-5 text-[var(--accent-green)]" />
+                <div className="p-2 rounded-lg bg-[var(--accent-blue-soft)]">
+                  <Pencil className="w-5 h-5 text-[var(--accent-emerald-text)]" />
                 </div>
-                <h2 className="text-white font-semibold">Edit Project</h2>
+                <h2 className="text-[var(--text-primary)] font-semibold">Edit Project</h2>
               </div>
-              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }} className="text-[var(--text-muted)] hover:text-white">
+              <button onClick={() => { setShowEditModal(false); setEditErrors({}); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1289,7 +1377,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
                 />
-                {editErrors.installer && <p className="text-red-400 text-xs mt-1">{editErrors.installer}</p>}
+                {editErrors.installer && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.installer}</p>}
               </div>
 
               {/* SolarTech Product — shown only when installer is SolarTech */}
@@ -1299,7 +1387,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <select
                     value={editVals.solarTechProductId}
                     onChange={(e) => { setEditVals((v) => ({ ...v, solarTechProductId: e.target.value })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}
                   >
                     <option value="">— Select product —</option>
                     {solarTechProducts.map((p) => (
@@ -1331,8 +1419,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)]'
+                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                       }`}
                     >
                       {pt}
@@ -1347,15 +1435,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">System Size (kW)</label>
                   <input type="number" step="0.1" value={editVals.kWSize}
                     onChange={(e) => { setEditVals((v) => ({ ...v, kWSize: e.target.value })); setEditErrors((prev) => ({ ...prev, kWSize: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.kWSize ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
-                  {editErrors.kWSize && <p className="text-red-400 text-xs mt-1">{editErrors.kWSize}</p>}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.kWSize ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
+                  {editErrors.kWSize && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.kWSize}</p>}
                 </div>
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Net PPW ($)</label>
                   <input type="number" step="0.01" value={editVals.netPPW}
                     onChange={(e) => { setEditVals((v) => ({ ...v, netPPW: e.target.value })); setEditErrors((prev) => ({ ...prev, netPPW: '' })); }}
-                    className={`w-full bg-[var(--surface-card)] border ${editErrors.netPPW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
-                  {editErrors.netPPW && <p className="text-red-400 text-xs mt-1">{editErrors.netPPW}</p>}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.netPPW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
+                  {editErrors.netPPW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.netPPW}</p>}
                 </div>
               </div>
 
@@ -1363,7 +1451,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]">
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">— None —</option>
                   {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== project.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
@@ -1401,7 +1489,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 label="Co-setters"
                 rows={editVals.additionalSetters}
                 primaryUserId={editVals.setterId}
-                excludeUserIds={[editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+                excludeUserIds={[project.repId, editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
                 repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
                 reps={reps}
                 onChange={(rows) => setEditVals((v) => ({ ...v, additionalSetters: rows }))}
@@ -1413,11 +1501,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="bg-[var(--surface-card)]/60 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Per-project trainer override</label>
-                  {editVals.trainerId && (
+                  {(editVals.trainerId || !editVals.noChainTrainer) && (
                     <button
                       type="button"
-                      onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '' }))}
-                      className="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                      onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '', noChainTrainer: true }))}
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors"
+                      title="Remove all trainers from this deal — chain trainer will no longer see it or earn override"
                     >
                       Clear
                     </button>
@@ -1432,8 +1521,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <label className="text-[var(--text-secondary)] text-[11px] block mb-1">Trainer</label>
                     <select
                       value={editVals.trainerId}
-                      onChange={(e) => setEditVals((v) => ({ ...v, trainerId: e.target.value }))}
-                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+                      onChange={(e) => setEditVals((v) => ({
+                        ...v,
+                        trainerId: e.target.value,
+                        // Picking any dropdown option (including "— none —") clears the
+                        // explicit-removal flag — chain trainer can apply again.
+                        noChainTrainer: false,
+                      }))}
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                     >
                       <option value="">— none —</option>
                       {reps
@@ -1452,7 +1547,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       value={editVals.trainerRate}
                       onChange={(e) => setEditVals((v) => ({ ...v, trainerRate: e.target.value }))}
                       disabled={!editVals.trainerId}
-                      className={`w-full bg-[var(--surface-card)] border text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] disabled:opacity-50 ${
+                      className={`w-full bg-[var(--surface-card)] border text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] disabled:opacity-50 ${
                         editVals.trainerId && editVals.trainerRate.trim() === ''
                           ? 'border-amber-500/60'
                           : 'border-[var(--border)]'
@@ -1461,9 +1556,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
                 {editVals.trainerId && editVals.trainerRate.trim() === '' && (
-                  <p className="text-amber-300 text-xs mt-2">
+                  <p className="text-[var(--accent-amber-text)] text-xs mt-2">
                     Rate is required — without a rate the trainer override calculates as $0.
                     Typical: $0.10–$0.20 per watt.
+                  </p>
+                )}
+                {!editVals.trainerId && editVals.noChainTrainer && (
+                  <p className="text-[var(--accent-red-text)] text-xs mt-2">
+                    Trainer removed — chain trainer (if any) will not see this deal or earn override.
+                    Pick a trainer above to restore.
                   </p>
                 )}
               </div>
@@ -1474,15 +1575,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Sold Date</label>
                 <input type="date" value={editVals.soldDate}
                   onChange={(e) => { setEditVals((v) => ({ ...v, soldDate: e.target.value })); setEditErrors((prev) => ({ ...prev, soldDate: '' })); }}
-                  className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
-                {editErrors.soldDate && <p className="text-red-400 text-xs mt-1">{editErrors.soldDate}</p>}
+                  className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
+                {editErrors.soldDate && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.soldDate}</p>}
               </div>
 
               {/* Notes */}
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Notes</label>
                 <textarea rows={2} value={editVals.notes} onChange={(e) => setEditVals((v) => ({ ...v, notes: e.target.value }))}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none" />
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none" />
               </div>
 
               {/* Baseline Override */}
@@ -1490,7 +1591,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input type="checkbox" checked={editVals.useBaselineOverride}
                     onChange={(e) => setEditVals((v) => ({ ...v, useBaselineOverride: e.target.checked }))}
-                    className="w-4 h-4 rounded accent-[var(--accent-green)]" />
+                    className="w-4 h-4 rounded accent-[var(--accent-emerald-solid)]" />
                   <span className="text-[var(--text-secondary)] text-sm font-medium">Override baseline for this project</span>
                 </label>
                 {editVals.useBaselineOverride && (
@@ -1500,8 +1601,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <input type="number" step="0.01" value={editVals.overrideCloserPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.closerPerW ?? 2.90)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideCloserPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideCloserPerW: '' })); }}
-                        className={`w-full bg-[var(--border)] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
-                      {editErrors.overrideCloserPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
+                        className={`w-full bg-[var(--border)] border ${editErrors.overrideCloserPerW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
+                      {editErrors.overrideCloserPerW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.overrideCloserPerW}</p>}
                     </div>
                     <div>
                       <label className="text-[var(--text-muted)] text-xs block mb-1">Setter $/W</label>
@@ -1510,15 +1611,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           ? String(Math.round((parseFloat(editVals.overrideCloserPerW) + 0.10) * 100) / 100)
                           : String(Math.round(((installerBaselines[editVals.installer]?.closerPerW ?? 2.90) + 0.10) * 100) / 100)}
                         onChange={(e) => setEditVals((v) => ({ ...v, overrideSetterPerW: e.target.value }))}
-                        className="w-full bg-[var(--border)] border border-[var(--border)] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]" />
+                        className="w-full bg-[var(--border)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]" />
                     </div>
                     <div>
                       <label className="text-[var(--text-muted)] text-xs block mb-1">Kilo $/W</label>
                       <input type="number" step="0.01" value={editVals.overrideKiloPerW}
                         placeholder={String(installerBaselines[editVals.installer]?.kiloPerW ?? 2.35)}
                         onChange={(e) => { setEditVals((v) => ({ ...v, overrideKiloPerW: e.target.value })); setEditErrors((prev) => ({ ...prev, overrideKiloPerW: '' })); }}
-                        className={`w-full bg-[var(--border)] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[var(--border)]'} text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]`} />
-                      {editErrors.overrideKiloPerW && <p className="text-red-400 text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
+                        className={`w-full bg-[var(--border)] border ${editErrors.overrideKiloPerW ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
+                      {editErrors.overrideKiloPerW && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.overrideKiloPerW}</p>}
                     </div>
                   </div>
                 )}
@@ -1537,9 +1638,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 const overrideKilo = parseFloat(editVals.overrideKiloPerW);
                 if (isNaN(overrideCloser) || isNaN(overrideKilo)) {
                   return (
-                    <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                    <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
                       <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
-                      <p className="text-amber-400 text-xs flex items-center gap-1">
+                      <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> Enter valid Closer $/W and Kilo $/W values to see the commission preview.
                       </p>
                     </div>
@@ -1553,9 +1654,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 };
               } else if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) {
                 return (
-                  <div className="mt-4 rounded-xl p-4 bg-amber-900/20 border border-amber-500/30">
+                  <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
                     <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
-                    <p className="text-amber-400 text-xs flex items-center gap-1">
+                    <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> A SolarTech product selection is required to preview commission.
                     </p>
                   </div>
@@ -1592,63 +1693,63 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const setterM3 = editVals.setterId && previewHasM3 ? Math.round(Math.max(0, setterTotal - setterM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
 
               return (
-                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-amber-900/20 border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
+                <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-[var(--accent-amber-soft)] border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
                   {editVals.setterId ? (
                     <div className={`grid ${previewHasM3 ? 'grid-cols-6' : 'grid-cols-4'} gap-3 text-center`}>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM1.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM1.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${setterM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
                       </div>
                       {previewHasM3 && (
                         <div>
                           <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
                         </div>
                       )}
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : (
                   <div className={`grid ${previewHasM3 ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-center`}>
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M1</p>
-                      <p className="text-white font-bold text-sm">${closerM1.toLocaleString()}</p>
+                      <p className="text-[var(--text-primary)] font-bold text-sm">${closerM1.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                      <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM2.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
                     </div>
                     {previewHasM3 && (
                       <div>
                         <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-amber-400' : 'text-[var(--accent-green)]'}`}>${closerM3.toLocaleString()}</p>
+                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
                       </div>
                     )}
                     <div>
                       <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'}`}>${kiloMargin.toLocaleString()}</p>
+                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
                     </div>
                   </div>
                   )}
                   {belowBaseline && (
-                    <p className="text-amber-400 text-xs mt-2 flex items-center gap-1">
+                    <p className="text-[var(--accent-amber-text)] text-xs mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> PPW is below the installer baseline (${previewBaseline.closerPerW}/W)
                     </p>
                   )}
@@ -1658,12 +1759,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex gap-3 mt-6">
               <button onClick={saveEditModal}
-                className="flex-1 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
-                style={{ backgroundColor: 'var(--brand)' }}>
+                className="flex-1 font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>
                 Save Changes
               </button>
               <button onClick={() => { setShowEditModal(false); setEditErrors({}); }}
-                className="flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
+                className="flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl transition-colors text-sm">
                 Cancel
               </button>
             </div>
@@ -1750,21 +1851,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400" />
-                <h2 className="text-white font-bold text-base">Cancel Project</h2>
+                <AlertTriangle className="w-4 h-4 text-[var(--accent-red-text)]" />
+                <h2 className="text-[var(--text-primary)] font-bold text-base">Cancel Project</h2>
               </div>
-              <button onClick={() => setShowCancelReasonModal(false)} className="text-[var(--text-secondary)] hover:text-white transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
+              <button onClick={() => setShowCancelReasonModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-[var(--text-secondary)] text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <p className="text-[var(--text-secondary)] text-sm">Please provide a reason for cancelling <span className="text-[var(--text-primary)] font-medium">{project.customerName}</span>.</p>
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
@@ -1782,7 +1883,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] resize-none placeholder-slate-500"
+                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500"
                 />
               </div>
               <div className="flex gap-3 pt-1">
@@ -1794,7 +1895,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </button>
                 <button
                   onClick={confirmCancelWithReason}
-                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]"
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-[var(--text-primary)] font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]"
                 >
                   Cancel Project
                 </button>

@@ -16,6 +16,7 @@ import {
   INSTALLER_PAY_CONFIGS,
 } from '../../../lib/data';
 import { todayLocalDateStr } from '../../../lib/utils';
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -70,7 +71,7 @@ function fmt$(n: number | null | undefined): string {
 
 export default function MobileCalculator() {
   const {
-    currentRepId,
+    effectiveRepId,
     effectiveRole,
     activeInstallers,
     installerPricingVersions,
@@ -121,14 +122,18 @@ export default function MobileCalculator() {
   useEffect(() => { setCalcHistory(loadCalcHistory()); }, []);
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────
+  // Scope by `effectiveRepId`. View-As makes `effectiveRole` 'rep' but
+  // `currentRepId` stays the admin's own (often null) id — matching null
+  // repIds against unassigned/Glide-imported projects leaks every other
+  // rep's customer name + PPW into the dropdown.
   const recentDeals = useMemo(() => {
     const filtered = effectiveRole === 'admin'
       ? projects
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
     return [...filtered]
       .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
-  }, [projects, currentRepId, effectiveRole]);
+  }, [projects, effectiveRepId, effectiveRole]);
 
   // ── Derived installer flags ──────────────────────────────────────────────
   const isSolarTech = installer === 'SolarTech';
@@ -192,25 +197,11 @@ export default function MobileCalculator() {
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === effectiveSetterId)).map((e) => e.projectId)).size
     : 0;
   const trainerRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterDealCount) : 0;
-
-  // Reverse-solve: PPW needed to hit a target dollar amount (mirrors desktop logic)
-  const targetAmount = parseFloat(targetEarning) || 0;
-  const requiredPPW = (() => {
-    if (!hasInput || kW <= 0) return 0;
-    if (!isSelfGen) {
-      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
-      if (targetAmount <= closerDiff) {
-        return targetAmount / (kW * 1000) + closerPerW;
-      }
-      const splitPoint = setterBaselinePerW + trainerRate;
-      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
-    }
-    return targetAmount / (kW * 1000) + closerPerW;
-  })();
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) ?? null : null;
 
-  // Closer trainer — mirrors desktop calculator logic
-  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  // Closer trainer — mirrors desktop calculator logic. Computed BEFORE
+  // requiredPPW so the reverse-solve can include the override.
+  const effectiveCloserId = quickFillRepId ?? effectiveRepId;
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
@@ -223,6 +214,24 @@ export default function MobileCalculator() {
     ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
     : 0;
 
+  // Reverse-solve: PPW needed to hit a target dollar amount. Closer trainer
+  // override sits above closerPerW and comes out of closer pay, so the rep's
+  // *personal* threshold is closerPerW + closerTrainerRate.
+  const targetAmount = parseFloat(targetEarning) || 0;
+  const requiredPPW = (() => {
+    if (!hasInput || kW <= 0) return 0;
+    const adjustedCloser = closerPerW + closerTrainerRate;
+    if (!isSelfGen) {
+      const closerDiffCap = Math.max(0, (setterBaselinePerW - adjustedCloser) * kW * 1000);
+      if (targetAmount <= closerDiffCap) {
+        return targetAmount / (kW * 1000) + adjustedCloser;
+      }
+      const splitPoint = setterBaselinePerW + trainerRate;
+      return ((targetAmount - closerDiffCap) * 2) / (kW * 1000) + splitPoint;
+    }
+    return targetAmount / (kW * 1000) + adjustedCloser;
+  })();
+
   // Commission split via the same resolver the server uses on POST +
   // PATCH (Batch 2b.4), so the mobile preview matches what a deal in
   // these exact conditions would actually pay. Self-gen = paired=false,
@@ -230,7 +239,11 @@ export default function MobileCalculator() {
   // closer side with M1 flat $1000 (if kW ≥ 5) or $500.
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
-  const split = hasInput && soldPPW > 0
+  // Raw split — `splitCloserSetterPay` does not factor in closer trainer
+  // overrides. Server payroll (project-transitions.ts) carves the closer-
+  // trainer slice out of M2/M3 after the split; mirror that locally via
+  // `applyCloserTrainerDeduction` so calc reflects actual paid amount.
+  const rawSplit = hasInput && soldPPW > 0
     ? splitCloserSetterPay(
         soldPPW,
         closerPerW,
@@ -240,12 +253,13 @@ export default function MobileCalculator() {
         installPayPct,
       )
     : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
+  const split = applyCloserTrainerDeduction(rawSplit, closerTrainerRate, kW, installPayPct);
   const closerTotal = split.closerTotal;
   const setterTotal = split.setterTotal;
   const trainerTotal = isPaired && trainerRate > 0 && kW > 0 ? Math.round(trainerRate * kW * 1000 * 100) / 100 : 0;
 
   // ── Save to history when a full result is displayed ──────────────────────
-  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}`;
+  const resultHash = `${installer}|${solarTechProductId}|${pcProductId}|${kWSize}|${netPPW}|${isPaired ? '1' : '0'}|${selectedSetterId}|${quickFillSoldDate}|${pricingDate}`;
 
   useEffect(() => {
     if (!hasInput || soldPPW <= 0 || closerTotal <= 0) return;
@@ -428,10 +442,10 @@ export default function MobileCalculator() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-28">
         <MobilePageHeader title="Calculator" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -439,41 +453,41 @@ export default function MobileCalculator() {
 
   // ── Select styles ────────────────────────────────────────────────────────
   const selectStyle: React.CSSProperties = {
-    background: 'var(--m-card, var(--surface-mobile-card))',
-    border: '1px solid var(--m-border, var(--border-mobile))',
+    background: 'var(--surface-card)',
+    border: '1px solid var(--border-subtle)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
   const inputStyle: React.CSSProperties = {
-    background: 'var(--m-card, var(--surface-mobile-card))',
-    border: '1px solid var(--m-border, var(--border-mobile))',
+    background: 'var(--surface-card)',
+    border: '1px solid var(--border-subtle)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
-  const selectCls = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
-  const inputCls  = 'w-full min-h-[48px] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 transition-transform duration-75 active:scale-[0.985]';
+  const selectCls = 'w-full min-h-[48px] text-[var(--text-primary)] rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 appearance-none transition-transform duration-75 active:scale-[0.985]';
+  const inputCls  = 'w-full min-h-[48px] text-[var(--text-primary)] rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-1 transition-transform duration-75 active:scale-[0.985]';
   const labelStyle: React.CSSProperties = {
-    color: 'var(--m-text-dim, #445577)',
+    color: 'var(--text-dim)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
 
   if (!isHydrated) return <MobileCalculatorSkeleton />;
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Calculator" />
 
       {/* ── Quick Fill ────────────────────────────────────────────────────── */}
       {recentDeals.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-1.5 mb-3">
-            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Quick Fill</span>
           </div>
           <div className="flex items-center gap-2">
             <select
               value={quickFillValue}
               onChange={(e) => handleQuickFill(e.target.value)}
               className={selectCls + ' flex-1'}
-              style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-cyan)' } as React.CSSProperties}
+              style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-cyan-solid)' } as React.CSSProperties}
             >
               <option value="">-- Fill from recent deal --</option>
               {recentDeals.map((proj) => (
@@ -487,7 +501,7 @@ export default function MobileCalculator() {
               onClick={handleReset}
               title="Clear all fields"
               className="flex-shrink-0 p-3 rounded-xl transition-colors"
-              style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -510,7 +524,7 @@ export default function MobileCalculator() {
               setPcSelectedFamily('');
             }}
             className={selectCls}
-            style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+            style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
           >
             <option value="">-- Select installer --</option>
             {activeInstallers.map((i) => (
@@ -528,7 +542,7 @@ export default function MobileCalculator() {
                 value={solarTechFamily}
                 onChange={(e) => { setSolarTechFamily(e.target.value); setSolarTechProductId(''); }}
                 className={selectCls}
-                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
               >
                 <option value="">-- Select family --</option>
                 {SOLARTECH_FAMILIES.map((f) => (
@@ -543,7 +557,7 @@ export default function MobileCalculator() {
                   value={solarTechProductId}
                   onChange={(e) => setSolarTechProductId(e.target.value)}
                   className={selectCls}
-                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
                 >
                   <option value="">-- Select package --</option>
                   {solarTechFamilyProducts.map((p) => (
@@ -564,7 +578,7 @@ export default function MobileCalculator() {
                 value={pcSelectedFamily}
                 onChange={(e) => { setPcSelectedFamily(e.target.value); setPcProductId(''); }}
                 className={selectCls}
-                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+                style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
               >
                 <option value="">-- Select family --</option>
                 {pcConfig.families.map((f) => (
@@ -579,7 +593,7 @@ export default function MobileCalculator() {
                   value={pcProductId}
                   onChange={(e) => setPcProductId(e.target.value)}
                   className={selectCls}
-                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+                  style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
                 >
                   <option value="">-- Select package --</option>
                   {pcFamilyProducts.map((p) => (
@@ -608,9 +622,9 @@ export default function MobileCalculator() {
                   onClick={() => { setIsPaired(opt.value); if (!opt.value) setSelectedSetterId(''); }}
                   className="min-h-[44px] rounded-xl text-sm font-semibold transition-[transform,color] duration-75 ease-out active:scale-[0.97]"
                   style={{
-                    background: active ? 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' : 'var(--m-card, var(--surface-mobile-card))',
-                    color: active ? '#050d18' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                    border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                    background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
+                    color: active ? 'var(--surface-page)' : 'var(--text-muted)',
+                    border: active ? 'none' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     transition: 'background 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
@@ -630,7 +644,7 @@ export default function MobileCalculator() {
               value={selectedSetterId}
               onChange={(e) => setSelectedSetterId(e.target.value)}
               className={selectCls}
-              style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+              style={{ ...selectStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             >
               <option value="">-- Select setter --</option>
               {reps
@@ -657,14 +671,20 @@ export default function MobileCalculator() {
               value={pricingDate}
               onChange={(e) => setPricingDate(e.target.value)}
               className={inputCls}
-              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
           </div>
         )}
 
         {/* kW + PPW */}
+        {/*
+         * Each cell is a flex column with the input pushed to the
+         * bottom (`mt-auto`), so a wrapped label on one side ("System
+         * Size (kW)" → 2 lines on narrow phones) doesn't leave its
+         * input misaligned with the unwrapped neighbor's.
+         */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div className="flex flex-col">
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>System Size (kW)</label>
             <input
               type="number"
@@ -676,11 +696,11 @@ export default function MobileCalculator() {
               placeholder="e.g. 8.4"
               value={kWSize}
               onChange={(e) => setKWSize(e.target.value)}
-              className={inputCls}
-              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+              className={inputCls + ' mt-auto'}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
           </div>
-          <div>
+          <div className="flex flex-col">
             <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Net PPW ($)</label>
             <input
               type="number"
@@ -692,8 +712,8 @@ export default function MobileCalculator() {
               placeholder="e.g. 3.85"
               value={netPPW}
               onChange={(e) => setNetPPW(e.target.value)}
-              className={inputCls}
-              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald)' } as React.CSSProperties}
+              className={inputCls + ' mt-auto'}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
           </div>
         </div>
@@ -701,8 +721,8 @@ export default function MobileCalculator() {
 
       {/* ── PPW Needed for Target Earning ────────────────────────────────── */}
       {hasInput && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>PPW Needed for Target Earning</p>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>PPW Needed for Target Earning</p>
           <div className="flex items-center gap-3">
             <input
               type="number"
@@ -711,18 +731,18 @@ export default function MobileCalculator() {
               value={targetEarning}
               onChange={(e) => setTargetEarning(e.target.value)}
               className={inputCls + ' flex-1'}
-              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-blue)' } as React.CSSProperties}
+              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-blue-solid)' } as React.CSSProperties}
             />
             <div className="text-right min-w-[90px]">
               {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                <p style={{ color: 'var(--accent-amber)', fontSize: 12 }}>Baseline unknown</p>
+                <p style={{ color: 'var(--accent-amber-display)', fontSize: 12 }}>Baseline unknown</p>
               ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                 <>
-                  <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--m-text-dim, #445577)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
-                  <p style={{ color: 'var(--m-text-dim, #445577)', fontSize: 11 }}>required PPW</p>
+                  <p style={{ color: 'var(--accent-blue-display)', fontWeight: 700, fontSize: 18, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 11, fontWeight: 400 }}>/W</span></p>
+                  <p style={{ color: 'var(--text-dim)', fontSize: 11 }}>required PPW</p>
                 </>
               ) : (
-                <p style={{ color: 'var(--m-text-dim, #445577)', fontSize: 14 }}>--</p>
+                <p style={{ color: 'var(--text-dim)', fontSize: 14 }}>--</p>
               )}
             </div>
           </div>
@@ -733,30 +753,30 @@ export default function MobileCalculator() {
       {resultMounted && (
         <div ref={resultRef}>
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
-          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="font-black tabular-nums break-words" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
+          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
+          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 
           <div className="mt-5 space-y-2.5">
             {/* Closer row + M1/M2/M3 breakdown */}
             <div className="calc-row-1 flex items-center justify-between">
-              <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
-              <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
+              <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>
+              <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotal)}</span>
             </div>
             <div className="flex gap-2 ml-2">
-              <div className="calc-ms-1 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M1</p>
-                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM1)}</p>
+              <div className="calc-ms-1 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M1</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM1)}</p>
               </div>
-              <div className="calc-ms-2 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M2</p>
-                <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM2)}</p>
+              <div className="calc-ms-2 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M2</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM2)}</p>
               </div>
               {hasM3Split && (
-                <div className="calc-ms-3 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M3</p>
-                  <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM3)}</p>
+                <div className="calc-ms-3 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M3</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.closerM3)}</p>
                 </div>
               )}
             </div>
@@ -765,22 +785,22 @@ export default function MobileCalculator() {
             {setterTotal > 0 && (
               <>
                 <div className="calc-row-2 flex items-center justify-between">
-                  <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
-                  <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displaySetter)}</span>
+                  <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Setter</span>
+                  <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displaySetter)}</span>
                 </div>
                 <div className="flex gap-2 ml-2">
-                  <div className="calc-ms-4 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M1</p>
-                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM1)}</p>
+                  <div className="calc-ms-4 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M1</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM1)}</p>
                   </div>
-                  <div className="calc-ms-5 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M2</p>
-                    <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM2)}</p>
+                  <div className="calc-ms-5 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                    <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M2</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM2)}</p>
                   </div>
                   {hasM3Split && (
-                    <div className="calc-ms-6 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--m-text-dim, #445577)' }}>M3</p>
-                      <p className="text-sm font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM3)}</p>
+                    <div className="calc-ms-6 flex-1 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>M3</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(split.setterM3)}</p>
                     </div>
                   )}
                 </div>
@@ -790,39 +810,40 @@ export default function MobileCalculator() {
             {/* Setter trainer override */}
             {trainerTotal > 0 && (
               <div className="calc-row-3 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{trainerRep ? `: ${trainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayTrainer)}</span>
               </div>
             )}
 
             {/* Closer trainer override */}
             {closerTrainerTotal > 0 && (
               <div className="calc-row-4 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Trainer{closerTrainerRep ? `: ${closerTrainerRep.name}` : ''}
                 </span>
-                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(displayCloserTrainer)}</span>
               </div>
             )}
 
             {effectiveRole === 'admin' && (
               <div className="calc-row-5 flex items-center justify-between">
-                <span className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal))}</span>
+                <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo</span>
+                <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal))}</span>
               </div>
             )}
           </div>
 
-          {/* Baseline info */}
-          <div className="calc-row-6 mt-4 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
-            <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Closer baseline: ${closerPerW.toFixed(2)}/W
-              {!isSelfGen && setterBaselinePerW > 0 && ` · Setter: $${setterBaselinePerW.toFixed(2)}/W`}
-              {trainerRate > 0 && ` · ${trainerRep ? trainerRep.name : 'Trainer'}: +$${trainerRate.toFixed(2)}/W`}
+          {/* Baseline info — display values fold in trainer overrides so the
+              rep's redline reflects their personal break-even. Setter is
+              hidden on self-gen since there's no setter pay path. */}
+          <div className="calc-row-6 mt-4 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              Closer baseline: ${(closerPerW + closerTrainerRate).toFixed(2)}/W
+              {!isSelfGen && setterBaselinePerW > 0 && ` · Setter: $${(setterBaselinePerW + trainerRate).toFixed(2)}/W`}
             </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Sold: ${soldPPW.toFixed(2)}/W · {kW.toFixed(1)} kW
             </p>
           </div>
@@ -834,7 +855,7 @@ export default function MobileCalculator() {
       {(!hasInput || soldPPW <= 0) && (
         <MobileCard key="empty">
           <div className="py-6 text-center">
-            <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Fill in the fields above to calculate commission</p>
           </div>
         </MobileCard>
       )}

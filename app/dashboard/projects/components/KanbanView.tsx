@@ -158,13 +158,13 @@ export default function KanbanView({
           placeholder="Search projects..."
           value={kanbanSearchInput}
           onChange={(e) => setKanbanSearchInput(e.target.value)}
-          className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] placeholder-slate-500"
+          className="w-full rounded-xl pl-9 pr-8 py-2 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] placeholder-slate-500"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         {kanbanSearchInput && (
           <button
             onClick={() => { setKanbanSearchInput(''); setKanbanDebouncedSearch(''); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             aria-label="Clear kanban search"
           >
             <X className="w-4 h-4" />
@@ -200,7 +200,7 @@ export default function KanbanView({
         <div className="flex justify-end mb-1">
           <button
             onClick={toggleAllPhases}
-            className="text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-[var(--surface-card)]"
+            className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--surface-card)]"
           >
             {allPhasesOpen ? 'Collapse All' : 'Expand All'}
           </button>
@@ -278,7 +278,7 @@ export default function KanbanView({
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
-                        className={`relative overflow-hidden bg-[var(--surface-card)]/60 border rounded-xl flex items-center justify-between gap-2 transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-[var(--accent-green)]/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
+                        className={`relative overflow-hidden bg-[var(--surface-card)]/60 border rounded-xl flex items-center justify-between gap-2 transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/5 hover:border-[var(--accent-emerald-solid)]/20 active:scale-[0.98] active:shadow-none after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-blue-500/30 after:to-transparent after:opacity-0 hover:after:opacity-100 after:transition-opacity ${
                           proj.flagged
                             ? 'border-l-2 border-l-red-500 border-[var(--border)]/60'
                             : isMyCard && dealScope === 'all'
@@ -289,18 +289,18 @@ export default function KanbanView({
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
                         {/* Card content — py-3 ensures at least 44px total height with text */}
                         <div className="flex-1 px-4 py-3 min-h-[44px]">
-                          <p className="text-white text-sm font-medium leading-snug group-hover:text-[var(--accent-green)] transition-colors flex items-center gap-1.5 flex-wrap">
+                          <p className="text-[var(--text-primary)] text-sm font-medium leading-snug group-hover:text-[var(--accent-emerald-text)] transition-colors flex items-center gap-1.5 flex-wrap">
                             {proj.customerName}
                             {proj.flagged && (
-                              <Flag className="w-3 h-3 text-red-400 flex-shrink-0" />
+                              <Flag className="w-3 h-3 text-[var(--accent-red-text)] flex-shrink-0" />
                             )}
                             <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
                             {/* Prominent "You" role pill next to customer name — shown in All Deals mode */}
                             {isMyCard && dealScope === 'all' && (
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                                 myRole === 'Closer'
-                                  ? 'bg-blue-900/60 text-[var(--accent-cyan)] border border-[var(--accent-green)]/40'
-                                  : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-green)]/40'
+                                  ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
+                                  : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/40'
                               }`}>
                                 You · {myRole}
                               </span>
@@ -319,7 +319,7 @@ export default function KanbanView({
                           >
                             {proj.repName}
                             {(proj.additionalClosers?.length ?? 0) > 0 && (
-                              <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                              <span className="ml-1 text-[10px] text-[var(--accent-emerald-text)] font-semibold">
                                 +{proj.additionalClosers!.length}
                               </span>
                             )}
@@ -327,7 +327,7 @@ export default function KanbanView({
                           {/* Commission row */}
                           {!hideFinancials && (
                             <div className="flex items-center justify-end mt-1">
-                              <span className="text-[var(--accent-green)]/70 text-[10px] font-medium tabular-nums">
+                              <span className="text-[var(--accent-emerald-text)]/70 text-[10px] font-medium tabular-nums">
                                 ${commissionTotal.toLocaleString()}
                               </span>
                             </div>
@@ -345,7 +345,7 @@ export default function KanbanView({
                                   e.stopPropagation();
                                   onPhaseChange(proj.id, prevPhase);
                                 }}
-                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--border)] hover:bg-amber-600 text-[var(--text-secondary)] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--border)] hover:bg-amber-600 text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
                               >
                                 <ChevronLeft className="w-4 h-4" />
@@ -359,7 +359,7 @@ export default function KanbanView({
                                   e.stopPropagation();
                                   onPhaseChange(proj.id, nextPhase);
                                 }}
-                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--border)] hover:bg-[var(--accent-green)] text-[var(--text-secondary)] hover:text-white active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--border)] hover:bg-[var(--accent-emerald-solid)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.97] transition-all focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
                               >
                                 <ChevronRight className="w-4 h-4" />
@@ -375,7 +375,7 @@ export default function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-2 text-xs font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
+                      className="w-full text-center py-2 text-xs font-medium text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
@@ -438,7 +438,7 @@ export default function KanbanView({
                       {phaseProjects.length > KANBAN_CARD_LIMIT && (
                         <button
                           onClick={() => toggleExpand(phase)}
-                          className="w-full text-center py-2 text-xs font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
+                          className="w-full text-center py-2 text-xs font-medium text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
                         >
                           {expandedColumns.has(phase)
                             ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
@@ -465,7 +465,7 @@ export default function KanbanView({
       <div
         ref={kanbanHeaderRef}
         className="sticky top-0 z-20 overflow-x-hidden"
-        style={{ background: 'var(--navy-base)' }}
+        style={{ background: 'var(--surface-page)' }}
       >
         <div className="flex gap-4 pb-1">
           {activePhasesForKanban.map((phase) => {
@@ -550,28 +550,28 @@ export default function KanbanView({
                           background: 'var(--surface)',
                           border: `1px solid var(--border)`,
                           borderLeft: proj.flagged
-                            ? '3px solid var(--accent-red)'
+                            ? '3px solid var(--accent-red-solid)'
                             : isMyCard && dealScope === 'all'
-                              ? '3px solid var(--accent-blue)'
+                              ? '3px solid var(--accent-blue-solid)'
                               : `3px solid ${PHASE_COLORS[proj.phase] ?? 'var(--border)'}`,
                         }}
                       >
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />
                         <div className="flex items-start justify-between gap-1 mb-1">
-                          <p className="text-white text-xs font-medium leading-tight group-hover:text-[var(--accent-green)] transition-colors">
+                          <p className="text-[var(--text-primary)] text-xs font-medium leading-tight group-hover:text-[var(--accent-emerald-text)] transition-colors">
                             {proj.customerName}
                           </p>
                           <div className="flex items-center gap-1 shrink-0 mt-0.5">
                             <StaleBadge soldDate={proj.soldDate} phase={proj.phase} />
-                            {proj.flagged && <Flag className="w-3 h-3 text-red-400" />}
+                            {proj.flagged && <Flag className="w-3 h-3 text-[var(--accent-red-text)]" />}
                           </div>
                         </div>
                         {/* "You" role pill — prominent, shown in All Deals mode */}
                         {isMyCard && dealScope === 'all' && (
                           <span className={`inline-flex items-center mb-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none ${
                             myRole === 'Closer'
-                              ? 'bg-blue-900/60 text-[var(--accent-cyan)] border border-[var(--accent-green)]/40'
-                              : 'bg-emerald-900/60 text-emerald-300 border border-[var(--accent-green)]/40'
+                              ? 'bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/40'
+                              : 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/40'
                           }`}>
                             You · {myRole}
                           </span>
@@ -588,7 +588,7 @@ export default function KanbanView({
                         >
                           {proj.repName}
                           {(proj.additionalClosers?.length ?? 0) > 0 && (
-                            <span className="ml-1 text-[10px] text-[var(--accent-green)] font-semibold">
+                            <span className="ml-1 text-[10px] text-[var(--accent-emerald-text)] font-semibold">
                               +{proj.additionalClosers!.length}
                             </span>
                           )}
@@ -596,7 +596,7 @@ export default function KanbanView({
                         {/* Mini commission preview + phase nav row */}
                         {!hideFinancials && (
                           <div className="flex items-center mt-1.5 justify-end">
-                            <span className="text-[10px] font-medium tabular-nums" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>
+                            <span className="text-[10px] font-medium tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>
                               ${commissionTotal.toLocaleString()}
                             </span>
                           </div>
@@ -613,7 +613,7 @@ export default function KanbanView({
                                   e.stopPropagation();
                                   onPhaseChange(proj.id, prevPhase);
                                 }}
-                                className="p-1 rounded-md bg-[var(--border)] hover:bg-amber-600 text-[var(--text-secondary)] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="p-1 rounded-md bg-[var(--border)] hover:bg-amber-600 text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} back to ${prevPhase}`}
                               >
                                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -627,7 +627,7 @@ export default function KanbanView({
                                   e.stopPropagation();
                                   onPhaseChange(proj.id, nextPhase);
                                 }}
-                                className="p-1 rounded-md bg-[var(--border)] hover:bg-[var(--accent-green)] text-[var(--text-secondary)] hover:text-white active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                                className="p-1 rounded-md bg-[var(--border)] hover:bg-[var(--accent-emerald-solid)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                                 aria-label={`Move ${proj.customerName} to ${nextPhase}`}
                               >
                                 <ChevronRight className="w-3.5 h-3.5" />
@@ -643,7 +643,7 @@ export default function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-1.5 text-[10px] font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
@@ -652,7 +652,7 @@ export default function KanbanView({
                   )}
                 </div>
                 {/* Bottom scroll-shadow gradient — only visible when content overflows */}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-xl" style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--surface-page) 80%, transparent), transparent)' }} />
               </div>
             </div>
           );
@@ -694,7 +694,7 @@ export default function KanbanView({
                   {phaseProjects.length > KANBAN_CARD_LIMIT && (
                     <button
                       onClick={() => toggleExpand(phase)}
-                      className="w-full text-center py-1.5 text-[10px] font-medium text-[var(--accent-green)] hover:text-[var(--accent-cyan)] transition-colors"
+                      className="w-full text-center py-1.5 text-[10px] font-medium text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
                     >
                       {expandedColumns.has(phase)
                         ? (phaseProjects.length > KANBAN_EXPANDED_MAX ? `Showing ${KANBAN_EXPANDED_MAX} of ${phaseProjects.length} — Show less` : 'Show less')
@@ -703,7 +703,7 @@ export default function KanbanView({
                   )}
                 </div>
                 {/* Bottom scroll-shadow gradient — only visible when content overflows */}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent rounded-b-xl" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-xl" style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--surface-page) 80%, transparent), transparent)' }} />
               </div>
             </div>
           );

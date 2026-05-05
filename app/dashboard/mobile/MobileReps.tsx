@@ -53,10 +53,10 @@ const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_mana
 };
 
 const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  rep:              { label: 'Rep',      color: 'var(--accent-emerald)', bg: 'rgba(0,229,160,0.12)' },
-  'sub-dealer':     { label: 'SD',       color: '#b47dff', bg: 'rgba(180,125,255,0.12)' },
-  project_manager:  { label: 'PM',       color: 'var(--accent-cyan)', bg: 'rgba(0,196,240,0.12)' },
-  admin:            { label: 'Admin',    color: 'var(--accent-amber)', bg: 'rgba(255,176,32,0.12)' },
+  rep:              { label: 'Rep',      color: 'var(--accent-emerald-text)', bg: 'var(--accent-emerald-soft)' },
+  'sub-dealer':     { label: 'SD',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
+  project_manager:  { label: 'PM',       color: 'var(--accent-cyan-text)', bg: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)' },
+  admin:            { label: 'Admin',    color: 'var(--accent-amber-text)', bg: 'var(--accent-amber-soft)' },
 };
 
 export default function MobileReps() {
@@ -82,13 +82,17 @@ export default function MobileReps() {
       .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
         setAdminUsers(data.map((u) => ({ ...u, role: 'admin' })));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] admin user load failed:', err instanceof Error ? err.message : err);
+      });
     fetch('/api/reps?role=project_manager')
       .then((r) => r.ok ? r.json() : [])
       .then((data: Array<{ id: string; firstName: string; lastName: string; email?: string; phone?: string }>) => {
         setPmUsers(data.map((u) => ({ ...u, role: 'project_manager' })));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] PM user load failed:', err instanceof Error ? err.message : err);
+      });
   }, [isAdmin, isPM]);
   const [showAddRep, setShowAddRep] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -120,7 +124,9 @@ export default function MobileReps() {
     fetch('/api/users/invitations')
       .then((r) => r.ok ? r.json() : { invitations: [] })
       .then((data) => setPendingInvitations(data.invitations ?? []))
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('[MobileReps] pending invitations load failed:', err instanceof Error ? err.message : err);
+      });
   }, [isAdmin]);
 
   // Reactivating state per user
@@ -315,7 +321,7 @@ export default function MobileReps() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader
         title="Users"
         right={
@@ -323,7 +329,7 @@ export default function MobileReps() {
             <button
               onClick={() => setShowAddRep(true)}
               className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))', boxShadow: '0 0 20px rgba(0,229,160,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
               aria-label="Add rep"
             >
               <Plus className="w-5 h-5" />
@@ -342,11 +348,11 @@ export default function MobileReps() {
               onClick={() => { setRoleFilter(rf.value); setRepTypeFilter('all'); }}
               className="shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.94]"
               style={{
-                background: active ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: active ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                background: active ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                color: active ? '#000' : 'var(--text-muted)',
+                border: active ? 'none' : '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                boxShadow: active ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+                boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
                 transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
@@ -367,11 +373,11 @@ export default function MobileReps() {
                 onClick={() => setRepTypeFilter(rt.value)}
                 className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold active:scale-[0.94]"
                 style={{
-                  background: active ? 'rgba(0,196,240,0.2)' : 'var(--m-card, var(--surface-mobile-card))',
-                  color: active ? 'var(--accent-cyan)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                  border: active ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--m-border, var(--border-mobile))',
+                  background: active ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-card)',
+                  color: active ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
+                  border: active ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  boxShadow: active ? '0 0 14px rgba(0,196,240,0.25)' : 'none',
+                  boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)' : 'none',
                   transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               >
@@ -384,16 +390,16 @@ export default function MobileReps() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
         <input
           type="text"
           placeholder={roleFilter === 'rep' ? 'Search reps...' : 'Search users...'}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-white focus:outline-none focus:ring-1 transition-colors"
+          className="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-2xl text-base text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         />
@@ -406,18 +412,18 @@ export default function MobileReps() {
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
             className="min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.95]"
             style={{
-              background: compareMode ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-              color: compareMode ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-              border: compareMode ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+              background: compareMode ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+              color: compareMode ? '#000' : 'var(--text-muted)',
+              border: compareMode ? 'none' : '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              boxShadow: compareMode ? '0 0 14px rgba(0,229,160,0.25)' : 'none',
+              boxShadow: compareMode ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
               transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Tap to exit` : 'Compare Reps'}
           </button>
           {compareMode && compareIds.size === 0 && (
-            <p className="text-xs mt-1.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Select 2–3 reps below to compare.
             </p>
           )}
@@ -426,19 +432,19 @@ export default function MobileReps() {
 
       {/* Pending invitations panel — admin only */}
       {isAdmin && pendingInvitations.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid rgba(255,176,32,0.25)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>
           <div className="flex items-center gap-2 mb-2">
-            <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">{pendingInvitations.length}</span>
+            <Mail className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0" />
+            <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending Invitations</span>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-[var(--accent-amber-text)] border border-amber-400/20">{pendingInvitations.length}</span>
           </div>
           <div className="space-y-2">
             {pendingInvitations.map((inv) => (
-              <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-                <Clock className="w-3.5 h-3.5 text-amber-400/60 shrink-0" />
+              <div key={inv.id} className="flex items-center gap-2 px-2 py-2 rounded-xl" style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
+                <Clock className="w-3.5 h-3.5 text-[var(--accent-amber-text)]/60 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
-                  <p className="text-[11px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-sm text-[var(--text-primary)] font-medium truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{inv.emailAddress}</p>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     Invited {new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>
@@ -467,7 +473,7 @@ export default function MobileReps() {
                     });
                   }}
                   className="shrink-0 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                  style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -504,7 +510,7 @@ export default function MobileReps() {
         return (
           <div className="space-y-3">
             {filteredPool.map((u) => {
-              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'rgba(136,145,168,0.12)' };
+              const badge = ROLE_BADGE[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)' };
               const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
               return (
                 <MobileCard key={u.id} onTap={() => router.push(`/dashboard/users/${u.id}`)}>
@@ -516,9 +522,9 @@ export default function MobileReps() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
                       {u.email && (
-                        <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
+                        <p className="text-sm truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
                       )}
                     </div>
                     <MobileBadge value={badge.label} />
@@ -542,7 +548,7 @@ export default function MobileReps() {
                           }}
                           title="Deactivate sub-dealer"
                           className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                          style={{ color: 'var(--text-muted)' }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -555,12 +561,15 @@ export default function MobileReps() {
                               confirmLabel: 'Convert',
                               onConfirm: () => convertUserRole(u.id, 'rep')
                                 .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
-                                .catch(() => {}),
+                                .catch((err) => {
+                                  toast(`Failed to convert ${u.firstName} ${u.lastName}`, 'error');
+                                  console.warn('[MobileReps] convertUserRole failed:', err instanceof Error ? err.message : err);
+                                }),
                             });
                           }}
                           title="Convert to Rep"
                           className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                          style={{ color: 'var(--text-muted)' }}
                         >
                           <UserCog className="w-4 h-4" />
                         </button>
@@ -587,15 +596,15 @@ export default function MobileReps() {
         const compareReps = filtered.filter((r) => compareIds.has(r.id));
         const todayStr = new Date().toISOString().slice(0, 10);
         if (compareReps.length < 2) return (
-          <div className="rounded-2xl p-4 text-sm" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+          <div className="rounded-2xl p-4 text-sm" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
             Some selected reps are hidden by the current filter. Change the filter or re-select reps to compare.
           </div>
         );
         return (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
-              {ranges.prev && <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>vs {ranges.prev.label}</span>}
+              <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
+              {ranges.prev && <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>vs {ranges.prev.label}</span>}
             </div>
             <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
               {PERIOD_OPTIONS.map((opt) => (
@@ -604,9 +613,9 @@ export default function MobileReps() {
                   onClick={() => setComparePeriod(opt.value)}
                   className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
                   style={{
-                    background: comparePeriod === opt.value ? 'rgba(0,196,240,0.2)' : 'rgba(0,0,0,0.2)',
-                    color: comparePeriod === opt.value ? 'var(--accent-cyan)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                    border: comparePeriod === opt.value ? '1px solid rgba(0,196,240,0.4)' : '1px solid var(--m-border, var(--border-mobile))',
+                    background: comparePeriod === opt.value ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-pressed)',
+                    color: comparePeriod === opt.value ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
+                    border: comparePeriod === opt.value ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -617,18 +626,18 @@ export default function MobileReps() {
             {comparePeriod === 'custom' && (
               <div className="flex items-center gap-2 mb-3">
                 <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
-                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }} />
-                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>to</span>
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
+                  style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }} />
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>to</span>
                 <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-                  className="flex-1 min-h-[36px] rounded-xl px-2 text-white text-xs focus:outline-none"
-                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--m-border, var(--border-mobile))' }} />
+                  className="flex-1 min-h-[36px] rounded-xl px-2 text-[var(--text-primary)] text-xs focus:outline-none"
+                  style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }} />
               </div>
             )}
             <div className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
               {compareReps.map((rep) => {
                 const rp = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const dealsClosed = rp.length;
                 const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
@@ -637,46 +646,46 @@ export default function MobileReps() {
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= todayStr).reduce((s, e) => s + e.amount, 0)
                   : 0;
                 const rpCancelled = ranges.current.from && ranges.current.to
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase === 'Cancelled' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const cancelRate = (rp.length + rpCancelled.length) > 0 ? (rpCancelled.length / (rp.length + rpCancelled.length) * 100) : 0;
                 const prevDeals = ranges.prev
-                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
+                  ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.prev!.from, ranges.prev!.to)).length
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
                 return (
-                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-black text-xs font-bold mx-auto mb-1.5"
-                      style={{ background: 'linear-gradient(135deg, var(--accent-cyan2), var(--accent-emerald))' }}>
+                      style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}>
                       {getInitials(rep.name)}
                     </div>
-                    <p className="text-sm font-semibold text-white truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
-                    <p className="text-[10px] mb-2" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{ranges.current.label}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-[10px] mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{ranges.current.label}</p>
                     <div className="space-y-1.5 text-xs text-left">
                       <div className="flex justify-between gap-2">
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Deals</span>
-                        <span className="font-semibold text-white flex items-center gap-1">
+                        <span style={{ color: 'var(--text-muted)' }}>Deals</span>
+                        <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1">
                           {dealsClosed}
                           {deltaDeals !== null && deltaDeals !== 0 && (
-                            <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald)' : '#f87171', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
+                            <span style={{ color: deltaDeals > 0 ? 'var(--accent-emerald-solid)' : 'var(--accent-red-text)', fontSize: 9 }}>{deltaDeals > 0 ? '+' : ''}{deltaDeals}</span>
                           )}
                         </span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>kW</span>
-                        <span className="font-semibold text-white">{formatCompactKW(kwSold)}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>kW</span>
+                        <span className="font-semibold text-[var(--text-primary)]">{formatCompactKW(kwSold)}</span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Avg</span>
-                        <span className="font-semibold text-white">{avgDealSize.toFixed(1)} kW</span>
+                        <span style={{ color: 'var(--text-muted)' }}>Avg</span>
+                        <span className="font-semibold text-[var(--text-primary)]">{avgDealSize.toFixed(1)} kW</span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Paid</span>
-                        <span className="font-semibold" style={{ color: 'var(--accent-emerald)' }}>${commissionEarned.toLocaleString()}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>Paid</span>
+                        <span className="font-semibold" style={{ color: 'var(--accent-emerald-text)' }}>${commissionEarned.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Cancel</span>
-                        <span className="font-semibold" style={{ color: cancelRate > 20 ? '#f87171' : 'var(--m-text-muted, var(--text-mobile-muted))' }}>{cancelRate.toFixed(0)}%</span>
+                        <span style={{ color: 'var(--text-muted)' }}>Cancel</span>
+                        <span className="font-semibold" style={{ color: cancelRate > 20 ? 'var(--accent-red-text)' : 'var(--text-muted)' }}>{cancelRate.toFixed(0)}%</span>
                       </div>
                     </div>
                   </div>
@@ -704,8 +713,8 @@ export default function MobileReps() {
                     <div
                       className="w-5 h-5 rounded flex items-center justify-center shrink-0"
                       style={{
-                        background: compareIds.has(rep.id) ? 'var(--accent-emerald)' : 'transparent',
-                        border: compareIds.has(rep.id) ? 'none' : '1.5px solid var(--m-border, var(--border-mobile))',
+                        background: compareIds.has(rep.id) ? 'var(--accent-emerald-solid)' : 'transparent',
+                        border: compareIds.has(rep.id) ? 'none' : '1.5px solid var(--border-subtle)',
                       }}
                     >
                       {compareIds.has(rep.id) && <Check className="w-3 h-3 text-black" />}
@@ -713,14 +722,14 @@ export default function MobileReps() {
                   )}
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-cyan2), var(--accent-emerald))' }}
+                    style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}
                   >
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     {rep.email && (
-                      <p className="text-base truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+                      <p className="text-base truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}
                   </div>
                   <MobileBadge value={REP_TYPE_LABELS[rep.repType] ?? rep.repType} />
@@ -743,14 +752,14 @@ export default function MobileReps() {
                       }}
                       title="Deactivate rep"
                       className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                      style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                      style={{ color: 'var(--text-muted)' }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
 
-                <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
                   <span>&middot;</span>
                   <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
@@ -765,30 +774,30 @@ export default function MobileReps() {
 
       {/* Inactive reps — shown for rep or all filter */}
       {isAdmin && (roleFilter === 'rep' || roleFilter === 'all') && inactiveReps.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             type="button"
             onClick={() => setShowInactiveReps((v) => !v)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
           >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveReps ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveReps ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Inactive reps ({inactiveReps.length})
             </span>
           </button>
           {showInactiveReps && (
             <div className="mt-2 space-y-2">
               {inactiveReps.map((rep) => (
-                <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(rep.firstName?.[0] ?? '') + (rep.lastName?.[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${rep.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {rep.name} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
                     </p>
-                    {rep.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>}
+                    {rep.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>}
                   </div>
                   <button
                     disabled={reactivatingId === rep.id}
@@ -804,7 +813,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)', border: '1px solid rgba(0,229,160,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -817,30 +826,30 @@ export default function MobileReps() {
 
       {/* Inactive sub-dealers — shown for sub-dealer or all filter */}
       {isAdmin && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             type="button"
             onClick={() => setShowInactiveSubDealers((v) => !v)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
           >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Inactive sub-dealers ({inactiveSubDealers.length})
             </span>
           </button>
           {showInactiveSubDealers && (
             <div className="mt-2 space-y-2">
               {inactiveSubDealers.map((sd) => (
-                <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(sd.firstName[0] ?? '') + (sd.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${sd.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {sd.firstName} {sd.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
                     </p>
-                    {sd.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
+                    {sd.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
                   </div>
                   <button
                     disabled={reactivatingSubDealerId === sd.id}
@@ -856,7 +865,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(180,125,255,0.12)', color: '#b47dff', border: '1px solid rgba(180,125,255,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -869,30 +878,30 @@ export default function MobileReps() {
 
       {/* Inactive PMs — shown for project_manager or all filter */}
       {isAdmin && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             type="button"
             onClick={() => setShowInactivePMs((v) => !v)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
           >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Inactive project managers ({inactivePMs.length})
             </span>
           </button>
           {showInactivePMs && (
             <div className="mt-2 space-y-2">
               {inactivePMs.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
                     </p>
-                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
                   </div>
                   <button
                     disabled={reactivatingPmId === u.id}
@@ -910,7 +919,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(0,196,240,0.12)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,196,240,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -923,30 +932,30 @@ export default function MobileReps() {
 
       {/* Inactive admins — shown for admin or all filter */}
       {isAdmin && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             type="button"
             onClick={() => setShowInactiveAdmins((v) => !v)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
           >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`} style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Inactive admins ({inactiveAdmins.length})
             </span>
           </button>
           {showInactiveAdmins && (
             <div className="mt-2 space-y-2">
               {inactiveAdmins.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(136,145,168,0.2)', color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
                     {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
                   </div>
                   <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
                     </p>
-                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
                   </div>
                   <button
                     disabled={reactivatingAdminId === u.id}
@@ -964,7 +973,7 @@ export default function MobileReps() {
                       }
                     }}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
                   </button>
@@ -1074,7 +1083,7 @@ export default function MobileReps() {
           className="px-5 space-y-4 pb-2"
         >
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Role</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Role</label>
             <div className="flex gap-2 flex-wrap">
               {(['rep', 'admin', 'sub-dealer', 'project_manager'] as const).map((role) => {
                 const labels: Record<string, string> = { rep: 'Rep', admin: 'Admin', 'sub-dealer': 'Sub-Dealer', project_manager: 'PM' };
@@ -1085,9 +1094,9 @@ export default function MobileReps() {
                     onClick={() => setAddForm((f) => ({ ...f, userRole: role, sendInvite: false }))}
                     className="flex-1 min-h-[40px] rounded-2xl text-sm font-semibold transition-colors"
                     style={{
-                      background: addForm.userRole === role ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                      color: addForm.userRole === role ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      border: addForm.userRole === role ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
+                      background: addForm.userRole === role ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                      color: addForm.userRole === role ? '#000' : 'var(--text-muted)',
+                      border: addForm.userRole === role ? '1px solid var(--accent-emerald-solid)' : '1px solid var(--border-subtle)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -1098,58 +1107,58 @@ export default function MobileReps() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
             <input
               type="text"
               required
               value={addForm.firstName}
               onChange={(e) => setAddForm((f) => ({ ...f, firstName: e.target.value }))}
               placeholder="First name"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Last Name</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Last Name</label>
             <input
               type="text"
               required
               value={addForm.lastName}
               onChange={(e) => setAddForm((f) => ({ ...f, lastName: e.target.value }))}
               placeholder="Last name"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Email</label>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Email</label>
             <input
               type="email"
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
-              className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           {addForm.userRole === 'rep' && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
               <div className="flex gap-2">
                 {(['closer', 'setter', 'both'] as const).map((type) => (
                   <button
@@ -1158,9 +1167,9 @@ export default function MobileReps() {
                     onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
                     className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
                     style={{
-                      background: addForm.repType === type ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                      color: addForm.repType === type ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                      border: addForm.repType === type ? '1px solid var(--accent-emerald)' : '1px solid var(--m-border, var(--border-mobile))',
+                      background: addForm.repType === type ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                      color: addForm.repType === type ? '#000' : 'var(--text-muted)',
+                      border: addForm.repType === type ? '1px solid var(--accent-emerald-solid)' : '1px solid var(--border-subtle)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
@@ -1172,14 +1181,14 @@ export default function MobileReps() {
           )}
           {addForm.userRole === 'rep' && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer (optional)</label>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer (optional)</label>
               <select
                 value={addForm.trainerId}
                 onChange={(e) => setAddForm((f) => ({ ...f, trainerId: e.target.value }))}
-                className="w-full min-h-[48px] text-white text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+                className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
@@ -1198,7 +1207,7 @@ export default function MobileReps() {
                 onChange={(e) => setAddForm((f) => ({ ...f, sendInvite: e.target.checked }))}
                 className="w-5 h-5 rounded accent-emerald-400"
               />
-              <span className="text-sm font-medium" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 Send invite email
               </span>
             </label>
@@ -1208,8 +1217,8 @@ export default function MobileReps() {
             disabled={isAddingUser}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors disabled:opacity-50"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 0 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

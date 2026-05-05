@@ -45,8 +45,14 @@ interface AppContextType {
   setTrainerAssignments: React.Dispatch<React.SetStateAction<TrainerAssignment[]>>;
   incentives: Incentive[];
   setIncentives: React.Dispatch<React.SetStateAction<Incentive[]>>;
-  // Adds a project and auto-creates Draft payroll entries for all involved reps
-  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => boolean;
+  // Adds a project and auto-creates Draft payroll entries for all involved reps.
+  // Returns a Promise that resolves with the persisted project's real DB id
+  // (after /api/projects responds), or null if validation fails synchronously
+  // (e.g. missing installer name → id mapping). Optimistic local-state update
+  // happens immediately; awaiters block on the actual server response so they
+  // can chain follow-up calls (e.g. uploading a utility bill against the
+  // newly-created project).
+  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => Promise<{ id: string } | null>;
   // Marks individual payroll entries as Pending
   markForPayroll: (entryIds: string[]) => Promise<void>;
   // Persists a new payroll entry to the DB, registers its temp ID in the resolution map
@@ -87,7 +93,7 @@ interface AppContextType {
   deleteSubDealerPermanently: (id: string) => Promise<{ success: boolean; error?: string }>;
   updateSubDealerContact: (id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string }, skipFetch?: boolean) => void;
   // Project editing
-  updateProject: (id: string, updates: Partial<Project>) => void;
+  updateProject: (id: string, updates: Partial<Project>, opts?: { editReason?: string }) => void;
   // Editable baselines (derived from active pricing versions for backward compat)
   installerBaselines: Record<string, InstallerBaseline>;
   updateInstallerBaseline: (installer: string, baseline: InstallerBaseline) => void;
@@ -106,7 +112,48 @@ interface AppContextType {
   productCatalogProducts: ProductCatalogProduct[];
   addProductCatalogInstaller: (name: string, config: ProductCatalogInstallerConfig) => void;
   updateProductCatalogInstallerConfig: (name: string, config: Partial<ProductCatalogInstallerConfig>) => void;
-  addProductCatalogProduct: (product: ProductCatalogProduct) => void;
+  addProductCatalogProduct: (
+    product: ProductCatalogProduct,
+    options?: { effectiveFrom?: string; versionLabel?: string; idempotencyKey?: string; reason?: string },
+  ) => void;
+  addSolarTechProduct: (input: {
+    tempId: string;
+    family: string;
+    financer: string;
+    name: string;
+    tiers: SolarTechProduct['tiers'];
+    effectiveFrom?: string;
+    versionLabel?: string;
+    idempotencyKey?: string;
+    reason?: string;
+  }) => Promise<string>;
+  removeSolarTechProduct: (id: string) => Promise<void>;
+  restoreProduct: (id: string) => Promise<void>;
+  applyBulkTierAdjust: (
+    op: { operation: 'adjust'; adjustment: number } | { operation: 'spread'; spreadByTierIndex: Record<string, number> },
+    selections: ReadonlyArray<{ productId: string; tierIndex: number; isSolarTech: boolean }>,
+  ) => Promise<{
+    affected: number;
+    skipped: Array<{ productId: string; tierIndex: number; reason: string }>;
+    undoData: Array<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>;
+  }>;
+  undoBulkTierAdjust: (
+    restorePoints: ReadonlyArray<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>,
+  ) => Promise<{ restored: number }>;
+  applyBulkVersionCreate: (input: {
+    effectiveFrom: string;
+    label: string;
+    reason?: string;
+    retroactive?: boolean;
+    products: ReadonlyArray<{
+      productId: string;
+      tiers: ReadonlyArray<{
+        minKW: number; maxKW: number | null;
+        closerPerW: number; setterPerW: number;
+        kiloPerW: number; subDealerPerW?: number | null;
+      }>;
+    }>;
+  }) => Promise<{ created: Array<{ id: string; productId: string; label: string; effectiveFrom: string }> }>;
   updateProductCatalogProduct: (id: string, updates: Partial<ProductCatalogProduct>) => void;
   updateProductCatalogTier: (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => void;
   removeProductCatalogProduct: (id: string) => Promise<void>;
@@ -131,17 +178,48 @@ interface AppContextType {
   // Project Chatter — lightweight unread mention count for nav badge
   unreadMentionCount: number;
   refreshMentionCount: () => void;
-  // View As (admin impersonation)
-  viewAsUser: { id: string; name: string; role: 'rep' | 'sub-dealer' } | null;
-  setViewAsUser: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  // View As (admin impersonation) — supports all roles, not just rep/SD,
+  // so admins can preview what a PM or admin colleague sees.
+  viewAsUser: ViewAsUser | null;
+  setViewAsUser: (user: ViewAsUser) => void;
   clearViewAs: () => void;
   isViewingAs: boolean;
   effectiveRole: Role;
   effectiveRepId: string | null;
   effectiveRepName: string | null;
+  /** When viewing-as a vendor PM, the installer scope id. UI components
+   *  scoping by installer (Projects list) read this to mirror what the PM
+   *  actually sees. Null otherwise (admin / internal PM / rep / SD view). */
+  effectiveScopedInstallerId: string | null;
+  /** Same as `effectiveScopedInstallerId` but resolved to the installer
+   *  name (project DTOs use names, not ids). Null when not in vendor PM
+   *  view-as mode or when the id has no name mapping. */
+  effectiveScopedInstallerName: string | null;
+  /** Admin + project_manager candidates the admin can view-as. Populated
+   *  by /api/data only for admins; empty for everyone else. */
+  viewAsCandidates: ViewAsCandidate[];
   // PM permissions
   pmPermissions: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null;
+  /** Lookup map for converting installer/financer display names to DB IDs.
+   *  Project DTOs use names; admin surfaces calling ID-keyed APIs
+   *  (e.g. /api/installers/[id]/handoff-config) need the inverse. */
+  getIdMaps: () => { installerNameToId: Record<string, string>; financerNameToId: Record<string, string> };
 }
+
+export type ViewAsUser = {
+  id: string;
+  name: string;
+  role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager';
+  /** Set only for vendor PM impersonation — the installer they're scoped to. */
+  scopedInstallerId?: string | null;
+};
+
+export type ViewAsCandidate = {
+  id: string;
+  name: string;
+  role: 'admin' | 'project_manager';
+  scopedInstallerId: string | null;
+};
 
 const AppContext = createContext<AppContextType | null>(null);
 
@@ -192,7 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dbReady, setDbReady] = useState(false);
   const [dataError, setDataError] = useState(false);
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
-  const [viewAsUser, setViewAsUserState] = useState<{ id: string; name: string; role: 'rep' | 'sub-dealer' } | null>(null);
+  const [viewAsUser, setViewAsUserState] = useState<ViewAsUser | null>(null);
+  const [viewAsCandidates, setViewAsCandidates] = useState<ViewAsCandidate[]>([]);
   const [pmPermissions, setPmPermissions] = useState<{ canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null>(null);
 
   // Maps temp client IDs (pay_${ts}_...) → Promise<realDbId> for in-flight payroll POSTs.
@@ -203,7 +282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // addProductCatalogProduct awaits this when the installer ID isn't in idMaps yet.
   const pendingInstallerIdRef = useRef<Map<string, Promise<string>>>(new Map());
 
-  const setViewAsUser = useCallback((user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => {
+  const setViewAsUser = useCallback((user: ViewAsUser) => {
     setViewAsUserState(user);
   }, []);
   const clearViewAs = useCallback(() => { setViewAsUserState(null); }, []);
@@ -211,23 +290,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const effectiveRole: Role = isViewingAs ? viewAsUser!.role : currentRole;
   const effectiveRepId = isViewingAs ? viewAsUser!.id : currentRepId;
   const effectiveRepName = isViewingAs ? viewAsUser!.name : currentRepName;
+  // Only meaningful when viewing-as a vendor PM (PM with scopedInstallerId).
+  // Internal PMs, admins, reps, sub-dealers all yield null. UI components
+  // that mirror PM-installer scoping (Projects list) read this.
+  const effectiveScopedInstallerId = isViewingAs && viewAsUser?.role === 'project_manager'
+    ? (viewAsUser.scopedInstallerId ?? null)
+    : null;
   const [idMaps, setIdMaps] = useState<{
     installerNameToId: Record<string, string>;
     financerNameToId: Record<string, string>;
   }>({ installerNameToId: {}, financerNameToId: {} });
+  // Reverse-resolve installer id → name. Project DTOs use names, so UI
+  // filters that mirror server-side installer scoping need the name.
+  const effectiveScopedInstallerName = effectiveScopedInstallerId
+    ? Object.entries(idMaps.installerNameToId).find(([, id]) => id === effectiveScopedInstallerId)?.[0] ?? null
+    : null;
 
-  // Hydrate all state from the database on mount
+  // Hydrate all state from the database on mount.
+  // Retry on transient auth failures: on a fresh sign-in the Clerk session
+  // cookie can lag the first navigation, so /api/data may 401 momentarily.
+  // We back off and retry a few times before surfacing the error banner.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/data')
-      .then((res) => {
-        if (!res.ok) throw new Error(`/api/data returned ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+    const RETRY_DELAYS = [300, 600, 1200, 2000];
+    const attempt = async (i: number): Promise<void> => {
+      try {
+        const res = await fetch('/api/data');
+        if (!res.ok) {
+          const isTransient = res.status === 401 || res.status === 403 || res.status >= 500;
+          if (isTransient && i < RETRY_DELAYS.length) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
+            if (cancelled) return;
+            return attempt(i + 1);
+          }
+          throw new Error(`/api/data returned ${res.status}`);
+        }
+        const data = await res.json();
         if (cancelled) return;
         setReps(data.reps ?? []);
         setSubDealers(data.subDealers ?? []);
+        setViewAsCandidates(data.viewAsCandidates ?? []);
         setInstallers((data.installers ?? []).map((i: { name: string; active: boolean }) => ({ name: i.name, active: i.active })));
         setFinancers((data.financers ?? []).map((f: { name: string; active: boolean }) => ({ name: f.name, active: f.active })));
         setProjects(data.projects ?? []);
@@ -244,13 +346,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setInstallerPayConfigs(data.installerPayConfigs ?? {});
         if (data._idMaps) setIdMaps(data._idMaps);
         setDbReady(true);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
+        if (i < RETRY_DELAYS.length) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
+          if (cancelled) return;
+          return attempt(i + 1);
+        }
         console.error('Failed to load data from API:', err);
         setDataError(true);
         setDbReady(true);
-      });
+      }
+    };
+    attempt(0);
     return () => { cancelled = true; };
   }, []);
 
@@ -262,7 +370,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (Array.isArray(data)) setUnreadMentionCount(data.length);
       })
-      .catch(() => {});
+      .catch((err) => {
+        // Mention count is a non-critical badge; failure shouldn't toast
+        // every poll. Log for diagnostics so transient API breakage is
+        // visible during dev, not silent.
+        console.warn('[refreshMentionCount] failed:', err instanceof Error ? err.message : err);
+      });
   }, [effectiveRepId]);
 
   useEffect(() => {
@@ -352,7 +465,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     persistPayrollEntry, deletePayrollEntriesFromDb, logProjectActivity,
   };
 
-  const updateProject = (id: string, updates: Partial<Project>) => {
+  const updateProject = (id: string, updates: Partial<Project>, opts?: { editReason?: string }) => {
     // ── 1. Find old project & log activity ──
     const old = projectsRef.current.find((p) => p.id === id);
     if (old) {
@@ -376,10 +489,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kWSize: 'System Size (kW)', netPPW: 'Net PPW', soldDate: 'Sold Date',
         m1Amount: 'M1 Amount', m2Amount: 'M2 Amount',
       };
+      // Trim + cap admin-supplied reason so we don't write unbounded
+      // text into the activity feed. 200 chars is generous for a sentence
+      // explaining "why this number changed" without becoming a note dump.
+      const editReason = opts?.editReason?.trim().slice(0, 200) || undefined;
       for (const [key, label] of Object.entries(fieldLabels)) {
         const k = key as keyof Project;
         if (updates[k] !== undefined && updates[k] !== old[k]) {
-          logProjectActivity(id, 'field_edit', `${label} changed from ${old[k]} to ${updates[k]}`, JSON.stringify({ field: key, old: old[k], new: updates[k] }));
+          const baseDetail = `${label} changed from ${old[k]} to ${updates[k]}`;
+          const detail = editReason ? `${baseDetail} — ${editReason}` : baseDetail;
+          const meta = JSON.stringify({
+            field: key,
+            old: old[k],
+            new: updates[k],
+            ...(editReason ? { reason: editReason } : {}),
+          });
+          logProjectActivity(id, 'field_edit', detail, meta);
         }
       }
 
@@ -789,7 +914,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // trainerRate on Trevor Schauwecker's deal showed ~$7–8k each on
     // mobile until app restart, 2026-04-22). Reconciling from the
     // response avoids the "fixes itself on reopen" ghost.
-    if (Object.keys(dbUpdates).length > 0) {
+    //
+    // pendingMilestonePersists collects milestone payroll entries to POST
+    // after the PATCH resolves. The server PATCH handler re-aligns existing
+    // Draft entries after recomputing commission; if the milestone POSTs
+    // race ahead of the PATCH, those new entries aren't in the DB yet and
+    // the re-alignment is a no-op, leaving stale amounts. Deferring the
+    // POSTs to the PATCH .finally ensures ordering when both fire together
+    // (e.g. admin edits netPPW and advances phase in one save).
+    const pendingMilestonePersists: PayrollEntry[] = [];
+    const hasPatch = Object.keys(dbUpdates).length > 0;
+    if (hasPatch) {
       persistFetch(`/api/projects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -801,9 +936,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const serverProject = await res.json();
             if (!serverProject || !serverProject.id) return;
             setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
-          } catch { /* non-JSON response — leave optimistic state alone */ }
+          } catch (parseErr) {
+            // Non-JSON response — leave optimistic state alone, but log
+            // because it usually means the server returned an HTML error
+            // page instead of JSON (API misconfig or proxy interception).
+            console.warn('[updateProject] non-JSON response from PATCH, keeping optimistic state:', parseErr);
+          }
         })
-        .catch(() => {});
+        .catch((err) => {
+          // Network failure on the server-state-sync PATCH. The optimistic
+          // state already applied — toast is fired by persistFetch above.
+          // We swallow here to keep the .finally() running; log for diag.
+          console.warn('[updateProject] server-sync fetch failed:', err instanceof Error ? err.message : err);
+        })
+        .finally(() => {
+          pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
+        });
     }
 
     // ── 5. Update local project state + phase-transition payroll ──
@@ -891,7 +1039,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             computedM3Amount: null, deps: transitionDeps,
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
-            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
             setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
           }
         }
@@ -909,7 +1057,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             computedM3Amount: null, deps: transitionDeps,
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
-            m1Entries.forEach((entry) => persistPayrollEntry(entry));
+            m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
             setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
           }
         }
@@ -943,7 +1091,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               computedM3Amount: m3AtInstalled, deps: transitionDeps,
             }, postRollbackEntries);
             if (m1m2Entries.length > 0) {
-              m1m2Entries.forEach((entry) => persistPayrollEntry(entry));
+              m1m2Entries.forEach((entry) => pendingMilestonePersists.push(entry));
               setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
               if (isInstalled) newlyCreatedM2Entries = m1m2Entries;
             }
@@ -957,7 +1105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           projectId: id, old, updatedProjects: updated, deps: transitionDeps,
         }, [...postRollbackEntries, ...newlyCreatedM2Entries]);
         if (m3Entries.length > 0) {
-          m3Entries.forEach((entry) => persistPayrollEntry(entry));
+          m3Entries.forEach((entry) => pendingMilestonePersists.push(entry));
           setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
         }
       }
@@ -965,6 +1113,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const finalUpdatedProject = updated.find((p) => p.id === id)!;
     setProjects((prev) => prev.map((p) => p.id === id ? finalUpdatedProject : p));
+
+    // No PATCH was queued, so the .finally handler never runs — fire immediately.
+    if (!hasPatch) {
+      pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
+    }
 
     // ── 6. Amount sync: patch Draft/Pending entries when amounts are edited ──
     const hasAmountUpdates = updates.m1Amount !== undefined || updates.m2Amount !== undefined
@@ -1048,7 +1201,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: newAmount }),
-        }, 'Failed to update payroll entry amount').catch(() => {});
+        }, 'Failed to update payroll entry amount').catch((err) => {
+          // persistFetch already toasted via emitPersistError. This swallow
+          // is just to prevent unhandled-rejection warnings on the inner
+          // .then() chain. Log for diagnostics so silent network blips
+          // affecting payroll amount sync are still traceable.
+          console.warn('[updateProject] payroll amount PATCH failed (toast already fired):',
+            entryId, err instanceof Error ? err.message : err);
+        });
       }
     }
   };
@@ -1057,7 +1217,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const {
     updateInstallerBaseline, addInstallerBaseline,
     addInstallerPricingVersion, updateInstallerPricingVersion, createNewInstallerVersion,
-    updateSolarTechProduct, updateSolarTechTier,
+    updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
+    removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust,
+    applyBulkVersionCreate,
     addProductCatalogInstaller, updateProductCatalogInstallerConfig,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -1094,7 +1256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('kilo-rep-name');
   };
 
-  const addDeal = (
+  const addDeal = async (
     project: Project,
     _closerM1: number,
     _closerM2: number,
@@ -1103,7 +1265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     _trainerM1 = 0,
     _trainerM2 = 0,
     _trainerId?: string,
-  ) => {
+  ): Promise<{ id: string } | null> => {
     // Validate installer mapping before mutating local state to avoid split-brain
     const installerId = idMaps.installerNameToId[project.installer];
     if (!installerId) {
@@ -1111,7 +1273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — installer not yet saved. Please refresh and try again.' }));
       }
-      return false;
+      return null;
     }
 
     // Validate financer mapping before mutating local state to avoid split-brain.
@@ -1123,7 +1285,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
       }
-      return false;
+      return null;
     }
 
     // Only add the project. Payroll entries are now auto-drafted when
@@ -1131,9 +1293,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Trainer override entries are auto-drafted at M2 (80%) and M3 (20%).
     setProjects((prev) => [...prev, project]);
 
-    // Persist to DB
-    const persistProject = (fId: string) => {
-      fetch('/api/projects', {
+    // Persist to DB. Awaited so callers receive the real DB id.
+    const persistProject = (fId: string): Promise<{ id: string } | null> => {
+      return fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1177,6 +1339,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             m3Amount: s.m3Amount ?? undefined,
             position: s.position,
           })),
+          // Per-installer intake JSON (BVI Sales Intake fields). Optional —
+          // null/omitted for non-BVI deals or when intake panel wasn't shown.
+          installerIntakeJson: project.installerIntakeJson || null,
         }),
       }).then(async (res) => {
         if (!res.ok) {
@@ -1204,6 +1369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         // Log creation activity only after the project exists in the DB, using the real DB id
         logProjectActivity(dbId, 'created', 'Project created');
+        return { id: dbId };
       }).catch((err) => {
         console.error('[addDeal] persist failed:', err);
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
@@ -1211,16 +1377,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const msg = err instanceof Error ? err.message : 'Failed to save new deal';
           window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: `Failed to save new deal — ${msg}` }));
         }
+        return null;
       });
     };
 
-    // Cash deals: server auto-resolves the financer via upsert, so pass empty string
-    persistProject(financerId || '');
-    return true;
+    // Cash deals: server auto-resolves the financer via upsert, so pass empty string.
+    // Await so callers can chain follow-up work (e.g. utility-bill upload) on the
+    // real DB id.
+    return persistProject(financerId || '');
   };
 
   // markForPayroll delegated to payrollActions (defined above)
   const { markForPayroll } = payrollActions;
+
+  // ── View-As scoping (admin impersonating PM/vendor PM) ────────────────
+  // /api/data is admin-scoped (full access), so view-as is a pure CLIENT-
+  // SIDE PREVIEW. We MUST filter what the client sees to mirror what the
+  // impersonated user would actually receive — otherwise admin views-as
+  // Joe Dale (BVI) and sees every installer's projects, totally defeating
+  // the purpose. This is a UI mirror of /api/data/route.ts's per-role
+  // filtering (vendor PM: scoped projects, no payroll/reimb/training/
+  // incentives/users; internal PM: no payroll/reimb).
+  const isVendorPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager' && !!viewAsUser.scopedInstallerId;
+  const isAnyPmViewAs = isViewingAs && viewAsUser?.role === 'project_manager';
+  const visibleProjects = useMemo(() => {
+    if (isVendorPmViewAs) {
+      if (!effectiveScopedInstallerName) return [];
+      return projects.filter((p) => p.installer === effectiveScopedInstallerName);
+    }
+    return projects;
+  }, [projects, isVendorPmViewAs, effectiveScopedInstallerName]);
+  const visiblePayrollEntries = isAnyPmViewAs ? [] : payrollEntries;
+  const visibleReimbursements = isAnyPmViewAs ? [] : reimbursements;
+  const visibleTrainerAssignments = isVendorPmViewAs ? [] : trainerAssignments;
+  const visibleIncentives = isVendorPmViewAs ? [] : incentives;
+  const visibleReps = isVendorPmViewAs ? [] : reps;
+  const visibleSubDealers = isVendorPmViewAs ? [] : subDealers;
 
   return (
     <AppContext.Provider
@@ -1233,15 +1425,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentUserRepType,
         setRole,
         logout,
-        projects,
+        projects: visibleProjects,
         setProjects,
-        payrollEntries,
+        payrollEntries: visiblePayrollEntries,
         setPayrollEntries,
-        reimbursements,
+        reimbursements: visibleReimbursements,
         setReimbursements,
-        trainerAssignments,
+        trainerAssignments: visibleTrainerAssignments,
         setTrainerAssignments,
-        incentives,
+        incentives: visibleIncentives,
         setIncentives,
         addDeal,
         markForPayroll,
@@ -1254,7 +1446,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFinancerActive,
         addInstaller,
         addFinancer,
-        reps,
+        reps: visibleReps,
         addRep,
         removeRep,
         deactivateRep,
@@ -1279,6 +1471,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addProductCatalogInstaller,
         updateProductCatalogInstallerConfig,
         addProductCatalogProduct,
+        addSolarTechProduct,
+        removeSolarTechProduct,
+        restoreProduct,
+        applyBulkTierAdjust,
+        undoBulkTierAdjust,
+        applyBulkVersionCreate,
         updateProductCatalogProduct,
         updateProductCatalogTier,
         removeProductCatalogProduct,
@@ -1297,7 +1495,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         installerPayConfigs,
         setInstallerPayConfigs,
         updateInstallerPayConfig,
-        subDealers,
+        subDealers: visibleSubDealers,
         addSubDealer,
         removeSubDealer,
         deactivateSubDealer,
@@ -1313,7 +1511,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         effectiveRole,
         effectiveRepId,
         effectiveRepName,
+        effectiveScopedInstallerId,
+        effectiveScopedInstallerName,
+        viewAsCandidates,
         pmPermissions,
+        getIdMaps: () => idMaps,
       }}
     >
       {children}

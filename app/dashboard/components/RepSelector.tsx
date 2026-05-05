@@ -50,9 +50,9 @@ function roleLabel(repType: Rep['repType']): string {
 
 /** Tailwind colour class for the role badge. */
 function roleBadgeClass(repType: Rep['repType']): string {
-  if (repType === 'closer') return 'text-purple-400';
-  if (repType === 'setter') return 'text-[var(--accent-green)]';
-  return 'text-teal-400';
+  if (repType === 'closer') return 'text-[var(--accent-purple-text)]';
+  if (repType === 'setter') return 'text-[var(--accent-emerald-text)]';
+  return 'text-[var(--accent-teal-text)]';
 }
 
 export function RepSelector({
@@ -163,10 +163,10 @@ export function RepSelector({
       >
         {currentRep ? (
           <>
-            <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
+            <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[9px] font-bold flex-shrink-0 select-none">
               {getInitials(currentRep.name)}
             </span>
-            <span className="flex-1 text-sm text-white font-medium truncate">
+            <span className="flex-1 text-sm text-[var(--text-primary)] font-medium truncate">
               {currentRep.name}
             </span>
             <span className={`${roleBadgeClass(currentRep.repType)} text-[10px] font-medium flex-shrink-0`}>
@@ -212,7 +212,7 @@ export function RepSelector({
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
               />
             </div>
           </div>
@@ -234,7 +234,7 @@ export function RepSelector({
                 <X className="w-3 h-3 text-[var(--text-secondary)]" />
               </span>
               <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">{clearLabel}</span>
-              {!value && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+              {!value && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
             </button>
 
             {/* Divider */}
@@ -260,7 +260,7 @@ export function RepSelector({
                   }`}
                 >
                   {/* Initials avatar */}
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 select-none">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[var(--text-primary)] text-[9px] font-bold flex-shrink-0 select-none">
                     {getInitials(rep.name)}
                   </span>
                   <span className="flex-1 text-sm text-[var(--text-secondary)] truncate">{rep.name}</span>
@@ -270,7 +270,7 @@ export function RepSelector({
                   <span className={`${roleBadgeClass(rep.repType)} text-[10px] font-medium flex-shrink-0`}>
                     {roleLabel(rep.repType)}
                   </span>
-                  {rep.id === value && <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                  {rep.id === value && <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] flex-shrink-0" />}
                 </button>
               ))
             )}

@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
-import { formatDate, formatCurrency, formatCompactKW } from '../../../lib/utils';
+import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
 import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
 import { BlitzFilterBar } from './BlitzFilterBar';
 import { useToast } from '../../../lib/toast';
@@ -56,10 +56,10 @@ interface BlitzRequestData {
 }
 
 const STATUS_INLINE: Record<BlitzStatus, { bg: string; color: string; dotBg: string; border: string }> = {
-  upcoming:  { bg: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', dotBg: 'var(--accent-blue)', border: '1px solid rgba(77,159,255,0.3)' },
-  active:    { bg: 'rgba(0,224,122,0.12)',  color: 'var(--accent-green)', dotBg: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' },
-  completed: { bg: 'rgba(136,145,168,0.12)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid rgba(136,145,168,0.3)' },
-  cancelled: { bg: 'rgba(255,82,82,0.12)',  color: 'var(--accent-red)', dotBg: 'var(--accent-red)', border: '1px solid rgba(255,82,82,0.3)' },
+  upcoming:  { bg: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', dotBg: 'var(--accent-blue-solid)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' },
+  active:    { bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',  color: 'var(--accent-emerald-text)', dotBg: 'var(--accent-emerald-solid)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' },
+  completed: { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', color: 'var(--text-muted)', dotBg: 'var(--text-muted)', border: '1px solid color-mix(in srgb, var(--text-muted) 30%, transparent)' },
+  cancelled: { bg: 'color-mix(in srgb, var(--accent-red-solid) 12%, transparent)',  color: 'var(--accent-red-text)', dotBg: 'var(--accent-red-solid)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' },
 };
 
 function getBlitzTimingLabel(blitz: BlitzData): string | null {
@@ -145,7 +145,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         </div>
 
         {/* Name */}
-        <h3 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-primary)' }}>{blitz.name}</h3>
+        <h3 className="text-lg font-bold mb-1 group-hover:text-[var(--accent-cyan-text)] transition-colors" style={{ color: 'var(--text-primary)' }}>{blitz.name}</h3>
 
         {/* Location + dates */}
         <div className="flex flex-col gap-1 text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
@@ -168,7 +168,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan))' }}
+                style={{ width: `${progress.pct}%`, background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
               />
             </div>
           </div>
@@ -202,10 +202,10 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
         {/* Owner tag + join action */}
         <div className="mt-3 flex items-center justify-between">
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
+            Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan-text)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
           {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20">
+            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
               <Tent className="w-3 h-3" /> Leading
             </span>
           )}
@@ -213,20 +213,20 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             <button
               disabled={joining}
               onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-green)]/20 text-[var(--accent-green)] border border-[var(--accent-green)]/30 rounded-lg hover:bg-[var(--accent-green)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
             </button>
           )}
           {!isOwner && myParticipation && !canJoin && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-emerald-900/30 text-[var(--accent-green)] border border-[var(--accent-green)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-red-900/30 text-red-400 border border-red-500/20' : 'bg-amber-900/30 text-amber-400 border border-amber-500/20'}`}>
+            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
               <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
             </span>
           )}
         </div>
 
         {/* Hover glow bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, var(--accent-green), var(--accent-cyan), var(--accent-green))' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid), var(--accent-emerald-solid))' }} />
       </div>
     </Link>
   );
@@ -279,39 +279,43 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
       <div ref={modalPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-green)]" /> New Blitz</h2>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-emerald-text)]" /> New Blitz</h2>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
-            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Blitz name is required</p>}
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Hunter's April 2026 Blitz" />
+            {touched && !name.trim() && <p className="text-xs text-[var(--accent-red-text)] mt-1">Blitz name is required</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Location / Market</label>
-            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+            <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Housing / Address</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow" placeholder="e.g. 123 Main St, Apt 4" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              <input type="date" value={startDate} onChange={(e) => {
+                const v = e.target.value;
+                setStartDate(v);
+                if (v && (!endDate || endDate < v)) setEndDate(v);
+              }} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
-              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
+              <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
           </div>
           {isAdmin && (
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Leader</label>
-              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow">
+              <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow">
                 <option value={userId}>Me</option>
                 {reps.filter((r) => r.id !== userId && r.active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
@@ -319,17 +323,17 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
           )}
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow resize-none" />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
           <button
             onClick={handleSubmit}
             disabled={!name.trim() || !startDate || !endDate || saving}
             className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Creating...' : 'Create Blitz'}
@@ -388,51 +392,55 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose}>
       <div ref={requestPanelRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl shadow-black/40 animate-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-amber-400" /> Request a Blitz</h2>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5 flex items-center gap-2"><Tent className="w-5 h-5 text-[var(--accent-amber-text)]" /> Request a Blitz</h2>
         <p className="text-sm text-[var(--text-muted)] mb-4">Submit a request for admin approval. You&apos;ll be notified when it&apos;s reviewed.</p>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Blitz Name *</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Austin Spring Blitz" />
-            {touched && !name.trim() && <p className="text-xs text-red-400 mt-1">Name is required</p>}
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !name.trim() ? 'border-red-500/60' : 'border-[var(--border)]'}`} placeholder="e.g. Austin Spring Blitz" />
+            {touched && !name.trim() && <p className="text-xs text-[var(--accent-red-text)] mt-1">Name is required</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
+              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow" placeholder="e.g. Austin, TX" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Expected Headcount</label>
-              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. 8" />
+              <input type="number" min="1" value={headcount} onChange={(e) => setHeadcount(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow" placeholder="e.g. 8" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !startDate && <p className="text-xs text-red-400 mt-1">Required</p>}
+              <input type="date" value={startDate} onChange={(e) => {
+                const v = e.target.value;
+                setStartDate(v);
+                if (v && (!endDate || endDate < v)) setEndDate(v);
+              }} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
-              {touched && !endDate && <p className="text-xs text-red-400 mt-1">Required</p>}
-              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-red-400 mt-1">Must be after start date</p>}
+              <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
+              {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Housing Preferences</label>
-            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
+            <input value={housing} onChange={(e) => setHousing(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow" placeholder="e.g. Airbnb near downtown" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow resize-none" placeholder="Why this blitz, what's the opportunity..." />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-white transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-white rounded-xl hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={!name.trim() || !startDate || !endDate || saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-amber-600 text-[var(--text-primary)] rounded-xl hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tent className="w-4 h-4" />}
             {saving ? 'Submitting...' : 'Submit Request'}
           </button>
@@ -555,7 +563,11 @@ function BlitzPageInner() {
     if (!effectiveRepId) { setPermsLoaded(true); return; }
     fetch(`/api/users/${effectiveRepId}`).then((r) => r.json()).then((u) => {
       if (u) setUserPerms({ canRequestBlitz: u.canRequestBlitz ?? false, canCreateBlitz: u.canCreateBlitz ?? false });
-    }).catch(() => {}).finally(() => setPermsLoaded(true));
+    }).catch((err) => {
+      // Permission load failure → fall through to defaults (no perms).
+      // Log so transient API breakage is visible.
+      console.warn('[blitz/page] permission load failed, defaulting to no perms:', err instanceof Error ? err.message : err);
+    }).finally(() => setPermsLoaded(true));
   }, [isAdmin, effectiveRepId]);
 
   // If a rep lands on ?tab=requests without canRequestBlitz (e.g. via shared link), redirect to blitzes
@@ -587,7 +599,19 @@ function BlitzPageInner() {
   const sortedBlitzes = useMemo(() => {
     const sorted = [...filteredBlitzes];
     switch (sortBy) {
-      case 'newest': sorted.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); break;
+      case 'newest':
+        // Upcoming blitzes appear first, soonest-first (ASC). Other statuses
+        // follow, most-recent-first (DESC) — so active/completed history stays
+        // chronologically intuitive while what's about to happen sits on top.
+        sorted.sort((a, b) => {
+          const aUp = a.status === 'upcoming';
+          const bUp = b.status === 'upcoming';
+          if (aUp && bUp) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          if (aUp) return -1;
+          if (bUp) return 1;
+          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        });
+        break;
       case 'oldest': sorted.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); break;
       case 'deals': {
         const scopedDeals = (blitz: BlitzData) => {
@@ -779,23 +803,23 @@ function BlitzPageInner() {
   const totalCosts = isAdmin ? blitzes.reduce((s, b) => s + b.costs.reduce((cs, c) => cs + c.amount, 0), 0) : 0;
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="p-4 md:p-8 space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight flex items-center gap-2.5" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            <Tent className="w-7 h-7" style={{ color: 'var(--accent-cyan)' }} /> Blitz
+            <Tent className="w-7 h-7" style={{ color: 'var(--accent-cyan-text)' }} /> Blitz
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Manage blitzes, track participation and profitability</p>
         </div>
         <div className="flex items-center gap-2">
           {(isAdmin || userPerms.canCreateBlitz) && (
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18', boxShadow: '0 4px 14px rgba(0,224,122,0.25)' }}>
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)', boxShadow: '0 4px 14px var(--accent-emerald-glow)' }}>
               <Plus className="w-4 h-4" /> New Blitz
             </button>
           )}
           {!isAdmin && !userPerms.canCreateBlitz && userPerms.canRequestBlitz && (
-            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-card)] text-[var(--text-secondary)] text-sm font-semibold rounded-xl border border-[var(--border)] hover:bg-[var(--border)] hover:text-white transition-colors">
+            <button onClick={() => setShowRequestBlitz(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-card)] text-[var(--text-secondary)] text-sm font-semibold rounded-xl border border-[var(--border)] hover:bg-[var(--border)] hover:text-[var(--text-primary)] transition-colors">
               <Plus className="w-4 h-4" /> Request Blitz
             </button>
           )}
@@ -804,46 +828,48 @@ function BlitzPageInner() {
 
       {/* Summary cards */}
       <div className={`grid grid-cols-2 ${isAdmin ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4`}>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-green)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-emerald-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Active</span>
-            <CheckCircle className="w-4 h-4 text-[var(--accent-green)]" />
+            <CheckCircle className="w-4 h-4 text-[var(--accent-emerald-text)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)' }}>{activeBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)' }}>{activeBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Upcoming</span>
-            <Clock className="w-4 h-4 text-[var(--accent-green)]" />
+            <Clock className="w-4 h-4 text-[var(--accent-emerald-text)]" />
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue)' }}>{upcomingBlitzes}</p>
+          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-blue-display)' }}>{upcomingBlitzes}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': '#a855f7' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-2" style={{ '--card-accent': 'var(--accent-purple-solid)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-400 mb-3" />
           <div className="flex items-center justify-between mb-3">
             <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Deals</span>
-            <TrendingUp className="w-4 h-4 text-purple-400" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-purple-text)]" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{totalDeals}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': '#06b6d4' } as React.CSSProperties}>
-          <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total kW</span>
-            <Zap className="w-4 h-4 text-cyan-400" />
+        {(() => { const t = formatCompactKWParts(totalKW); return (
+          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
+            <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 mb-3" />
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Total {t.unit}</span>
+              <Zap className="w-4 h-4 text-[var(--accent-cyan-text)]" />
+            </div>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{t.value}</p>
           </div>
-          <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}>{formatCompactKW(totalKW)}</p>
-        </div>
+        ); })()}
         {isAdmin && (
-          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': '#f59e0b' } as React.CSSProperties}>
+          <div className="card-surface card-surface-stat rounded-2xl p-5 transition-all duration-200 hover:translate-y-[-2px] animate-slide-in-scale stagger-4" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
             <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">Costs</span>
-              <DollarSign className="w-4 h-4 text-amber-400" />
+              <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
             </div>
-            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber)' }}>{formatCurrency(totalCosts)}</p>
+            <p className="stat-value text-3xl font-black tabular-nums tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-amber-display)' }}>{formatCurrency(totalCosts)}</p>
           </div>
         )}
       </div>
@@ -858,9 +884,9 @@ function BlitzPageInner() {
                 left: adminTabIndicator.left,
                 width: adminTabIndicator.width,
                 transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-                background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-                border: '1px solid rgba(0,224,122,0.45)',
-                boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
               }}
             />
           )}
@@ -870,9 +896,9 @@ function BlitzPageInner() {
               ref={(el) => { adminTabRefs.current[i] = el; }}
               onClick={() => setTab(t)}
               className="relative z-10 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={tab === t ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
+              style={tab === t ? { color: 'var(--text-primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
             >
-              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red)', color: '#fff' }}>{pendingRequests.length}</span>}</>}
+              {t === 'blitzes' ? `Blitzes (${sortedBlitzes.length})` : <>Requests {isAdmin && pendingRequests.length > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full px-1" style={{ background: 'var(--accent-red-solid)', color: 'var(--text-primary)' }}>{pendingRequests.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -948,7 +974,7 @@ function BlitzPageInner() {
               {pendingBlitzes.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-400" /> Pending Approval
+                    <Clock className="w-4 h-4 text-[var(--accent-amber-text)]" /> Pending Approval
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {pendingBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
@@ -969,7 +995,7 @@ function BlitzPageInner() {
               )}
 
               {myBlitzes.length === 0 && pendingBlitzes.length === 0 && browseBlitzes.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+                <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
                   <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
                   <div className="text-center">
                     <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitzes available</p>
@@ -984,8 +1010,8 @@ function BlitzPageInner() {
 
       {tab === 'requests' && !isAdmin && userPerms.canRequestBlitz && (
         <div className="space-y-3">
-          {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+          {requests.filter((r) => r.requestedBy.id === effectiveRepId).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
               <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
                 <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No requests submitted</p>
@@ -993,17 +1019,17 @@ function BlitzPageInner() {
               </div>
             </div>
           ) : (
-            requests.map((req) => (
+            requests.filter((r) => r.requestedBy.id === effectiveRepId).map((req) => (
               <div key={req.id} className="card-surface rounded-2xl p-5 transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       {req.type === 'cancel' ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20">Cancel Request</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                       )}
-                      <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)] truncate">{req.name}</h3>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[var(--text-secondary)]">
                       {req.type !== 'cancel' && req.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" />{req.location}</span>}
@@ -1011,7 +1037,7 @@ function BlitzPageInner() {
                     </div>
                     {req.notes && <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-2">{req.notes}</p>}
                   </div>
-                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : req.status === 'denied' ? 'bg-red-900/30 text-red-300 border border-red-500/20' : 'bg-amber-900/30 text-amber-300 border border-amber-500/20'}`}>
+                  <span className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : req.status === 'denied' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
                     {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : req.status === 'denied' ? <XCircle className="w-3 h-3" /> : <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                   </span>
@@ -1025,7 +1051,7 @@ function BlitzPageInner() {
       {tab === 'requests' && isAdmin && (
         <div className="space-y-3">
           {requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
               <Inbox className="w-14 h-14" style={{ color: 'var(--text-dim)' }} />
               <div className="text-center">
                 <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>No blitz requests</p>
@@ -1040,11 +1066,11 @@ function BlitzPageInner() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         {req.type === 'cancel' ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-500/20">Cancel Request</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20">Cancel Request</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/30 text-[var(--accent-cyan)] border border-[var(--accent-green)]/20">New Blitz</span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-blue-soft)] text-[var(--accent-cyan-text)] border border-[var(--accent-emerald-solid)]/20">New Blitz</span>
                         )}
-                        <h3 className="text-base font-bold text-white truncate">{req.name}</h3>
+                        <h3 className="text-base font-bold text-[var(--text-primary)] truncate">{req.name}</h3>
                         {req.status === 'pending' && <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-[var(--text-secondary)]">
@@ -1062,16 +1088,16 @@ function BlitzPageInner() {
                             onClick={() => handleApproveRequest(req.id)}
                             disabled={processingRequest.has(req.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                           >
                             {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                           </button>
-                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
+                          <button onClick={() => handleDenyRequest(req.id)} disabled={processingRequest.has(req.id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-red-600/30 disabled:opacity-50 transition-colors">
                             <XCircle className="w-3 h-3" /> Deny
                           </button>
                         </>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-900/30 text-emerald-300 border border-[var(--accent-green)]/20' : 'bg-red-900/30 text-red-300 border border-red-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${req.status === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20'}`}>
                           {req.status === 'approved' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>

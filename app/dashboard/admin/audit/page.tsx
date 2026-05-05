@@ -21,6 +21,7 @@ import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '../../../../lib/context';
 import { ArrowLeft, Filter, Download } from 'lucide-react';
+import { SecondaryButton, TextInput, FormField } from '@/components/ui';
 
 interface AuditLogRow {
   id: string;
@@ -34,7 +35,39 @@ interface AuditLogRow {
   createdAt: string;
 }
 
-const ENTITY_TYPES = ['', 'Project', 'PayrollEntry', 'User', 'Blitz', 'Installer', 'Financer', 'InstallerPricingVersion', 'ProductPricingVersion'] as const;
+// Single source of truth — kept in sync with AuditEntityType in lib/audit.ts.
+// When the union there gains a new entry, add it here too. The
+// audit-coverage CI gate doesn't enforce this list (it only counts route
+// audit calls), so the dropdown is the place to update.
+const ENTITY_TYPES = [
+  '',
+  'Project',
+  'PayrollEntry',
+  'User',
+  'Blitz',
+  'BlitzCost',
+  'BlitzRequest',
+  'Installer',
+  'Financer',
+  'SubDealer',
+  'ProjectManager',
+  'Reimbursement',
+  'Incentive',
+  'TrainerAssignment',
+  'PrepaidOption',
+  'AdminInvitation',
+  'ProductCatalogConfig',
+  'InstallerPricingVersion',
+  'ProductPricingVersion',
+  'Product',
+  // BVI handoff entity types — added 2026-04-28 in lockstep with
+  // AuditEntityType in lib/audit.ts.
+  'ProjectFile',
+  'ProjectSurveyLink',
+  'ProjectInstallerNote',
+  'EmailDelivery',
+  'StalledAlertConfig',
+] as const;
 
 function formatTimestamp(iso: string): string {
   const d = new Date(iso);
@@ -132,26 +165,21 @@ export default function AdminAuditPage() {
     <div className="px-6 py-6 max-w-[1400px] mx-auto">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-white mb-3"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-3"
       >
         <ArrowLeft className="w-4 h-4" /> Dashboard
       </Link>
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Audit Log</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "'DM Serif Display', serif" }}>Audit Log</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Every mutation on money-sensitive tables. Filter to investigate specific changes.
           </p>
         </div>
-        <button
-          onClick={exportCsv}
-          disabled={logs.length === 0}
-          className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-        >
+        <SecondaryButton onClick={exportCsv} disabled={logs.length === 0}>
           <Download className="w-4 h-4" /> Export CSV
-        </button>
+        </SecondaryButton>
       </div>
 
       {/* Filters */}
@@ -161,64 +189,54 @@ export default function AdminAuditPage() {
           Filters
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div>
-            <label htmlFor="audit-entityType" className="block text-xs text-[var(--text-muted)] mb-1">Entity type</label>
+          <FormField label="Entity type">
             <select
               id="audit-entityType"
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
+              className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] transition-colors"
             >
               {ENTITY_TYPES.map((t) => <option key={t || 'all'} value={t}>{t || 'All types'}</option>)}
             </select>
-          </div>
-          <div>
-            <label htmlFor="audit-action" className="block text-xs text-[var(--text-muted)] mb-1">Action (exact)</label>
-            <input
+          </FormField>
+          <FormField label="Action (exact)">
+            <TextInput
               id="audit-action"
-              type="text"
               value={action}
               onChange={(e) => setAction(e.target.value)}
               placeholder="phase_change, etc."
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)]"
             />
-          </div>
-          <div>
-            <label htmlFor="audit-actorEmail" className="block text-xs text-[var(--text-muted)] mb-1">Actor email</label>
-            <input
+          </FormField>
+          <FormField label="Actor email">
+            <TextInput
               id="audit-actorEmail"
               type="email"
               value={actorEmail}
               onChange={(e) => setActorEmail(e.target.value)}
               placeholder="admin@…"
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-dim)]"
             />
-          </div>
-          <div>
-            <label htmlFor="audit-from" className="block text-xs text-[var(--text-muted)] mb-1">From</label>
-            <input
+          </FormField>
+          <FormField label="From">
+            <TextInput
               id="audit-from"
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
             />
-          </div>
-          <div>
-            <label htmlFor="audit-to" className="block text-xs text-[var(--text-muted)] mb-1">To</label>
-            <input
+          </FormField>
+          <FormField label="To">
+            <TextInput
               id="audit-to"
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm text-white"
             />
-          </div>
+          </FormField>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] text-sm">
           {error}
         </div>
       )}
@@ -267,13 +285,13 @@ export default function AdminAuditPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">Old</p>
-                            <pre className="text-xs text-red-300/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-red-text)]/70 bg-red-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.oldValue ? JSON.stringify(tryParseJson(log.oldValue), null, 2) : '(none)'}
                             </pre>
                           </div>
                           <div>
                             <p className="text-xs text-[var(--text-muted)] mb-1">New</p>
-                            <pre className="text-xs text-emerald-300/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
+                            <pre className="text-xs text-[var(--accent-emerald-text)]/70 bg-emerald-500/5 p-2 rounded overflow-auto max-h-64">
                               {log.newValue ? JSON.stringify(tryParseJson(log.newValue), null, 2) : '(none)'}
                             </pre>
                           </div>
@@ -291,18 +309,9 @@ export default function AdminAuditPage() {
       {/* Load more */}
       <div className="flex justify-center mt-6">
         {nextCursor && (
-          <button
-            onClick={() => fetchLogs(true)}
-            disabled={loading}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
-            style={{
-              background: 'var(--surface-card)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
-            }}
-          >
+          <SecondaryButton onClick={() => fetchLogs(true)} disabled={loading}>
             {loading ? 'Loading…' : 'Load more'}
-          </button>
+          </SecondaryButton>
         )}
         {!nextCursor && logs.length > 0 && (
           <p className="text-xs text-[var(--text-muted)]">End of results · {logs.length} entries</p>

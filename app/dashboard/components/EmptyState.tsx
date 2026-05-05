@@ -30,7 +30,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
           <button
             onClick={action.onClick}
             className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
-            style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+            style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
           >
             {action.label}
           </button>
@@ -42,7 +42,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
   return (
     <div
       className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl"
-      style={{ background: 'rgba(22,25,32,0.5)', border: '1px dashed var(--border)' }}
+      style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}
     >
       {Icon && <Icon className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />}
       <div className="text-center">
@@ -53,7 +53,7 @@ export function EmptyState({ icon: Icon, title, description, action, variant = '
         <button
           onClick={action.onClick}
           className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors"
-          style={{ background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', border: '1px solid rgba(0,224,122,0.3)' }}
+          style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
         >
           {action.label}
         </button>

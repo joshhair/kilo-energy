@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKW } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWParts } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
 import {
   ACTIVE_PHASES,
@@ -21,12 +21,16 @@ import MobileStatCard from './shared/MobileStatCard';
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, var(--accent-emerald))';
-const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
-const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
-const DIM = 'var(--m-text-dim, #445577)';
-const DANGER = 'var(--m-danger, var(--accent-danger))';
-const WARNING = 'var(--m-warning, #f5a623)';
+const ACCENT = 'var(--accent-emerald-solid)';
+const ACCENT2 = 'var(--accent-cyan-solid)';
+const ACCENT_DISP = 'var(--accent-emerald-display)';
+const MUTED = 'var(--text-muted)';
+const DIM = 'var(--text-dim)';
+const DANGER = 'var(--accent-red-solid)';
+const WARNING = 'var(--accent-amber-solid)';
+// BIG hero numbers — near-black for max readability on white in light mode.
+// Brand color frames the number via the small uppercase label, not the digit.
+const HERO_NUM = 'var(--text-primary)';
 
 function getGreeting(name: string): string {
   const h = new Date().getHours();
@@ -300,26 +304,26 @@ export default function MobileAdminDashboard() {
   // ── Skeleton while data hydrates (prevents stale-number flash) ──────────
   if (!dbReady) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-        <div className="h-7 w-48 rounded-lg bg-[#1a2235] animate-skeleton" />
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
+        <div className="h-7 w-48 rounded-lg bg-[var(--surface-pressed)] animate-skeleton" />
         <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="shrink-0 h-10 w-24 rounded-full bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60}ms` }} />
+            <div key={i} className="shrink-0 h-10 w-24 rounded-full bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: `${i * 60}ms` }} />
           ))}
         </div>
-        <div className="rounded-2xl p-5 bg-[var(--surface-mobile-card)] border border-[var(--border-mobile)] space-y-3">
-          <div className="h-4 w-20 rounded bg-[#1a2235] animate-skeleton" />
-          <div className="h-10 w-40 rounded-lg bg-[#1a2235] animate-skeleton" style={{ animationDelay: '80ms' }} />
+        <div className="rounded-2xl p-5 bg-[var(--surface-card)] border border-[var(--border-subtle)] space-y-3">
+          <div className="h-4 w-20 rounded bg-[var(--surface-pressed)] animate-skeleton" />
+          <div className="h-10 w-40 rounded-lg bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '80ms' }} />
           <div className="flex gap-4 mt-2">
-            <div className="h-6 w-24 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: '140ms' }} />
-            <div className="h-6 w-24 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: '200ms' }} />
+            <div className="h-6 w-24 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '140ms' }} />
+            <div className="h-6 w-24 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: '200ms' }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-2xl p-4 bg-[var(--surface-mobile-card)] border border-[var(--border-mobile)]">
-              <div className="h-3 w-12 rounded bg-[#1a2235] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
-              <div className="h-7 w-10 rounded bg-[#1a2235] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
+            <div key={i} className="rounded-2xl p-4 bg-[var(--surface-card)] border border-[var(--border-subtle)]">
+              <div className="h-3 w-12 rounded bg-[var(--surface-pressed)] animate-skeleton mb-2" style={{ animationDelay: `${i * 60}ms` }} />
+              <div className="h-7 w-10 rounded bg-[var(--surface-pressed)] animate-skeleton" style={{ animationDelay: `${i * 60 + 30}ms` }} />
             </div>
           ))}
         </div>
@@ -328,9 +332,9 @@ export default function MobileAdminDashboard() {
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
-      <div className="flex items-start justify-between gap-3">
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(currentRepName ?? '')}</h1>
         {/* "My Rep View" toggle — only offered when the admin also sells
             (has repType). Flips into rep-view for themselves, replacing
             Glide's two-account hack. The layout's "Viewing as …" banner
@@ -339,7 +343,7 @@ export default function MobileAdminDashboard() {
           <button
             onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
             className="text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap"
-            style={{ background: 'rgba(0,229,160,0.12)', borderColor: 'rgba(0,229,160,0.3)', color: 'var(--accent-emerald)' }}
+            style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)' }}
           >
             My Rep View
           </button>
@@ -370,7 +374,7 @@ export default function MobileAdminDashboard() {
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
                 fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                border: period === p.value ? 'none' : '1px solid var(--border-subtle)',
                 position: 'relative',
                 zIndex: 1,
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -385,18 +389,18 @@ export default function MobileAdminDashboard() {
       {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
       <MobileCard hero>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Revenue</p>
-          <TrendingUp className="w-5 h-5" style={{ color: ACCENT }} />
+          <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.12em' }}>Revenue</p>
+          <TrendingUp className="w-5 h-5" style={{ color: ACCENT_DISP }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: ACCENT, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: HERO_NUM, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedProfit)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
-          <div className="h-8" style={{ width: '1px', background: 'var(--m-border, var(--border-mobile))' }} />
+          <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: '#fff' }}>{fmtCompact$(animatedPaid)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
           </div>
         </div>
@@ -406,8 +410,16 @@ export default function MobileAdminDashboard() {
       <div className="grid grid-cols-2 gap-3">
         <MobileStatCard label="Active" value={active.length} color={ACCENT} />
         <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
-        <MobileStatCard label="Sold" value={formatCompactKW(totalKW)} color={WARNING} />
-        <MobileStatCard label="Installed" value={formatCompactKW(totalKWInstalled)} color={DANGER} />
+        {(() => {
+          const sold = formatCompactKWParts(totalKW);
+          const installed = formatCompactKWParts(totalKWInstalled);
+          return (
+            <>
+              <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color={WARNING} />
+              <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color={DANGER} />
+            </>
+          );
+        })()}
       </div>
 
       {/* ── Needs Attention (action-oriented) ── */}
@@ -415,7 +427,7 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5" style={{ color: WARNING }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
             <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{needsAttention}</span>
           </div>
 
@@ -423,11 +435,11 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/payroll')}
               className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
+              style={pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
-                <span style={{ color: '#fff', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
+                <span style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
               </div>
               <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
             </button>
@@ -437,7 +449,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/payroll')}
               className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
+              style={flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
@@ -451,7 +463,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/projects')}
               className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
+              style={stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <Flag className="w-4 h-4" style={{ color: DANGER }} />
@@ -465,7 +477,7 @@ export default function MobileAdminDashboard() {
             <button
               onClick={() => router.push('/dashboard/projects')}
               className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${onHoldCount > 0 ? ' border-b' : ''}`}
-              style={onHoldCount > 0 ? { borderColor: 'var(--m-border, var(--border-mobile))' } : undefined}
+              style={onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-3">
                 <Clock className="w-4 h-4" style={{ color: MUTED }} />
@@ -491,11 +503,11 @@ export default function MobileAdminDashboard() {
       ) : (
         <MobileCard>
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(0,224,122,0.13)', border: '1px solid rgba(0,224,122,0.25)' }}>
-              <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-green)' }} />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 13%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
+              <CheckCircle className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
             </div>
             <div>
-              <p className="font-bold" style={{ color: 'var(--accent-green)', fontFamily: FONT_BODY, fontSize: '0.9rem', margin: 0 }}>All Clear</p>
+              <p className="font-bold" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.9rem', margin: 0 }}>All Clear</p>
               <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', margin: 0 }}>No items need attention right now.</p>
             </div>
           </div>
@@ -512,10 +524,10 @@ export default function MobileAdminDashboard() {
             return (
               <div key={phase} className="flex items-center gap-3">
                 <span className="w-24 shrink-0 truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{phase}</span>
-                <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="flex-1 h-2 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: ACCENT }} />
                 </div>
-                <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
+                <span className="w-8 text-right tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
               </div>
             );
           })}
@@ -535,14 +547,14 @@ export default function MobileAdminDashboard() {
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
-                    background: r.rank === 1 ? 'rgba(0,229,160,0.15)' : r.rank === 2 ? 'rgba(0,180,216,0.15)' : 'rgba(136,153,170,0.12)',
+                    background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'var(--accent-cyan-soft)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
                     color: r.rank === 1 ? ACCENT : r.rank === 2 ? ACCENT2 : MUTED,
                     fontFamily: FONT_DISPLAY,
                   }}
                 >
                   {r.rank}
                 </span>
-                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
+                <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{r.name}</span>
                 <span className="font-bold tabular-nums" style={{ color: MUTED, fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{r.count} deals</span>
               </div>
             ))}
@@ -555,19 +567,19 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <BarChart2 className="w-4 h-4" style={{ color: WARNING }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Installer Insights</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Installer Insights</p>
           </div>
           <div className="space-y-2">
             {installerRanking.map((inst) => (
-              <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
-                <span className="flex-1 text-white" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
-                <span className="tabular-nums text-sm" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
-                <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div key={inst.name} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <span className="flex-1 text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9375rem' }}>{inst.name}</span>
+                <span className="tabular-nums text-sm whitespace-nowrap" style={{ color: MUTED }}>{inst.kW.toFixed(1)} kW</span>
+                <div className="w-16 h-2 rounded-full mx-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                   <div className="h-full rounded-full" style={{ width: `${(inst.deals / maxInstallerDeals) * 100}%`, background: WARNING }} />
                 </div>
-                <span className="tabular-nums font-semibold" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
+                <span className="tabular-nums font-semibold" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1rem' }}>{inst.deals}</span>
                 {inst.cancelled > 0 && (
-                  <span className="tabular-nums text-xs font-medium" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
+                  <span className="tabular-nums text-xs font-medium whitespace-nowrap" style={{ color: DANGER }}>({inst.cancelled} ✕)</span>
                 )}
               </div>
             ))}
@@ -580,12 +592,12 @@ export default function MobileAdminDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4" style={{ color: DANGER }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Cancellation Reasons</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Cancellation Reasons</p>
             <span className="ml-auto text-xs" style={{ color: MUTED }}>{cancelledProjects.length} cancelled</span>
           </div>
           <div className="space-y-2">
             {cancellationReasons.map(([reason, count]) => (
-              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'var(--surface-inset-subtle)' }}>
                 <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{reason}</span>
                 <span className="font-semibold tabular-nums text-sm" style={{ color: DANGER }}>{count}</span>
               </div>
@@ -626,8 +638,8 @@ export default function MobileAdminDashboard() {
           placeholder="Search customer or rep..."
           value={recentSearch}
           onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--m-border, var(--border-mobile))' }}
+          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none"
+          style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '1px solid var(--border-subtle)' }}
         />
         {(() => {
           const searched = recentSearch.trim()
@@ -661,10 +673,10 @@ export default function MobileAdminDashboard() {
                         key={p.id}
                         onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                         className={`w-full text-left active:opacity-70 transition-opacity py-3 ${i < paginated.length - 1 ? 'border-b' : ''}`}
-                        style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}
+                        style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-white truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}</p>
+                          <p className="text-[var(--text-primary)] truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}{p.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/20">Sub-Dealer</span>}</p>
                           <span className="font-semibold tabular-nums shrink-0" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
                             {fmt$(closerPay)}
                             {setterPay > 0 && <span style={{ color: MUTED, fontSize: '0.75rem' }}> +{fmt$(setterPay)}</span>}
@@ -677,7 +689,7 @@ export default function MobileAdminDashboard() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {milestones.map(({ label, amount, paid }) =>
                             amount > 0 ? (
-                              <span key={label} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: paid ? 'rgba(0,229,160,0.12)' : 'rgba(245,158,11,0.12)', color: paid ? ACCENT : WARNING }}>
+                              <span key={label} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: paid ? 'var(--accent-emerald-soft)' : 'var(--accent-amber-soft)', color: paid ? ACCENT : WARNING }}>
                                 <span style={{ color: DIM }}>{label}</span>{paid ? ` ${fmt$(amount)}` : ' Unpaid'}
                               </span>
                             ) : null
@@ -689,12 +701,12 @@ export default function MobileAdminDashboard() {
                 </div>
               )}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                   <button
                     onClick={() => setRecentPage((pg) => Math.max(1, pg - 1))}
                     disabled={safePage <= 1}
                     className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
-                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                    style={{ color: ACCENT, background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}
                   >
                     ‹ Prev
                   </button>
@@ -705,7 +717,7 @@ export default function MobileAdminDashboard() {
                     onClick={() => setRecentPage((pg) => Math.min(totalPages, pg + 1))}
                     disabled={safePage >= totalPages}
                     className="px-3 py-1.5 rounded-lg text-sm font-medium active:opacity-70 disabled:opacity-30 transition-opacity"
-                    style={{ color: ACCENT, background: 'rgba(0,229,160,0.08)' }}
+                    style={{ color: ACCENT, background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' }}
                   >
                     Next ›
                   </button>

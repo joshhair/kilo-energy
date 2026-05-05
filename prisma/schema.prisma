@@ -25,8 +25,11 @@ model User {
   /// "admin" | "rep" | "sub-dealer" | "project_manager"
   role      String   @default("rep")
 
-  /// "closer" | "setter" | "both" — only applies when role = "rep"; null for non-rep roles
-  repType   String?
+  /// "closer" | "setter" | "both" — only meaningful when role = "rep".
+  /// For non-rep roles (admin/sub-dealer/PM) defaults to "both" as a placeholder.
+  /// Aligned to Turso schema (NOT NULL DEFAULT 'both') to prevent silent
+  /// constraint failures — historical drift from agent cycle 861.
+  repType   String   @default("both")
 
   active    Boolean  @default(true)
 
@@ -80,6 +83,12 @@ model User {
   blitzParticipations BlitzParticipant[]
   blitzRequests      BlitzRequest[]
 
+  // BVI handoff back-relations
+  projectFilesUploaded    ProjectFile[]
+  projectSurveyLinksAdded ProjectSurveyLink[]
+  projectInstallerNotes   ProjectInstallerNote[]
+  emailDeliveriesCreated  EmailDelivery[]
+
   @@index([role])
   @@index([active])
   @@index([clerkUserId])
@@ -100,6 +109,24 @@ model Installer {
   /// Whether this installer uses product catalog pricing (per-product tiered, like SolarTech)
   usesProductCatalog Boolean @default(false)
 
+  // --- Per-installer handoff config ---
+  // Drives the auto-email of the BVI-style intake form on deal submission.
+  // When handoffEnabled=false (default), no email fires regardless of other
+  // fields — admin must explicitly enable per-installer after configuring
+  // recipients. Edited via /api/installers/[id]/handoff-config; changes
+  // logged via lib/audit.ts logChange against AUDITED_FIELDS.Installer.
+
+  /// To: address for the handoff email. Null = handoff cannot fire.
+  primaryEmail String?
+  /// JSON-encoded String[] of CC addresses for the handoff email.
+  ccEmails String @default("[]")
+  /// Subject-line prefix, e.g. "[BVI]". Null = no prefix.
+  subjectPrefix String?
+  /// Master switch. False = collect data + render PDF on demand but never auto-send.
+  handoffEnabled Boolean @default(false)
+  /// Optional free-text appended to the handoff email body.
+  customNotes String @default("")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -108,6 +135,7 @@ model Installer {
   products            Product[]
   productCatalogConfig ProductCatalogConfig?
   prepaidOptions      InstallerPrepaidOption[]
+  emailDeliveries     EmailDelivery[]
 
   @@index([active])
 }
@@ -172,8 +200,10 @@ model InstallerPricingTier {
   maxKW      Float?  /// null = no upper limit
   closerPerW Float
   setterPerW Float?  /// null = auto (closerPerW + 0.10)
+  /// @sensitivity admin — company cost; never expose to non-admin viewers
   kiloPerW   Float
 
+  /// @sensitivity admin — sub-dealer payment rate; admin-only
   /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this installer/tier)
   subDealerPerW Float?
 
@@ -248,8 +278,10 @@ model ProductPricingTier {
   maxKW      Float?  /// null = no upper limit
   closerPerW Float
   setterPerW Float   /// explicit (usually closerPerW + 0.10)
+  /// @sensitivity admin — company cost; never expose to non-admin viewers
   kiloPerW   Float
 
+  /// @sensitivity admin — sub-dealer payment rate; admin-only
   /// Sub-dealer rate: what Kilo pays the sub-dealer per watt (null = sub-dealers cannot sell this product/tier)
   subDealerPerW Float?
 
@@ -344,9 +376,34 @@ model Project {
   /// Override rate in $/W. Paired with trainerId. Admin-set in project sheet.
   trainerRate Float?
 
+  /// Admin's explicit "remove all trainers from this deal" flag. Set true by
+  /// the project sheet's Clear button. When true: chain-trainee visibility AND
+  /// chain-trainee commission are suppressed for this project. The trainee's
+  /// chain trainer no longer sees the project in their list and no longer
+  /// earns M2/M3 override on it. Default false preserves current behavior —
+  /// new projects auto-attach the closer's chain trainer as today.
+  noChainTrainer Boolean @default(false)
+
   /// Set only when phase changes — used by Needs Attention staleness calc.
   /// Null for projects created before this field was added.
   phaseChangedAt DateTime?
+
+  // --- BVI / per-installer handoff ---
+  /// Per-installer intake fields. Shape varies per installer — typed in
+  /// lib/installer-intakes/<slug>.ts. Stored as JSON so adding a new
+  /// installer's intake is a code change (template + types) without a
+  /// schema migration. Vendor-PM-of-OTHER-installer must never see this
+  /// (scrubbed at the serializer); BVI's vendor PM sees their own.
+  installerIntakeJson String?
+  /// Stamped on first successful handoff send. Drives the 60s replay
+  /// guard and the "Sent" badge on the project page.
+  handoffSentAt DateTime?
+  /// Stamped on every "Resend to Installer" override after the initial send.
+  handoffLastResendAt DateTime?
+  /// FK convenience — points at the ProjectFile holding the homeowner's
+  /// utility bill. Null = no bill on file. Cascades managed at app layer
+  /// (ProjectFile is the canonical source; this is a lookup shortcut).
+  utilityBillFileId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -356,6 +413,11 @@ model Project {
   messages       ProjectMessage[]
   projectNotes   ProjectNote[]
   adminNotesList ProjectAdminNote[]
+  // BVI handoff relations
+  files            ProjectFile[]
+  surveyLinks      ProjectSurveyLink[]
+  installerNotes   ProjectInstallerNote[]
+  emailDeliveries  EmailDelivery[]
 
   /// Tag-team support: extra closers / setters on a deal beyond the primary.
   /// Empty for a standard single-closer, single-setter deal — no query cost.
@@ -817,6 +879,38 @@ model AuditLog {
   @@index([createdAt])
 }
 
+/// Read-side counterpart to AuditLog. Records who hit a sensitive
+/// endpoint and which model rows were returned, so a privacy leak
+/// can be diagnosed forensically (which user saw what, when, for
+/// how long). Distinct from AuditLog because reads are high-volume
+/// and one row carries N record IDs as a JSON array.
+///
+/// Retention: 90 days, enforced by a cleanup script run nightly.
+model DataAccessLog {
+  id              String   @id @default(cuid())
+  /// The authenticated user who made the request.
+  actorUserId     String
+  /// Optional view-as target — when admin is impersonating, this is
+  /// the user whose visibility rules were applied. Null otherwise.
+  effectiveUserId String?
+  /// Route path, e.g. "/api/data" or "/api/projects/[id]".
+  route           String
+  /// The model whose rows were exposed, e.g. "Project".
+  modelName       String
+  /// JSON array of record IDs returned to the caller. Capped to
+  /// the first 1000 ids per request — beyond that we just log
+  /// the count, since high-cardinality logs are noise.
+  recordIdsJson   String
+  /// Total number of records returned (== recordIds.length when
+  /// uncapped, > recordIds.length when truncated for log size).
+  recordCount     Int
+  createdAt       DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([modelName, createdAt])
+  @@index([createdAt])
+}
+
 model BlitzRequest {
   id            String @id @default(cuid())
   requestedById String
@@ -846,4 +940,168 @@ model BlitzRequest {
 
   @@index([requestedById])
   @@index([status])
+}
+
+// ============================================================================
+// BVI HANDOFF — installer-handoff surfaces
+// ============================================================================
+// Sensitive models. All four below must be visible to:
+//   - admin
+//   - internal PM
+//   - vendor PM whose scopedInstallerId matches the project's installerId
+// Reps, setters, sub-dealers, misconfigured PMs, and unknown roles all DENY.
+// See lib/db-gated.ts → installerSurfaceProjectWhere() for the policy.
+
+/// Generic per-installer file storage. Holds utility bills (kind='utility_bill'),
+/// permits, plans, inspection reports, as-built photos. Each row references a
+/// blob in Vercel Blob (private access mode); reads go through the gated
+/// download proxy at /api/projects/[id]/files/[fileId]/download which signs a
+/// short-lived URL after role check + audit log. blobUrl is opaque — never
+/// expose directly to clients.
+model ProjectFile {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// 'utility_bill' | 'permit' | 'plan' | 'inspection' | 'as_built' | 'other'
+  kind         String
+  /// Human-readable label (e.g. "May 2026 utility bill")
+  label        String
+  /// Original filename as uploaded (display only; do not use for storage path).
+  originalName String
+  /// Vercel Blob URL — private mode, requires signed URL to fetch.
+  blobUrl      String
+  /// Blob path/key for delete operations.
+  blobPath     String
+  mimeType     String
+  sizeBytes    Int
+
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+
+  createdAt    DateTime @default(now())
+
+  @@index([projectId])
+  @@index([kind])
+}
+
+/// External links (Google Drive folders, Dropbox, OneDrive) where installer
+/// PMs upload site-survey photos / supporting docs. We do not host the
+/// content; we just track the link, label, and provenance. URL validation
+/// at the route layer rejects non-HTTPS URLs.
+model ProjectSurveyLink {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  url         String
+  label       String
+
+  addedById   String
+  addedBy     User     @relation(fields: [addedById], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+}
+
+/// Per-project notes scoped to the installer-handoff audience (admin +
+/// internal PM + vendor PM of matching installer). Distinct from
+/// ProjectNote (rep-visible) and ProjectAdminNote (admin-only). This is
+/// where BVI's vendor PM leaves "scheduled site survey for Tuesday"-type
+/// status updates that the rep doesn't need to see.
+model ProjectInstallerNote {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  body      String
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([authorId])
+}
+
+/// Per-send delivery status record. One row per /api/projects/[id]/handoff
+/// POST (whether real or test=true). Updated by the Resend webhook receiver
+/// at /api/webhooks/resend with delivered/bounced/complained transitions.
+/// Surfaces on project page as the HandoffStatusCard; bounces feed the
+/// daily stalled digest's "bounced handoffs" section.
+model EmailDelivery {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Optional — null when send is not installer-keyed (e.g. internal test send).
+  installerId       String?
+  installer         Installer? @relation(fields: [installerId], references: [id])
+
+  /// Resend API message id; webhook events match against this.
+  providerMessageId String?   @unique
+
+  /// JSON-encoded String[] of recipient envelope addresses.
+  toEmails          String
+  ccEmails          String
+
+  subject           String
+
+  /// 'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed'
+  status            String
+
+  /// Bounce/complaint detail when status is bounced/complained/failed.
+  errorReason       String?
+
+  sentAt            DateTime  @default(now())
+  deliveredAt       DateTime?
+  bouncedAt         DateTime?
+
+  /// True when the send was triggered with ?test=true (admin self-test).
+  /// Test sends do NOT count toward Project.handoffSentAt or idempotency.
+  isTest            Boolean   @default(false)
+
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([providerMessageId])
+}
+
+// ============================================================================
+// STALLED PROJECT ALERT CONFIG (admin singleton)
+// ============================================================================
+
+/// Admin-managed config powering the daily stalled-project digest.
+/// Single-row by convention (id = "singleton"). Read by the cron at
+/// /api/cron/stalled-digest. Edited via /api/admin/stalled-config.
+/// Not in the privacy gate (admin-only endpoint by route guard);
+/// allowlisted in scripts/privacy-gate-coverage.allowlist.json.
+model StalledAlertConfig {
+  id                  String   @id @default("singleton")
+
+  /// Master kill switch. False = no digest sent regardless of cron firing.
+  enabled             Boolean  @default(true)
+
+  /// Projects whose soldDate is older than this many days are exempt
+  /// from the digest regardless of phase or threshold (legacy-data filter).
+  soldDateCutoffDays  Int      @default(180)
+
+  /// JSON-encoded String[] of email addresses to receive the daily digest.
+  digestRecipients    String   @default("[]")
+
+  /// JSON-encoded { phaseName: thresholdDays }. Phases not present
+  /// fall back to DEFAULT_THRESHOLDS in the cron handler.
+  phaseThresholds     String   @default("{}")
+
+  /// Hour-of-day (0-23 UTC) when the digest is expected to fire. Used
+  /// by the cron route to short-circuit if invoked off-schedule.
+  /// Default 15 = 8am Pacific Time.
+  digestSendHourUtc   Int      @default(15)
+
+  updatedAt           DateTime @updatedAt
+  updatedById         String?
 }

@@ -772,7 +772,7 @@ function PayrollPageInner() {
     persistPayrollEntry(newEntry);
   };
 
-  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
+  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
 
   const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
 
@@ -800,8 +800,8 @@ function PayrollPageInner() {
     return (
       <div className="p-4 md:p-8">
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[var(--accent-green)]" />
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
+            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -811,8 +811,8 @@ function PayrollPageInner() {
         </div>
         <div className="grid grid-cols-3 gap-4 mb-8">
           <StatCard label="Draft" value={myDraft} color="text-[var(--text-secondary)]" accentGradient="from-blue-500 to-blue-400" className="animate-slide-in-scale stagger-1" />
-          <StatCard label="Pending" value={myPending} color="text-yellow-400" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
-          <StatCard label="Paid" value={myPaid} color="text-[var(--accent-green)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
+          <StatCard label="Pending" value={myPending} color="text-[var(--accent-amber-text)]" accentGradient="from-yellow-500 to-yellow-400" className="animate-slide-in-scale stagger-2" />
+          <StatCard label="Paid" value={myPaid} color="text-[var(--accent-emerald-text)]" accentGradient="from-emerald-500 to-emerald-400" className="animate-slide-in-scale stagger-3" />
         </div>
         {/* Type and status filters */}
         <div className="flex flex-wrap gap-3 mb-4">
@@ -820,7 +820,7 @@ function PayrollPageInner() {
             {(['All', 'Deal', 'Bonus'] as const).map((t) => (
               <button key={t} onClick={() => setRepTypeFilter(t)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
-                style={repTypeFilter === t ? { background: '#2563eb', color: '#fff' } : { color: 'var(--text-muted)' }}>
+                style={repTypeFilter === t ? { background: 'var(--accent-blue-solid)', color: 'var(--text-on-accent)' } : { color: 'var(--text-muted)' }}>
                 {t}
               </button>
             ))}
@@ -830,10 +830,10 @@ function PayrollPageInner() {
               <button key={s} onClick={() => setRepStatusFilter(s)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                 style={repStatusFilter === s
-                  ? s === 'Paid' ? { background: 'rgba(0,224,122,0.2)', color: 'var(--accent-green)' }
-                    : s === 'Pending' ? { background: 'rgba(255,176,32,0.2)', color: 'var(--accent-amber)' }
-                    : s === 'Draft' ? { background: 'rgba(77,159,255,0.2)', color: 'var(--accent-blue)' }
-                    : { background: '#2563eb', color: '#fff' }
+                  ? s === 'Paid' ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)' }
+                    : s === 'Pending' ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }
+                    : s === 'Draft' ? { background: 'color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)', color: 'var(--accent-blue-text)' }
+                    : { background: 'var(--accent-blue-solid)', color: 'var(--text-on-accent)' }
                   : { color: 'var(--text-muted)' }}>
                 {s}
               </button>
@@ -846,17 +846,17 @@ function PayrollPageInner() {
               {/* Illustration — wallet with coins (no earnings yet) */}
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" className="opacity-40">
                 {/* Wallet body */}
-                <rect x="10" y="24" width="52" height="34" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-                <rect x="10" y="30" width="52" height="4" fill="#334155"/>
+                <rect x="10" y="24" width="52" height="34" rx="6" fill="var(--surface-pressed)" stroke="var(--border-strong)" strokeWidth="1.5"/>
+                <rect x="10" y="30" width="52" height="4" fill="var(--border-strong)"/>
                 {/* Coin pocket */}
-                <rect x="44" y="34" width="18" height="16" rx="4" fill="#0f172a" stroke="#334155" strokeWidth="1.5"/>
-                <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan)" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <rect x="44" y="34" width="18" height="16" rx="4" fill="var(--surface-page)" stroke="var(--border-strong)" strokeWidth="1.5"/>
+                <circle cx="53" cy="42" r="4" fill="var(--surface-card)" stroke="var(--accent-cyan-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
                 {/* Dashed lines — empty content indicator */}
-                <line x1="17" y1="40" x2="36" y2="40" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
-                <line x1="17" y1="46" x2="30" y2="46" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="17" y1="40" x2="36" y2="40" stroke="var(--border-default)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
+                <line x1="17" y1="46" x2="30" y2="46" stroke="var(--border-default)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2"/>
                 {/* Dollar sign badge */}
-                <circle cx="60" cy="22" r="9" fill="var(--surface-card)" stroke="var(--accent-green)" strokeWidth="1.5" strokeOpacity="0.5"/>
-                <text x="60" y="26.5" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
+                <circle cx="60" cy="22" r="9" fill="var(--surface-card)" stroke="var(--accent-emerald-solid)" strokeWidth="1.5" strokeOpacity="0.5"/>
+                <text x="60" y="26.5" textAnchor="middle" fill="var(--accent-blue-text)" fontSize="11" fontWeight="bold" fontFamily="sans-serif">$</text>
               </svg>
               <p className="text-[var(--text-secondary)] text-sm font-semibold leading-snug text-center">No payroll entries yet</p>
               <p className="text-[var(--text-muted)] text-xs leading-relaxed text-center">Your commissions and bonus payments will appear here once your admin processes them.</p>
@@ -882,7 +882,7 @@ function PayrollPageInner() {
                   <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {entry.type === 'Deal' && entry.customerName && entry.projectId ? (
-                        <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan)' }}>
+                        <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan-text)' }}>
                           {entry.customerName}
                         </Link>
                       ) : (
@@ -890,7 +890,7 @@ function PayrollPageInner() {
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'rgba(168,85,247,0.15)' : 'rgba(37,99,235,0.15)', color: entry.type === 'Bonus' ? '#c084fc' : '#60a5fa' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: entry.type === 'Bonus' ? 'color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)' : 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)', color: entry.type === 'Bonus' ? 'var(--accent-purple-text)' : 'var(--accent-blue-text)' }}>
                         {entry.type}
                       </span>
                     </td>
@@ -899,14 +899,14 @@ function PayrollPageInner() {
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
-                          ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)' }
+                          ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)' }
                           : entry.status === 'Pending'
-                          ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)' }
-                          : { background: 'var(--surface-card)', color: 'var(--accent-blue)' }
+                          ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)' }
+                          : { background: 'var(--surface-card)', color: 'var(--accent-blue-text)' }
                       }>
                         {entry.status}
                       </span>
@@ -937,8 +937,8 @@ function PayrollPageInner() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <CreditCard className="w-5 h-5 text-[var(--accent-green)]" />
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
+            <CreditCard className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <div>
             <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
@@ -959,7 +959,7 @@ function PayrollPageInner() {
               onClick={() => setShowPublishConfirm(true)}
               disabled={pendingCount === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -1059,10 +1059,10 @@ function PayrollPageInner() {
             className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={pageView === v
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-secondary)' }
@@ -1073,7 +1073,7 @@ function PayrollPageInner() {
             ) : (
               <><Receipt className="w-3.5 h-3.5" /> Reimbursements
                 {pendingReimCount > 0 && (
-                  <span className="ml-1 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
+                  <span className="ml-1 text-xs bg-yellow-500/20 text-[var(--accent-amber-text)] px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
                 )}
               </>
             )}
@@ -1090,7 +1090,7 @@ function PayrollPageInner() {
             <select
               value={reimFilterStatus}
               onChange={(e) => setReimFilterStatus(e.target.value as 'All' | 'Pending' | 'Approved' | 'Denied')}
-              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
             >
               <option value="Pending">Pending</option>
@@ -1104,7 +1104,7 @@ function PayrollPageInner() {
                 type="date"
                 value={reimFilterFrom}
                 onChange={(e) => setReimFilterFrom(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
@@ -1114,14 +1114,14 @@ function PayrollPageInner() {
                 type="date"
                 value={reimFilterTo}
                 onChange={(e) => setReimFilterTo(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)]"
+                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
                 style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               />
             </div>
             <select
               value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
               onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
-              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-green)] ml-auto"
+              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] ml-auto"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
               title="Archive visibility"
             >
@@ -1129,10 +1129,10 @@ function PayrollPageInner() {
               <option value="all">Include archived</option>
               <option value="only">Archived only</option>
             </select>
-            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending') && (
+            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending' || showArchivedReim !== false) && (
               <button
-                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); }}
-                className="text-xs text-[var(--text-muted)] hover:text-white underline transition-colors"
+                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); setShowArchivedReim(false); }}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline transition-colors"
               >
                 Clear
               </button>
@@ -1158,11 +1158,11 @@ function PayrollPageInner() {
                   <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
                     <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">
                       {r.receiptUrl ? (
-                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan)] hover:underline">
+                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan-text)] hover:underline">
                           {r.receiptName || 'Receipt'}
                         </a>
                       ) : (
@@ -1196,10 +1196,10 @@ function PayrollPageInner() {
                           <div className="flex gap-2 flex-wrap">
                             {r.status === 'Pending' && (
                               <>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-emerald-900/50 hover:bg-emerald-800/60 text-[var(--accent-green)]`}>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-emerald-soft)] hover:bg-emerald-800/60 text-[var(--accent-emerald-text)]`}>
                                   <Check className="w-3 h-3" /> Approve
                                 </button>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-red-900/50 hover:bg-red-800/60 text-red-400`}>
+                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-red-soft)] hover:bg-red-800/60 text-[var(--accent-red-text)]`}>
                                   <X className="w-3 h-3" /> Deny
                                 </button>
                               </>
@@ -1219,7 +1219,7 @@ function PayrollPageInner() {
                                 Unarchive
                               </button>
                             )}
-                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-red-400 hover:bg-red-500/10`} title="Delete permanently">
+                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10`} title="Delete permanently">
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
@@ -1233,7 +1233,7 @@ function PayrollPageInner() {
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Receipt className="w-10 h-10 text-[var(--text-dim)]" />
-                        <p className="text-sm font-semibold text-white">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
                         <p className="text-xs text-[var(--text-muted)]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
                       </div>
                     </td>
@@ -1254,25 +1254,25 @@ function PayrollPageInner() {
           drill-down. 2026-04-23. */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         {/* Draft */}
-        <div style={{ background: 'linear-gradient(135deg, #040c1c, #060e22)', border: '1px solid rgba(77,159,255,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(77,159,255,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(77,159,255,0.25)' }}>${draftBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'rgba(77,159,255,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'rgba(77,159,255,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-blue-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' }}>${draftBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
         </div>
         {/* Pending */}
-        <div style={{ background: 'linear-gradient(135deg, #120b00, #180e00)', border: '1px solid rgba(255,176,32,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,176,32,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(255,176,32,0.25)' }}>${pendingBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'rgba(255,176,32,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'rgba(255,176,32,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-amber-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>${pendingBreakdown.total.toLocaleString()}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
         </div>
         {/* Total Paid */}
-        <div style={{ background: 'linear-gradient(135deg, #00160d, #001c10)', border: '1px solid rgba(0,224,122,0.19)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(0,224,122,0.73)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-green)', letterSpacing: '-0.03em', textShadow: '0 0 20px rgba(0,224,122,0.25)' }}>${combinedTotalPaid.toLocaleString()}</p>
-          <p style={{ color: 'rgba(0,224,122,0.55)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
-          <p style={{ color: 'rgba(0,224,122,0.4)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
+        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-emerald-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
+          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
+          <p style={{ color: 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
+          <p style={{ color: 'var(--accent-emerald-glow)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
         </div>
       </div>
 
@@ -1287,10 +1287,10 @@ function PayrollPageInner() {
             className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={statusTab === s
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-secondary)' }
@@ -1315,10 +1315,10 @@ function PayrollPageInner() {
             className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={typeTab === t
               ? {
-                  background: 'linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18))',
-                  border: '1px solid rgba(0, 224, 122, 0.45)',
-                  boxShadow: '0 0 12px rgba(0, 224, 122, 0.12)',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
+                  color: 'var(--text-primary)',
                   fontWeight: 600,
                 }
               : { color: 'var(--text-muted)' }
@@ -1354,7 +1354,7 @@ function PayrollPageInner() {
           {statusTab === 'Draft' && (
             <button
               onClick={selectAll}
-              className="text-xs hover:text-white underline transition-colors"
+              className="text-xs hover:text-[var(--text-primary)] underline transition-colors"
               style={{ color: 'var(--text-muted)' }}
             >
               {allPageSelected ? 'Deselect All on Page' : 'Select All on Page'}
@@ -1391,7 +1391,7 @@ function PayrollPageInner() {
                   setShowPaymentModal(true);
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
                 <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
               </button>
@@ -1406,7 +1406,7 @@ function PayrollPageInner() {
               <tr>
                 {statusTab === 'Draft' && (
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const, width: 40 }}>
-                    <input type="checkbox" checked={allPageSelected} onChange={selectAll} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />
+                    <input type="checkbox" checked={allPageSelected} onChange={selectAll} style={{ accentColor: 'var(--accent-emerald-solid)', cursor: 'pointer' }} />
                   </th>
                 )}
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
@@ -1438,7 +1438,7 @@ function PayrollPageInner() {
                           type="checkbox"
                           checked={groupAllSelected}
                           onChange={() => toggleGroupSelection(group.entries)}
-                          style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }}
+                          style={{ accentColor: 'var(--accent-emerald-solid)', cursor: 'pointer' }}
                           title={groupAllSelected ? 'Deselect all of this rep\'s entries' : 'Select all of this rep\'s entries'}
                         />
                       </td>
@@ -1462,7 +1462,7 @@ function PayrollPageInner() {
                     </td>
                     <td style={{ padding: '12px 14px' }}></td>
                     <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}>
-                      <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
+                      <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
                         {fmt$(group.total)}
                       </span>
                     </td>
@@ -1477,7 +1477,7 @@ function PayrollPageInner() {
                   key={entry.id}
                   className={`table-row-enter row-stagger-${Math.min(i, 24)}`}
                   style={{
-                    background: selectedIds.has(entry.id) ? 'rgba(0,224,122,0.05)' : i % 2 === 0 ? 'var(--surface-card)' : '#141820',
+                    background: selectedIds.has(entry.id) ? 'var(--accent-emerald-soft)' : i % 2 === 0 ? 'var(--surface-card)' : 'var(--surface-pressed)',
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
                   }}
@@ -1485,7 +1485,7 @@ function PayrollPageInner() {
                 >
                   {statusTab === 'Draft' && (
                     <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
-                      <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: 'var(--accent-green)', cursor: 'pointer' }} />
+                      <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleEntry(entry.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: 'var(--accent-emerald-solid)', cursor: 'pointer' }} />
                     </td>
                   )}
                   <td style={{ padding: '12px 14px 12px 40px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>↳</span></td>
@@ -1495,7 +1495,7 @@ function PayrollPageInner() {
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
                         className="hover:underline"
-                        style={{ color: 'var(--accent-cyan)' }}
+                        style={{ color: 'var(--accent-cyan-text)' }}
                         title="Open project"
                       >
                         {entry.customerName}
@@ -1504,15 +1504,15 @@ function PayrollPageInner() {
                       <span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-green)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={
                       entry.status === 'Paid'
-                        ? { background: 'rgba(0,224,122,0.12)', color: 'var(--accent-green)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                         : entry.status === 'Pending'
-                        ? { background: 'rgba(255,176,32,0.12)', color: 'var(--accent-amber)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
-                        : { background: 'rgba(77,159,255,0.12)', color: 'var(--accent-blue)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        ? { background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
+                        : { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-display)', padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 600 }
                     }>{entry.status}</span>
                   </td>
                   <td style={{ padding: '12px 14px', fontSize: 12, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' as const, textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
@@ -1533,7 +1533,7 @@ function PayrollPageInner() {
                           disabled={processingEntryIds.has(entry.id)}
                           onClick={() => handleReverseEntry(entry)}
                           className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40"
-                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber)' }}
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber-text)' }}
                           title="Move back to Draft"
                         >
                           Reverse
@@ -1543,7 +1543,7 @@ function PayrollPageInner() {
                         <button
                           disabled={processingEntryIds.has(entry.id)}
                           onClick={() => handleDeleteEntry(entry)}
-                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40 hover:text-red-400 hover:bg-red-500/10"
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40 hover:text-[var(--accent-red-text)] hover:bg-red-500/10"
                           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-dim)' }}
                           title="Delete entry"
                         >
@@ -1599,20 +1599,20 @@ function PayrollPageInner() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
             <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-yellow-900/30">
-                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                <div className="p-2 rounded-lg bg-[var(--accent-amber-soft)]">
+                  <AlertTriangle className="w-5 h-5 text-[var(--accent-amber-text)]" />
                 </div>
-                <h2 className="text-white font-semibold text-lg">Publish Payroll?</h2>
+                <h2 className="text-[var(--text-primary)] font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[var(--text-secondary)] text-sm mb-3">
-                This will mark <span className="text-yellow-400 font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-green)] font-semibold">Paid</span>. Only <span className="text-yellow-400 font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
+                This will mark <span className="text-[var(--accent-amber-text)] font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-text)] font-semibold">Paid</span>. Only <span className="text-[var(--accent-amber-text)] font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
               </p>
               {filterRepId && (() => {
                 const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
                 return (
-                  <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                    <p className="text-yellow-300 text-xs leading-relaxed">
+                  <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
+                    <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
                       <span className="font-semibold">Rep filter is active.</span> Only entries for <span className="font-semibold">{filteredRepName}</span> will be published. Other reps&apos; Pending entries will not be affected.
                     </p>
                   </div>
@@ -1620,9 +1620,9 @@ function PayrollPageInner() {
               })()}
 
               {(payFilterFrom || payFilterTo) && (
-                <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-                  <p className="text-yellow-300 text-xs leading-relaxed">
+                <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
+                  <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
                     <span className="font-semibold">Date filter is active.</span> Only entries{payFilterFrom && <> from <span className="font-semibold">{payFilterFrom}</span></>}{payFilterTo && <> to <span className="font-semibold">{payFilterTo}</span></>} will be published. Pending entries outside this date range will not be affected.
                   </p>
                 </div>
@@ -1639,16 +1639,16 @@ function PayrollPageInner() {
                     {repSummary.map((rep) => (
                       <div key={rep.id} className="flex items-center justify-between px-4 py-2.5">
                         <div>
-                          <p className="text-white text-sm font-medium">{rep.name}</p>
+                          <p className="text-[var(--text-primary)] text-sm font-medium">{rep.name}</p>
                           <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
                         </div>
-                        <span className={`${rep.total < 0 ? 'text-red-400' : 'text-[var(--accent-green)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
+                        <span className={`${rep.total < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
                   <div className="px-4 py-2.5 border-t border-[var(--border)]/60 flex items-center justify-between bg-[var(--surface-card)]/40">
                     <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Total</span>
-                    <span className="text-white font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
+                    <span className="text-[var(--text-primary)] font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -1657,14 +1657,14 @@ function PayrollPageInner() {
                 <button
                   onClick={handlePublish}
                   disabled={publishingPayroll}
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: 'var(--brand)' }}
                 >
                   {publishingPayroll ? 'Publishing…' : 'Publish Payroll'}
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Cancel
                 </button>
@@ -1691,8 +1691,8 @@ function PayrollPageInner() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add {titleFor}</h2>
-              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Add {titleFor}</h2>
+              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1708,7 +1708,7 @@ function PayrollPageInner() {
                       key={t}
                       type="button"
                       onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
-                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-white' : 'text-black') : 'text-[var(--text-secondary)]'}`}
+                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-[var(--text-primary)]' : 'text-black') : 'text-[var(--text-secondary)]'}`}
                       style={{ background: paymentForm.type === t ? (t === 'Chargeback' ? 'var(--accent-red, #ef4444)' : 'var(--brand)') : 'transparent' }}
                     >
                       {t}
@@ -1794,12 +1794,12 @@ function PayrollPageInner() {
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-white' : 'btn-primary text-black'}`}
+                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-[var(--text-primary)]' : 'btn-primary text-black'}`}
                   style={{ backgroundColor: isChargeback ? 'var(--accent-red, #ef4444)' : 'var(--brand)' }}>
                   Add {titleFor}
                 </button>
                 <button type="button" onClick={closeAndReset}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1816,8 +1816,8 @@ function PayrollPageInner() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={editEntryPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
-              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
+              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1850,7 +1850,7 @@ function PayrollPageInner() {
                   Save Changes
                 </button>
                 <button type="button" onClick={() => setEditingEntry(null)}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-white font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
+                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
                   Cancel
                 </button>
               </div>
@@ -1879,13 +1879,13 @@ function PayrollPageInner() {
           <div className="flex items-center gap-3">
 
             {/* Selection count badge — blue accent pill */}
-            <span className="flex items-center gap-1.5 bg-[var(--accent-green)]/15 border border-[var(--accent-green)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
-              <span key={selectedIds.size} className="text-white font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
-              <span className="text-[var(--accent-green)] font-medium">selected</span>
+            <span className="flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+              <span key={selectedIds.size} className="text-[var(--text-primary)] font-bold tabular-nums animate-badge-pop">{selectedIds.size}</span>
+              <span className="text-[var(--accent-emerald-text)] font-medium">selected</span>
               {selectedTotal > 0 && (
                 <>
                   <span className="text-[var(--text-dim)] mx-0.5">·</span>
-                  <span key={selectedTotal} className="text-[var(--accent-green)] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
+                  <span key={selectedTotal} className="text-[var(--accent-emerald-text)] font-semibold tabular-nums animate-badge-pop">${selectedTotal.toLocaleString()}</span>
                 </>
               )}
             </span>
@@ -1898,7 +1898,7 @@ function PayrollPageInner() {
               <button
                 onClick={handleMarkForPayroll}
                 disabled={markingForPayroll}
-                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 Mark for Payroll →
@@ -1909,7 +1909,7 @@ function PayrollPageInner() {
             <button
               onClick={() => setSelectedIds(new Set())}
               aria-label="Deselect all and dismiss toolbar"
-              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors flex-shrink-0"
+              className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

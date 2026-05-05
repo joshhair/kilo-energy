@@ -3,10 +3,12 @@ import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAuth } from '../../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../../lib/api-validation';
+import { deriveBlitzStatus } from '../../../../../lib/blitzStatus';
 import {
   createBlitzParticipantSchema,
   patchBlitzParticipantSchema,
 } from '../../../../../lib/schemas/business';
+import { logChange } from '../../../../../lib/audit';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
-  if (blitz.status === 'cancelled' || blitz.status === 'completed') {
+  const effectiveStatus = deriveBlitzStatus(blitz);
+  if (effectiveStatus === 'cancelled' || effectiveStatus === 'completed') {
     return NextResponse.json({ error: 'Cannot join a cancelled or completed blitz' }, { status: 409 });
   }
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId && caller.id !== body.userId) {
@@ -145,6 +148,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     throw e;
   }
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_add',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: { addedUserId: body.userId, joinStatus },
+  });
   return NextResponse.json(participant, { status: 201 });
 }
 
@@ -281,6 +291,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_update',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: {
+      affectedUserId: body.userId,
+      joinStatusBefore: existing.joinStatus,
+      joinStatusAfter: updated.joinStatus,
+      attendanceStatusAfter: updated.attendanceStatus,
+    },
+  });
   return NextResponse.json(updated);
 }
 
@@ -347,5 +369,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
   }
 
+  await logChange({
+    actor: { id: caller.id, email: caller.email },
+    action: 'blitz_participant_remove',
+    entityType: 'Blitz',
+    entityId: blitzId,
+    detail: { removedUserId: userId },
+  });
   return NextResponse.json({ success: true });
 }

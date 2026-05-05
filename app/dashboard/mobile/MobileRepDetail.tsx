@@ -6,8 +6,8 @@ import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
-import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square } from 'lucide-react';
-import { getTrainerOverrideRate } from '../../../lib/data';
+import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square, Check, X, Plus } from 'lucide-react';
+import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../lib/data';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
@@ -16,9 +16,9 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const STATUS_AMOUNT_COLORS: Record<string, string> = {
-  Paid: 'var(--accent-emerald)',
-  Pending: '#f5a623',
-  Draft: 'var(--text-mobile-muted)',
+  Paid: 'var(--accent-emerald-solid)',
+  Pending: 'var(--accent-amber-solid)',
+  Draft: 'var(--text-muted)',
 };
 
 const REP_TYPE_LABELS: Record<string, string> = {
@@ -84,6 +84,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [confirmConvert, setConfirmConvert] = useState<{ targetRole: 'rep' | 'sub-dealer'; targetLabel: string; msg: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
+  const [editingTiers, setEditingTiers] = useState(false);
+  const [draftTiers, setDraftTiers] = useState<TrainerOverrideTier[]>([]);
+  const [tierSaving, setTierSaving] = useState(false);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -177,10 +180,10 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
 
   if (!hydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
-        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
-        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', opacity: 0.6 }} />
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
+        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--surface-card)', opacity: 0.6 }} />
       </div>
     );
   }
@@ -192,24 +195,24 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   // Still fetching — show skeleton
   if (!resolvedUser && !lookupFailed) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
-        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }} />
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
+        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
+        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
       </div>
     );
   }
 
   if (!resolvedUser) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
-          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Users
         </button>
-        <p className="text-base text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>User not found.</p>
+        <p className="text-base text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>User not found.</p>
       </div>
     );
   }
@@ -221,33 +224,33 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       : resolvedUser.role === 'project_manager' ? 'Project Manager'
       : 'Sub-Dealer';
     const badgeColor =
-      resolvedUser.role === 'admin' ? 'var(--accent-amber)'
-      : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan)'
-      : '#b47dff';
+      resolvedUser.role === 'admin' ? 'var(--accent-amber-solid)'
+      : resolvedUser.role === 'project_manager' ? 'var(--accent-cyan-solid)'
+      : 'var(--accent-purple-solid)';
     const badgeBg =
-      resolvedUser.role === 'admin' ? 'rgba(255,176,32,0.12)'
-      : resolvedUser.role === 'project_manager' ? 'rgba(0,196,240,0.12)'
-      : 'rgba(180,125,255,0.12)';
+      resolvedUser.role === 'admin' ? 'var(--accent-amber-soft)'
+      : resolvedUser.role === 'project_manager' ? 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)'
+      : 'var(--accent-purple-soft)';
     const initials = `${resolvedUser.firstName[0] ?? ''}${resolvedUser.lastName[0] ?? ''}`.toUpperCase();
     const fu = fetchedUser; // PM permission flags only available from fetched payload
 
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
         <button
           onClick={() => router.push('/dashboard/users')}
           className="flex items-center gap-1.5 text-base min-h-[48px]"
-          style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           <ArrowLeft className="w-4 h-4" /> Users
         </button>
 
-        <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderLeft: `3px solid ${badgeColor}` }}>
+        <div className="rounded-2xl p-5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderLeft: `3px solid ${badgeColor}` }}>
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black shrink-0" style={{ background: badgeBg, color: badgeColor }}>
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-white truncate" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              <h1 className="text-xl font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                 {resolvedUser.firstName} {resolvedUser.lastName}
               </h1>
               <div className="mt-1.5">
@@ -255,16 +258,16 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   {roleLabel}
                 </span>
               </div>
-              {resolvedUser.email && <p className="text-sm mt-2 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.email}</p>}
-              {resolvedUser.phone && <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.phone}</p>}
+              {resolvedUser.email && <p className="text-sm mt-2 truncate" style={{ color: 'var(--text-muted)' }}>{resolvedUser.email}</p>}
+              {resolvedUser.phone && <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{resolvedUser.phone}</p>}
             </div>
           </div>
         </div>
 
         {resolvedUser.role === 'admin' && effectiveRole === 'admin' && (
-          <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--m-text-dim, #445577)' }}>Sales</p>
-            <p className="text-xs mb-3" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <div className="rounded-2xl p-5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--text-dim)' }}>Sales</p>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Set if this admin also sells deals — they&apos;ll appear in closer/setter pickers and get a My Pay tab.
             </p>
             <select
@@ -291,8 +294,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               className="w-full rounded-xl px-3 py-3 text-base focus:outline-none"
               style={{
                 background: 'var(--navy-base, #0a1628)',
-                border: '1px solid var(--m-border, var(--border-mobile))',
-                color: '#fff',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -305,8 +308,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         )}
 
         {resolvedUser.role === 'project_manager' && fu && effectiveRole === 'admin' && (
-          <div className="rounded-2xl p-5" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--m-text-dim, #445577)' }}>Permissions</p>
+          <div className="rounded-2xl p-5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)' }}>Permissions</p>
             <div className="flex flex-wrap gap-2">
               {([
                 { field: 'canCreateDeals' as const, label: 'Create Deals' },
@@ -331,9 +334,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                   }}
                   className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
                   style={{
-                    background: fu[field] ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                    color: fu[field] ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                    borderColor: fu[field] ? 'rgba(0,229,160,0.3)' : 'var(--m-border, var(--border-mobile))',
+                    background: fu[field] ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    color: fu[field] ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                    borderColor: fu[field] ? 'var(--accent-emerald-glow)' : 'var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -344,8 +347,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             </div>
 
             {/* Installer scope — mirrors desktop user detail page */}
-            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
-              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--m-text-dim, #445577)' }}>
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--text-dim)' }}>
                 Installer scope
               </p>
               <select
@@ -354,8 +357,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 disabled={scopeSaving}
                 className="w-full rounded-xl px-3 py-3 text-base focus:outline-none disabled:opacity-50"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                   color: 'var(--m-text, var(--text-mobile))',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
@@ -366,7 +369,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 ))}
               </select>
               {scopedInstallerId && (
-                <p className="text-[11px] mt-2 text-amber-400">
+                <p className="text-[11px] mt-2 text-[var(--accent-amber-text)]">
                   Vendor PM — installer-scoped, ops-only.
                 </p>
               )}
@@ -544,12 +547,12 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4 animate-mobile-slide-in">
+    <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/users')}
         className="flex items-center gap-1.5 text-base min-h-[48px]"
-        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <ArrowLeft className="w-4 h-4" /> Reps
       </button>
@@ -557,19 +560,19 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{rep.name}</h1>
           <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <MobileBadge value={repType} variant="status" />
             {isSubDealer && <MobileBadge value="Sub-Dealer" variant="status" />}
             {resolvedUser.active === false && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(136,153,170,0.15)', color: 'var(--text-mobile-muted)' }}>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'color-mix(in srgb, var(--text-muted) 15%, transparent)', color: 'var(--text-muted)' }}>
                 Inactive
               </span>
             )}
           </div>
-          <p className="text-base mt-1 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
+          <p className="text-base mt-1 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
           {resolvedUser.phone && (
-            <p className="text-sm" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{resolvedUser.phone}</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{resolvedUser.phone}</p>
           )}
         </div>
         {isAdmin && (
@@ -577,9 +580,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             onClick={() => setActionSheetOpen(true)}
             className="shrink-0 min-h-[44px] px-3 rounded-xl flex items-center gap-1.5 text-sm font-semibold"
             style={{
-              background: 'var(--m-card, var(--surface-mobile-card))',
-              border: '1px solid var(--m-border, var(--border-mobile))',
-              color: 'var(--accent-emerald)',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--accent-emerald-text)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
             aria-label="Manage user"
@@ -591,31 +594,31 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
       </div>
 
       {/* Inline stats */}
-      <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
+      <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
         {' \u00B7 '}
-        <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
+        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
         {!isPM && (
           <>
             {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
+            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
           </>
         )}
       </p>
 
       {/* Trainer Assignment — admin only */}
       {isAdmin && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <UserPlus className="w-4 h-4" style={{ color: 'var(--accent-amber, #f5a623)' }} />
-              <span className="text-sm font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Assignment</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Assignment</span>
             </div>
             {!trainerAssignment && !showTrainerPicker && (
               <button
                 onClick={() => setShowTrainerPicker(true)}
                 className="text-sm font-medium min-h-[36px] px-2"
-                style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 + Assign
               </button>
@@ -623,56 +626,164 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           </div>
 
           {trainerAssignment && (
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(245,166,35,0.15)', color: 'var(--accent-amber, #f5a623)' }}>
-                  {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
+            <div className="py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber, #f5a623)' }}>
+                    {trainerRep ? trainerRep.name.split(' ').map((n: string) => n[0]).join('') : '?'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {trainerRep ? trainerRep.name : 'Unknown trainer'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      ${currentOverrideRate.toFixed(2)}/W override rate
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {trainerRep ? trainerRep.name : 'Unknown trainer'}
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
-                    ${currentOverrideRate.toFixed(2)}/W override rate
-                  </p>
+                <div className="flex items-center gap-1">
+                  {!editingTiers && (
+                    <button
+                      onClick={() => { setDraftTiers([...trainerAssignment.tiers]); setEditingTiers(true); }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-2"
+                      style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </button>
+                  )}
+                  {!editingTiers && (
+                    <button
+                      onClick={() => {
+                        const snapshot = trainerAssignment;
+                        const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
+                        setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
+                        fetch('/api/trainer-assignments', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: snapshot.id }),
+                        }).then((res) => {
+                          if (!res.ok) throw new Error();
+                        }).catch(() => {
+                          setTrainerAssignments((prev) => {
+                            const next = [...prev];
+                            const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
+                            next.splice(idx, 0, snapshot);
+                            return next;
+                          });
+                          toast('Failed to remove trainer assignment', 'error');
+                        });
+                      }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-2"
+                      style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  const snapshot = trainerAssignment;
-                  const snapshotIndex = trainerAssignments.findIndex((a) => a.id === snapshot.id);
-                  setTrainerAssignments((prev) => prev.filter((a) => a.id !== snapshot.id));
-                  fetch('/api/trainer-assignments', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: snapshot.id }),
-                  }).then((res) => {
-                    if (!res.ok) throw new Error();
-                  }).catch(() => {
-                    setTrainerAssignments((prev) => {
-                      const next = [...prev];
-                      const idx = snapshotIndex >= 0 ? snapshotIndex : next.length;
-                      next.splice(idx, 0, snapshot);
-                      return next;
-                    });
-                    toast('Failed to remove trainer assignment', 'error');
-                  });
-                }}
-                className="flex items-center gap-1 text-xs min-h-[36px] px-2"
-                style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Remove
-              </button>
+
+              {editingTiers && (
+                <div className="mt-3 space-y-2">
+                  {draftTiers.map((tier, i) => (
+                    <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--surface-page)', border: '1px solid var(--border-subtle)' }}>
+                      <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>T{i + 1}</span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>Up to</span>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="∞"
+                          value={tier.upToDeal ?? ''}
+                          disabled={i === draftTiers.length - 1}
+                          onChange={(e) => setDraftTiers((prev) => prev.map((t, j) => j !== i ? t : { ...t, upToDeal: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+                          className="w-14 rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] outline-none disabled:opacity-40"
+                          style={{ background: 'var(--border-default)', border: '1px solid var(--border-subtle)' }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={tier.ratePerW}
+                          onChange={(e) => setDraftTiers((prev) => prev.map((t, j) => j !== i ? t : { ...t, ratePerW: parseFloat(e.target.value) || 0 }))}
+                          className="w-16 rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] outline-none"
+                          style={{ background: 'var(--border-default)', border: '1px solid var(--border-subtle)' }}
+                        />
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>/W</span>
+                      </div>
+                      <button
+                        disabled={draftTiers.length <= 1}
+                        onClick={() => setDraftTiers((prev) => {
+                          const next = prev.filter((_, j) => j !== i);
+                          if (next[next.length - 1].upToDeal !== null) {
+                            next[next.length - 1] = { ...next[next.length - 1], upToDeal: null };
+                          }
+                          return next;
+                        })}
+                        className="disabled:opacity-30"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setDraftTiers((prev) => {
+                      const updated = prev.map((t, i) => i === prev.length - 1 && t.upToDeal === null ? { ...t, upToDeal: completedDeals + 10 } : t);
+                      return [...updated, { upToDeal: null, ratePerW: 0.05 }];
+                    })}
+                    className="flex items-center gap-1 text-xs min-h-[36px]"
+                    style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add tier
+                  </button>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      disabled={tierSaving}
+                      onClick={async () => {
+                        if (tierSaving) return;
+                        setTierSaving(true);
+                        try {
+                          const res = await fetch('/api/trainer-assignments', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: trainerAssignment.id, tiers: draftTiers }),
+                          });
+                          if (!res.ok) { toast('Failed to save tiers', 'error'); return; }
+                          setTrainerAssignments((prev) => prev.map((a) => a.id === trainerAssignment.id ? { ...a, tiers: draftTiers } : a));
+                          setEditingTiers(false);
+                          toast('Trainer tiers updated');
+                        } finally {
+                          setTierSaving(false);
+                        }
+                      }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-3 rounded-xl font-semibold disabled:opacity-50"
+                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)', color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Check className="w-3.5 h-3.5" /> {tierSaving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingTiers(false); setDraftTiers([]); }}
+                      className="flex items-center gap-1 text-xs min-h-[36px] px-3 rounded-xl"
+                      style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {!trainerAssignment && showTrainerPicker && (
             <div className="mt-1 space-y-2">
               <select
-                className="w-full min-h-[44px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[44px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
                   background: 'var(--navy-base, #0a1628)',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
                 defaultValue=""
@@ -713,8 +824,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               </select>
               <button
                 onClick={() => setShowTrainerPicker(false)}
-                className="w-full min-h-[44px] rounded-xl text-sm font-semibold text-white"
-                style={{ background: 'var(--m-border, var(--border-mobile))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                className="w-full min-h-[44px] rounded-xl text-sm font-semibold text-[var(--text-primary)]"
+                style={{ background: 'var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Cancel
               </button>
@@ -722,7 +833,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           )}
 
           {!trainerAssignment && !showTrainerPicker && (
-            <p className="text-xs mt-1" style={{ color: 'var(--m-text-dim, #445577)' }}>No trainer assigned.</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-dim)' }}>No trainer assigned.</p>
           )}
         </div>
       )}
@@ -732,7 +843,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         {activeProjects.length === 0 ? (
           <MobileEmptyState icon={FolderKanban} title="No active projects" />
         ) : (
-          <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderColor: 'var(--m-border, var(--border-mobile))' }}>
+          <div className="rounded-2xl divide-y" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderColor: 'var(--border-subtle)' }}>
             {activeProjects.map((proj) => (
               <MobileListItem
                 key={proj.id}
@@ -756,20 +867,20 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 <div
                   key={entry.id}
                   className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0"
-                  style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))' }}
+                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-base font-medium text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.customerName || entry.notes || '\u2014'}
                     </p>
-                    <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                    <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       {entry.paymentStage} &middot; {formatDate(entry.date)}
                     </p>
                   </div>
                   <span
                     className="text-lg font-bold tabular-nums ml-3"
                     style={{
-                      color: STATUS_AMOUNT_COLORS[entry.status] ?? 'var(--m-text-muted, var(--text-mobile-muted))',
+                      color: STATUS_AMOUNT_COLORS[entry.status] ?? 'var(--text-muted)',
                       fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                     }}
                   >
@@ -799,7 +910,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             {/* Rep type — only for reps (sub-dealer repType is fixed) */}
             {!isSubDealer && (
               <div className="py-2">
-                <p className="text-xs uppercase tracking-widest mb-2 px-1" style={{ color: 'var(--m-text-dim, #445577)' }}>Rep Type</p>
+                <p className="text-xs uppercase tracking-widest mb-2 px-1" style={{ color: 'var(--text-dim)' }}>Rep Type</p>
                 <div className="grid grid-cols-3 gap-2">
                   {(['closer', 'setter', 'both'] as const).map((v) => {
                     const active = rep?.repType === v;
@@ -810,9 +921,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                         onClick={() => setRepTypeValue(v)}
                         className="min-h-[44px] rounded-xl text-sm font-semibold"
                         style={{
-                          background: active ? 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))' : 'var(--m-card, var(--surface-mobile-card))',
-                          color: active ? '#050d18' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                          border: active ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                          background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
+                          color: active ? 'var(--surface-page)' : 'var(--text-muted)',
+                          border: active ? 'none' : '1px solid var(--border-subtle)',
                           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                         }}
                       >
@@ -878,55 +989,55 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           <div className="px-5 pb-5 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>First name</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>First name</label>
                 <input
                   type="text"
                   value={editFirst}
                   onChange={(e) => setEditFirst(e.target.value)}
-                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                   style={{
-                    background: 'var(--m-card, var(--surface-mobile-card))',
-                    border: '1px solid var(--m-border, var(--border-mobile))',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Last name</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>Last name</label>
                 <input
                   type="text"
                   value={editLast}
                   onChange={(e) => setEditLast(e.target.value)}
-                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                  className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                   style={{
-                    background: 'var(--m-card, var(--surface-mobile-card))',
-                    border: '1px solid var(--m-border, var(--border-mobile))',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Email</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>Email</label>
               <input
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                 }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--m-text-dim, #445577)' }}>Phone</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>Phone</label>
               <input
                 type="tel"
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
-                className="w-full min-h-[48px] rounded-xl px-3 text-base text-white outline-none"
+                className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] outline-none"
                 style={{
-                  background: 'var(--m-card, var(--surface-mobile-card))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
                 }}
               />
             </div>
@@ -936,8 +1047,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 disabled={saving}
                 className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))',
-                  color: '#050d18',
+                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                  color: 'var(--text-on-accent)',
                   opacity: saving ? 0.6 : 1,
                 }}
               >
@@ -945,8 +1056,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               </button>
               <button
                 onClick={() => setEditMode(false)}
-                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold text-white"
-                style={{ background: 'var(--m-border, var(--border-mobile))' }}
+                className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold text-[var(--text-primary)]"
+                style={{ background: 'var(--border-subtle)' }}
               >
                 Cancel
               </button>

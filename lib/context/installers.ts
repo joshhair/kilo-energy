@@ -412,18 +412,35 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
-  const addProductCatalogProduct = (product: ProductCatalogProduct) => {
+  const addProductCatalogProduct = (
+    product: ProductCatalogProduct,
+    options?: { effectiveFrom?: string; versionLabel?: string; idempotencyKey?: string; reason?: string },
+  ) => {
     setProductCatalogProducts((prev) => [...prev, product]);
     const doPost = (installerId: string) => {
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installerId, family: product.family, name: product.name, tiers: product.tiers }),
+        body: JSON.stringify({
+          installerId,
+          family: product.family,
+          name: product.name,
+          tiers: product.tiers,
+          // Pass through the new optional fields; the API endpoint
+          // (/api/products POST) handles them. Maintains parity with
+          // addSolarTechProduct.
+          effectiveFrom: options?.effectiveFrom,
+          versionLabel: options?.versionLabel,
+          idempotencyKey: options?.idempotencyKey,
+          reason: options?.reason,
+        }),
       }).then((res) => res.json()).then((data: { id?: string }) => {
         if (data?.id && data.id !== product.id) {
           setProductCatalogProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, id: data.id as string } : p));
         }
-      }).catch(console.error);
+      }).catch((err) => {
+        console.warn('[addProductCatalogProduct] persist failed:', err instanceof Error ? err.message : err);
+      });
     };
     const installerId = getIdMaps().installerNameToId[product.installer];
     if (installerId) {
@@ -431,9 +448,84 @@ export function createInstallerActions(deps: InstallerDeps) {
     } else {
       const pending = pendingInstallerIdRef.current.get(product.installer);
       if (pending) {
-        pending.then(doPost).catch(console.error);
+        pending.then(doPost).catch((err) => {
+          console.warn('[addProductCatalogProduct] installer-id resolve failed:', err instanceof Error ? err.message : err);
+        });
       }
     }
+  };
+
+  /**
+   * Create a new SolarTech-family product (Goodleap, Enfin, Lightreach,
+   * Cash/HDM/PE). Same DB endpoint as Product Catalog (POST /api/products);
+   * different local state (`solarTechProducts`) because the UI partitions
+   * the two views.
+   *
+   * Optionally accepts an `effectiveFrom` date — passed through to the
+   * server, used as the initial pricing version's effectiveFrom. Default
+   * (omitted) = today.
+   *
+   * Returns a Promise resolving to the new server-issued ID, or rejecting
+   * with the API error. Caller responsible for surfacing toasts.
+   */
+  const addSolarTechProduct = async (input: {
+    tempId: string;
+    family: string;
+    financer: string;
+    name: string;
+    tiers: SolarTechProduct['tiers'];
+    effectiveFrom?: string;
+    versionLabel?: string;
+    idempotencyKey?: string;
+    reason?: string;
+  }): Promise<string> => {
+    // Optimistic local insert
+    const optimistic: SolarTechProduct = {
+      id: input.tempId,
+      family: input.family,
+      financer: input.financer,
+      name: input.name,
+      tiers: input.tiers,
+    };
+    setSolarTechProducts((prev) => [...prev, optimistic]);
+
+    const doPost = async (installerId: string): Promise<string> => {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          installerId,
+          family: input.family,
+          name: input.name,
+          tiers: input.tiers,
+          effectiveFrom: input.effectiveFrom,
+          versionLabel: input.versionLabel,
+          idempotencyKey: input.idempotencyKey,
+          reason: input.reason,
+        }),
+      });
+      if (!res.ok) {
+        // Roll back optimistic insert on server reject
+        setSolarTechProducts((prev) => prev.filter((p) => p.id !== input.tempId));
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Product create failed: ${res.status} ${errText}`);
+      }
+      const data = await res.json() as { id?: string };
+      if (data?.id && data.id !== input.tempId) {
+        setSolarTechProducts((prev) => prev.map((p) => p.id === input.tempId ? { ...p, id: data.id as string } : p));
+        return data.id;
+      }
+      return input.tempId;
+    };
+
+    const installerId = getIdMaps().installerNameToId['SolarTech'];
+    if (installerId) return doPost(installerId);
+    const pending = pendingInstallerIdRef.current.get('SolarTech');
+    if (pending) {
+      const resolvedId = await pending;
+      return doPost(resolvedId);
+    }
+    throw new Error('SolarTech installer not found');
   };
 
   const updateProductCatalogProduct = (id: string, updates: Partial<ProductCatalogProduct>) => {
@@ -489,6 +581,340 @@ export function createInstallerActions(deps: InstallerDeps) {
     if (!res.ok) throw new Error(`Failed to delete product: ${res.status}`);
     setProductCatalogPricingVersions((prev) => prev.filter((v) => v.productId !== id));
     setProductCatalogProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  /**
+   * Soft-archive a SolarTech product. Sets the underlying Product row's
+   * active=false (same DELETE endpoint as Product Catalog — they share
+   * the Product table). The row stays in the DB so historical projects
+   * referencing it via productId still resolve. The UI hides archived
+   * products from the active SolarTech tab; an "Archived" tab toggle
+   * (rendered separately) surfaces them with a Restore action.
+   *
+   * Note: hard-delete is intentionally not supported here. To permanently
+   * remove a product, an admin must (a) verify zero project references,
+   * (b) ack via the hard-delete API endpoint with step-up auth. That
+   * flow lives outside this context action.
+   */
+  const removeSolarTechProduct = async (id: string) => {
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete product: ${res.status}`);
+    setSolarTechProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  /**
+   * Restore an archived product (PC or SolarTech) by setting active=true.
+   * Caller passes a fresh product payload (we don't have the row in
+   * memory once archived); after the API confirms, the product reappears
+   * in /api/data on the next reload. Local-state insertion is best-effort
+   * and not strictly required — the context will rehydrate from server.
+   */
+  const restoreProduct = async (id: string): Promise<void> => {
+    const res = await fetch(`/api/products/${id}/restore`, { method: 'POST' });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Failed to restore product: ${res.status} ${text}`);
+    }
+  };
+
+  /**
+   * Apply a bulk tier-level adjustment via the new transaction-wrapped
+   * endpoint. Either every selected tier updates or none do — partial
+   * failure is impossible. Returns per-tier undoData the caller can
+   * stash for a 30-second "Undo" toast.
+   *
+   * Optimistic updates: applies the change locally first, then awaits
+   * the server. On 4xx/5xx, rolls back to the captured before-state.
+   *
+   * Operations:
+   *   adjust  — add a constant to every selected tier's closer (setter
+   *             auto-derives as closer + 0.10).
+   *   spread  — set closer = kilo + spread per tier index.
+   */
+  type BulkSelection = { productId: string; tierIndex: number; isSolarTech: boolean };
+  type BulkAdjustResult = {
+    affected: number;
+    skipped: Array<{ productId: string; tierIndex: number; reason: string }>;
+    undoData: Array<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>;
+  };
+  const applyBulkTierAdjust = async (
+    op:
+      | { operation: 'adjust'; adjustment: number }
+      | { operation: 'spread'; spreadByTierIndex: Record<string, number> },
+    selections: ReadonlyArray<BulkSelection>,
+  ): Promise<BulkAdjustResult> => {
+    if (selections.length === 0) {
+      return { affected: 0, skipped: [], undoData: [] };
+    }
+
+    // Snapshot pre-change state so we can roll back optimistic updates
+    // on server reject. Pulled from current local state — not the API
+    // response — so rollback is instant.
+    const localBefore = new Map<string, { closerPerW: number; setterPerW: number; kiloPerW: number }>();
+    for (const sel of selections) {
+      const key = `${sel.productId}::${sel.tierIndex}`;
+      const sources = sel.isSolarTech
+        ? deps.setSolarTechProducts // we'll read via state below
+        : null;
+      // For PC, we don't have direct getter; reading via setter callback.
+      // Instead: pull from the pricing version arrays below.
+      void sources;
+      // Snapshot will be filled in via the optimistic update step below.
+      void key;
+    }
+
+    // Optimistic local update + capture before-state in one pass.
+    const applyLocal = (tier: { closerPerW: number; setterPerW: number; kiloPerW: number }): { closerPerW: number; setterPerW: number; kiloPerW: number } => {
+      let newCloser: number;
+      if (op.operation === 'adjust') {
+        newCloser = Math.round((tier.closerPerW + op.adjustment) * 100) / 100;
+      } else {
+        // For 'spread' the caller is responsible for tier-index→spread map; fallback no-op
+        newCloser = tier.closerPerW;
+      }
+      return {
+        closerPerW: newCloser,
+        setterPerW: Math.round((newCloser + 0.10) * 100) / 100,
+        kiloPerW: tier.kiloPerW,
+      };
+    };
+
+    // Apply optimistic updates per state slice.
+    const stTouched = selections.filter((s) => s.isSolarTech);
+    const pcTouched = selections.filter((s) => !s.isSolarTech);
+
+    if (stTouched.length > 0) {
+      setSolarTechProducts((prev) => prev.map((p) => {
+        const matchingSels = stTouched.filter((s) => s.productId === p.id);
+        if (matchingSels.length === 0) return p;
+        const newTiers = p.tiers.map((t, i) => {
+          const sel = matchingSels.find((s) => s.tierIndex === i);
+          if (!sel) return t;
+          localBefore.set(`${p.id}::${i}`, { closerPerW: t.closerPerW, setterPerW: t.setterPerW ?? t.closerPerW + 0.10, kiloPerW: t.kiloPerW });
+          if (op.operation === 'spread') {
+            const spread = op.spreadByTierIndex[String(i)];
+            if (typeof spread !== 'number') return t;
+            const newCloser = Math.round((t.kiloPerW + spread) * 100) / 100;
+            return { ...t, closerPerW: newCloser, setterPerW: Math.round((newCloser + 0.10) * 100) / 100 };
+          }
+          const next = applyLocal({ closerPerW: t.closerPerW, setterPerW: t.setterPerW ?? t.closerPerW + 0.10, kiloPerW: t.kiloPerW });
+          return { ...t, closerPerW: next.closerPerW, setterPerW: next.setterPerW };
+        });
+        return { ...p, tiers: newTiers };
+      }));
+    }
+    if (pcTouched.length > 0) {
+      setProductCatalogProducts((prev) => prev.map((p) => {
+        const matchingSels = pcTouched.filter((s) => s.productId === p.id);
+        if (matchingSels.length === 0) return p;
+        const newTiers = p.tiers.map((t, i) => {
+          const sel = matchingSels.find((s) => s.tierIndex === i);
+          if (!sel) return t;
+          localBefore.set(`${p.id}::${i}`, { closerPerW: t.closerPerW, setterPerW: t.setterPerW, kiloPerW: t.kiloPerW });
+          if (op.operation === 'spread') {
+            const spread = op.spreadByTierIndex[String(i)];
+            if (typeof spread !== 'number') return t;
+            const newCloser = Math.round((t.kiloPerW + spread) * 100) / 100;
+            return { ...t, closerPerW: newCloser, setterPerW: Math.round((newCloser + 0.10) * 100) / 100 };
+          }
+          const next = applyLocal({ closerPerW: t.closerPerW, setterPerW: t.setterPerW, kiloPerW: t.kiloPerW });
+          return { ...t, closerPerW: next.closerPerW, setterPerW: next.setterPerW };
+        });
+        return { ...p, tiers: newTiers };
+      }));
+    }
+
+    // POST to the batch endpoint.
+    const body = op.operation === 'adjust'
+      ? { operation: 'adjust', adjustment: op.adjustment, selections: selections.map((s) => ({ productId: s.productId, tierIndex: s.tierIndex })) }
+      : { operation: 'spread', spreadByTierIndex: op.spreadByTierIndex, selections: selections.map((s) => ({ productId: s.productId, tierIndex: s.tierIndex })) };
+
+    const res = await fetch('/api/baselines/bulk-tier-adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      // Roll back optimistic updates from the captured snapshot.
+      const rollback = (productId: string, tierIndex: number, before: { closerPerW: number; setterPerW: number; kiloPerW: number }) => {
+        const isSt = stTouched.some((s) => s.productId === productId && s.tierIndex === tierIndex);
+        if (isSt) {
+          setSolarTechProducts((prev) => prev.map((p) => p.id !== productId ? p : {
+            ...p,
+            tiers: p.tiers.map((t, i) => i !== tierIndex ? t : { ...t, closerPerW: before.closerPerW, setterPerW: before.setterPerW }),
+          }));
+        } else {
+          setProductCatalogProducts((prev) => prev.map((p) => p.id !== productId ? p : {
+            ...p,
+            tiers: p.tiers.map((t, i) => i !== tierIndex ? t : { ...t, closerPerW: before.closerPerW, setterPerW: before.setterPerW }),
+          }));
+        }
+      };
+      for (const [key, before] of localBefore.entries()) {
+        const [productId, tierIndexStr] = key.split('::');
+        rollback(productId, parseInt(tierIndexStr, 10), before);
+      }
+      const text = await res.text().catch(() => '');
+      throw new Error(`Bulk adjust failed: ${res.status} ${text}`);
+    }
+
+    const result = await res.json() as BulkAdjustResult;
+    return result;
+  };
+
+  /**
+   * Replay an explicit set of (tierId, closerPerW, setterPerW) tuples
+   * to undo a previous bulk operation. Server wraps in a single
+   * transaction. Local optimistic update mirrors the restore values
+   * across both PC and SolarTech state slices.
+   *
+   * Caller responsible for passing the restorePoints from a recent
+   * bulk-adjust's response. The 30-second window is policy-only —
+   * server happily restores anytime as long as the actor is admin.
+   */
+  /**
+   * Create new pricing versions for many products in one shot. Wraps
+   * the corresponding bulk endpoint, which runs all close-old + create-
+   * new operations in a single Prisma transaction. On success, applies
+   * an optimistic local update: closes the current version per affected
+   * product (sets effectiveTo to the day before the new effectiveFrom)
+   * and inserts a new active version with the supplied tiers.
+   */
+  const applyBulkVersionCreate = async (input: {
+    effectiveFrom: string;
+    label: string;
+    reason?: string;
+    retroactive?: boolean;
+    products: ReadonlyArray<{
+      productId: string;
+      tiers: ReadonlyArray<{
+        minKW: number; maxKW: number | null;
+        closerPerW: number; setterPerW: number;
+        kiloPerW: number; subDealerPerW?: number | null;
+      }>;
+    }>;
+  }): Promise<{ created: Array<{ id: string; productId: string; label: string; effectiveFrom: string }> }> => {
+    const res = await fetch('/api/baselines/bulk-version-create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Bulk version create failed: ${res.status} ${text}`);
+    }
+    const data = await res.json() as { created: Array<{ id: string; productId: string; label: string; effectiveFrom: string }> };
+
+    // Optimistic local mirror: close each product's current version and
+    // insert the new one. Because both PC and SolarTech reads come from
+    // the same /api/data productCatalogPricingVersions slice (filtered
+    // by installer name in render), updating that slice covers both UIs.
+    const prevDate = new Date(`${input.effectiveFrom}T00:00:00Z`);
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const closeAs = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}-${String(prevDate.getUTCDate()).padStart(2, '0')}`;
+    const productIdsTouched = new Set(input.products.map((p) => p.productId));
+    const inputByProductId = new Map(input.products.map((p) => [p.productId, p.tiers]));
+
+    setProductCatalogPricingVersions((prev) => {
+      // Close all currently-active versions for affected products.
+      const closed = prev.map((v) => productIdsTouched.has(v.productId) && v.effectiveTo === null
+        ? { ...v, effectiveTo: closeAs }
+        : v,
+      );
+      // Append the new versions returned from the server.
+      const newVersions = data.created.map((nv) => ({
+        id: nv.id,
+        productId: nv.productId,
+        label: nv.label,
+        effectiveFrom: nv.effectiveFrom,
+        effectiveTo: null as string | null,
+        tiers: (inputByProductId.get(nv.productId) ?? []).map((t) => ({
+          minKW: t.minKW,
+          maxKW: t.maxKW,
+          closerPerW: t.closerPerW,
+          setterPerW: t.setterPerW,
+          kiloPerW: t.kiloPerW,
+          subDealerPerW: t.subDealerPerW ?? undefined,
+        })),
+      }));
+      return [...closed, ...newVersions];
+    });
+
+    // Update solarTechProducts and productCatalogProducts so the table
+    // tier inputs reflect the new active values immediately.
+    const tierEntriesByProduct = (productId: string) => {
+      const tiers = inputByProductId.get(productId);
+      if (!tiers) return null;
+      return tiers.map((t) => ({
+        minKW: t.minKW,
+        maxKW: t.maxKW,
+        closerPerW: t.closerPerW,
+        setterPerW: t.setterPerW,
+        kiloPerW: t.kiloPerW,
+        subDealerPerW: t.subDealerPerW ?? undefined,
+      }));
+    };
+    setSolarTechProducts((prev) => prev.map((p) => {
+      if (!productIdsTouched.has(p.id)) return p;
+      const newTiers = tierEntriesByProduct(p.id);
+      return newTiers ? { ...p, tiers: newTiers } : p;
+    }));
+    setProductCatalogProducts((prev) => prev.map((p) => {
+      if (!productIdsTouched.has(p.id)) return p;
+      const newTiers = tierEntriesByProduct(p.id);
+      return newTiers ? { ...p, tiers: newTiers as typeof p.tiers } : p;
+    }));
+
+    return { created: data.created };
+  };
+
+  const undoBulkTierAdjust = async (
+    restorePoints: ReadonlyArray<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>,
+  ): Promise<{ restored: number }> => {
+    if (restorePoints.length === 0) return { restored: 0 };
+
+    // Optimistic local rollback to before-state.
+    setSolarTechProducts((prev) => prev.map((p) => {
+      const matchingRPs = restorePoints.filter((rp) => rp.productId === p.id);
+      if (matchingRPs.length === 0) return p;
+      return {
+        ...p,
+        tiers: p.tiers.map((t, i) => {
+          const rp = matchingRPs.find((r) => r.tierIndex === i);
+          return rp ? { ...t, closerPerW: rp.before.closerPerW, setterPerW: rp.before.setterPerW } : t;
+        }),
+      };
+    }));
+    setProductCatalogProducts((prev) => prev.map((p) => {
+      const matchingRPs = restorePoints.filter((rp) => rp.productId === p.id);
+      if (matchingRPs.length === 0) return p;
+      return {
+        ...p,
+        tiers: p.tiers.map((t, i) => {
+          const rp = matchingRPs.find((r) => r.tierIndex === i);
+          return rp ? { ...t, closerPerW: rp.before.closerPerW, setterPerW: rp.before.setterPerW } : t;
+        }),
+      };
+    }));
+
+    const res = await fetch('/api/baselines/bulk-tier-adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        operation: 'restore',
+        restorePoints: restorePoints.map((rp) => ({
+          tierId: rp.tierId,
+          closerPerW: rp.before.closerPerW,
+          setterPerW: rp.before.setterPerW,
+        })),
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Undo failed: ${res.status} ${text}`);
+    }
+    return await res.json() as { restored: number };
   };
 
   const addProductCatalogPricingVersion = (version: ProductCatalogPricingVersion) =>
@@ -702,6 +1128,12 @@ export function createInstallerActions(deps: InstallerDeps) {
     addProductCatalogInstaller,
     updateProductCatalogInstallerConfig,
     addProductCatalogProduct,
+    addSolarTechProduct,
+    removeSolarTechProduct,
+    restoreProduct,
+    applyBulkTierAdjust,
+    undoBulkTierAdjust,
+    applyBulkVersionCreate,
     updateProductCatalogProduct,
     updateProductCatalogTier,
     removeProductCatalogProduct,

@@ -16,14 +16,19 @@ import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../lib/chargebacks';
 import MobileCard from './shared/MobileCard';
-import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ProjectChatter from '../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Collapse } from '../components/Collapse';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import { ProjectNotes } from '../components/ProjectNotes';
+import { EquipmentSnapshot } from '../projects/components/detail/EquipmentSnapshot';
+import { InstallerFiles } from '../projects/components/detail/InstallerFiles';
+import { SiteSurveyLinks } from '../projects/components/detail/SiteSurveyLinks';
+import { InstallerNotes } from '../projects/components/detail/InstallerNotes';
+import { HandoffStatusCard } from '../projects/components/detail/HandoffStatusCard';
 
 // ── Pipeline steps ──
 
@@ -60,10 +65,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const {
     effectiveRole, effectiveRepId, currentRepId, projects, setProjects, payrollEntries, reps,
-    trainerAssignments,
+    trainerAssignments, persistPayrollEntry,
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
+    isViewingAs, viewAsUser,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
@@ -84,6 +90,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [editM2, setEditM2] = useState(false);
   const [m1Val, setM1Val] = useState('');
   const [m2Val, setM2Val] = useState('');
+  // Optional "why is this changing" note attached to amount edits. Renders
+  // alongside the activity feed entry so the next admin reading the log
+  // has the context for the change. Cleared after save.
+  const [editReason, setEditReason] = useState('');
+  // Single-expansion accordion for the per-party commission breakdown
+  // (admin view). Tapping a row expands it to show the full-size stage
+  // rows with mark-paid actions. null = all collapsed.
+  const [expandedParty, setExpandedParty] = useState<string | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
   const [, setEditErrors] = useState<Record<string, string>>({});
@@ -120,9 +134,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   if (!project) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         Project not found.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back to Projects</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back to Projects</button>
       </div>
     );
   }
@@ -136,24 +150,24 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
   ) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
 
   if (effectiveRole === 'sub-dealer' && project.subDealerId !== effectiveRepId && project.repId !== effectiveRepId) {
     return (
-      <div className="px-5 pt-4 pb-24 text-center text-base text-slate-400">
+      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-blue-400 ml-1">Back</button>
+        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
 
-  const updateProject = (updates: Partial<typeof project>) => {
-    ctxUpdateProject(projectId, updates);
+  const updateProject = (updates: Partial<typeof project>, opts?: { editReason?: string }) => {
+    ctxUpdateProject(projectId, updates, opts);
   };
 
   const handleToggleM1 = () => {
@@ -179,8 +193,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const saveM1 = () => {
     const val = parseFloat(m1Val);
-    if (!isNaN(val)) { updateProject({ m1Amount: val }); toast('M1 amount updated', 'success'); setEditM1(false); }
-    else { toast('Invalid amount', 'error'); }
+    if (!isNaN(val)) {
+      updateProject({ m1Amount: val }, { editReason });
+      toast('M1 amount updated', 'success');
+      setEditM1(false);
+      setEditReason('');
+    } else { toast('Invalid amount', 'error'); }
   };
 
   const saveM2 = () => {
@@ -196,13 +214,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       const newSetterM3 = installPayPct < 100 && !project.subDealerId && project.setterId
         ? Math.round(newSetterM2 * ((100 - installPayPct) / installPayPct) * 100) / 100
         : 0;
-      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 });
+      updateProject({ m2Amount: val, m3Amount: newM3, setterM2Amount: newSetterM2, setterM3Amount: newSetterM3 }, { editReason });
       if (originalM2 === 0 && project.setterId) {
         toast('M2 updated — closer M2 was $0 so setter M2 could not be auto-scaled.', 'error');
       } else {
         toast('M2 amount updated', 'success');
       }
       setEditM2(false);
+      setEditReason('');
     } else { toast('Invalid amount', 'error'); }
   };
 
@@ -408,6 +427,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
+
+  // ── Per-party stage helpers (admin commission breakdown) ───────────────
+  // Closer paid status comes from the legacy project.m1Paid/m2Paid/m3Paid
+  // flags (single-source for the closer's milestones). Setter, co-party,
+  // and trainer paid status comes from the matching payroll entry's
+  // status field. Mark Paid from this UI calls the right path per-party
+  // so each cell unambiguously affects only that party's stage.
+  type StageKey = 'M1' | 'M2' | 'M3';
+  const findPartyEntry = (repId: string, stage: StageKey | 'Trainer') =>
+    projectEntries.find((e) => e.repId === repId && e.paymentStage === stage && !e.isChargeback);
+  const togglePartyEntryPaid = (repId: string, stage: StageKey | 'Trainer') => {
+    const entry = findPartyEntry(repId, stage);
+    if (!entry) {
+      toast(`No ${stage} entry found for this party — generate payroll first.`, 'error');
+      return;
+    }
+    const next = entry.status === 'Paid' ? 'Pending' : 'Paid';
+    persistPayrollEntry({ ...entry, status: next });
+    toast(`${stage} marked as ${next}`, 'success');
+  };
   const _getEntryDate = (stage: 'M1' | 'M2' | 'M3'): string | null => {
     const entry = projectEntries.find((e) => e.paymentStage === stage && e.status !== 'Draft');
     return entry ? entry.date : null;
@@ -467,43 +506,21 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Back button */}
       <button
         onClick={() => router.push('/dashboard/projects')}
-        className="flex items-center gap-1 text-base text-slate-400 mb-4 min-h-[48px]"
+        className="flex items-center gap-1 text-base text-[var(--text-muted)] mb-4 min-h-[48px]"
       >
         <ArrowLeft className="w-4 h-4" />
         Projects
       </button>
 
-      {/* Customer name + phase badge + flagged.
-          For admin / internal PM viewers, the phase badge is wrapped in
-          a button that opens the same phase bottom sheet the sticky
-          footer uses — lets a busy admin bump a phase without scrolling
-          to the footer. Min-height 44px for touch target; chevron
-          signals tappability. Rep/SD/vendor-PM still see a plain pill. */}
+      {/* Customer name + flagged dot. Phase used to render here as an
+          outlined pill, but the prominent cyan phase label below the
+          stepper says the same thing more attractively — keeping just
+          one phase indicator per view. Admins still get tap-to-change
+          via that label (button + chevron); reps see static text. */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-white">{project.customerName}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            {(isAdmin || isPM) ? (
-              <button
-                type="button"
-                onClick={() => setPhaseSheetOpen(true)}
-                aria-label={`Change phase — currently ${project.phase}`}
-                className="inline-flex items-center gap-1.5 min-h-[36px] rounded-full active:scale-[0.97] transition-transform duration-75 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan2)]/50"
-              >
-                <MobileBadge value={project.phase} />
-                <span
-                  aria-hidden="true"
-                  className="text-xs leading-none"
-                  style={{ color: 'var(--m-text-dim, #445577)' }}
-                >
-                  &#x25BE;
-                </span>
-              </button>
-            ) : (
-              <MobileBadge value={project.phase} />
-            )}
-            {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500" />}
-          </div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-[var(--text-primary)]">{project.customerName}</h1>
+          {project.flagged && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--accent-red-solid)' }} />}
         </div>
       </div>
 
@@ -519,7 +536,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 style={{
                   width: isCurrent ? 14 : 10,
                   height: isCurrent ? 14 : 10,
-                  background: isCompleted ? 'var(--accent-emerald)' : isCurrent ? 'var(--accent-cyan2)' : 'var(--m-border, var(--border-mobile))',
+                  background: isCompleted ? 'var(--accent-emerald-solid)' : isCurrent ? 'var(--accent-cyan-solid)' : 'var(--text-dim)',
                   willChange: 'transform',
                   animation: `dotPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 40}ms both`,
                   transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1), height 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -527,31 +544,58 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald-solid)' : 'var(--text-dim)', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
               )}
             </div>
           );
         })}
       </div>
 
-      <p
-        className="font-bold tracking-wide mt-2"
-        style={{
-          color: isOffTrack
-            ? (project.phase === 'Cancelled' ? '#ef4444' : '#f59e0b')
-            : 'var(--m-accent2, var(--accent-cyan2))',
-          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-          letterSpacing: '0.02em',
-          fontSize: '1rem',
-          lineHeight: 1.2,
-        }}
-      >
-        {project.phase}
-      </p>
+      {/* Phase label — the prominent cyan/amber/red phase identifier
+          below the stepper. For admin/PM viewers it's a tap target that
+          opens the phase sheet (chevron signals tappability). For
+          reps/sub-dealers it's static text. Single source of phase
+          identity for the whole detail view. */}
+      {(isAdmin || isPM) ? (
+        <button
+          type="button"
+          onClick={() => setPhaseSheetOpen(true)}
+          aria-label={`Change phase — currently ${project.phase}`}
+          className="inline-flex items-center gap-1.5 mt-2 min-h-[36px] rounded-md active:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50"
+          style={{
+            color: isOffTrack
+              ? (project.phase === 'Cancelled' ? 'var(--accent-red-display)' : 'var(--accent-amber-display)')
+              : 'var(--accent-cyan-display)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            fontWeight: 700,
+            letterSpacing: '0.02em',
+            fontSize: '1rem',
+            lineHeight: 1.2,
+          }}
+        >
+          <span>{project.phase}</span>
+          <span aria-hidden="true" className="text-xs leading-none" style={{ color: 'var(--text-dim)' }}>&#x25BE;</span>
+        </button>
+      ) : (
+        <p
+          className="font-bold tracking-wide mt-2"
+          style={{
+            color: isOffTrack
+              ? (project.phase === 'Cancelled' ? 'var(--accent-red-display)' : 'var(--accent-amber-display)')
+              : 'var(--accent-cyan-display)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            letterSpacing: '0.02em',
+            fontSize: '1rem',
+            lineHeight: 1.2,
+          }}
+        >
+          {project.phase}
+        </p>
+      )}
       <p
         className="mt-0.5"
         style={{
-          color: 'var(--m-text-dim, #445577)',
+          color: 'var(--text-dim)',
           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           fontSize: '0.85rem',
           lineHeight: 1.3,
@@ -561,17 +605,27 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       </p>
 
       {/* YOUR COMMISSION — dominant total header (reps + sub-dealers only).
-          The M1/M2/M3 breakdown card below this shows the stage split. */}
+          The M1/M2/M3 breakdown card below this shows the stage split.
+          Number uses --text-primary for max readability (~19:1 on white,
+          ~17:1 on dark) instead of any tinted accent. Status is carried
+          by the colored uppercase label above + the caption below — the
+          digit itself doesn't need to also signal status. */}
       {!isPM && !isAdmin && myCommission.total > 0 && (
         <MobileCard hero>
           <p
             className="tracking-widest uppercase"
             style={{
-              color: 'var(--m-text-dim, #445577)',
+              color:
+                myCommission.status === 'paid'
+                  ? 'var(--accent-emerald-display)'
+                  : myCommission.status === 'partial'
+                  ? 'var(--accent-amber-display)'
+                  : 'var(--accent-emerald-display)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               fontSize: '0.75rem',
-              fontWeight: 500,
+              fontWeight: 600,
               marginBottom: '0.25rem',
+              letterSpacing: '0.12em',
             }}
           >
             Your Commission
@@ -581,12 +635,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             style={{
               fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
               fontSize: 'clamp(2.5rem, 13vw, 3.5rem)',
-              color:
-                myCommission.status === 'paid'
-                  ? 'var(--accent-emerald)'
-                  : myCommission.status === 'partial'
-                  ? 'var(--accent-amber)'
-                  : 'var(--m-accent, var(--accent-emerald))',
+              color: 'var(--text-primary)',
               lineHeight: 1.05,
             }}
           >
@@ -594,7 +643,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </p>
           <p
             style={{
-              color: 'var(--m-text-muted, var(--text-mobile-muted))',
+              color: 'var(--text-muted)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               fontSize: '0.85rem',
               marginTop: '0.35rem',
@@ -612,9 +661,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       {/* Info rows — no card wrapper, thin separators */}
       <div className="space-y-0">
         {infoRows.map(([label, value], index) => (
-          <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))', animationDelay: `${index * 35}ms` }}>
-            <span className="text-base" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-            <span className="text-base font-bold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
+          <div key={label} className="flex items-center justify-between py-3 animate-info-row-enter" style={{ borderBottom: '1px solid var(--border-subtle)', animationDelay: `${index * 35}ms` }}>
+            <span className="text-base" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
+            <span className="text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{value}</span>
           </div>
         ))}
       </div>
@@ -676,116 +725,340 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
         return (
           <MobileCard>
-            <h2 className="text-base font-semibold text-white mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
+            <h2 className="text-base font-semibold text-[var(--text-primary)] mb-3" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission Breakdown</h2>
 
             {/* Total-expected summary row — rep/SD see own total; admin sees
                 closer (and setter, if applicable) totals. */}
             {isMeView && myTotalExpected > 0 && (
-              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Total expected</span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total expected</span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(myTotalExpected)}</span>
               </div>
             )}
             {showSetterTotalToCloser && (
-              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter) total</span>
-                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--m-text-secondary, var(--text-mobile-secondary))' }}>{fmt$(setterTotalExpected)}</span>
+              <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.setterName} (setter) total</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt$(setterTotalExpected)}</span>
               </div>
             )}
-            {!isMeView && (
-              <div className="space-y-2 mb-3">
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                  <div>
-                    <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.repName} (closer)</p>
-                    <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
-                  </div>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(closerTotalExpected)}</span>
-                </div>
-                {project.setterId && setterTotalExpected > 0 && (
-                  <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{project.setterName} (setter)</p>
-                      <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>Total expected</p>
-                    </div>
-                    <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(setterTotalExpected)}</span>
-                  </div>
-                )}
-                {/* Co-closers — desktop renders these as full cards with
-                    M1/M2/M3 breakdown; mobile keeps it compact with one
-                    row per party showing the sum. Only rendered for
-                    admin/PM since scrubber zeros these amounts for reps. */}
-                {(project.additionalClosers ?? []).map((co) => {
-                  const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
-                  if (coTotal <= 0) return null;
-                  return (
-                    <div key={`cc-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                      <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-closer · #{co.position})</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
-                          M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
-                          {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
+            {!isMeView && (() => {
+              // Per-party-per-stage admin breakdown — replaces the legacy
+              // shared M1/M2 row at the bottom which only showed/toggled
+              // the closer's flags. Each party row now lists its own
+              // stages so Mark Paid is unambiguous.
+              type StageCell = {
+                stage: StageKey;
+                amount: number;
+                paid: boolean;
+                applicable: boolean;
+                onToggle?: () => void;
+              };
+              const renderPartyRow = (
+                key: string,
+                name: string,
+                roleLabel: string,
+                total: number,
+                cells: StageCell[],
+                tone: 'emerald' | 'amber' = 'emerald',
+              ) => {
+                const totalColor = tone === 'amber' ? 'var(--accent-amber-display)' : 'var(--accent-emerald-display)';
+                const isOpen = expandedParty === key;
+                const applicable = cells.filter((c) => c.applicable);
+                const paidCount = applicable.filter((c) => c.paid).length;
+                const summaryColor = paidCount === 0
+                  ? 'var(--accent-amber-text)'
+                  : paidCount === applicable.length
+                  ? 'var(--accent-emerald-text)'
+                  : 'var(--accent-cyan-text)';
+                const summary = applicable.length === 0
+                  ? '—'
+                  : `${paidCount}/${applicable.length} paid`;
+                return (
+                  <div key={key} className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                    {/* Collapsed header — tappable */}
+                    <button
+                      onClick={() => setExpandedParty(isOpen ? null : key)}
+                      aria-expanded={isOpen}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 active:opacity-80 transition-opacity"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                          {name}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          {roleLabel} · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
                         </p>
                       </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
-                    </div>
-                  );
-                })}
-                {(project.additionalSetters ?? []).map((co) => {
-                  const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
-                  if (coTotal <= 0) return null;
-                  return (
-                    <div key={`cs-${co.userId}`} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--m-card, var(--surface-mobile-card))' }}>
-                      <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{co.userName} (co-setter · #{co.position})</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
-                          M1 ${co.m1Amount.toLocaleString()} · M2 ${co.m2Amount.toLocaleString()}
-                          {(co.m3Amount ?? 0) > 0 && ` · M3 $${co.m3Amount!.toLocaleString()}`}
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(coTotal)}</span>
-                    </div>
-                  );
-                })}
-                {/* Trainer row — matches desktop's dedicated trainer card.
-                    trainerId/trainerName/trainerRate are scrubbed server-
-                    side for non-admin/PM viewers, so this block only
-                    renders for admin. Explicit isAdmin guard mirrors the
-                    desktop gate (effectiveRole === 'admin' && !isPM). */}
-                {isAdmin && (() => {
-                  const { rate: effTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
-                    { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
-                    project.repId,
-                    trainerAssignments,
-                    payrollEntries,
-                  );
-                  const trainerName = project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? 'Trainer';
-                  if (!effTrainerId || effTrainerRate <= 0) return null;
-                  return (
-                    <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                      <div>
-                        <p className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{trainerName} (trainer)</p>
-                        <p className="text-[10px]" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>
-                          ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                        {fmt$(effTrainerRate * (project.kWSize ?? 0) * 1000)}
+                      <span className="text-base font-bold tabular-nums shrink-0" style={{ color: totalColor, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                        {fmt$(total)}
                       </span>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
+                      <span
+                        className="shrink-0 text-[var(--text-muted)] text-xs leading-none"
+                        aria-hidden="true"
+                        style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+                      >▶</span>
+                    </button>
+                    {/* Expanded panel — full-size stage rows with proper buttons.
+                        Wrapped in <Collapse> so the height animates smoothly
+                        on toggle (same component MobileSection uses across
+                        the app — grid-template-rows trick, 220ms ease). */}
+                    <Collapse open={isOpen}>
+                      <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                        {cells.map((c) => {
+                          const stageColor = c.paid ? 'var(--accent-emerald-text)' : c.applicable ? 'var(--text-primary)' : 'var(--text-dim)';
+                          return (
+                            <div key={c.stage} className="flex items-center justify-between gap-3 py-2">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <span
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold shrink-0"
+                                  style={{
+                                    background: c.paid
+                                      ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)'
+                                      : c.applicable
+                                      ? 'color-mix(in srgb, var(--text-primary) 5%, transparent)'
+                                      : 'transparent',
+                                    border: c.applicable ? '1.5px solid ' + (c.paid ? 'var(--accent-emerald-display)' : 'var(--border-default)') : '1.5px dashed var(--border-subtle)',
+                                    color: stageColor,
+                                  }}
+                                >
+                                  {c.stage}
+                                </span>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-base font-bold tabular-nums" style={{ color: c.applicable ? 'var(--text-primary)' : 'var(--text-dim)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                                    {c.applicable ? fmt$(c.amount) : 'n/a'}
+                                  </span>
+                                  {c.applicable && (
+                                    <span className="text-xs mt-0.5" style={{ color: c.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)' }}>
+                                      {c.paid ? 'Paid' : 'Pending'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {c.onToggle ? (
+                                <button
+                                  onClick={c.onToggle}
+                                  className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
+                                  style={{
+                                    background: c.paid
+                                      ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)'
+                                      : 'color-mix(in srgb, var(--accent-amber-solid) 18%, transparent)',
+                                    color: c.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                                    border: '1px solid ' + (c.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)'),
+                                    WebkitTapHighlightColor: 'transparent',
+                                  }}
+                                >
+                                  {c.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                </button>
+                              ) : (
+                                <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>—</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Collapse>
+                  </div>
+                );
+              };
 
-            <div className="relative flex items-start justify-between pt-2 pb-4">
+              const closerCells: StageCell[] = [
+                {
+                  stage: 'M1',
+                  amount: project.m1Amount ?? 0,
+                  paid: project.m1Paid ?? false,
+                  applicable: (project.m1Amount ?? 0) > 0,
+                  onToggle: isAdmin && (project.m1Amount ?? 0) > 0 ? handleToggleM1 : undefined,
+                },
+                {
+                  stage: 'M2',
+                  amount: project.m2Amount ?? 0,
+                  paid: project.m2Paid ?? false,
+                  applicable: (project.m2Amount ?? 0) > 0,
+                  onToggle: isAdmin && (project.m2Amount ?? 0) > 0 ? handleToggleM2 : undefined,
+                },
+                {
+                  stage: 'M3',
+                  amount: project.m3Amount ?? 0,
+                  paid: project.m3Paid ?? false,
+                  applicable: (project.m3Amount ?? 0) > 0,
+                  onToggle: isAdmin && (project.m3Amount ?? 0) > 0 ? handleToggleM3 : undefined,
+                },
+              ];
+
+              const setterCells: StageCell[] = project.setterId ? (['M1', 'M2', 'M3'] as StageKey[]).map((s) => {
+                const amount = s === 'M1' ? (project.setterM1Amount ?? 0) : s === 'M2' ? (project.setterM2Amount ?? 0) : (project.setterM3Amount ?? 0);
+                const entry = findPartyEntry(project.setterId!, s);
+                return {
+                  stage: s,
+                  amount,
+                  paid: entry?.status === 'Paid',
+                  applicable: amount > 0,
+                  onToggle: isAdmin && amount > 0 && entry ? () => togglePartyEntryPaid(project.setterId!, s) : undefined,
+                };
+              }) : [];
+
+              return (
+                <div className="space-y-2 mb-3">
+                  {/* Closer row */}
+                  {renderPartyRow(
+                    'closer',
+                    project.repName,
+                    'closer',
+                    closerTotalExpected,
+                    closerCells,
+                  )}
+
+                  {/* Setter row */}
+                  {project.setterId && setterTotalExpected > 0 && renderPartyRow(
+                    'setter',
+                    project.setterName ?? 'Setter',
+                    'setter',
+                    setterTotalExpected,
+                    setterCells,
+                  )}
+
+                  {/* Co-closers */}
+                  {(project.additionalClosers ?? []).map((co) => {
+                    const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
+                    if (coTotal <= 0) return null;
+                    const cells: StageCell[] = (['M1', 'M2', 'M3'] as StageKey[]).map((s) => {
+                      const amount = s === 'M1' ? co.m1Amount : s === 'M2' ? co.m2Amount : (co.m3Amount ?? 0);
+                      const entry = findPartyEntry(co.userId, s);
+                      return {
+                        stage: s,
+                        amount,
+                        paid: entry?.status === 'Paid',
+                        applicable: amount > 0,
+                        onToggle: isAdmin && amount > 0 && entry ? () => togglePartyEntryPaid(co.userId, s) : undefined,
+                      };
+                    });
+                    return renderPartyRow(`cc-${co.userId}`, co.userName, `co-closer · #${co.position}`, coTotal, cells);
+                  })}
+
+                  {/* Co-setters */}
+                  {(project.additionalSetters ?? []).map((co) => {
+                    const coTotal = co.m1Amount + co.m2Amount + (co.m3Amount ?? 0);
+                    if (coTotal <= 0) return null;
+                    const cells: StageCell[] = (['M1', 'M2', 'M3'] as StageKey[]).map((s) => {
+                      const amount = s === 'M1' ? co.m1Amount : s === 'M2' ? co.m2Amount : (co.m3Amount ?? 0);
+                      const entry = findPartyEntry(co.userId, s);
+                      return {
+                        stage: s,
+                        amount,
+                        paid: entry?.status === 'Paid',
+                        applicable: amount > 0,
+                        onToggle: isAdmin && amount > 0 && entry ? () => togglePartyEntryPaid(co.userId, s) : undefined,
+                      };
+                    });
+                    return renderPartyRow(`cs-${co.userId}`, co.userName, `co-setter · #${co.position}`, coTotal, cells);
+                  })}
+
+                  {/* Trainer row — same expand/collapse pattern, single
+                      Trainer-stage cell that fires alongside M2. */}
+                  {isAdmin && (() => {
+                    const { rate: effTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
+                      { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
+                      project.repId,
+                      trainerAssignments,
+                      payrollEntries,
+                    );
+                    if (!effTrainerId || effTrainerRate <= 0) return null;
+                    const trainerName = project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? 'Trainer';
+                    const trainerTotal = effTrainerRate * (project.kWSize ?? 0) * 1000;
+                    const entry = findPartyEntry(effTrainerId, 'Trainer');
+                    const paid = entry?.status === 'Paid';
+                    const isOpen = expandedParty === 'trainer';
+                    const summary = paid ? 'paid' : 'pending';
+                    const summaryColor = paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)';
+                    return (
+                      <div className="rounded-xl overflow-hidden" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>
+                        <button
+                          onClick={() => setExpandedParty(isOpen ? null : 'trainer')}
+                          aria-expanded={isOpen}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-3 active:opacity-80 transition-opacity"
+                          style={{ WebkitTapHighlightColor: 'transparent' }}
+                        >
+                          <div className="flex flex-col items-start min-w-0 flex-1">
+                            <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                              {trainerName}
+                            </p>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                              trainer · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
+                            </p>
+                          </div>
+                          <span className="text-base font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                            {fmt$(trainerTotal)}
+                          </span>
+                          <span
+                            className="shrink-0 text-[var(--text-muted)] text-xs leading-none"
+                            aria-hidden="true"
+                            style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+                          >▶</span>
+                        </button>
+                        <Collapse open={isOpen}>
+                          <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
+                            <div className="flex items-center justify-between gap-3 py-2">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <span className="inline-flex items-center justify-center px-2.5 h-9 rounded-full text-xs font-bold shrink-0"
+                                  style={{
+                                    background: paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 14%, transparent)',
+                                    border: '1.5px solid ' + (paid ? 'var(--accent-emerald-display)' : 'var(--accent-amber-display)'),
+                                    color: paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                                  }}
+                                >Trainer</span>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-base font-bold tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                                    {fmt$(trainerTotal)}
+                                  </span>
+                                  <span className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
+                                    ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
+                                  </span>
+                                </div>
+                              </div>
+                              {entry ? (
+                                <button
+                                  onClick={() => togglePartyEntryPaid(effTrainerId, 'Trainer')}
+                                  className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
+                                  style={{
+                                    background: paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 18%, transparent)',
+                                    color: paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                                    border: '1px solid ' + (paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)'),
+                                    WebkitTapHighlightColor: 'transparent',
+                                  }}
+                                >
+                                  {paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                </button>
+                              ) : (
+                                <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>No entry yet</span>
+                              )}
+                            </div>
+                          </div>
+                        </Collapse>
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })()}
+
+            {/* Legacy single-row stage display — kept for rep/SD views only.
+                Admin/PM use the per-party-per-stage breakdown above which
+                shows everyone's stages with unambiguous Mark Paid actions.
+                When only one stage applies (e.g. setter on a 100%-install
+                deal sees just M2), justify-between would left-align the
+                lone item — switch to justify-center in that case so the
+                single milestone sits in the middle of the card. */}
+            {isMeView && (
+            <div className={`relative flex items-start pt-2 pb-4 ${visibleStages.length === 1 ? 'justify-center' : 'justify-between'}`}>
               {visibleStages.length > 1 && (
                 <>
-                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+                  <div className="absolute top-[18px] left-[14px] right-[14px] h-0.5" style={{ background: 'var(--border-subtle)' }} />
                   <div
                     className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
                     style={{
                       width: `calc(${Math.min(100, Math.max(0, fillPct))}% - 28px)`,
-                      background: 'linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan2))',
+                      background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                       animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
                     }}
                   />
@@ -800,9 +1073,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     <div
                       className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                       style={{
-                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' : 'var(--m-card, var(--surface-mobile-card))',
-                        border: `2px solid ${stage.paid ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
-                        color: stage.paid ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
+                        border: `2px solid ${stage.paid ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
+                        color: stage.paid ? '#000' : 'var(--text-muted)',
                         animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
                       }}
                     >{stage.key}</div>
@@ -812,12 +1085,28 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           type="number"
                           value={stage.key === 'M1' ? m1Val : m2Val}
                           onChange={(e) => stage.key === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
-                          className="w-20 text-xs text-center rounded px-1 py-0.5 text-white"
-                          style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+                          className="w-24 text-xs text-center rounded px-1 py-0.5 text-[var(--text-primary)]"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
+                        />
+                        <input
+                          type="text"
+                          value={editReason}
+                          onChange={(e) => setEditReason(e.target.value)}
+                          placeholder="Reason (optional)"
+                          maxLength={200}
+                          className="w-32 text-[10px] text-center rounded px-1 py-0.5 text-[var(--text-primary)]"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                         />
                         <div className="flex gap-1.5">
-                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald)' }}>Save</button>
-                          <button onClick={() => stage.key === 'M1' ? setEditM1(false) : setEditM2(false)} className="text-[10px]" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>Cancel</button>
+                          <button onClick={stage.key === 'M1' ? saveM1 : saveM2} className="text-[10px] font-medium" style={{ color: 'var(--accent-emerald-text)' }}>Save</button>
+                          <button
+                            onClick={() => {
+                              if (stage.key === 'M1') setEditM1(false); else setEditM2(false);
+                              setEditReason('');
+                            }}
+                            className="text-[10px]"
+                            style={{ color: 'var(--text-muted)' }}
+                          >Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -830,7 +1119,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                             }}
                             className="milestone-amount text-sm font-bold tabular-nums underline-offset-2"
                             style={{
-                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                               fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                               animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
                             }}
@@ -839,18 +1128,28 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           <span
                             className="milestone-amount text-sm font-bold tabular-nums"
                             style={{
-                              color: stage.paid ? 'var(--m-accent, var(--accent-emerald))' : 'var(--m-text-muted, var(--text-mobile-muted))',
+                              color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
                               fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                               animation: `amountFadeUp 280ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms both`,
                             }}
                           >{fmt$(stage.amount)}</span>
                         )}
-                        <MobileBadge value={stage.paid ? 'Paid' : 'Pending'} variant="status" />
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full whitespace-nowrap"
+                          style={{
+                            background: 'transparent',
+                            border: `1.5px solid ${stage.paid ? 'var(--accent-emerald-display)' : 'var(--accent-amber-display)'}`,
+                            color: stage.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                          }}
+                        >
+                          {stage.paid ? 'Paid' : 'Pending'}
+                        </span>
                         {(isEditableStage || isToggleableM3) && (
                           <button
                             onClick={stage.key === 'M1' ? handleToggleM1 : stage.key === 'M2' ? handleToggleM2 : handleToggleM3}
                             className="text-[10px] px-1.5 py-0.5 rounded-md font-medium min-h-[28px]"
-                            style={{ background: stage.paid ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: stage.paid ? 'var(--accent-emerald)' : '#f59e0b' }}
+                            style={{ background: stage.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'var(--accent-amber-soft)', color: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--accent-amber-text)' }}
                           >
                             {stage.paid ? 'Mark Unpaid' : 'Mark Paid'}
                           </button>
@@ -861,6 +1160,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 );
               })}
             </div>
+            )}
           </MobileCard>
         );
       })()}
@@ -871,16 +1171,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries));
         if (eligiblePaidEntries.length === 0) return null;
         return (
-          <div className="flex items-center justify-between gap-3 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+          <div className="flex items-center justify-between gap-3 bg-[var(--accent-amber-soft)] border border-amber-500/30 rounded-xl p-4">
             <div>
-              <p className="text-amber-300 text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-dim, #445577)' }}>
+              <p className="text-[var(--accent-amber-text)] text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
                 {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback.
               </p>
             </div>
             <button
               onClick={() => setShowRecordChargeback(true)}
-              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 active:bg-amber-500/30 text-amber-300 border border-amber-500/40"
+              className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 active:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/40"
             >
               Record Chargeback
             </button>
@@ -897,28 +1197,55 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           PMs are blocked at the endpoint. */}
       {(isAdmin || isPM) && (
         <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
-          <p className="text-xs text-[var(--m-text-dim, #445577)] mb-2">
+          <p className="text-xs text-[var(--text-dim)] mb-2">
             Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
           </p>
           <ProjectNotes projectId={projectId} kind="admin" />
         </MobileSection>
       )}
 
+      {/* Equipment Snapshot — non-sensitive, all roles */}
+      <MobileSection title="Equipment" collapsible defaultOpen={false}>
+        <EquipmentSnapshot projectId={projectId} />
+      </MobileSection>
+
+      {/* Installer-handoff surfaces — admin + PM only. Vendor PM scope
+          enforced at the endpoint via the privacy gate. */}
+      {(isAdmin || isPM) && (
+        <>
+          <MobileSection title="Installer Handoff" collapsible defaultOpen={false}>
+            <HandoffStatusCard
+              projectId={projectId}
+              canResend={isAdmin || (isPM && !viewAsUser?.scopedInstallerId)}
+            />
+          </MobileSection>
+          <MobileSection title="Installer Files" collapsible defaultOpen={false}>
+            <InstallerFiles projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+          <MobileSection title="Site Survey Links" collapsible defaultOpen={false}>
+            <SiteSurveyLinks projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+          <MobileSection title="Installer Notes" collapsible defaultOpen={false}>
+            <InstallerNotes projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+        </>
+      )}
+
       {/* Messages / Chatter */}
       <ProjectChatter projectId={projectId} />
 
       {/* Activity Timeline */}
-      <MobileActivityTimeline projectId={projectId} />
+      <MobileActivityTimeline projectId={projectId} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--m-card, var(--surface-mobile-card))', borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] text-white text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
+            className="flex-1 min-h-[48px] text-[var(--text-primary)] text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.25)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -929,11 +1256,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           onClick={() => setMoreSheetOpen(true)}
           className="min-h-[48px] px-5 text-base font-medium rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
           style={{
-            background: 'var(--m-card, var(--surface-mobile-card))',
-            border: '1px solid var(--m-border, var(--border-mobile))',
-            color: 'var(--m-text-muted, var(--text-mobile-muted))',
+            background: 'var(--surface-pressed)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-primary)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
+          aria-label="More actions"
         >
           &middot; &middot; &middot;
         </button>
@@ -1002,14 +1330,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         <div className="px-5 space-y-5 pb-24">
           {/* Setter */}
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
               Setter (optional)
             </label>
             <select
               value={editDraft.setterId}
               onChange={(e) => setEditDraft((d) => ({ ...d, setterId: e.target.value }))}
               className="w-full min-h-[48px] outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px', color: '#fff', fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >
               <option value="">— None —</option>
               {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== project.repId).map((r) => (
@@ -1020,7 +1348,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
           {/* Notes */}
           <div>
-            <label className="block tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 500 }}>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
               Notes
             </label>
             <textarea
@@ -1028,7 +1356,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               value={editDraft.notes}
               onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
               className="w-full outline-none resize-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px', color: '#fff', fontSize: '1rem' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '14px 16px', color: 'var(--text-primary)', fontSize: '1rem' }}
             />
           </div>
 
@@ -1057,28 +1385,28 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
           {/* Per-project trainer override — admin only. */}
           {isAdmin && (
-            <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>Per-project trainer</span>
+                <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Per-project trainer</span>
                 {editDraft.trainerId && (
                   <button
                     type="button"
                     onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '' }))}
                     className="text-xs"
-                    style={{ color: 'rgba(255,100,100,0.8)' }}
+                    style={{ color: 'color-mix(in srgb, var(--accent-red-solid) 80%, transparent)' }}
                   >
                     Clear
                   </button>
                 )}
               </div>
-              <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
                 Attaches a trainer + rate to this deal only. Overrides the rep&apos;s assignment chain.
               </p>
               <select
                 value={editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value }))}
                 className="w-full mb-2"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff' }}
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
               >
                 <option value="">— no trainer override —</option>
                 {reps.filter((r) => r.active && r.id !== project.repId && r.id !== editDraft.setterId).map((r) => (
@@ -1095,7 +1423,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 disabled={!editDraft.trainerId}
                 onChange={(e) => setEditDraft((d) => ({ ...d, trainerRate: e.target.value }))}
                 className="w-full"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: '#fff', opacity: editDraft.trainerId ? 1 : 0.45 }}
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)', opacity: editDraft.trainerId ? 1 : 0.45 }}
               />
             </div>
           )}
@@ -1105,7 +1433,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={saveEditSheet}
               className="flex-1 font-semibold"
-              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Save
             </button>
@@ -1113,7 +1441,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={() => setEditSheetOpen(false)}
               className="flex-1"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: '#fff' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Cancel
             </button>
@@ -1127,20 +1455,20 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center p-4 pb-8"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}
         >
-          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <span className="text-white font-bold text-base">Cancel Project</span>
-              <button onClick={() => setShowCancelReasonModal(false)} className="text-slate-400 p-1"><XIcon className="w-5 h-5" /></button>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--text-primary) 8%, transparent)' }}>
+              <span className="text-[var(--text-primary)] font-bold text-base">Cancel Project</span>
+              <button onClick={() => setShowCancelReasonModal(false)} className="text-[var(--text-muted)] p-1"><XIcon className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-slate-400 text-sm">Please provide a reason for cancelling <span className="text-white font-medium">{project.customerName}</span>.</p>
+              <p className="text-[var(--text-muted)] text-sm">Please provide a reason for cancelling <span className="text-[var(--text-primary)] font-medium">{project.customerName}</span>.</p>
               <div>
-                <label className="block text-xs uppercase tracking-wider mb-1.5 text-slate-400">Reason</label>
+                <label className="block text-xs uppercase tracking-wider mb-1.5 text-[var(--text-muted)]">Reason</label>
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-white outline-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                  className="w-full min-h-[44px] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none"
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}
                 >
                   <option value="">Select a reason...</option>
                   <option value="Customer changed mind">Customer changed mind</option>
@@ -1152,27 +1480,31 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 </select>
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider mb-1.5 text-slate-400">Notes <span className="normal-case font-normal text-slate-500">(optional)</span></label>
+                <label className="block text-xs uppercase tracking-wider mb-1.5 text-[var(--text-muted)]">Notes <span className="normal-case font-normal text-[var(--text-dim)]">(optional)</span></label>
                 <textarea
                   rows={3}
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none resize-none placeholder-slate-500"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)' }}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none resize-none placeholder:text-[var(--text-dim)]"
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}
                 />
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setShowCancelReasonModal(false)}
                   className="flex-1 font-medium text-sm rounded-xl py-3"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', color: 'var(--text-secondary)' }}
                 >
                   Go Back
                 </button>
                 <button
                   onClick={confirmCancelWithReason}
-                  className="flex-1 font-semibold text-sm rounded-xl py-3 bg-red-600 active:bg-red-500 text-white"
+                  className="flex-1 font-semibold text-sm rounded-xl py-3"
+                  style={{
+                    background: 'var(--accent-red-solid)',
+                    color: 'var(--text-on-accent)',
+                  }}
                 >
                   Cancel Project
                 </button>

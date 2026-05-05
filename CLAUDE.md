@@ -101,8 +101,12 @@ Also: Cancelled, On Hold
 
 ## Coding Conventions
 
-### Styling
-- Dark theme only. CSS variables: `--brand`, `--navy-base`, `--navy-card`, `--navy-hover`
+### Styling — design tokens
+- **Read `docs/design-tokens.md` before adding color anywhere.** It defines the canonical 35-token system (5 surface, 4 text, 3 border, 21 accent, 2 special-purpose) used app-wide.
+- **Light + dark themes** are both supported. Active theme is set via `data-theme` attribute on `<html>`. The `useTheme()` hook in `lib/use-theme.ts` is the user-facing API.
+- **No raw hex / rgba in inline `style` props or Tailwind arbitrary class syntax.** Always reference tokens: `style={{ color: 'var(--text-primary)' }}` or `className="bg-[var(--surface-card)]"`. CI gate: `npm run check:tokens` fails if raw color count grows above the frozen baseline.
+- Token examples: `var(--surface-page)`, `var(--surface-card)`, `var(--text-primary)`, `var(--text-muted)`, `var(--border-default)`, `var(--accent-emerald-solid)`, `var(--accent-emerald-soft)`, `var(--accent-emerald-glow)`. Pattern: `--accent-{emerald|cyan|blue|red|amber|purple|teal}-{solid|soft|glow}`.
+- Special-purpose hex (kept literal): `#00e07a` is `--brand-mark` (registered logo color, wordmark only); SVG illustration fills are hard-coded by design.
 - Card pattern: `className="card-surface rounded-2xl p-6"` (defined in globals.css)
 - Use Tailwind utilities, no CSS modules or styled-components
 - Icons: `lucide-react` only. Import individually: `import { Plus, Trash2 } from 'lucide-react'`

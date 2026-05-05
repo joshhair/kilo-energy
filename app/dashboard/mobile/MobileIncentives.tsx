@@ -96,7 +96,7 @@ export default function MobileIncentives() {
   // PM guard — rendered AFTER hooks so hook ordering stays stable.
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="Incentives" />
         <MobileEmptyState
           icon={Trophy}
@@ -314,7 +314,7 @@ export default function MobileIncentives() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader
         title="Incentives"
         right={isAdmin ? (
@@ -323,11 +323,11 @@ export default function MobileIncentives() {
             aria-label="Add incentive"
             className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 4px 14px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 4px 14px var(--accent-emerald-glow)',
             }}
           >
-            <Plus className="w-5 h-5 text-white" />
+            <Plus className="w-5 h-5 text-[var(--text-primary)]" />
           </button>
         ) : undefined}
       />
@@ -339,7 +339,7 @@ export default function MobileIncentives() {
             value={filter}
             onChange={(e) => { setFilter(e.target.value as typeof filter); clearSelection(); }}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
-            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--m-border, var(--border-mobile))', color: '#fff' }}
+            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
             <option value="all">All</option>
             <option value="active">Active</option>
@@ -350,7 +350,7 @@ export default function MobileIncentives() {
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
-            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--m-border, var(--border-mobile))', color: '#fff' }}
+            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
             <option value="newest">Newest</option>
             <option value="progress">Progress %</option>
@@ -361,8 +361,8 @@ export default function MobileIncentives() {
               onClick={() => { if (selectMode) clearSelection(); else setSelectMode(true); }}
               className="flex items-center justify-center w-10 shrink-0 rounded-lg"
               style={selectMode
-                ? { background: 'rgba(0,196,240,0.15)', color: 'var(--accent-cyan2)', border: '1px solid rgba(0,196,240,0.3)' }
-                : { background: 'var(--m-surface, var(--surface))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }
+                ? { background: 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }
+                : { background: 'var(--m-surface, var(--surface))', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }
               }
             >
               {selectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -373,7 +373,7 @@ export default function MobileIncentives() {
           <button
             onClick={handleBulkArchiveExpired}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
-            style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent-amber, #f5a623)', border: '1px solid rgba(245,158,11,0.25)' }}
+            style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 10%, transparent)', color: 'var(--accent-amber, #f5a623)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}
           >
             <Archive className="w-3.5 h-3.5" />
             Archive All Expired ({expiredActiveCount})
@@ -381,18 +381,18 @@ export default function MobileIncentives() {
         )}
         {isAdmin && selectMode && selectedIds.size > 0 && (
           <div className="flex items-center gap-2 animate-fade-in-up">
-            <span className="flex-1 text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{selectedIds.size} selected</span>
+            <span className="flex-1 text-xs" style={{ color: 'var(--text-muted)' }}>{selectedIds.size} selected</span>
             <button
               onClick={handleBulkDeactivate}
               className="px-3 py-2 rounded-lg text-xs font-semibold"
-              style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent-amber, #f5a623)', border: '1px solid rgba(245,158,11,0.25)' }}
+              style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 10%, transparent)', color: 'var(--accent-amber, #f5a623)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}
             >
               Deactivate
             </button>
             <button
               onClick={handleBulkDelete}
               className="px-3 py-2 rounded-lg text-xs font-semibold"
-              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
+              style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 10%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)' }}
             >
               Delete
             </button>
@@ -411,20 +411,20 @@ export default function MobileIncentives() {
                 key={`${incentive.id}-${milestone.id}`}
                 className="rounded-2xl px-4 py-3"
                 style={{
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.22)',
+                  background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)',
                 }}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.2)' }}>
-                      <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber)' }} />
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
+                      <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber-text)' }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{incentive.title}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{incentive.title}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                         At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
-                        <span style={{ color: 'var(--accent-amber)' }}> · {milestone.reward}</span>
+                        <span style={{ color: 'var(--accent-amber-text)' }}> · {milestone.reward}</span>
                       </p>
                     </div>
                   </div>
@@ -433,8 +433,8 @@ export default function MobileIncentives() {
                   onClick={() => markMilestoneFulfilled(incentive.id, milestone.id)}
                   className="w-full min-h-[40px] rounded-lg text-xs font-semibold"
                   style={{
-                    background: 'rgba(0,229,160,0.15)',
-                    color: 'var(--accent-emerald)',
+                    background: 'var(--accent-emerald-soft)',
+                    color: 'var(--accent-emerald-text)',
                   }}
                 >
                   Mark Fulfilled
@@ -658,14 +658,14 @@ function CreateIncentiveSheet({
     }
   };
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)]';
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]';
   const inputStyle: React.CSSProperties = {
     background: 'var(--m-surface, var(--surface))',
-    border: '1px solid var(--m-border, var(--border-mobile))',
-    color: '#fff',
+    border: '1px solid var(--border-subtle)',
+    color: 'var(--text-primary)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
-  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--m-text-muted,var(--text-mobile-muted))]';
+  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--text-muted)]';
 
   return (
     <MobileBottomSheet
@@ -689,7 +689,7 @@ function CreateIncentiveSheet({
                   setMilestones(tpl.milestones);
                 }}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-medium"
-                style={{ background: 'rgba(0,229,160,0.1)', color: 'var(--accent-emerald)', border: '1px solid rgba(0,229,160,0.25)' }}
+                style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}
               >
                 {tpl.label}
               </button>
@@ -776,7 +776,7 @@ function CreateIncentiveSheet({
             <button
               onClick={() => setMilestones((prev) => [...prev, { threshold: '', reward: '' }])}
               className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)' }}
+              style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
             >
               + Add
             </button>
@@ -785,7 +785,7 @@ function CreateIncentiveSheet({
             {milestones.map((ms, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <input
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] w-20 shrink-0"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] w-20 shrink-0"
                   style={inputStyle}
                   type="number"
                   min="0"
@@ -794,7 +794,7 @@ function CreateIncentiveSheet({
                   onChange={(e) => setMilestones((prev) => prev.map((m, i) => i === idx ? { ...m, threshold: e.target.value } : m))}
                 />
                 <input
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] flex-1 min-w-0"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] flex-1 min-w-0"
                   style={inputStyle}
                   placeholder="Reward (e.g. $500)"
                   value={ms.reward}
@@ -804,7 +804,7 @@ function CreateIncentiveSheet({
                   <button
                     onClick={() => setMilestones((prev) => prev.filter((_, i) => i !== idx))}
                     className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg"
-                    style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                    style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)' }}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -818,8 +818,8 @@ function CreateIncentiveSheet({
         <button
           onClick={handleSubmit}
           disabled={!canSubmit || submitting}
-          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-white active:scale-[0.97] transition-transform disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' }}
+          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-[var(--text-primary)] active:scale-[0.97] transition-transform disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           {submitting ? 'Creating…' : 'Create Incentive'}
@@ -897,14 +897,14 @@ function EditIncentiveSheet({
   const updateMilestone = (idx: number, field: 'threshold' | 'reward', val: string) =>
     setMilestones((prev) => prev.map((m, i) => i === idx ? { ...m, [field]: val } : m));
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)]';
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]';
   const inputStyle: React.CSSProperties = {
     background: 'var(--m-surface, var(--surface))',
-    border: '1px solid var(--m-border, var(--border-mobile))',
-    color: '#fff',
+    border: '1px solid var(--border-subtle)',
+    color: 'var(--text-primary)',
     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
   };
-  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--m-text-muted,var(--text-mobile-muted))]';
+  const labelCls = 'block text-xs font-medium uppercase tracking-wider mb-1.5 text-[var(--text-muted)]';
 
   return (
     <MobileBottomSheet
@@ -992,7 +992,7 @@ function EditIncentiveSheet({
             <button
               onClick={addMilestone}
               className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(0,229,160,0.12)', color: 'var(--accent-emerald)' }}
+              style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
             >
               + Add
             </button>
@@ -1001,7 +1001,7 @@ function EditIncentiveSheet({
             {milestones.map((ms, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <input
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] w-20 shrink-0"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] w-20 shrink-0"
                   style={inputStyle}
                   type="number"
                   min="0"
@@ -1010,14 +1010,14 @@ function EditIncentiveSheet({
                   onChange={(e) => updateMilestone(idx, 'threshold', e.target.value)}
                 />
                 <input
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald)] flex-1 min-w-0"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] flex-1 min-w-0"
                   style={inputStyle}
                   placeholder="Reward"
                   value={ms.reward}
                   onChange={(e) => updateMilestone(idx, 'reward', e.target.value)}
                 />
                 {milestones.length > 1 && (
-                  <button onClick={() => removeMilestone(idx)} className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                  <button onClick={() => removeMilestone(idx)} className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg" style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)' }}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -1030,8 +1030,8 @@ function EditIncentiveSheet({
         <button
           onClick={handleSave}
           disabled={!canSubmit || submitting}
-          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-white active:scale-[0.97] transition-transform disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))' }}
+          className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-[var(--text-primary)] active:scale-[0.97] transition-transform disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           {submitting ? 'Saving…' : 'Save Changes'}

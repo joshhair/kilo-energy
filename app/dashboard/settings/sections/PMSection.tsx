@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Plus, Trash2, CheckSquare, Square, ClipboardList } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
+import { validateName, validateEmail } from '../../../../lib/validation';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { EmptyState } from '../../components/EmptyState';
+import { PrimaryButton, IconButton, TextInput, FormField } from '@/components/ui';
 
 interface Installer { id: string; name: string; active: boolean }
 
@@ -35,15 +38,21 @@ export function PMSection() {
     }).catch(() => { /* non-fatal */ });
   }, []);
 
+  const firstNameCheck = newFirstName.trim().length > 0 ? validateName(newFirstName) : null;
+  const emailCheck = newEmail.trim().length > 0
+    ? validateEmail(newEmail, { siblings: pms.map((pm) => ({ id: pm.id, email: pm.email })) })
+    : null;
+  const canSubmit = firstNameCheck?.ok === true && emailCheck?.ok === true;
+
   const handleAdd = async () => {
-    if (!newFirstName.trim() || !newEmail.trim()) return;
+    if (!canSubmit || !firstNameCheck?.ok || !emailCheck?.ok) return;
     const res = await fetch('/api/reps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        firstName: newFirstName.trim(),
+        firstName: firstNameCheck.value,
         lastName: newLastName.trim(),
-        email: newEmail.trim(),
+        email: emailCheck.value,
         role: 'project_manager',
         scopedInstallerId: newScopedInstallerId || undefined,
       }),
@@ -97,59 +106,81 @@ export function PMSection() {
     <div className="space-y-4">
       <p className="text-xs text-[var(--text-muted)]">Project managers can view all projects and reps but cannot access payroll, pricing, or settings.</p>
 
-      {/* Add form */}
       <div className="space-y-2">
         <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">First Name</label>
-            <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
-          </div>
-          <div className="flex-1">
-            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Last Name</label>
-            <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
-          </div>
-          <div className="flex-[2]">
-            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
-            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
-          </div>
-          <button onClick={handleAdd} disabled={!newFirstName.trim() || !newEmail.trim()} className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}>
+          <FormField
+            label="First Name"
+            className="flex-1"
+            error={firstNameCheck && !firstNameCheck.ok ? firstNameCheck.reason : undefined}
+          >
+            <TextInput
+              value={newFirstName}
+              onChange={(e) => setNewFirstName(e.target.value)}
+              placeholder="First"
+              invalid={firstNameCheck?.ok === false}
+            />
+          </FormField>
+          <FormField label="Last Name" className="flex-1">
+            <TextInput
+              value={newLastName}
+              onChange={(e) => setNewLastName(e.target.value)}
+              placeholder="Last"
+            />
+          </FormField>
+          <FormField
+            label="Email"
+            className="flex-[2]"
+            error={emailCheck && !emailCheck.ok ? emailCheck.reason : undefined}
+          >
+            <TextInput
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="email@example.com"
+              invalid={emailCheck?.ok === false}
+            />
+          </FormField>
+          <PrimaryButton onClick={handleAdd} disabled={!canSubmit} aria-label="Add project manager">
             <Plus className="w-4 h-4" />
-          </button>
+          </PrimaryButton>
         </div>
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Installer scope (optional)</label>
-            <select
-              value={newScopedInstallerId}
-              onChange={(e) => setNewScopedInstallerId(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40"
-            >
-              <option value="">— Full access (internal PM) —</option>
-              {installers.map((i) => (
-                <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <FormField label="Installer scope (optional)" className="flex-1">
+          <select
+            value={newScopedInstallerId}
+            onChange={(e) => setNewScopedInstallerId(e.target.value)}
+            className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-colors"
+          >
+            <option value="">— Full access (internal PM) —</option>
+            {installers.map((i) => (
+              <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
+            ))}
+          </select>
+        </FormField>
       </div>
 
-      {/* PM list with permission toggles */}
       {pms.length === 0 ? (
-        <div className="card-surface rounded-2xl p-5 text-center">
-          <p className="text-[var(--text-muted)] text-sm">No project managers yet</p>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No project managers yet"
+          description="Project managers can view all projects and reps but cannot access payroll, pricing, or settings."
+          variant="inline"
+        />
       ) : (
         <div className="space-y-2">
           {pms.map((pm) => (
             <div key={pm.id} className="card-surface rounded-xl px-5 py-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-white font-medium text-sm">{pm.firstName} {pm.lastName}</p>
+                  <p className="text-[var(--text-primary)] font-medium text-sm">{pm.firstName} {pm.lastName}</p>
                   <p className="text-[var(--text-muted)] text-xs">{pm.email}</p>
                 </div>
-                <button onClick={() => setConfirmDeletePmId(pm.id)} className="text-[var(--text-dim)] hover:text-red-400 transition-colors">
+                <IconButton
+                  variant="danger"
+                  aria-label={`Remove ${pm.firstName} ${pm.lastName}`}
+                  onClick={() => setConfirmDeletePmId(pm.id)}
+                >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </IconButton>
               </div>
               <div className="flex flex-wrap gap-3">
                 {([
@@ -163,7 +194,7 @@ export function PMSection() {
                     disabled={!!pm.scopedInstallerId}
                     className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       pm[field]
-                        ? 'bg-emerald-900/30 text-emerald-300 border-[var(--accent-green)]/30'
+                        ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30'
                         : 'bg-[var(--surface-card)]/50 text-[var(--text-muted)] border-[var(--border)]/50'
                     }`}
                     title={pm.scopedInstallerId ? 'Disabled while scoped to an installer' : undefined}
@@ -182,7 +213,7 @@ export function PMSection() {
                 <select
                   value={pm.scopedInstallerId ?? ''}
                   onChange={(e) => setScope(pm.id, e.target.value || null)}
-                  className="bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+                  className="bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500/40"
                 >
                   <option value="">— Full access (internal PM) —</option>
                   {installers.map((i) => (
@@ -190,7 +221,7 @@ export function PMSection() {
                   ))}
                 </select>
                 {pm.scopedInstallerId && (
-                  <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                     Vendor PM — ops-only
                   </span>
                 )}

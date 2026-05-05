@@ -144,14 +144,14 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       className={[
         'toast-item',
         'pointer-events-auto relative flex items-center gap-3 px-4 py-3',
-        'rounded-xl border bg-[#161920]',
+        'rounded-xl border bg-[var(--surface-card)]',
         config.border,
         'min-w-[280px] max-w-[400px] shadow-2xl overflow-hidden',
         leaving ? 'animate-toast-out' : 'animate-toast-in',
       ].join(' ')}
     >
       {config.icon}
-      <span className="text-white text-sm flex-1 leading-snug">{toast.message}</span>
+      <span className="text-[var(--text-primary)] text-sm flex-1 leading-snug">{toast.message}</span>
       {toast.action && (
         <button
           onClick={() => {
@@ -165,7 +165,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       )}
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-[#8891a8] hover:text-white transition-colors ml-1 flex-shrink-0"
+        className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-1 flex-shrink-0"
       >
         <X className="w-3.5 h-3.5" />
       </button>

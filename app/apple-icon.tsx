@@ -25,6 +25,10 @@ export default function AppleIcon() {
           // Layered background:
           //   1. base diagonal navy → emerald gradient
           //   2. radial highlight from upper-left for depth
+          //
+          // Literals only: next/og ImageResponse renders outside the CSS-
+          // var scope (no globals.css), so var() and color-mix(var(),...)
+          // resolve to invalid `initial` and break the build.
           background:
             'radial-gradient(circle at 25% 20%, rgba(0,229,160,0.4), transparent 55%), linear-gradient(135deg, #050d18 0%, #0a2540 40%, #008f5a 100%)',
           // Faint inner ring suggests a card/lens edge
@@ -65,7 +69,7 @@ export default function AppleIcon() {
         {/* The K — primary mark, sits above all the glow layers */}
         <span
           style={{
-            color: 'white',
+            color: '#f0f2f7',
             fontSize: 110,
             fontWeight: 900,
             fontFamily: 'system-ui, sans-serif',

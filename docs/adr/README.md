@@ -16,3 +16,4 @@ new ADRs (numbered forward) that reference the original.
 - [004 — Clerk for authentication](004-clerk.md)
 - [005 — Field-visibility matrix for RBAC scrubbing](005-field-visibility-matrix.md)
 - [006 — Separate desktop + mobile files, shared logic](006-parallel-mobile-files.md)
+- [007 — Soft-delete pattern (active boolean default + Reimbursement / Product exceptions)](007-soft-delete-pattern.md)

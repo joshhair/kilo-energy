@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
+import { logChange } from '../../../../../lib/audit';
 
 /**
  * DELETE /api/users/invitations/[id] — Revoke a pending Clerk invitation
@@ -9,7 +10,8 @@ import { requireAdmin } from '../../../../../lib/api-auth';
  * Admin only.
  */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
 
   try {
@@ -21,6 +23,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const invitations = Array.isArray(list) ? list : list?.data ?? [];
     const invitation = invitations.find((i) => i.id === id);
     const internalUserId = invitation?.publicMetadata?.internalUserId as string | undefined;
+    const invitedEmail = invitation?.emailAddress;
 
     // Revoke the invitation in Clerk
     await client.invitations.revokeInvitation(id);
@@ -29,6 +32,18 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     if (internalUserId) {
       await prisma.user.delete({ where: { id: internalUserId } }).catch(() => {});
     }
+
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'user_invitation_revoke',
+      entityType: 'AdminInvitation',
+      entityId: id,
+      detail: {
+        clerkInvitationId: id,
+        invitedEmail: invitedEmail ?? null,
+        deletedInternalUserId: internalUserId ?? null,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

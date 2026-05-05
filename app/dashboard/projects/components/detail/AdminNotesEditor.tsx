@@ -63,11 +63,11 @@ export function AdminNotesEditor({
 
   return (
     <div className="card-surface rounded-2xl p-6 border border-amber-500/20"
-         style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.04), rgba(245,158,11,0.02))' }}>
+         style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 12%, transparent), color-mix(in srgb, var(--accent-amber-solid) 6%, transparent))' }}>
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="w-4 h-4 text-amber-400" />
-        <h2 className="text-white font-semibold">Admin Notes</h2>
-        <span className="text-[10px] text-amber-400/70 uppercase tracking-wider font-semibold ml-auto">Admin · PM only</span>
+        <Shield className="w-4 h-4 text-[var(--accent-amber-text)]" />
+        <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
+        <span className="text-[10px] text-[var(--accent-amber-text)]/70 uppercase tracking-wider font-semibold ml-auto">Admin · PM only</span>
       </div>
       <p className="text-[var(--text-muted)] text-xs mb-3">
         Private reference notes. Never visible to reps, trainers, or sub-dealers.
@@ -79,15 +79,15 @@ export function AdminNotesEditor({
         onBlur={onBlur}
         placeholder="Admin-only context — handoff notes, customer quirks, commission exceptions, anything reps shouldn't see..."
         maxLength={2000}
-        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500 resize-none"
+        className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500 resize-none"
       />
       <div className="flex items-center justify-between mt-1">
         <p className={`text-xs transition-colors duration-200 ${
-          draft.length >= 1920 ? 'text-red-400' :
-          draft.length >= 1600 ? 'text-amber-400' :
+          draft.length >= 1920 ? 'text-[var(--accent-red-text)]' :
+          draft.length >= 1600 ? 'text-[var(--accent-amber-text)]' :
           'text-[var(--text-muted)]'
         }`}>{draft.length} / 2000</p>
-        {saved && <span className="text-xs text-[var(--accent-green)] animate-fade-in-up">Saved</span>}
+        {saved && <span className="text-xs text-[var(--accent-emerald-text)] animate-fade-in-up">Saved</span>}
         {!saved && draft !== lastSynced.current && (
           <span className="text-xs text-[var(--text-muted)]">Auto-saving...</span>
         )}

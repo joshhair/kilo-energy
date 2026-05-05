@@ -25,6 +25,8 @@ import { CommissionPreview } from './components/CommissionPreview';
 import { SuccessScreen } from './components/SuccessScreen';
 import { DealEntryPage } from './components/DealEntryPage';
 import { NewDealSkeleton } from './components/NewDealSkeleton';
+import { BviIntakePanel } from './components/BviIntakePanel';
+import { EMPTY_BVI_INTAKE, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,13 @@ function NewDealPage() {
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<SubmittedDeal | null>(null);
+
+  // BVI intake — separate from `form` because BviIntake includes booleans
+  // and unions that don't fit the string-only form-state shape. The
+  // utility bill is a File ref, also kept out of `form`.
+  const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
+  const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const isBviInstaller = form.installer === 'BVI';
 
   const formRef = useRef<HTMLFormElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -189,6 +198,22 @@ function NewDealPage() {
   const hasPcProducts = isPcInstaller && pcFamily !== '' && pcFamilyProducts.length > 0;
 
   // ── Unsaved-changes guard ──────────────────────────────────────────────────
+  // Per project_kilo_setter_regression.md — every field that captures user input
+  // must be in this expression. Missing one means navigating away after typing
+  // silently loses data. Adding a new form field? Add it here too.
+  const bviIntakeDirty =
+    bviIntake.customerPhone.trim() !== '' ||
+    bviIntake.customerEmail.trim() !== '' ||
+    bviIntake.customerAddress.trim() !== '' ||
+    bviIntake.exportType !== null ||
+    bviIntake.existingSystemInfo.trim() !== '' ||
+    bviIntake.siteSurveyNeeded !== null ||
+    bviIntake.batteryLocation !== null ||
+    bviIntake.batteryLocationOther.trim() !== '' ||
+    bviIntake.dogsOnProperty !== null ||
+    bviIntake.lockedGates !== null ||
+    bviIntake.gateCode.trim() !== '' ||
+    bviIntake.additionalNotes.trim() !== '';
   const isFormDirty =
     form.customerName.trim() !== '' || form.installer !== '' || form.financer !== '' ||
     form.productType !== '' || form.kWSize !== '' || form.netPPW !== '' ||
@@ -196,7 +221,8 @@ function NewDealPage() {
     form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
     form.leadSource !== '' || form.blitzId !== '' ||
     (effectiveRole === 'admin' && form.repId !== '') ||
-    form.additionalClosers.length > 0 || form.additionalSetters.length > 0;
+    form.additionalClosers.length > 0 || form.additionalSetters.length > 0 ||
+    bviIntakeDirty || utilityBill !== null;
 
   useEffect(() => {
     if (!isFormDirty) return;
@@ -247,12 +273,18 @@ function NewDealPage() {
   const fieldCheck = (field: string, value?: string) => {
     const v = value ?? form[field as keyof typeof form] ?? '';
     if (!touched.has(field) || errors[field] || !v) return null;
-    return <Check className="w-3.5 h-3.5 text-[var(--accent-green)] shrink-0" />;
+    return <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)] shrink-0" />;
   };
 
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    // Reset BVI intake + utility bill when switching installer — switching
+    // away from BVI shouldn't carry intake data into a non-BVI deal.
+    if (value !== 'BVI') {
+      setBviIntake(EMPTY_BVI_INTAKE);
+      setUtilityBill(null);
+    }
   };
 
   const handleFinancerChange = (value: string) => {
@@ -312,19 +344,21 @@ function NewDealPage() {
   }, [form.blitzId, rawBlitzes, reps]);
 
   // Clear setterId only when a BLITZ change makes the selected setter
-  // no longer an approved participant. Previously this fired any time
-  // setterPickerReps shifted — including the moment reps[] was empty
-  // during initial hydration — silently dropping the user's picked
-  // setter. Tyson dropped on Trevor Schauwecker's deal (2026-04-22)
-  // was traced to this race. Guard so clearing only happens when
-  // (a) reps are loaded and (b) a blitz is actually selected.
+  // no longer an approved participant. Has regressed twice (Tyson on
+  // Trevor 2026-04-22, Melissa Lance 2026-04-26) — both times because
+  // the picker computed empty against half-loaded data and the effect
+  // happily wiped the setter. Rule: NEVER clear without positive
+  // evidence the setter is invalid. Absent data ≠ invalid setter.
   useEffect(() => {
     if (!form.setterId) return;
-    if (!form.blitzId) return;         // no blitz → don't filter membership
-    if (reps.length === 0) return;     // reps still loading → don't clear
+    if (!form.blitzId) return;            // no blitz → no membership rule applies
+    if (reps.length === 0) return;        // reps still loading
+    if (rawBlitzes.length === 0) return;  // blitzes still loading — can't judge membership
+    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
+    if (!selectedBlitz) return;           // blitz not in our list (stale/deleted) — don't presume invalid
     if (setterPickerReps.some((r) => r.id === form.setterId)) return;
     setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, form.blitzId, setterPickerReps, reps.length]);
+  }, [form.setterId, form.blitzId, setterPickerReps, reps.length, rawBlitzes]);
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {
@@ -528,7 +562,7 @@ function NewDealPage() {
 
   // ── Submit ─────────────────────────────────────────────────────────────────
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -736,22 +770,49 @@ function NewDealPage() {
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
+      installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
     };
 
     isDirty.current = false;
-    let dealAccepted: boolean;
+    let dealResult: { id: string } | null;
     if (isSubDealer) {
       // Sub-dealer deals: no M1, M2 = sub-dealer commission, no setter/trainer entries
-      dealAccepted = addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+      dealResult = await addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
     } else {
-      dealAccepted = addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+      dealResult = await addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
         trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
     }
+    const dealAccepted = dealResult !== null;
 
     if (!dealAccepted) {
       setSubmitting(false);
       submittingRef.current = false;
       return;
+    }
+
+    // BVI handoff: if a utility bill was attached, upload it against the
+    // real DB id returned by the server. We deliberately don't fail the
+    // whole deal submission if the upload fails — the project is already
+    // saved; the rep can re-upload from the project page later.
+    if (isBviInstaller && utilityBill && dealResult?.id) {
+      try {
+        const fd = new FormData();
+        fd.append('file', utilityBill);
+        fd.append('kind', 'utility_bill');
+        fd.append('label', 'Homeowner utility bill');
+        const res = await fetch(`/api/projects/${dealResult.id}/files`, {
+          method: 'POST',
+          body: fd,
+        });
+        if (!res.ok) {
+          const detail = await res.text().catch(() => `HTTP ${res.status}`);
+          console.error('[handleSubmit] utility bill upload failed:', detail);
+          toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+        }
+      } catch (err) {
+        console.error('[handleSubmit] utility bill upload threw:', err);
+        toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+      }
     }
 
     // Remember installer for next deal
@@ -793,17 +854,17 @@ function NewDealPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
 
   const inputCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200 placeholder-slate-500${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const inputFieldStyle = (field: string): React.CSSProperties => ({
     background: 'var(--surface-card)',
-    border: `1px solid ${errors[field] ? 'var(--accent-red)' : 'var(--border-subtle)'}`,
+    border: `1px solid ${errors[field] ? 'var(--accent-red-solid)' : 'var(--border-subtle)'}`,
     color: 'var(--text-primary)',
     fontFamily: "'DM Sans', sans-serif",
   });
 
   const _selectCls = (field: string) =>
-    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)]/50 focus-visible:border-[var(--accent-green)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
+    `w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)]/50 focus-visible:border-[var(--accent-emerald-solid)] transition-all duration-200${errors[field] ? ' ring-2 ring-red-500' : ''}`;
 
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: React.CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
@@ -826,6 +887,8 @@ function NewDealPage() {
           setCurrentStep(0);
           autoAdvancedSteps.current = new Set();
           userNavigatedBack.current = false;
+          setBviIntake(EMPTY_BVI_INTAKE);
+          setUtilityBill(null);
         }}
       />
     );
@@ -868,15 +931,15 @@ function NewDealPage() {
                 <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: done ? 'var(--accent-green)' : active ? 'rgba(0,224,122,0.1)' : 'var(--surface-card)',
-                    border: `1.5px solid ${done || active ? 'var(--accent-green)' : 'var(--border-subtle)'}`,
+                    background: done ? 'var(--accent-emerald-solid)' : active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                    border: `1.5px solid ${done || active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-green)' : 'var(--text-muted)',
-                    boxShadow: active ? '0 0 20px rgba(0,224,122,0.25)' : 'none',
+                    fontSize: 12, fontWeight: 700, color: done ? '#000' : active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                    boxShadow: active ? '0 0 20px var(--accent-emerald-glow)' : 'none',
                   }}>
                     {done ? '\u2713' : n}
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
+                  <p style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif" }}>{step}</p>
                 </div>
               );
             })}
@@ -896,9 +959,9 @@ function NewDealPage() {
 
       {/* Duplicate info badge */}
       {duplicateCustomerName && (
-        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 rounded-xl px-4 py-2.5">
-          <RotateCcw className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" />
-          <p className="text-[var(--accent-cyan)] text-sm">Duplicating from <span className="font-semibold text-white">{duplicateCustomerName}</span></p>
+        <div className="mb-4 flex items-center gap-2 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 rounded-xl px-4 py-2.5">
+          <RotateCcw className="w-4 h-4 text-[var(--accent-emerald-text)] flex-shrink-0" />
+          <p className="text-[var(--accent-cyan-text)] text-sm">Duplicating from <span className="font-semibold text-[var(--text-primary)]">{duplicateCustomerName}</span></p>
         </div>
       )}
 
@@ -913,8 +976,8 @@ function NewDealPage() {
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-green)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px rgba(0,224,122,0.5)' : 'none' }} />
-                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-green)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
+                  <div style={{ height: 3, width: active ? 32 : 20, borderRadius: 99, background: done || active ? 'var(--accent-emerald-solid)' : 'var(--border)', transition: 'all 0.2s', boxShadow: active ? '0 0 8px color-mix(in srgb, var(--accent-emerald-solid) 50%, transparent)' : 'none' }} />
+                  <span style={{ fontSize: 12, color: active ? 'var(--text-primary)' : done ? 'var(--accent-emerald-solid)' : 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: active ? 700 : 400 }}>{s}</span>
                 </div>
                 {i < DEAL_STEPS.length - 1 && <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{'\u203A'}</span>}
               </div>
@@ -968,7 +1031,7 @@ function NewDealPage() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-xs text-amber-400 mt-1.5">
+                  <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
                     ★ Trainer: {trainerRep.name} — override{' '}
                     <span className="font-semibold">${trainerOverrideRate.toFixed(2)}/W</span>
                     {currentTier?.upToDeal !== null && nextTier
@@ -1069,7 +1132,7 @@ function NewDealPage() {
         {/* ── Section 2: Deal Details ── */}
         {currentStep === 1 && (
         <div id="section-deal" className="overflow-visible">
-          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>System details {form.customerName && <span style={{ color: 'var(--accent-cyan-display)', fontWeight: 500 }}>for {form.customerName}</span>}</p>
 
           <div className="space-y-4">
             {/* ── Card 1: Installer / Financer / Product selects ── */}
@@ -1118,8 +1181,8 @@ function NewDealPage() {
                       }}
                       className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
                         form.productType === pt
-                          ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                          ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)]'
+                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                       }`}
                     >
                       {pt}
@@ -1133,7 +1196,7 @@ function NewDealPage() {
             {/* Cash product type — no financer needed indicator */}
             {form.installer && form.productType === 'Cash' && (
               <div className="flex items-center gap-2 bg-[var(--surface-card)]/60 border border-[var(--border)]/50 rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)]">
-                <Check className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                <Check className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
                 Cash deal — no financer required
               </div>
             )}
@@ -1163,11 +1226,11 @@ function NewDealPage() {
                               disabled
                                 ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                 : selected
-                                  ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                  ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)]'
+                                  : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
-                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>
+                            <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>
                               {isPrepaid ? 'Prepaid' : family}
                             </span>
                           </button>
@@ -1194,8 +1257,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1232,7 +1295,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{rawMappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1287,11 +1350,11 @@ function NewDealPage() {
                                 disabled
                                   ? 'bg-[var(--surface-card)]/40 border-[var(--border)]/40 text-[var(--text-dim)] cursor-not-allowed opacity-50'
                                   : selected
-                                    ? 'bg-[var(--accent-green)]/20 border-[var(--accent-green)]/60 text-[var(--accent-cyan)] shadow-[0_0_12px_rgba(37,99,235,0.2)]'
-                                    : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                    ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)]/60 text-[var(--accent-cyan-text)] shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 20%, transparent)]'
+                                    : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                               }`}
                             >
-                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-green)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
+                              <span className={`text-xs font-semibold ${disabled ? 'text-[var(--text-dim)]' : selected ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-muted)]'}`}>{family}</span>
                             </button>
                           );
                         });
@@ -1317,8 +1380,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1355,7 +1418,7 @@ function NewDealPage() {
                               error={!!errors.financer}
                             />
                             {mappedIsArchived && (
-                              <p className="mt-1 text-xs text-yellow-400">
+                              <p className="mt-1 text-xs text-[var(--accent-amber-text)]">
                                 The designated financer for this family (&quot;{mappedFinancer}&quot;) has been archived — select an alternative below.
                               </p>
                             )}
@@ -1416,8 +1479,8 @@ function NewDealPage() {
                             onClick={() => { update('prepaidSubType', opt); setTouched((prev) => { const next = new Set(prev); next.add('prepaidSubType'); return next; }); }}
                             className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                               form.prepaidSubType === opt
-                                ? 'bg-violet-600/20 border-violet-500/60 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                                ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
+                                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                             }`}
                           >
                             {opt}
@@ -1446,7 +1509,7 @@ function NewDealPage() {
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
                     {kW > 0 && !errors.kWSize && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-text)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1463,7 +1526,7 @@ function NewDealPage() {
                       className={inputCls('netPPW') + (soldPPW > 0 && !errors.netPPW ? ' pr-9' : '')} style={inputFieldStyle('netPPW')} />
                     {soldPPW > 0 && !errors.netPPW && (
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 text-[var(--accent-emerald-text)]" strokeWidth={2.5} />
                       </span>
                     )}
                   </div>
@@ -1521,16 +1584,16 @@ function NewDealPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Customer</p>
-                  <p className="text-white font-medium truncate">{form.customerName || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.customerName || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Sold Date</p>
-                  <p className="text-white font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium">{form.soldDate || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 {effectiveRole === 'admin' && (
                   <div>
                     <p className="text-[var(--text-muted)] text-xs mb-0.5">Closer</p>
-                    <p className="text-white font-medium truncate">
+                    <p className="text-[var(--text-primary)] font-medium truncate">
                       {reps.find((r) => r.id === form.repId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
@@ -1538,32 +1601,44 @@ function NewDealPage() {
                 {form.setterId && (
                   <div>
                     <p className="text-[var(--text-muted)] text-xs mb-0.5">Setter</p>
-                    <p className="text-white font-medium truncate">
+                    <p className="text-[var(--text-primary)] font-medium truncate">
                       {reps.find((r) => r.id === form.setterId)?.name || <span className="text-[var(--text-dim)] italic">—</span>}
                     </p>
                   </div>
                 )}
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Installer</p>
-                  <p className="text-white font-medium truncate">{form.installer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.installer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Financer</p>
-                  <p className="text-white font-medium truncate">{form.financer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium truncate">{form.financer || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">Product Type</p>
-                  <p className="text-white font-medium">{form.productType || <span className="text-[var(--text-dim)] italic">—</span>}</p>
+                  <p className="text-[var(--text-primary)] font-medium">{form.productType || <span className="text-[var(--text-dim)] italic">—</span>}</p>
                 </div>
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
-                  <p className="text-white font-medium">
+                  <p className="text-[var(--text-primary)] font-medium">
                     {kW > 0 ? `${kW.toFixed(1)} kW` : <span className="text-[var(--text-dim)] italic">—</span>}
                     {kW > 0 && soldPPW > 0 && <span className="text-[var(--text-secondary)]"> @ ${soldPPW.toFixed(2)}/W</span>}
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* BVI conditional intake panel — appears when installer = BVI.
+             *  Captures the per-installer fields BVI ops needs and a utility-
+             *  bill upload that gets attached to the handoff email at submit. */}
+            {isBviInstaller && (
+              <BviIntakePanel
+                value={bviIntake}
+                onChange={setBviIntake}
+                utilityBill={utilityBill}
+                onUtilityBillChange={setUtilityBill}
+              />
+            )}
 
             {/* Notes */}
             <div className="transition-all duration-200">
@@ -1587,8 +1662,8 @@ function NewDealPage() {
               <div className="flex items-center justify-between mt-1 mb-4">
                 <p className="text-xs italic text-[var(--text-dim)]">Internal notes only — not visible to customer</p>
                 <p className={`text-xs transition-colors duration-200 ${
-                  form.notes.length >= 500 ? 'text-red-400' :
-                  form.notes.length >= 400 ? 'text-amber-400' :
+                  form.notes.length >= 500 ? 'text-[var(--accent-red-text)]' :
+                  form.notes.length >= 400 ? 'text-[var(--accent-amber-text)]' :
                   'text-[var(--text-muted)]'
                 }`}>
                   {form.notes.length}/500
@@ -1625,8 +1700,8 @@ function NewDealPage() {
                     }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                       form.leadSource === value
-                        ? 'bg-[var(--accent-green)] border-[var(--accent-green)] text-black shadow-[0_0_10px_rgba(0,224,122,0.25)]'
-                        : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-white'
+                        ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_var(--accent-emerald-glow)]'
+                        : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {label}
@@ -1702,7 +1777,7 @@ function NewDealPage() {
               type="button"
               onClick={handleNext}
               className="inline-flex items-center gap-2 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--text-on-accent)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               Next
             </button>
@@ -1714,7 +1789,7 @@ function NewDealPage() {
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-2 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', borderRadius: 10, padding: '9px 20px', color: '#050d18', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 10, padding: '9px 20px', color: 'var(--text-on-accent)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>
@@ -1752,7 +1827,7 @@ function NewDealPage() {
               <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">
                 {form.installer}{kW > 0 ? ` \u00B7 ${kW.toFixed(1)} kW` : ''}
               </span>
-              <span className="text-lg font-black text-[var(--accent-green)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <span className="text-lg font-black text-[var(--accent-emerald-text)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 Est. Commission: ${(isSubDealer ? subDealerCommission : closerTotal).toLocaleString()}
               </span>
             </div>

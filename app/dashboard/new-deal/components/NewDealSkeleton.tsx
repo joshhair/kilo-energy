@@ -15,7 +15,7 @@ export function NewDealSkeleton() {
       {/* Stepper bar skeleton — mirrors the sticky FormStepper (3 steps + connecting lines) */}
       <div
         className="sticky top-[60px] md:top-0 z-20 border-b border-[var(--border-subtle)]/60"
-        style={{ backgroundColor: 'var(--navy-base)' }}
+        style={{ backgroundColor: 'var(--surface-page)' }}
       >
         {/* Desktop stepper (md+): 3 dots connected by 2 lines */}
         <div className="hidden md:flex items-center px-4 md:px-8 py-3 max-w-2xl">

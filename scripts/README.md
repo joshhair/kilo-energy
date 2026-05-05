@@ -35,10 +35,13 @@ state, and (with `--commit`) writes corrections.
   imports (used to gate chargeback generation + reconcile drift scan)
 - `backfill-payroll-roles.mts` — infers correct rep-role on payroll
   entries from surrounding context
-- `backfill-project-expected-formula.mts` — fills M1/M2/M3 for
-  imports using `splitCloserSetterPay`
-- `backfill-project-expected.mts` — older version; use the `-formula`
-  variant unless working with legacy data
+- `backfill-project-expected-formula.mts` — fills M1/M2/M3 for Glide
+  imports where milestones were blank. Skips any project with
+  non-zero existing values.
+- `recompute-stale-commissions.mts` — corrects projects whose stored
+  M1/M2/M3 disagree with the live formula. Used to remediate the
+  Hunter-Helton-class drift from pre-4bdcb54 commits. Dry-run only by
+  default; --apply --commit to write.
 - `backfill-project-paid-flags.mts` — sets `m1Paid/m2Paid/m3Paid`
   boolean flags from PayrollEntry rows
 - `backfill-setter-readd-m1.mts` — creates orphan setter M1 entries
@@ -120,14 +123,14 @@ deletion once the issue has a proper test or runbook.
 - `debug-max-deal.mts` — finds the largest deal for spot-checking.
 - `debug-unresponsive.mts` — locates projects stuck in a phase.
 
-### Orphans / ignored
+### Removed
 
-- `find-timothy.mts` — excluded from typecheck + lint + gitignore'd.
-  References `sqlite3` + `sqlite` packages that aren't in package.json.
-  Kept on disk for historical reference but out of every verification
-  loop. If you need similar investigation: copy the pattern from
-  `check-timothy-salunga.mts` instead (uses Prisma + Turso adapter
+- `find-timothy.mts` — deleted in cleanup PR. Referenced sqlite3 packages
+  not in package.json. If you need similar investigation, copy the
+  pattern from `check-timothy-salunga.mts` (uses Prisma + Turso adapter
   properly).
+- `backfill-project-expected.mts` — deleted in cleanup PR. Superseded
+  by `backfill-project-expected-formula.mts`.
 
 ### Policy
 

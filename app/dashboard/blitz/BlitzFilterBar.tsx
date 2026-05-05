@@ -128,9 +128,9 @@ export function BlitzFilterBar({
               left: sortIndicator.left,
               width: sortIndicator.width,
               transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-              border: '1px solid rgba(0,224,122,0.45)',
-              boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
             }}
           />
         )}
@@ -140,7 +140,7 @@ export function BlitzFilterBar({
             ref={(el) => { sortTabRefs.current[i] = el; }}
             onClick={() => onSort(opt.key)}
             className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-            style={sortBy === opt.key ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
+            style={sortBy === opt.key ? { color: 'var(--text-primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
           >
             {opt.label}
           </button>
@@ -159,9 +159,9 @@ export function BlitzFilterBar({
               left: statusIndicator.left,
               width: statusIndicator.width,
               transition: 'left 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              background: 'linear-gradient(135deg, rgba(0,224,122,0.18), rgba(0,196,240,0.18))',
-              border: '1px solid rgba(0,224,122,0.45)',
-              boxShadow: '0 0 12px rgba(0,224,122,0.12)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
             }}
           />
         )}
@@ -174,11 +174,11 @@ export function BlitzFilterBar({
               ref={(el) => { statusTabRefs.current[i] = el; }}
               onClick={() => onStatusFilter(s)}
               className="relative z-10 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
-              style={isActive ? { color: '#fff', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
+              style={isActive ? { color: 'var(--text-primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}
             >
               {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
               {count > 0 && (
-                <span className="ml-1" style={{ color: isActive ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}>
+                <span className="ml-1" style={{ color: isActive ? 'color-mix(in srgb, var(--text-primary) 60%, transparent)' : 'var(--text-dim)' }}>
                   {count}
                 </span>
               )}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { fmt$, fmtCompact$, formatCompactKW, localDateString } from '../../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
@@ -37,11 +37,16 @@ function getGreeting(name: string): string {
 
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
-const ACCENT = 'var(--m-accent, var(--accent-emerald))';
-const ACCENT2 = 'var(--m-accent2, var(--accent-cyan2))';
-const MUTED = 'var(--m-text-muted, var(--text-mobile-muted))';
-const DIM = 'var(--m-text-dim, #445577)';
-const DANGER = 'var(--m-danger, var(--accent-danger))';
+const ACCENT = 'var(--accent-emerald-solid)';
+const ACCENT2 = 'var(--accent-cyan-solid)';
+const ACCENT_DISP = 'var(--accent-emerald-display)';
+const ACCENT2_DISP = 'var(--accent-cyan-display)';
+const MUTED = 'var(--text-muted)';
+const DIM = 'var(--text-dim)';
+// BIG hero numbers — near-black for max readability on white in light mode.
+// Brand color frames the number via the small uppercase label, not the digit.
+const HERO_NUM = 'var(--text-primary)';
+const DANGER = 'var(--accent-red-solid)';
 
 function relativeTime(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -108,15 +113,29 @@ export default function MobileDashboard() {
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
 
-  useEffect(() => {
-    const idx = PERIODS.findIndex(p => p.value === period);
-    const el = pillRefs.current[idx];
-    if (!el) return;
-    const parent = el.parentElement!;
-    const parentRect = parent.getBoundingClientRect();
-    const rect = el.getBoundingClientRect();
-    setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
-    setPillReady(true);
+  // useLayoutEffect (synchronous, pre-paint) instead of useEffect so the
+  // active-pill highlight is positioned before the user sees the first
+  // frame. With the post-paint useEffect, switching from admin → rep view
+  // (the dashboard component swap in the parent layout) sometimes left
+  // the highlight unset until the user re-tapped a pill — refs were
+  // populated but the effect's measurement hadn't completed before paint.
+  // Layout effect avoids that race. We also re-measure once via rAF in
+  // case fonts/scroll-snap settle on the next frame.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const idx = PERIODS.findIndex(p => p.value === period);
+      const el = pillRefs.current[idx];
+      if (!el) return;
+      const parent = el.parentElement;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
+      setPillReady(true);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
   }, [period]);
 
   useEffect(() => { setStatVersion(v => v + 1); }, [period]);
@@ -535,7 +554,7 @@ export default function MobileDashboard() {
   // ── Sub-dealer dispatch (after all hooks) ─────────────────────────────────
   if (effectiveRole === 'sub-dealer') {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="Dashboard" />
 
         {/* Hero — next payout */}
@@ -543,7 +562,7 @@ export default function MobileDashboard() {
           <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
           <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(pendingPayrollTotal)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? 'Today' : `${nextFridayLabel} \u00b7 ${daysUntilPayday} days`}</p>
-          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="mt-3 h-1.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
             <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, ((7 - daysUntilPayday) / 7) * 100))}%`, background: ACCENT }} />
           </div>
         </MobileCard>
@@ -552,8 +571,16 @@ export default function MobileDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
           <MobileStatCard label="In Pipeline" value={fmt$(pipelineValue)} color={ACCENT2} />
-          <MobileStatCard label="kW Sold" value={formatCompactKW(totalKW)} color="#fff" />
-          <MobileStatCard label="kW Installed" value={formatCompactKW(totalKWInstalled)} color="#fff" />
+          {(() => {
+            const sold = formatCompactKWParts(totalKW);
+            const installed = formatCompactKWParts(totalKWInstalled);
+            return (
+              <>
+                <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color="var(--text-primary)" />
+                <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color="var(--text-primary)" />
+              </>
+            );
+          })()}
           {outstandingChargebacks.length > 0 && (
             <MobileStatCard
               label="Chargebacks"
@@ -568,10 +595,10 @@ export default function MobileDashboard() {
           <MobileSection title="My Tasks" collapsible count={mobileTasks.length}>
             <MobileCard>
               {mobileTasks.map((task, i, arr) => (
-                <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+                <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--border-subtle)' }}>
                   <input type="checkbox" checked={checkedTaskIds.has(task.checkItemId)} onChange={() => handleToggleTask(task.projectId, task.messageId, task.checkItemId, checkedTaskIds.has(task.checkItemId))} className="mt-1 w-5 h-5 rounded cursor-pointer flex-shrink-0" style={{ accentColor: ACCENT }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
+                    <p className="text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
                     <button onClick={() => router.push(`/dashboard/projects/${task.projectId}`)} className="text-left" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{task.projectName}</button>
                     <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>from {task.authorName}</p>
                   </div>
@@ -588,17 +615,17 @@ export default function MobileDashboard() {
           ) : (
             <div className="space-y-2">
               {recentProjects.map((p) => {
-                const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
+                const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-muted)';
                 return (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                     className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
-                    style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid #2a3858', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid #2a3858', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
                     <div className="shrink-0" style={{ width: 4, background: accent }} />
                     <div className="flex-1 min-w-0 px-4 py-3">
-                      <p className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                      <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                       <div className="flex items-center gap-2 mt-1.5">
                         <MobileBadge value={p.phase} />
                         <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
@@ -625,15 +652,15 @@ export default function MobileDashboard() {
       {} as Record<string, number>,
     );
     return (
-      <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+      <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
         <MobilePageHeader title="Dashboard" />
 
         {/* Stat grid — 2x2 */}
         <div className="grid grid-cols-2 gap-3">
           <MobileStatCard label="Active Projects" value={activeProjects.length} color={ACCENT} />
-          <MobileStatCard label="Total Projects" value={myProjects.length} color="#fff" />
-          <MobileStatCard label="Total kW" value={formatCompactKW(totalKWPm)} color={ACCENT2} />
-          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : '#fff'} />
+          <MobileStatCard label="Total Projects" value={myProjects.length} color="var(--text-primary)" />
+          {(() => { const t = formatCompactKWParts(totalKWPm); return (<MobileStatCard label={`Total ${t.unit}`} value={t.value} color={ACCENT2} />); })()}
+          <MobileStatCard label="Flagged" value={flaggedProjects.length} color={flaggedProjects.length > 0 ? DANGER : 'var(--text-primary)'} />
         </div>
 
         {/* Pipeline phase bars */}
@@ -646,10 +673,10 @@ export default function MobileDashboard() {
                 return (
                   <div key={phase} className="flex items-center gap-3 py-2">
                     <span className="w-28 shrink-0" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{phase}</span>
-                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="flex-1 h-1.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }}>
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: ACCENT }} />
                     </div>
-                    <span className="w-8 text-right tabular-nums" style={{ color: '#fff', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
+                    <span className="w-8 text-right tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{count}</span>
                   </div>
                 );
               })}
@@ -666,11 +693,11 @@ export default function MobileDashboard() {
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                   className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < flaggedProjects.length - 1 ? 'border-b' : ''}`}
-                  style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                  style={{ borderColor: 'var(--border-subtle)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                 >
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
-                    <p className="font-semibold text-white truncate flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <p className="font-semibold text-[var(--text-primary)] truncate flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-1 pl-6">
                     <MobileBadge value={p.phase} />
@@ -696,9 +723,9 @@ export default function MobileDashboard() {
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                     className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < arr.length - 1 ? 'border-b' : ''}`}
-                    style={{ borderColor: 'var(--m-border, var(--border-mobile))', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                    style={{ borderColor: 'var(--border-subtle)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
-                    <p className="text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <p className="text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <MobileBadge value={p.phase} />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{relativeTime(p.soldDate)}</span>
@@ -715,9 +742,9 @@ export default function MobileDashboard() {
   // ── Rep layout (full) ─────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-5" style={{ fontFamily: FONT_BODY }}>
+    <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
-      <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '1.5rem', color: '#fff', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
+      <h1 className="truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
@@ -743,7 +770,7 @@ export default function MobileDashboard() {
                 fontFamily: FONT_BODY,
                 color: period === p.value ? '#000' : MUTED,
                 fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--m-border, var(--border-mobile))',
+                border: period === p.value ? 'none' : '1px solid var(--border-subtle)',
                 position: 'relative',
                 zIndex: 1,
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -769,45 +796,47 @@ export default function MobileDashboard() {
       <MobileCard hero>
         {onPaceAnnual > 0 ? (
           <div>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>On Pace For {new Date().getFullYear()}</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT2, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>On Pace For {new Date().getFullYear()}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
               {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
             </p>
             {/* Next Payout — secondary */}
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600 }}>Next Payout</p>
-                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: '#fff' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday}d</span></>}</p>
+                <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>Next Payout</p>
+                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: ACCENT, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
           </div>
         ) : (
           <div>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.25rem' }}>Next Payout</p>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: ACCENT, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: '#fff' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: '#fff' }}>{daysUntilPayday} days</span></>}</p>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday} days</span></>}</p>
           </div>
         )}
 
         {/* Stats inside hero card */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--m-border, var(--border-mobile))' }}>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Paid</p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Paid</p>
           </div>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(animatedPipeline)}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Pipeline</p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Pipeline</p>
           </div>
-          <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{formatCompactKW(periodKW)}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Sold</p>
-          </div>
+          {(() => { const t = formatCompactKWParts(periodKW); return (
+            <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
+              <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{t.value}</p>
+              <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>{t.unit} Sold</p>
+            </div>
+          ); })()}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: '#fff', lineHeight: 1.15 }}>{periodActive.length}</p>
-            <p className="tracking-wide uppercase" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>Active Deals</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{periodActive.length}</p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Active</p>
           </div>
         </div>
       </MobileCard>
@@ -817,7 +846,7 @@ export default function MobileDashboard() {
         <MobileCard>
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-5 h-5" style={{ color: ACCENT }} />
-            <p className="font-semibold text-white" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Needs Attention</p>
+            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Needs Attention</p>
             <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{attentionItems.length}</span>
           </div>
           {attentionItems.map((item, i) => (
@@ -825,13 +854,13 @@ export default function MobileDashboard() {
               key={item.id}
               onClick={() => router.push(`/dashboard/projects/${item.id}`)}
               className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 mobile-list-item ${i < attentionItems.length - 1 ? 'border-b' : ''}`}
-              style={{ borderColor: 'var(--m-border, var(--border-mobile))', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+              style={{ borderColor: 'var(--border-subtle)', animationDelay: `${i * 45}ms`, transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
               {/* Stacked layout — badge + duration-in-phase stayed in the
                   same horizontal band as the customer name before, which
                   caused visual collisions on narrow screens (badge pill
                   sitting under the grey "Xd in Phase" text). 2026-04-23. */}
-              <p className="font-semibold text-white truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
+              <p className="font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
               <div className="flex items-center gap-2 mt-1">
                 <MobileBadge value={item.phase} />
                 <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{item.suffix}</span>
@@ -846,10 +875,10 @@ export default function MobileDashboard() {
         <MobileSection title="My Tasks" collapsible count={mobileTasks.length}>
           <MobileCard>
             {mobileTasks.map((task, i, arr) => (
-              <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--m-border, var(--border-mobile))' }}>
+              <div key={task.checkItemId} className={`flex items-start gap-3 py-3 ${i < arr.length - 1 ? 'border-b' : ''}`} style={{ borderColor: 'var(--border-subtle)' }}>
                 <input type="checkbox" checked={checkedTaskIds.has(task.checkItemId)} onChange={() => handleToggleTask(task.projectId, task.messageId, task.checkItemId, checkedTaskIds.has(task.checkItemId))} className="mt-1 w-5 h-5 rounded cursor-pointer flex-shrink-0" style={{ accentColor: ACCENT }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-white" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
+                  <p className="text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem', fontWeight: 500 }}>{task.text}</p>
                   <button onClick={() => router.push(`/dashboard/projects/${task.projectId}`)} className="text-left" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{task.projectName}</button>
                   <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>from {task.authorName}</p>
                 </div>
@@ -864,15 +893,15 @@ export default function MobileDashboard() {
         <MobileSection title="Recent">
           <div className="space-y-2">
             {recentProjects.map((p, i) => {
-              const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-mobile-muted)';
+              const accent = PHASE_COLORS[p.phase]?.text ?? 'var(--text-muted)';
               return (
                 <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                   className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150 mobile-list-item"
                   style={{
-                    background: 'var(--m-card, var(--surface-mobile-card))',
-                    border: '1px solid #2a3858',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-default)',
                     animationDelay: `${i * 45}ms`,
                     transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
                   }}
@@ -885,7 +914,7 @@ export default function MobileDashboard() {
                       Schauwecker" to clip to 4 chars whenever the badge
                       was wide ("Pending Install"). 2026-04-23. */}
                   <div className="flex-1 min-w-0 px-4 py-3">
-                    <p className="text-white font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                    <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <MobileBadge value={p.phase} />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>

@@ -40,52 +40,88 @@ export function applyStatusFilter(projects: ProjectList, status: StatusFilter) {
 }
 
 export const PHASE_COLORS: Record<string, string> = {
-  'New': 'var(--accent-cyan)',
-  'Acceptance': 'var(--accent-blue)',
-  'Site Survey': '#b47dff',
-  'Design': '#b47dff',
-  'Permitting': 'var(--accent-amber)',
-  'Pending Install': 'var(--accent-amber)',
-  'Installed': '#00d4c8',
-  'PTO': 'var(--accent-green)',
-  'Completed': 'var(--accent-green)',
-  'Cancelled': 'var(--accent-red)',
-  'On Hold': 'var(--accent-amber)',
+  'New': 'var(--accent-cyan-solid)',
+  'Acceptance': 'var(--accent-blue-solid)',
+  'Site Survey': 'var(--accent-purple-solid)',
+  'Design': 'var(--accent-purple-solid)',
+  'Permitting': 'var(--accent-amber-solid)',
+  'Pending Install': 'var(--accent-amber-solid)',
+  'Installed': 'var(--accent-teal-solid)',
+  'PTO': 'var(--accent-emerald-solid)',
+  'Completed': 'var(--accent-emerald-solid)',
+  'Cancelled': 'var(--accent-red-solid)',
+  'On Hold': 'var(--accent-amber-solid)',
 };
 
 export const PHASE_PILL: Record<string, { gradient: string; border: string; shadow: string; text: string; dot: string; hex: string }> = {
-  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_rgba(14,165,233,0.15)]',  text: 'text-sky-300',     dot: 'bg-sky-400',     hex: 'var(--accent-cyan)' },
-  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_rgba(99,102,241,0.15)]',  text: 'text-indigo-300',  dot: 'bg-indigo-400',  hex: 'var(--accent-blue)' },
-  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_rgba(139,92,246,0.15)]',  text: 'text-violet-300',  dot: 'bg-violet-400',  hex: '#b47dff' },
-  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_rgba(217,70,239,0.15)]',  text: 'text-fuchsia-300', dot: 'bg-fuchsia-400', hex: '#b47dff' },
-  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_rgba(245,158,11,0.15)]',  text: 'text-amber-300',   dot: 'bg-amber-400',   hex: 'var(--accent-amber)' },
-  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_rgba(249,115,22,0.15)]',  text: 'text-orange-300',  dot: 'bg-orange-400',  hex: 'var(--accent-amber)' },
-  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_rgba(20,184,166,0.15)]',  text: 'text-teal-300',    dot: 'bg-teal-400',    hex: '#00d4c8' },
-  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]',  text: 'text-emerald-300', dot: 'bg-emerald-400', hex: 'var(--accent-green)' },
-  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_rgba(34,197,94,0.25)]',   text: 'text-green-300',   dot: 'bg-green-400',   hex: 'var(--accent-green)' },
-  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_rgba(239,68,68,0.15)]',   text: 'text-red-300',     dot: 'bg-red-400',     hex: 'var(--accent-red)' },
-  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',   text: 'text-yellow-300',  dot: 'bg-yellow-400',  hex: 'var(--accent-amber)' },
+  'New':             { gradient: 'bg-gradient-to-r from-sky-900/40 to-sky-800/20',         border: 'border-sky-700/30',      shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)]',  text: 'text-[var(--accent-cyan-text)]',     dot: 'bg-sky-400',     hex: 'var(--accent-cyan-solid)' },
+  'Acceptance':      { gradient: 'bg-gradient-to-r from-indigo-900/40 to-indigo-800/20',    border: 'border-indigo-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]',  text: 'text-[var(--accent-blue-text)]',  dot: 'bg-indigo-400',  hex: 'var(--accent-blue-solid)' },
+  'Site Survey':     { gradient: 'bg-gradient-to-r from-violet-900/40 to-violet-800/20',    border: 'border-violet-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)]',  text: 'text-[var(--accent-purple-text)]',  dot: 'bg-violet-400',  hex: 'var(--accent-purple-solid)' },
+  'Design':          { gradient: 'bg-gradient-to-r from-fuchsia-900/40 to-fuchsia-800/20',  border: 'border-fuchsia-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-purple-solid) 15%, transparent)]',  text: 'text-[var(--accent-purple-text)]', dot: 'bg-fuchsia-400', hex: 'var(--accent-purple-solid)' },
+  'Permitting':      { gradient: 'bg-gradient-to-r from-amber-900/40 to-amber-800/20',      border: 'border-amber-700/30',    shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',   dot: 'bg-amber-400',   hex: 'var(--accent-amber-solid)' },
+  'Pending Install': { gradient: 'bg-gradient-to-r from-orange-900/40 to-orange-800/20',    border: 'border-orange-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-orange-400',  hex: 'var(--accent-amber-solid)' },
+  'Installed':       { gradient: 'bg-gradient-to-r from-teal-900/40 to-teal-800/20',        border: 'border-teal-700/30',     shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-teal-solid) 15%, transparent)]',  text: 'text-[var(--accent-teal-text)]',    dot: 'bg-teal-400',    hex: 'var(--accent-teal-solid)' },
+  'PTO':             { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20',  border: 'border-emerald-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]',  text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400', hex: 'var(--accent-emerald-solid)' },
+  'Completed':       { gradient: 'bg-gradient-to-r from-green-900/50 to-green-800/30',      border: 'border-green-600/40',    shadow: 'shadow-[0_0_8px_color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)]',   text: 'text-[var(--accent-emerald-text)]',   dot: 'bg-green-400',   hex: 'var(--accent-emerald-solid)' },
+  'Cancelled':       { gradient: 'bg-gradient-to-r from-red-900/40 to-red-800/20',          border: 'border-red-700/30',      shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-red-solid) 15%, transparent)]',   text: 'text-[var(--accent-red-text)]',     dot: 'bg-red-400',     hex: 'var(--accent-red-solid)' },
+  'On Hold':         { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',    border: 'border-yellow-700/30',   shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',   text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400',  hex: 'var(--accent-amber-solid)' },
 };
 
 /**
- * Badge shown on Kanban cards when a project has been in the pipeline for
- * more than 30 days since the sold date.
+ * Terminal phases never get a stale badge. PTO + Completed are
+ * effectively done from a workflow standpoint; Cancelled / On Hold are
+ * already off-track and the user has explicit signal there. Mirrors
+ * Filter A in the daily stalled-digest cron.
+ */
+const STALE_TERMINAL_PHASES: ReadonlySet<Phase> = new Set([
+  'PTO', 'Completed', 'Cancelled', 'On Hold',
+] as Phase[]);
+
+/**
+ * Badge shown on project cards/rows when a project has been sitting in
+ * its current phase too long.
+ *
+ * Refactored 2026-04-29: now uses `phaseChangedAt` (time-in-current-phase)
+ * with fallback to `soldDate` for legacy rows that pre-date the column.
+ * The per-phase thresholds live in the daily-digest cron — this badge
+ * is a quick-glance, simple-global "30/60 day" signal.
+ *
  *   30–59 days → amber
  *   60+ days   → red
  */
-export function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase: Phase }) {
-  if (!ACTIVE_PHASES.includes(phase) || phase === 'Completed') return null;
-  if (!soldDate) return null;
-  const days = daysSince(soldDate);
+export function StaleBadge({
+  soldDate,
+  phase,
+  phaseChangedAt,
+}: {
+  soldDate: string | null;
+  phase: Phase;
+  phaseChangedAt?: string | Date | null;
+}) {
+  if (!ACTIVE_PHASES.includes(phase)) return null;
+  if (STALE_TERMINAL_PHASES.has(phase)) return null;
+
+  // Prefer phaseChangedAt — captures "stuck in current phase" semantics.
+  // Legacy rows fall back to soldDate (which is what the badge originally
+  // measured before the column was added). daysSince expects ISO date
+  // string `YYYY-MM-DD`, so normalize Dates first.
+  const reference = phaseChangedAt ?? soldDate;
+  if (!reference) return null;
+
+  const referenceIso =
+    typeof reference === 'string'
+      ? reference.slice(0, 10)
+      : reference.toISOString().slice(0, 10);
+  const days = daysSince(referenceIso);
   if (days < 30) return null;
   const isRed = days >= 60;
   return (
     <span
-      title={`${days} days since sold`}
+      title={`${days} days in ${phase}`}
       className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
       style={isRed
-        ? { background: 'rgba(255,82,82,0.15)', color: 'var(--accent-red)', border: '1px solid rgba(255,82,82,0.3)' }
-        : { background: 'rgba(255,176,32,0.15)', color: 'var(--accent-amber)', border: '1px solid rgba(255,176,32,0.3)' }
+        ? { background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }
+        : { background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }
       }
     >
       {days}d

@@ -132,18 +132,18 @@ export default function InstallPrompt() {
         <div className="flex items-start gap-3">
           {/* App icon */}
           <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
-            <span className="text-white font-black text-xl tracking-tighter">K</span>
+            <span className="text-[var(--text-primary)] font-black text-xl tracking-tighter">K</span>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-semibold">
+            <p className="text-[var(--text-primary)] text-sm font-semibold">
               Add Kilo Energy to your home screen
             </p>
             {isIOS ? (
               <p className="text-[var(--text-secondary)] text-xs mt-1 leading-relaxed">
-                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[var(--accent-green)]" /> then{' '}
-                <span className="text-white font-medium">&quot;Add to Home Screen&quot;</span>
+                Tap <Share className="inline w-3.5 h-3.5 -mt-0.5 text-[var(--accent-emerald-text)]" /> then{' '}
+                <span className="text-[var(--text-primary)] font-medium">&quot;Add to Home Screen&quot;</span>
               </p>
             ) : (
               <p className="text-[var(--text-secondary)] text-xs mt-1">
@@ -156,7 +156,7 @@ export default function InstallPrompt() {
           <button
             onClick={dismiss}
             aria-label="Dismiss install prompt"
-            className="flex-shrink-0 text-[var(--text-muted)] hover:text-white transition-colors p-1 -mt-1 -mr-1"
+            className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 -mt-1 -mr-1"
           >
             <X className="w-4 h-4" />
           </button>
@@ -167,7 +167,7 @@ export default function InstallPrompt() {
           <button
             onClick={handleInstall}
             className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
           >
             <Download className="w-4 h-4" />
             Install

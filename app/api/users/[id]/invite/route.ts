@@ -3,6 +3,8 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
+import { logger, errorContext } from '../../../../../lib/logger';
+import { logChange } from '../../../../../lib/audit';
 
 /**
  * POST /api/users/[id]/invite — Idempotent send/resend of a Clerk invitation
@@ -63,7 +65,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const items = Array.isArray(list) ? list : list?.data ?? [];
     const pending = items.filter((i) => i.emailAddress.toLowerCase() === user.email.toLowerCase());
     for (const inv of pending) {
-      await client.invitations.revokeInvitation(inv.id).catch(() => {});
+      await client.invitations.revokeInvitation(inv.id).catch((err) => {
+        logger.warn('clerk_revoke_invitation_individual_failed', {
+          userId: id, op: 'invite_resend', invitationId: inv.id, ...errorContext(err),
+        });
+      });
     }
 
     // Create a fresh invitation. Origin derived from the request so dev
@@ -77,6 +83,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         role: user.role,
       },
       notify: true,
+    });
+
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'user_invite_resend',
+      entityType: 'AdminInvitation',
+      entityId: user.id,
+      detail: {
+        invitedEmail: user.email,
+        role: user.role,
+        clerkInvitationId: invitation.id,
+        revokedCount: pending.length,
+      },
     });
 
     return NextResponse.json({

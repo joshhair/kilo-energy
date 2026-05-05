@@ -27,10 +27,10 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
     <div className="card-surface rounded-2xl p-5 mb-8 animate-slide-in-scale" style={{ animationDelay: 'var(--podium-delay, 300ms)' }}>
       <div className="h-[3px] w-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 mb-3" />
       <div className="flex items-center gap-2 mb-5">
-        <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(234,179,8,0.15)' }}>
-          <Trophy className="w-4 h-4 text-yellow-400" />
+        <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)' }}>
+          <Trophy className="w-4 h-4 text-[var(--accent-amber-text)]" />
         </div>
-        <h2 className="text-white font-bold text-base tracking-tight">Top Performers</h2>
+        <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight">Top Performers</h2>
       </div>
 
       <div className="flex items-end justify-center gap-3">
@@ -46,22 +46,22 @@ export function TopPerformersPodium({ entries }: { entries: PodiumEntry[] }) {
             >
               <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${gradient}${isFirst ? ' animate-podium-glow' : ''}`} />
 
-              {isFirst && <Award className="w-4 h-4 text-yellow-400" />}
+              {isFirst && <Award className="w-4 h-4 text-[var(--accent-amber-text)]" />}
 
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} p-[2px] flex-shrink-0`}>
                 <div
-                  className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: 'var(--navy-card)' }}
+                  className="w-full h-full rounded-full flex items-center justify-center text-[var(--text-primary)] font-bold text-lg"
+                  style={{ backgroundColor: 'var(--surface-pressed)' }}
                 >
                   {initials}
                 </div>
               </div>
 
-              <div className={`text-[10px] font-black text-white px-2 py-0.5 rounded-full bg-gradient-to-br ${gradient}`}>
+              <div className={`text-[10px] font-black text-[var(--text-primary)] px-2 py-0.5 rounded-full bg-gradient-to-br ${gradient}`}>
                 #{rank}
               </div>
 
-              <p className="font-bold text-white text-sm text-center leading-tight">{rep.name}</p>
+              <p className="font-bold text-[var(--text-primary)] text-sm text-center leading-tight">{rep.name}</p>
 
               <p className="text-gradient-brand font-black text-sm">${paid.toLocaleString()}</p>
             </div>

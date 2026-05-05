@@ -75,7 +75,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
     <div className="space-y-3">
       {/* Sort pills */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-        <ArrowUpDown className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--m-text-dim, #445577)' }} />
+        <ArrowUpDown className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-dim)' }} />
         {sortOptions.map((opt) => {
           const active = sort.key === opt.key;
           return (
@@ -84,9 +84,9 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
               onClick={() => cycleSort(opt.key)}
               className="text-xs font-semibold rounded-full px-3 py-1 shrink-0 transition-colors"
               style={{
-                color: active ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                background: active ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                border: `1px solid ${active ? 'var(--accent-emerald)' : 'var(--m-border, var(--border-mobile))'}`,
+                color: active ? '#000' : 'var(--text-muted)',
+                background: active ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                border: `1px solid ${active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -96,7 +96,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
         })}
       </div>
 
-      <div className="rounded-2xl divide-y" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', borderColor: 'var(--m-border, var(--border-mobile))' }}>
+      <div className="rounded-2xl divide-y" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderColor: 'var(--border-subtle)' }}>
         {sorted.map((p) => {
           const closerName = p.closer ? `${p.closer.firstName} ${p.closer.lastName}` : '—';
           const role = (!isAdmin && !isOwner && effectiveRepId)
@@ -113,9 +113,9 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
                 </div>
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   {closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W{role ? ` · ${role}` : ''}
                 </p>
                 <div className="mt-1">
@@ -124,8 +124,8 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
               </div>
               {showPayout && payout > 0 && (
                 <div className="text-right shrink-0">
-                  <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Payout</p>
-                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Payout</p>
+                  <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(Math.round(payout))}</p>
                 </div>
               )}
             </button>

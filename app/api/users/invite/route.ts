@@ -5,6 +5,8 @@ import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { createUserInviteSchema } from '../../../../lib/schemas/business';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
+import { logger, errorContext } from '../../../../lib/logger';
+import { logChange } from '../../../../lib/audit';
 
 /**
  * POST /api/users/invite — Admin creates a new internal user AND sends
@@ -38,13 +40,22 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseJsonBody(req, createUserInviteSchema);
   if (!parsed.ok) return parsed.response;
-  const { firstName, lastName, email, phone, role, repType } = parsed.data;
+  const { firstName, lastName, email, phone, role, repType, scopedInstallerId } = parsed.data;
 
   // Refuse if an internal user with this email already exists
   const existing = await prisma.user.findFirst({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 });
   }
+
+  // Vendor-PM scope only applies to project_manager role. Coerce empty
+  // string from the form layer to null so the privacy gate's "scoped
+  // when set" check works correctly — empty-string is truthy in JS and
+  // would silently route through the unscoped branch otherwise.
+  const effectiveScopedInstallerId =
+    role === 'project_manager' && scopedInstallerId && scopedInstallerId.length > 0
+      ? scopedInstallerId
+      : null;
 
   // 1. Create the internal User record first so we can stash its id in
   //    the Clerk invitation metadata. active=true so they can log in
@@ -58,6 +69,7 @@ export async function POST(req: NextRequest) {
       role,
       repType,
       active: true,
+      scopedInstallerId: effectiveScopedInstallerId,
     },
   });
 
@@ -75,6 +87,20 @@ export async function POST(req: NextRequest) {
         role,
       },
       notify: true,
+    });
+
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'user_invite',
+      entityType: 'AdminInvitation',
+      entityId: user.id,
+      detail: {
+        invitedEmail: user.email,
+        role: user.role,
+        repType: user.repType,
+        scopedInstallerId: user.scopedInstallerId,
+        clerkInvitationId: invitation.id,
+      },
     });
 
     return NextResponse.json(
@@ -97,8 +123,17 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (err: unknown) {
-    // Roll back the internal user if the Clerk invitation fails
-    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    // Roll back the internal user if the Clerk invitation fails. If the
+    // rollback itself fails, surface BOTH errors — the orphaned user row
+    // is recoverable but admin needs to know to clean it up manually.
+    logger.error('user_invite_failed', { userId: user.id, ...errorContext(err) });
+    await prisma.user.delete({ where: { id: user.id } }).catch((rollbackErr) => {
+      logger.error('user_invite_rollback_failed', {
+        userId: user.id,
+        originalError: errorContext(err),
+        rollbackError: errorContext(rollbackErr),
+      });
+    });
     const message = err instanceof Error ? err.message : 'Unknown error sending invitation';
     return NextResponse.json({ error: `Invitation failed: ${message}` }, { status: 500 });
   }

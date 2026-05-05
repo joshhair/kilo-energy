@@ -160,6 +160,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Per-project trainer override — nullable FK + nullable rate.
   if (body.trainerId !== undefined) data.trainerId = body.trainerId || null;
   if (body.trainerRate !== undefined) data.trainerRate = body.trainerRate ?? null;
+  // Admin's "remove all trainers from this deal" flag — suppresses chain
+  // trainer visibility + commission. Only set explicitly by the project
+  // sheet's Clear button; defaults false on new projects.
+  if (body.noChainTrainer !== undefined) data.noChainTrainer = body.noChainTrainer;
 
   // FK resolution: installer/financer name → ID
   if (body.installer !== undefined) {
@@ -370,6 +374,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         baselineOverride: effectiveBaselineOverride,
         trainerId: body.trainerId !== undefined ? (body.trainerId || null) : current.trainerId,
         trainerRate: body.trainerRate !== undefined ? (body.trainerRate ?? null) : current.trainerRate,
+        noChainTrainer: body.noChainTrainer !== undefined ? body.noChainTrainer : current.noChainTrainer,
         additionalClosers: effectiveAdditionalClosers,
         additionalSetters: effectiveAdditionalSetters,
       },

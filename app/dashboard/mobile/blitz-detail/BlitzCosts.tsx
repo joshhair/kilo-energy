@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, DollarSign, Loader2 } from 'lucide-react';
 import MobileEmptyState from '../shared/MobileEmptyState';
 import MobileBottomSheet from '../shared/MobileBottomSheet';
@@ -32,6 +32,11 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
   const [amount, setAmount] = useState('');
   const [desc, setDesc] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  useEffect(() => {
+    if (!showAdd) return;
+    setDate(new Date().toISOString().split('T')[0]);
+  }, [showAdd]);
+
   const [adding, setAdding] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -74,7 +79,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
       <button
         onClick={() => setShowAdd(true)}
         className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-        style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
         <Plus className="w-4 h-4" /> Add Cost
       </button>
@@ -87,23 +92,23 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             <div
               key={c.id}
               className="flex items-center justify-between min-h-[48px] py-3 last:border-b-0 animate-info-row-enter"
-              style={{ borderBottom: '1px solid var(--m-border, var(--border-mobile))', animationDelay: `${index * 35}ms` }}
+              style={{ borderBottom: '1px solid var(--border-subtle)', animationDelay: `${index * 35}ms` }}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold capitalize" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{c.category}</span>
+                  <span className="text-base font-semibold capitalize" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{c.category}</span>
                   {c.description && (
-                    <span className="text-base truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>&middot; {c.description}</span>
+                    <span className="text-base truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>&middot; {c.description}</span>
                   )}
                 </div>
-                <p className="text-base mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatDate(c.date)}</p>
+                <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{formatDate(c.date)}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-3">
-                <span className="text-lg font-bold text-white tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
+                <span className="text-lg font-bold text-[var(--text-primary)] tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(c.amount)}</span>
                 <button
                   onClick={() => setConfirmDeleteId(c.id)}
                   className="p-2 active:opacity-70 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -111,8 +116,8 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             </div>
           ))}
           <div className="flex items-center justify-between pt-3">
-            <span className="text-base font-semibold" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total</span>
-            <span className="text-lg font-bold text-white" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(total)}</span>
+            <span className="text-base font-semibold" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total</span>
+            <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCurrency(total)}</span>
           </div>
         </div>
       )}
@@ -130,16 +135,16 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
       <MobileBottomSheet open={showAdd} onClose={() => setShowAdd(false)} title="Add Cost">
         <div className="px-5 space-y-4">
           <div>
-            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
+            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             >
               {COST_CATEGORIES.map((c) => (
@@ -148,48 +153,48 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
+            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Description</label>
+            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Description</label>
             <input
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="Optional"
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
+            <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 text-base text-white min-h-[48px] focus:outline-none focus:ring-1"
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={{
-                background: 'var(--m-card, var(--surface-mobile-card))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                '--tw-ring-color': 'var(--accent-emerald)',
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
               } as React.CSSProperties}
             />
           </div>
@@ -198,8 +203,8 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             disabled={adding || !amount}
             className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan2))',
-              boxShadow: '0 0 20px rgba(0,229,160,0.3)',
+              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+              boxShadow: '0 0 20px var(--accent-emerald-glow)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

@@ -63,10 +63,10 @@ export function SubDealerDashboard({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
-    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[var(--accent-green)]', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-purple-400', accentGradient: 'from-purple-500 to-purple-400' },
-    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-yellow-400', accentGradient: 'from-yellow-500 to-yellow-400' },
-    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[var(--accent-green)]', accentGradient: 'from-emerald-500 to-emerald-400' },
+    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-blue-500 to-blue-400' },
+    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-[var(--accent-purple-text)]', accentGradient: 'from-purple-500 to-purple-400' },
+    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-[var(--accent-amber-text)]', accentGradient: 'from-yellow-500 to-yellow-400' },
+    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 
   return (
@@ -104,7 +104,7 @@ export function SubDealerDashboard({
               ref={(el) => { periodTabRefs.current[i] = el; }}
               onClick={() => setPeriod(p.value)}
               className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-                period === p.value ? 'text-black font-bold' : 'text-[var(--text-secondary)] hover:text-white'
+                period === p.value ? 'text-black font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.label}
@@ -161,12 +161,12 @@ export function SubDealerDashboard({
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-              <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-                <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+              <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               </div>
-              <h2 className="text-white font-bold tracking-tight text-base">Pipeline Overview</h2>
+              <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Pipeline Overview</h2>
             </div>
-            <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+            <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
               View All &rarr;
             </Link>
           </div>
@@ -182,12 +182,12 @@ export function SubDealerDashboard({
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
-            <div className="p-1.5 rounded-lg bg-[var(--accent-green)]/15">
-              <FolderKanban className="w-4 h-4 text-[var(--accent-green)]" />
+            <div className="p-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+              <FolderKanban className="w-4 h-4 text-[var(--accent-emerald-text)]" />
             </div>
-            <h2 className="text-white font-bold tracking-tight text-base">Recent Projects</h2>
+            <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base">Recent Projects</h2>
           </div>
-          <Link href="/dashboard/projects" className="text-[var(--accent-green)] hover:text-[var(--accent-cyan)] text-xs transition-colors">
+          <Link href="/dashboard/projects" className="text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-xs transition-colors">
             View All &rarr;
           </Link>
         </div>
@@ -198,7 +198,7 @@ export function SubDealerDashboard({
               <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                 <FolderKanban className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No projects yet</p>
+              <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No projects yet</p>
               <p className="text-[var(--text-muted)] text-xs mb-4">Submit your first deal to see it here</p>
               <Link
                 href="/dashboard/new-deal"
@@ -234,10 +234,10 @@ export function SubDealerDashboard({
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[var(--accent-green)]/[0.03] transition-colors">
+                  <div className="px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-white font-medium text-sm truncate group-hover:text-[var(--accent-cyan)] transition-colors">{proj.customerName}</span>
+                        <span className="text-[var(--text-primary)] font-medium text-sm truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
                       <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>
@@ -245,7 +245,7 @@ export function SubDealerDashboard({
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-[var(--text-muted)]">{proj.kWSize} kW</span>
                       <span className="text-[var(--text-dim)]">&middot;</span>
-                      <span className="text-[var(--accent-green)] font-semibold">${estPay.toLocaleString()}</span>
+                      <span className="text-[var(--accent-emerald-text)] font-semibold">${estPay.toLocaleString()}</span>
                       <div className="flex items-center gap-2.5 ml-auto">
                         {proj.setterId === currentRepId ? (
                           <>

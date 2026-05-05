@@ -25,9 +25,9 @@ export default function MobileSection({
 
   const headerContent = (
     <div className="flex items-center gap-2">
-      <h2 className="tracking-widest uppercase" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 500 }}>{title}</h2>
+      <h2 className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 500 }}>{title}</h2>
       {count !== undefined && (
-        <span className="px-2 py-0.5 rounded-full text-base" style={{ background: 'rgba(0,229,160,0.1)', color: 'var(--m-accent, var(--accent-emerald))', fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>
+        <span className="px-2 py-0.5 rounded-full text-base" style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>
       )}
     </div>
   );
@@ -45,7 +45,7 @@ export default function MobileSection({
           <ChevronDown
             className="w-5 h-5 motion-safe:transition-transform"
             style={{
-              color: 'var(--m-text-dim, #445577)',
+              color: 'var(--text-dim)',
               transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
               transitionDuration: '220ms',
               transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',

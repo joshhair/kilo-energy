@@ -22,6 +22,36 @@ export function isVendorPM(user: Pick<InternalUser, 'role' | 'scopedInstallerId'
 }
 
 /**
+ * Default-deny gate for project_manager users without an installer scope.
+ *
+ * Background: a PM with `scopedInstallerId = null` is treated as an
+ * "internal PM" (full access to everything). That's the right behavior
+ * for one or two real ops admins, but it's a massive privacy hole if a
+ * VENDOR PM (e.g. Joe Dale, BVI) is created or edited and the scope
+ * is silently left null — they end up seeing every project in the org.
+ *
+ * Mitigation: explicit allowlist via env. Only emails listed here are
+ * permitted to act as unscoped internal PMs. Every other PM without a
+ * scope gets treated as `role = 'none'` (no project access).
+ *
+ * INTERNAL_PM_EMAILS=alice@kilo.com,bob@kilo.com
+ *
+ * Truly internal PMs are rare; vendor PMs are the common case. Default-
+ * deny here means an admin who forgets to set the installer scope can't
+ * accidentally hand a vendor full org-wide access.
+ */
+const INTERNAL_PM_EMAILS = (process.env.INTERNAL_PM_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isInternalPM(user: Pick<InternalUser, 'role' | 'email' | 'scopedInstallerId'>): boolean {
+  if (user.role !== 'project_manager') return false;
+  if (user.scopedInstallerId) return false; // they're a vendor PM
+  return INTERNAL_PM_EMAILS.includes((user.email ?? '').toLowerCase());
+}
+
+/**
  * Get the current authenticated user's internal record (with role) from the
  * database, mapped via their Clerk email. Returns null if not authenticated
  * or not found. Use this for server-side role/ownership checks.
@@ -99,10 +129,17 @@ export async function userCanAccessProject(
     });
     return !!p && p.installerId === user.scopedInstallerId;
   }
-  if (user.role === 'project_manager') return true;
+  // Internal PM (full access): only if email is on the env allowlist.
+  // PMs without a scope AND not on the allowlist default-deny — protects
+  // against a vendor PM accidentally created without an installer scope
+  // ending up with org-wide visibility.
+  if (user.role === 'project_manager') {
+    if (isInternalPM(user)) return true;
+    return false;
+  }
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+    select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, noChainTrainer: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
   });
   if (!project) return false;
 
@@ -110,16 +147,20 @@ export async function userCanAccessProject(
   // to verify their own override amount. Two ways a user qualifies:
   //   1. Per-project trainer override (project.trainerId === user.id)
   //   2. Rep-chain trainer: active TrainerAssignment where this user is
-  //      the trainer and the project's closer is the trainee.
+  //      the trainer and the project's closer is the trainee — UNLESS
+  //      admin explicitly suppressed the chain trainer for this project
+  //      via the project sheet's Clear button (project.noChainTrainer = true).
   // Note: this is purely for access; what they *see* once inside is scrubbed
   // by the field-visibility matrix (trainer relationship), which hides
   // closer/setter commission and kiloMargin.
   if (project.trainerId === user.id) return true;
-  const chainTrainer = await prisma.trainerAssignment.findFirst({
-    where: { trainerId: user.id, traineeId: project.closerId, active: true },
-    select: { id: true },
-  });
-  if (chainTrainer) return true;
+  if (!project.noChainTrainer) {
+    const chainTrainer = await prisma.trainerAssignment.findFirst({
+      where: { trainerId: user.id, traineeId: project.closerId, active: true },
+      select: { id: true },
+    });
+    if (chainTrainer) return true;
+  }
 
   if (user.role === 'rep') {
     if (project.closerId === user.id || project.setterId === user.id) return true;

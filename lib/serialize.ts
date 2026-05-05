@@ -226,6 +226,7 @@ interface ScrubbableProjectDTO {
   trainerId?: string | null;
   trainerName?: string | null;
   trainerRate?: number | null;
+  noChainTrainer?: boolean;
   additionalClosers?: ReadonlyArray<SerializedProjectParty>;
   additionalSetters?: ReadonlyArray<SerializedProjectParty>;
   // Future (Batch 2): kiloMargin?: number; kiloRevenue?: number;

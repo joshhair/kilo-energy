@@ -6,6 +6,7 @@ import { patchPayrollEntrySchema } from '../../../../lib/schemas/pricing';
 import { REP_PUBLIC_SELECT } from '../../../../lib/redact';
 import { serializePayrollEntry, dollarsToCents } from '../../../../lib/serialize';
 import { logger } from '../../../../lib/logger';
+import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
 
 // PATCH /api/payroll/[id] — Update a single payroll entry (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -75,6 +76,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.date !== undefined) data.date = body.date;
   if (body.notes !== undefined) data.notes = body.notes;
 
+  const before = await prisma.payrollEntry.findUnique({ where: { id } });
   const entry = await prisma.payrollEntry.update({
     where: { id },
     data,
@@ -85,6 +87,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     actorId: actor.id,
     fieldsChanged: Object.keys(data),
     newStatus: entry.status,
+  });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'payroll_entry_update',
+    entityType: 'PayrollEntry',
+    entityId: id,
+    before: before ?? undefined, after: entry,
+    fields: AUDITED_FIELDS.PayrollEntry,
   });
   return NextResponse.json(serializePayrollEntry(entry));
 }
@@ -107,7 +117,17 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
   }
 
+  const before = await prisma.payrollEntry.findUnique({ where: { id } });
   await prisma.payrollEntry.delete({ where: { id } });
   logger.info('payroll_deleted', { entryId: id, actorId: actor.id, actorRole: actor.role });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'payroll_entry_delete',
+    entityType: 'PayrollEntry',
+    entityId: id,
+    detail: before
+      ? { repId: before.repId, projectId: before.projectId, status: before.status, amountCents: before.amountCents, paymentStage: before.paymentStage }
+      : { id },
+  });
   return NextResponse.json({ success: true });
 }

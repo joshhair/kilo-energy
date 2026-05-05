@@ -3,14 +3,14 @@
 export default function MobileStatCard({
   label,
   value,
-  color = '#fff',
+  color = 'var(--text-primary)',
 }: {
   label: string;
   value: string | number;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+    <div className="rounded-xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
       <p
         className="font-bold tabular-nums break-words leading-tight"
         style={{
@@ -26,7 +26,7 @@ export default function MobileStatCard({
       </p>
       <p
         className="mt-1.5 tracking-wide uppercase truncate"
-        style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}
+        style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}
       >
         {label}
       </p>

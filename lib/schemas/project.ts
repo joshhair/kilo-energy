@@ -64,6 +64,15 @@ export const createProjectSchema = z.object({
   /// thousands of rows would blow up the createMany batch.
   additionalClosers: z.array(additionalPartySchema).max(10).optional(),
   additionalSetters: z.array(additionalPartySchema).max(10).optional(),
+
+  /// Per-installer intake JSON. Shape depends on the installer (BVI vs
+  /// future Lumio/Sunova/etc.) — typed at lib/installer-intakes/<slug>.ts.
+  /// Stored as JSON string on Project.installerIntakeJson. Server doesn't
+  /// validate the shape here (it would need per-installer dispatch); the
+  /// PDF renderer + downstream consumers parse defensively via
+  /// `parseBviIntake()` which falls back to EMPTY_BVI_INTAKE on bad data.
+  /// Hard length cap to prevent abuse.
+  installerIntakeJson: z.string().max(20000).optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
@@ -120,5 +129,8 @@ export const patchProjectSchema = z.object({
   // null to clear.
   trainerId:   optionalId,
   trainerRate: finiteNumber.min(0).max(5).nullable().optional(),
+  // Admin's "remove all trainers from this deal" flag. true suppresses the
+  // chain-trainee visibility + chain commission for this project.
+  noChainTrainer: z.boolean().optional(),
 }).strict();
 export type PatchProjectInput = z.infer<typeof patchProjectSchema>;

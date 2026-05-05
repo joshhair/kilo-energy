@@ -2,70 +2,302 @@
 @import "tailwindcss";
 
 :root {
-  /* Tell the browser this app is dark. Without this, native UI (<select>
-     option lists, scrollbars, form autofill, date pickers) renders in the
-     OS default scheme — on Windows that's a light-mode overlay on our dark
-     surfaces, producing unreadable light-on-light dropdowns. */
+  /* Tell the browser this app is dark by default. Native UI (<select>
+     options, scrollbars, autofill) follows this. The [data-theme="light"]
+     block below overrides to light when the user opts in via Settings. */
   color-scheme: dark;
 
-  /* ── Brand ──────────────────────────────────────────────────────────────── */
-  --brand: #00e07a;
-  --brand-light: #00c4f0;
-  --brand-dark: #00b868;
+  /* ═══════════════════════════════════════════════════════════════════════
+     CANONICAL TOKENS — see docs/design-tokens.md
+     The single source of truth. Every styled surface must reference these.
+     Light-mode values appear under [data-theme="light"] at the bottom of
+     this :root group.
+     ═══════════════════════════════════════════════════════════════════════ */
 
-  /* ── Surfaces ───────────────────────────────────────────────────────────── */
-  --surface-base: #0b0d11;
-  --surface-deep: #0f1117;
-  --surface: #161920;
-  --surface-card: #1d2028;
-  --surface-mobile-base: #060b13;
-  --surface-mobile-card: #0d1525;
+  /* ── Surface (5) ────────────────────────────────────────────────────── */
+  --surface-page: #050d18;
+  --surface-card: #161920;
+  --surface-elevated: #1d2028;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-pressed: #0d1525;
 
-  /* ── Text ────────────────────────────────────────────────────────────────── */
+  /* ── Text (4) ───────────────────────────────────────────────────────── */
   --text-primary: #f0f2f7;
   --text-secondary: #c2c8d8;
-  --text-muted: #8891a8;
-  --text-dim: #525c72;
-  --text-mobile-muted: #8899aa;
-  --text-mobile-dim: #445577;
+  --text-muted: #8899aa;       /* unified from #8891a8/#8899aa */
+  --text-dim: #7a86a0;          /* tuned to ≥4.5:1 on surface-card+page (was #445577 → 2.35:1, failed AA) */
 
-  /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --border: #272b35;
-  --border-subtle: #333849;
-  --border-mobile: #1a2840;
+  /* ── Border (3) ─────────────────────────────────────────────────────── */
+  --border-default: #272b35;
+  --border-subtle: #1a2840;
+  --border-strong: #334155;
 
-  /* ── Accents ─────────────────────────────────────────────────────────────── */
-  --accent-green: #00e07a;
-  --accent-emerald: #00e5a0;
-  --accent-cyan: #00c4f0;
-  --accent-cyan2: #00b4d8;
-  --accent-amber: #ffb020;
-  --accent-red: #ff5252;
-  --accent-blue: #4d9fff;
-  --accent-purple: #b47dff;
-  --accent-teal: #00d4c8;
-  --accent-danger: #ff6b6b;
-  --accent-warning: #f5a623;
+  /* ── Accent — 7 colors × 4 variants (28 tokens) ─────────────────────── */
+  /* solid: button bg / glow source. soft: tinted bg fill. glow: shadow.
+     text: foreground readable on a soft-tinted surface. In dark mode
+     -text equals -solid (same color reads fine on dark). In light mode
+     -text shifts to a darker, more saturated variant so contrast on
+     near-white backgrounds clears WCAG. */
+  --accent-emerald-solid: #00e5a0;
+  --accent-emerald-soft: rgba(0, 229, 160, 0.10);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.30);
+  --accent-emerald-text: #00e5a0;
+  /* -display: punchy, saturated value tuned for large hero stats. In dark
+     mode = solid (already vivid on navy). In light mode it's deeper than
+     -text so it pops on white cards while passing 3:1 large-text. */
+  --accent-emerald-display: #00e5a0;
 
-  /* ── Legacy aliases (match existing --d-* / --m-* references) ───────────── */
-  --d-surface: var(--surface);
-  --d-card: var(--surface-card);
-  --d-border: var(--border);
-  --d-border2: var(--border-subtle);
-  --d-text: var(--text-primary);
-  --d-sub: var(--text-secondary);
-  --d-muted: var(--text-muted);
-  --d-dim: var(--text-dim);
-  --d-green: var(--accent-green);
-  --d-cyan: var(--accent-cyan);
-  --d-amber: var(--accent-amber);
-  --d-red: var(--accent-red);
-  --d-blue: var(--accent-blue);
-  --d-purple: var(--accent-purple);
-  --d-teal: var(--accent-teal);
-  --navy-base: var(--surface-base);
-  --navy-card: var(--surface-deep);
-  --navy-hover: var(--surface-card);
+  --accent-cyan-solid: #00b4d8;
+  --accent-cyan-soft: rgba(0, 180, 216, 0.10);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+  --accent-cyan-text: #00b4d8;
+  --accent-cyan-display: #00b4d8;
+
+  --accent-blue-solid: #4d9fff;
+  --accent-blue-soft: rgba(77, 159, 255, 0.10);
+  --accent-blue-glow: rgba(77, 159, 255, 0.30);
+  --accent-blue-text: #4d9fff;
+  --accent-blue-display: #4d9fff;
+
+  --accent-red-solid: #ef4444;
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.30);
+  --accent-red-text: #f87171;  /* lifted from #ef4444 to clear AA on red-soft (was 4.03:1) */
+  --accent-red-display: #f87171;
+
+  --accent-amber-solid: #f5a623;
+  --accent-amber-soft: rgba(245, 166, 35, 0.10);
+  --accent-amber-glow: rgba(245, 166, 35, 0.30);
+  --accent-amber-text: #f5a623;
+  --accent-amber-display: #f5a623;
+
+  /* Gold — decorative-only (trophies, leaderboard ranks, achievement
+     badges). Distinct from amber, which is reserved for paused/warning
+     state semantics. Use --accent-gold-text for icons; in light mode it
+     darkens to a still-gold-feeling brown for ≥4.5:1 contrast on white. */
+  --accent-gold-text: #fbbf24;
+
+  --accent-purple-solid: #b47dff;
+  --accent-purple-soft: rgba(180, 125, 255, 0.10);
+  --accent-purple-glow: rgba(180, 125, 255, 0.30);
+  --accent-purple-text: #b47dff;
+  --accent-purple-display: #b47dff;
+
+  --accent-teal-solid: #00d4c8;
+  --accent-teal-soft: rgba(0, 212, 200, 0.10);
+  --accent-teal-glow: rgba(0, 212, 200, 0.30);
+  --accent-teal-text: #00d4c8;
+  --accent-teal-display: #00d4c8;
+
+  /* ── Special-purpose (kept hard-coded by design) ────────────────────── */
+  --text-on-accent: #000;       /* black text on solid accent buttons */
+  --brand-mark: #00e07a;         /* registered "kilo green" — wordmark only */
+
+  /* ── Inset surfaces ──────────────────────────────────────────────────────
+     Subtle / strong "well" backgrounds for nested sections, divider
+     blocks, hover states. The 4-7% color-mix surfaces that were
+     previously inlined throughout mobile pages were invisible against
+     light-mode --surface-card (#fff). These tokens use a higher base
+     percentage tuned for visibility in BOTH modes:
+       subtle = section dividers, hover wells, disabled inputs
+       strong = inline notes, expanded action strips, chip backdrops */
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 12%, transparent);
+
+  /* ── Legacy mobile aliases ──────────────────────────────────────────────
+     A handful of mobile-only components (BottomNav, MobileRepDetail)
+     still reference the pre-tokenization --*-mobile
+     family. Phase 3 removed the dark-mode fallbacks but missed a few
+     callsites, so var(--surface-mobile-card) was resolving to
+     unset/transparent — visible as see-through More sheets and
+     transparent bottom-nav strip. These aliases route the legacy
+     names back into the canonical token vocabulary so both themes
+     work without touching the components themselves. */
+  --surface-mobile-page: var(--surface-page);
+  --surface-mobile-card: var(--surface-card);
+  --surface-mobile-elevated: var(--surface-elevated);
+  --border-mobile: var(--border-default);
+  --text-mobile-muted: var(--text-muted);
+  --text-mobile-dim: var(--text-dim);
+
+  /* ── Legacy bare aliases ──────────────────────────────────────────────
+     `var(--border)`, `var(--surface)`, `var(--brand)` were used in
+     ~640 callsites pre-tokenization but were never defined as tokens —
+     they silently resolved to transparent / currentColor / nothing.
+     Aliasing them to the canonical names fixes every callsite at once
+     without a 640-file sweep, and they cascade through the theme
+     scopes automatically. */
+  --border:  var(--border-default);
+  --surface: var(--surface-card);
+  --brand:   var(--accent-emerald-solid);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — activated by <html data-theme="light">
+   Only redefines the canonical tokens. Legacy aliases above resolve via
+   var() so they cascade automatically.
+   ═════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Page sits a notch darker than before (#f7f8fb → #eaeef4) so the
+     pure-white surface-card has somewhere to elevate against. Without
+     this, cards-on-page contrast was ~1.04:1, which made every white
+     card visually shout while borders/text felt washed out. */
+  --surface-page: #eaeef4;
+  --surface-card: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.40);
+  --surface-pressed: #dde2ec;
+
+  /* Light-mode text ramp tuned for WCAG AA on #ffffff and #f7f8fb.
+     Each step is ≥4.5:1 so even the dim tier (used for tertiary
+     captions, helper text, footnotes) stays legible. Old ramp had
+     #8a93a5 at ~3.0:1 which failed AA — common offender on mobile. */
+  --text-primary: #0a0e1a;     /* ~19.2:1  */
+  --text-secondary: #232b3d;   /* ~13.5:1  */
+  --text-muted: #45506a;       /* ~7.5:1   */
+  --text-dim: #606b82;         /* ~4.8:1   */
+
+  --border-default: #d2d8e3;
+  --border-subtle: #e3e7ef;
+  --border-strong: #7c8696;  /* darkened from #98a2b3 to clear 3:1 on white (was 2.58:1) */
+
+  /* Accent solids stay identical across themes — emerald is emerald.
+     Only the soft / glow alpha forms shift to compensate for the
+     higher-contrast light bg. */
+  --accent-emerald-soft: rgba(0, 229, 160, 0.14);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.20);
+  --accent-cyan-soft: rgba(0, 180, 216, 0.14);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.20);
+  --accent-blue-soft: rgba(77, 159, 255, 0.14);
+  --accent-blue-glow: rgba(77, 159, 255, 0.20);
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.20);
+  --accent-amber-soft: rgba(245, 166, 35, 0.14);
+  --accent-amber-glow: rgba(245, 166, 35, 0.20);
+  --accent-purple-soft: rgba(180, 125, 255, 0.14);
+  --accent-purple-glow: rgba(180, 125, 255, 0.20);
+  --accent-teal-soft: rgba(0, 212, 200, 0.14);
+  --accent-teal-glow: rgba(0, 212, 200, 0.20);
+
+  /* Light-mode text variants — darker, more saturated so they read on
+     light backgrounds. All tuned to ≥4.5:1 against surface-card AND
+     against the matching X-soft tinted bg (15% accent on card).
+     Solid/soft/glow stay identical across themes — the cool brand
+     emerald is intentional. */
+  --accent-emerald-text: #007355;  /* ≥4.5:1 on emerald-soft (was #008866 → 4.04:1) */
+  --accent-cyan-text: #006a85;     /* ≥4.5:1 on cyan-soft  (was #007999 → 4.35:1) */
+  --accent-blue-text: #1758b0;     /* ≥4.5:1 on blue-soft  (was #1d6fe5 → 4.11:1) */
+  --accent-red-text: #c0312f;
+  --accent-amber-text: #8e5400;    /* ≥4.5:1 on amber-soft (was #b87012 → 3.54:1) */
+  --accent-gold-text: #8a5a00;     /* ≥4.5:1 on white card; dark amber that still feels gold */
+  --accent-purple-text: #7c4cd6;
+  --accent-teal-text: #017068;     /* ≥4.5:1 on teal-soft  (was #018a83 → 3.80:1) */
+
+  /* Light-mode display variants — between -solid (too light for white bg)
+     and -text (passes AA but visually muted on hero stats). Tuned for
+     ≥3:1 large-text contrast on white card so big hero numbers POP
+     without losing the saturated brand feel. Use for ≥18pt display
+     elements only; small text stays on -text variant. */
+  --accent-emerald-display: #009868;
+  --accent-cyan-display:    #008599;
+  --accent-blue-display:    #3a82e0;
+  --accent-red-display:     #e64141;
+  --accent-amber-display:   #b06800;
+  --accent-purple-display:  #9560e0;
+  --accent-teal-display:    #019188;
+
+  /* Black text on bright accent fills (emerald/cyan/amber buttons).
+     White on these accents was 1.65–2.72:1 — failed AA. Black on
+     emerald is ~10:1, on amber ~10:1, on cyan ~7:1. */
+  --text-on-accent: #000000;
+
+  /* Light-mode inset wells — bumped vs. dark to read on white card.
+     8% / 14% chosen so subtle dividers stay quiet but visible against
+     surface-card (#fff). Strong is used for chip backdrops + admin-
+     notes editor where the previous 2-4% was effectively transparent. */
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+/* ── Force-dark scope ───────────────────────────────────────────────────────
+   Sign-in / sign-up / legal pages are intentionally dark regardless of the
+   user's theme preference (they're marketing surfaces meant to feel
+   premium / brand-defining). Wrapping a subtree in [data-force-dark]
+   re-asserts the dark token values inside, even when <html> has
+   data-theme="light" applied. */
+[data-force-dark] {
+  color-scheme: dark;
+  --surface-page: #050d18;
+  --surface-card: #161920;
+  --surface-elevated: #1d2028;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-pressed: #0d1525;
+  --text-primary: #f0f2f7;
+  --text-secondary: #c2c8d8;
+  --text-muted: #8899aa;
+  --text-dim: #7a86a0;
+  --border-default: #272b35;
+  --border-subtle: #1a2840;
+  --border-strong: #334155;
+  --accent-emerald-soft: rgba(0, 229, 160, 0.10);
+  --accent-emerald-glow: rgba(0, 229, 160, 0.30);
+  --accent-emerald-text: #00e5a0;
+  --accent-emerald-display: #00e5a0;
+  --accent-cyan-soft: rgba(0, 180, 216, 0.10);
+  --accent-cyan-glow: rgba(0, 180, 216, 0.30);
+  --accent-cyan-text: #00b4d8;
+  --accent-cyan-display: #00b4d8;
+  --accent-blue-soft: rgba(77, 159, 255, 0.10);
+  --accent-blue-glow: rgba(77, 159, 255, 0.30);
+  --accent-blue-text: #4d9fff;
+  --accent-blue-display: #4d9fff;
+  --accent-red-soft: rgba(239, 68, 68, 0.10);
+  --accent-red-glow: rgba(239, 68, 68, 0.30);
+  --accent-red-text: #f87171;
+  --accent-red-display: #f87171;
+  --accent-amber-soft: rgba(245, 166, 35, 0.10);
+  --accent-amber-glow: rgba(245, 166, 35, 0.30);
+  --accent-amber-text: #f5a623;
+  --accent-amber-display: #f5a623;
+  --accent-gold-text: #fbbf24;
+  --surface-inset-subtle: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  --surface-inset-strong: color-mix(in srgb, var(--text-primary) 12%, transparent);
+  --accent-purple-soft: rgba(180, 125, 255, 0.10);
+  --accent-purple-glow: rgba(180, 125, 255, 0.30);
+  --accent-purple-text: #b47dff;
+  --accent-purple-display: #b47dff;
+  --accent-teal-soft: rgba(0, 212, 200, 0.10);
+  --accent-teal-glow: rgba(0, 212, 200, 0.30);
+  --accent-teal-text: #00d4c8;
+  --accent-teal-display: #00d4c8;
+  --text-on-accent: #000;
+}
+
+/* ── Light-mode overrides for legacy class-based surfaces ───────────────────
+   A handful of utility classes (.card-surface, .table-header-frost,
+   .card-surface-interactive) bake hardcoded rgba(0,0,0,*) shadows or
+   navy gradient backgrounds that pre-date the token system. They look
+   correct in dark mode but render as muddy/dark blocks on light bg.
+   The overrides below swap those to soft, theme-correct equivalents.  */
+[data-theme="light"] .card-surface {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+[data-theme="light"] .card-surface:hover {
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+[data-theme="light"] .table-header-frost {
+  background: rgba(247, 248, 251, 0.92);
+}
+[data-theme="light"] .card-surface-interactive {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(247, 248, 251, 0.6) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+[data-theme="light"] .card-surface-interactive:hover {
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 /* ── Accessibility: reduced-motion safety net ───────────────────────────────
@@ -130,13 +362,13 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px var(--navy-base),
+    0 0 0 2px var(--surface-page),
     0 0 0 4px rgba(0, 224, 122, 0.3); /* green accent focus ring */
 }
 
 body {
-  background-color: var(--navy-base);
-  color: var(--d-text, #f0f2f7);
+  background-color: var(--surface-page);
+  color: var(--text-primary);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* No font-smoothing override: let the browser + OS pick. Chrome on
      Windows 1080p gets its default subpixel (sharp). Chrome/Safari on
@@ -197,20 +429,26 @@ body {
   [data-hero-card] { animation: none; }
 }
 
+/* ── Stat card stagger entrance ─────────────────────────────────────────── */
+@keyframes statCardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stat-card-enter {
+  animation: statCardEnter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-stat-card-enter { animation: none; }
+}
+
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 
 @media (max-width: 767px) {
   :root {
-    --m-bg: #060b13;
-    --m-card: #0d1525;
-    --m-border: #1a2840;
-    --m-accent: #00e5a0;
-    --m-accent2: #00b4d8;
-    --m-text-muted: #8899aa;
-    --m-text-dim: #445577;
-    --m-danger: #ff6b6b;
-    --m-warning: #f5a623;
+    /* Typography aliases — kept because every mobile component references
+       these inline via fontFamily: "var(--m-font-body, ...)". Color
+       aliases were deleted in Phase 3 of the design-token sweep. */
     --m-font-display: 'DM Serif Display', serif;
     --m-font-body: 'DM Sans', sans-serif;
   }
@@ -456,9 +694,9 @@ body {
 .calc-skeleton {
   background: linear-gradient(
     90deg,
-    var(--m-card, var(--surface-mobile-card)) 25%,
+    var(--surface-card) 25%,
     rgba(255,255,255,0.045) 50%,
-    var(--m-card, var(--surface-mobile-card)) 75%
+    var(--surface-card) 75%
   );
   background-size: 200% 100%;
   animation: calcSkeletonSweep 1.4s ease infinite;
@@ -563,22 +801,22 @@ body {
 /* Glass-morphism card surface with gradient wash + glow borders */
 .card-surface {
   position: relative;
-  background: var(--d-surface, #161920);
-  border: 1px solid var(--d-border, #272b35);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
   box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   transition: transform 200ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
 .card-surface:hover {
   transform: translateY(-1px);
-  border-color: var(--d-border2, #333849);
+  border-color: var(--border-subtle);
   box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Stat card variant — radial accent glow + bounce-scale on the number */
 .card-surface-stat {
   background: radial-gradient(ellipse at 90% 10%, var(--card-accent, transparent) 0%, transparent 60%),
-              var(--d-surface, #161920);
+              var(--surface-card);
 }
 
 .card-surface-stat .stat-value {
@@ -1086,17 +1324,8 @@ select {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── ProfileDrawer exit animations ───────────────────────────────────── */
-@keyframes slideDown {
-  from { transform: translateY(0); }
-  to   { transform: translateY(105%); }
-}
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
 @media (prefers-reduced-motion: reduce) {
-  [style*='slideDown'], [style*='slideUp'], [style*='fadeIn'], [style*='fadeOut'] {
+  [style*='slideUp'], [style*='fadeIn'] {
     animation-duration: 1ms !important;
   }
 }
@@ -1259,25 +1488,6 @@ select {
 .field-appear-delayed { animation: fieldAppear 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both; }
 @media (prefers-reduced-motion: reduce) {
   .field-appear, .field-appear-delayed { animation: none; }
-}
-
-@keyframes historyReveal {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: none; }
-}
-.history-reveal {
-  animation: historyReveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .history-reveal { animation: none; }
-}
-
-@keyframes historyExit {
-  to { opacity: 0; transform: translateY(-6px); }
-}
-.history-exit { animation: historyExit 200ms ease-in forwards; }
-@media (prefers-reduced-motion: reduce) {
-  .history-exit { animation: none; }
 }
 
 /* calc-row stagger — rows cascade in after the card settles */
@@ -1494,4 +1704,14 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-info-row-enter { animation: none; }
+}
+
+/* ── Projects table hover ────────────────────────────────────────────────── */
+.projects-table tbody tr:hover {
+  background: var(--surface-card) !important;
+  transition: background 120ms ease;
+}
+.projects-table tbody tr:has(input[type='checkbox']:checked) {
+  /* preserve selected-row blue tint — !important wins on hover too */
+  background: color-mix(in srgb, var(--accent-blue-solid) 8%, transparent) !important;
 }

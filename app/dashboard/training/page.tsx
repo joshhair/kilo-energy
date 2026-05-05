@@ -35,6 +35,7 @@ import {
   ChevronDown,
   Home,
   MoreHorizontal,
+  Pencil,
   Pause,
   Play,
   Archive,
@@ -78,10 +79,10 @@ type StatusPill = {
 };
 
 const STATUS_PILLS: Record<AdminStatus, StatusPill> = {
-  training:  { key: 'training',  label: 'In Training', text: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
+  training:  { key: 'training',  label: 'In Training', text: 'text-[var(--accent-emerald-text)]', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
   residuals: { key: 'residuals', label: 'Residuals',   text: 'text-[var(--text-secondary)]', bg: 'bg-slate-500/10', border: 'border-slate-500/30', dot: 'bg-slate-400' },
   maxed:     { key: 'maxed',     label: 'Maxed',       text: 'text-[var(--text-muted)]', bg: 'bg-[var(--surface-card)]/40', border: 'border-[var(--border-subtle)]', dot: 'bg-[var(--text-dim)]' },
-  paused:    { key: 'paused',    label: 'Paused',      text: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
+  paused:    { key: 'paused',    label: 'Paused',      text: 'text-[var(--accent-amber-text)]', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
 };
 
 /**
@@ -122,8 +123,8 @@ function StatusPillBadge({ status }: { status: AdminStatus }) {
 type PillStyle = { gradient: string; border: string; shadow: string; text: string; dot: string };
 
 const PAYROLL_PILL: Record<string, PillStyle> = {
-  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_rgba(16,185,129,0.15)]', text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_rgba(234,179,8,0.15)]',  text: 'text-yellow-300',  dot: 'bg-yellow-400'  },
+  Paid:    { gradient: 'bg-gradient-to-r from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)]', text: 'text-[var(--accent-emerald-text)]', dot: 'bg-emerald-400' },
+  Pending: { gradient: 'bg-gradient-to-r from-yellow-900/40 to-yellow-800/20',  border: 'border-yellow-700/30',  shadow: 'shadow-[0_0_6px_color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)]',  text: 'text-[var(--accent-amber-text)]',  dot: 'bg-yellow-400'  },
   Draft:   { gradient: 'bg-gradient-to-r from-slate-800/40 to-slate-700/20',    border: 'border-[var(--border)]/30',   shadow: '',                                       text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
 };
 
@@ -292,17 +293,28 @@ function TrainingPageInner() {
   const [expandedTrainerIds, setExpandedTrainerIds] = useState<Set<string>>(new Set());
   const kebabButtonRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
 
   // Compute menu position anchored to the opened kebab button. Recomputes on
   // scroll/resize so the menu stays attached while the user moves the page.
+  // Flips upward when there's not enough space below — last few table rows
+  // would otherwise have the menu cropped off the viewport.
   useEffect(() => {
     if (!openMenuId) { setMenuPos(null); return; }
     const compute = () => {
       const btn = kebabButtonRefs.current.get(openMenuId);
       if (!btn) return;
       const r = btn.getBoundingClientRect();
-      setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      // Menu has 6 items + 2 dividers ≈ 280px. Use a slightly larger pad
+      // so we flip with a margin of comfort, not at the exact edge.
+      const ESTIMATED_MENU_HEIGHT = 300;
+      const spaceBelow = window.innerHeight - r.bottom;
+      const flipUp = spaceBelow < ESTIMATED_MENU_HEIGHT;
+      const right = window.innerWidth - r.right;
+      setMenuPos(flipUp
+        ? { bottom: window.innerHeight - r.top + 4, right }
+        : { top: r.bottom + 4, right }
+      );
     };
     compute();
     window.addEventListener('scroll', compute, { capture: true });
@@ -355,6 +367,7 @@ function TrainingPageInner() {
 
   // Backfill wizard — stores the assignment ID whose backfill is active
   const [backfillAssignmentId, setBackfillAssignmentId] = useState<string | null>(null);
+  const [editAssignmentId, setEditAssignmentId] = useState<string | null>(null);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -370,35 +383,57 @@ function TrainingPageInner() {
   // silently disappear from the Trainer tab — viewer can open them but
   // can't see them listed. Synthesize pseudo-assignments so the existing
   // render path picks them up.
+  //
+  // Previously this bailed for admin with a comment claiming "admin sees
+  // every assignment already" — but admin's adminRows is built from
+  // trainerAssignments[] only, NOT direct project.trainerId overrides.
+  // Result: a Paul → Josh per-project override appeared in Paul's view
+  // (rep path synthesized the pseudo) but vanished from the admin Trainer
+  // Hub. The synthesizer now runs for both paths — admin sees ALL
+  // trainers' direct overrides, non-admin sees only their own.
   const directTrainerProjects = useMemo(() => {
-    if (effectiveRole === 'admin') return []; // admin sees every assignment already
-    const assignmentTraineeIds = new Set(myAssignments.map((a) => a.traineeId));
-    return projects.filter((p) =>
-      p.trainerId === effectiveRepId &&
-      p.phase !== 'Cancelled' &&
-      p.phase !== 'On Hold' &&
-      !assignmentTraineeIds.has(p.repId ?? '') &&
-      !assignmentTraineeIds.has(p.setterId ?? ''),
+    const isAdmin = effectiveRole === 'admin';
+    if (!isAdmin && !effectiveRepId) return [];
+    // Index existing trainer-trainee pairs so we don't re-list a deal
+    // that's already covered by a real assignment.
+    const assignedPairs = new Set(
+      trainerAssignments.map((a) => `${a.trainerId}::${a.traineeId}`),
     );
-  }, [projects, effectiveRepId, effectiveRole, myAssignments]);
+    return projects.filter((p) => {
+      if (!p.trainerId) return false;
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') return false;
+      // Non-admin: only direct overrides where this viewer is the trainer.
+      if (!isAdmin && p.trainerId !== effectiveRepId) return false;
+      // Skip if a real TrainerAssignment already covers this pair via
+      // either the closer or the setter.
+      const closerKey = `${p.trainerId}::${p.repId ?? ''}`;
+      const setterKey = `${p.trainerId}::${p.setterId ?? ''}`;
+      if (assignedPairs.has(closerKey) || assignedPairs.has(setterKey)) return false;
+      return true;
+    });
+  }, [projects, effectiveRepId, effectiveRole, trainerAssignments]);
 
   const directPseudoAssignments = useMemo<TrainerAssignment[]>(() => {
-    if (!effectiveRepId) return [];
-    const byCloser = new Map<string, typeof projects>();
+    // Group by (trainerId, closerId) so each (trainer, trainee) pair
+    // surfaces once even when there are multiple direct-override deals.
+    const byPair = new Map<string, { trainerId: string; closerId: string; rate: number }>();
     for (const p of directTrainerProjects) {
-      const key = p.repId ?? '';
-      if (!key) continue;
-      if (!byCloser.has(key)) byCloser.set(key, []);
-      byCloser.get(key)!.push(p);
+      const trainerId = p.trainerId;
+      const closerId = p.repId;
+      if (!trainerId || !closerId) continue;
+      const key = `${trainerId}::${closerId}`;
+      if (!byPair.has(key)) {
+        byPair.set(key, { trainerId, closerId, rate: p.trainerRate ?? 0 });
+      }
     }
-    return Array.from(byCloser.entries()).map(([closerId, projs]) => ({
-      id: `direct-${closerId}`,
-      trainerId: effectiveRepId,
+    return Array.from(byPair.entries()).map(([key, { trainerId, closerId, rate }]) => ({
+      id: `direct-${key}`,
+      trainerId,
       traineeId: closerId,
-      tiers: [{ upToDeal: null, ratePerW: projs[0]?.trainerRate ?? 0 }],
+      tiers: [{ upToDeal: null, ratePerW: rate }],
       isActiveTraining: true,
     }));
-  }, [directTrainerProjects, effectiveRepId]);
+  }, [directTrainerProjects]);
 
   const isTrainer = myAssignments.length > 0 || directPseudoAssignments.length > 0;
 
@@ -617,6 +652,13 @@ function TrainingPageInner() {
   const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed');
 
   const deleteAssignment = (id: string) => {
+    // Synthetic rows surfaced from per-project trainer overrides aren't
+    // backed by a TrainerAssignment record, so DELETE would 404 silently.
+    // Tell the admin where to actually go.
+    if (id.startsWith('direct-')) {
+      toast('This is a per-deal trainer override. Open the project to remove it.', 'info');
+      return;
+    }
     const assignment = trainerAssignments.find((a) => a.id === id);
     if (!assignment) return;
     const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'trainer';
@@ -653,8 +695,11 @@ function TrainingPageInner() {
   const adminRows = useMemo(() => {
     if (effectiveRole !== 'admin') return [];
     // Group by (trainer, trainee) and render multi-tier rows so the full
-    // tier chain is visible at a glance.
-    return trainerAssignments.map((a) => {
+    // tier chain is visible at a glance. Include directPseudoAssignments
+    // so per-project trainer overrides without a matching TrainerAssignment
+    // surface in the admin Trainer Hub (matches what the rep view shows).
+    const allRows = [...trainerAssignments, ...directPseudoAssignments];
+    return allRows.map((a) => {
       const trainee = reps.find((r) => r.id === a.traineeId);
       const trainer = reps.find((r) => r.id === a.trainerId);
       const consumed = getConsumedDeals(a);
@@ -667,7 +712,7 @@ function TrainingPageInner() {
       return { assignment: a, trainer, trainee, consumed, status, rate, activeTierIndex };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainerAssignments, reps, projects, payrollEntries, effectiveRole]);
+  }, [trainerAssignments, directPseudoAssignments, reps, projects, payrollEntries, effectiveRole]);
 
   const filteredAdminRows = useMemo(() => {
     return adminRows.filter((row) => {
@@ -724,7 +769,82 @@ function TrainingPageInner() {
 
   if (!isHydrated) return <TrainingSkeleton />;
 
-  if (isMobile && effectiveRole !== 'admin') return <MobileTraining />;
+  if (isMobile) {
+    return (
+      <>
+        <MobileTraining
+          onNewAssignment={effectiveRole === 'admin' ? () => setShowNewAssignment(true) : undefined}
+          onEditAssignment={effectiveRole === 'admin' ? setEditAssignmentId : undefined}
+          onBackfill={effectiveRole === 'admin' ? setBackfillAssignmentId : undefined}
+          onDeleteAssignment={effectiveRole === 'admin' ? deleteAssignment : undefined}
+        />
+        {effectiveRole === 'admin' && showNewAssignment && (
+          <NewAssignmentModal
+            reps={reps}
+            prefillTraineeId={prefillTraineeId ?? undefined}
+            onClose={() => { setShowNewAssignment(false); setPrefillTraineeId(null); }}
+            onCreated={(assignment) => {
+              setTrainerAssignments((prev) => [...prev, assignment]);
+              setShowNewAssignment(false);
+              setPrefillTraineeId(null);
+              toast('Assignment created', 'success');
+            }}
+          />
+        )}
+        {effectiveRole === 'admin' && backfillAssignmentId && (() => {
+          const bfAssignment = trainerAssignments.find((a) => a.id === backfillAssignmentId);
+          if (!bfAssignment) return null;
+          return (
+            <BackfillWizard
+              assignment={bfAssignment}
+              reps={reps}
+              projects={projects}
+              payrollEntries={payrollEntries}
+              onClose={() => setBackfillAssignmentId(null)}
+              onComplete={async (created, skippedCount) => {
+                toast(`Created ${created} trainer entries${skippedCount > 0 ? `, skipped ${skippedCount}` : ''}`, 'success');
+                setBackfillAssignmentId(null);
+                try {
+                  const res = await fetch('/api/data');
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data?.payrollEntries) setPayrollEntries(data.payrollEntries);
+                  }
+                } catch { /* non-fatal */ }
+              }}
+            />
+          );
+        })()}
+        {effectiveRole === 'admin' && editAssignmentId && (() => {
+          const ea = trainerAssignments.find((a) => a.id === editAssignmentId);
+          if (!ea) return null;
+          return (
+            <EditAssignmentModal
+              assignment={ea}
+              reps={reps}
+              onClose={() => setEditAssignmentId(null)}
+              onSaved={(updated) => {
+                setTrainerAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+                setEditAssignmentId(null);
+                toast('Assignment updated', 'success');
+              }}
+            />
+          );
+        })()}
+        {deleteConfirm && (
+          <ConfirmDialog
+            open
+            onClose={() => setDeleteConfirm(null)}
+            onConfirm={confirmDeleteAssignment}
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            confirmLabel="Delete"
+            danger
+          />
+        )}
+      </>
+    );
+  }
 
   if (effectiveRole === 'project_manager') {
     return (
@@ -739,16 +859,16 @@ function TrainingPageInner() {
       <div className="p-4 md:p-8 max-w-5xl animate-fade-in-up">
         <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
         <div className="card-surface rounded-2xl p-8 text-center">
-          <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
-            <GraduationCap className="w-8 h-8 text-amber-400" />
+          <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
+            <GraduationCap className="w-8 h-8 text-[var(--accent-amber-text)]" />
           </div>
-          <h2 className="text-white text-lg font-bold mb-2">No Trainees Assigned</h2>
+          <h2 className="text-[var(--text-primary)] text-lg font-bold mb-2">No Trainees Assigned</h2>
           <p className="text-[var(--text-secondary)] text-sm max-w-md mx-auto mb-4">
             You don&apos;t have any trainees assigned. Contact your admin to set up trainer assignments.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-lg text-white transition-all hover:opacity-90 active:scale-[0.97]"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-lg text-[var(--text-primary)] transition-all hover:opacity-90 active:scale-[0.97]"
             style={{ backgroundColor: 'var(--brand)' }}
           >
             <Home className="w-4 h-4" />
@@ -777,8 +897,8 @@ function TrainingPageInner() {
         <div className="mb-6">
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
-              <GraduationCap className="w-5 h-5 text-amber-400" />
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
+              <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
               Trainer Hub
@@ -819,17 +939,17 @@ function TrainingPageInner() {
               <div className="mt-4 ml-[52px] grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
                 <div className="card-surface rounded-xl p-3 bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime Paid</p>
-                  <p className="text-xl font-bold text-amber-400 tabular-nums mt-1">${lifetimeTrainerPaid.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-[var(--accent-amber-text)] tabular-nums mt-1">${lifetimeTrainerPaid.toLocaleString()}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">org-wide trainer override</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Active</p>
-                  <p className="text-xl font-bold text-white tabular-nums mt-1">{activeTrainingCount}</p>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums mt-1">{activeTrainingCount}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">of {totalAssignments} assignment{totalAssignments === 1 ? '' : 's'}</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Trainers</p>
-                  <p className="text-xl font-bold text-white tabular-nums mt-1">{uniqueTrainerCount}</p>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums mt-1">{uniqueTrainerCount}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">avg ${avgRate.toFixed(2)}/W</p>
                 </div>
                 <div className="card-surface rounded-xl p-3">
@@ -839,12 +959,12 @@ function TrainingPageInner() {
                       <button
                         type="button"
                         onClick={() => setAdminTrainerFilter(topTrainer.id)}
-                        className="text-sm font-bold text-white mt-1 hover:text-[var(--accent-cyan)] transition-colors text-left truncate max-w-full"
+                        className="text-sm font-bold text-[var(--text-primary)] mt-1 hover:text-[var(--accent-cyan-text)] transition-colors text-left truncate max-w-full"
                         title="Filter to this trainer"
                       >
                         {topTrainer.name}
                       </button>
-                      <p className="text-[10px] text-amber-400 tabular-nums mt-0.5">${topTrainerAmount.toLocaleString()} paid</p>
+                      <p className="text-[10px] text-[var(--accent-amber-text)] tabular-nums mt-0.5">${topTrainerAmount.toLocaleString()} paid</p>
                     </>
                   ) : (
                     <p className="text-sm text-[var(--text-muted)] mt-1">—</p>
@@ -856,7 +976,7 @@ function TrainingPageInner() {
           <button
             onClick={() => setShowNewAssignment(true)}
             className="mt-3 ml-[52px] inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-            style={{ backgroundColor: 'var(--brand)', color: '#050d18' }}
+            style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
           >
             <Plus className="w-4 h-4" />
             New Assignment
@@ -874,7 +994,7 @@ function TrainingPageInner() {
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') { (e.target as HTMLInputElement).blur(); } }}
-              className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+              className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
             />
           </div>
           <select
@@ -916,7 +1036,7 @@ function TrainingPageInner() {
                 setAdminRepFilter('');
                 setAdminSearch('');
               }}
-              className="text-xs text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
             >
               <X className="w-3 h-3" /> Clear
             </button>
@@ -944,28 +1064,28 @@ function TrainingPageInner() {
           return (
             <div className="card-surface rounded-2xl p-5 mb-5 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border-amber-500/20">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-base font-bold flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-[var(--accent-amber-text)] flex items-center justify-center text-base font-bold flex-shrink-0">
                   {getInitials(trainerRep.name)}
                 </div>
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-white font-bold text-lg hover:text-[var(--accent-cyan)] transition-colors">
+                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-[var(--text-primary)] font-bold text-lg hover:text-[var(--accent-cyan-text)] transition-colors">
                       {trainerRep.name}
                     </Link>
                     <span className="text-xs text-[var(--text-muted)] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">Trainer</span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
-                    <span><span className="text-white font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
-                    {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-amber-400 font-semibold">{active}</span> training</span></>}
-                    {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-cyan-400 font-semibold">{residuals}</span> residuals</span></>}
+                    <span><span className="text-[var(--text-primary)] font-semibold">{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
+                    {active > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-amber-text)] font-semibold">{active}</span> training</span></>}
+                    {residuals > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-cyan-text)] font-semibold">{residuals}</span> residuals</span></>}
                     {paused > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-slate-400 font-semibold">{paused}</span> paused</span></>}
-                    {maxed > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-emerald-400 font-semibold">{maxed}</span> maxed</span></>}
+                    {maxed > 0 && <><span className="text-[var(--border)]">·</span><span><span className="text-[var(--accent-emerald-text)] font-semibold">{maxed}</span> maxed</span></>}
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                   <div className="text-right">
                     <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">Lifetime earned</p>
-                    <p className="text-xl font-bold text-amber-400 tabular-nums">${lifetimeEarned.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-[var(--accent-amber-text)] tabular-nums">${lifetimeEarned.toLocaleString()}</p>
                     {pendingEarnings > 0 && (
                       <p className="text-[11px] text-[var(--text-muted)] tabular-nums">+${pendingEarnings.toLocaleString()} pending</p>
                     )}
@@ -973,7 +1093,7 @@ function TrainingPageInner() {
                   <Link
                     href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]"
-                    style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}
+                    style={{ backgroundColor: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                   >
                     View payments
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -1033,13 +1153,13 @@ function TrainingPageInner() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0 transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
-                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-[var(--accent-amber-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             {getInitials(trainerName)}
                           </div>
                           <Link
                             href={`/dashboard/users/${group.trainerId}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-white truncate hover:text-[var(--accent-cyan)] transition-colors font-semibold"
+                            className="text-[var(--text-primary)] truncate hover:text-[var(--accent-cyan-text)] transition-colors font-semibold"
                           >
                             {trainerName}
                           </Link>
@@ -1051,12 +1171,12 @@ function TrainingPageInner() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {activeCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/30">
                               {activeCount} training
                             </span>
                           )}
                           {residualsCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-[var(--accent-cyan-text)] border border-cyan-500/30">
                               {residualsCount} residuals
                             </span>
                           )}
@@ -1066,14 +1186,14 @@ function TrainingPageInner() {
                             </span>
                           )}
                           {maxedCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-[var(--accent-emerald-text)] border border-emerald-500/30">
                               {maxedCount} maxed
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-[var(--text-muted)] text-xs">—</td>
-                      <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
+                      <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">
                         ${avgRate.toFixed(2)}/W <span className="text-[10px] text-[var(--text-muted)] font-normal">avg</span>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-right text-[var(--text-secondary)] tabular-nums text-xs">
@@ -1103,10 +1223,10 @@ function TrainingPageInner() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-[var(--accent-green)]/20 text-[var(--accent-green)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             {getInitials(traineeName)}
                           </div>
-                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan)] transition-colors">
+                          <Link href={`/dashboard/users/${a.traineeId}`} className="text-[var(--text-secondary)] truncate hover:text-[var(--accent-cyan-text)] transition-colors">
                             {traineeName}
                           </Link>
                         </div>
@@ -1125,7 +1245,7 @@ function TrainingPageInner() {
                                 title={`Tier ${i + 1}: up to ${rangeEnd} deals`}
                                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border ${
                                   isActive
-                                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                                    ? 'bg-amber-500/15 text-[var(--accent-amber-text)] border-amber-500/40'
                                     : 'bg-[var(--surface-card)]/40 text-[var(--text-muted)] border-[var(--border-subtle)]'
                                 }`}
                               >
@@ -1135,7 +1255,7 @@ function TrainingPageInner() {
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">
+                      <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">
                         ${row.rate.toFixed(2)}/W
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-right">
@@ -1165,7 +1285,7 @@ function TrainingPageInner() {
                             e.stopPropagation();
                             setOpenMenuId(openMenuId === a.id ? null : a.id);
                           }}
-                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--border)]/60 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors"
                           aria-label="Row actions"
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -1174,53 +1294,61 @@ function TrainingPageInner() {
                           <div
                             ref={menuPanelRef}
                             className="fixed z-[9999] min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] shadow-2xl py-1 motion-safe:animate-[fadeSlideIn_160ms_cubic-bezier(0.16,1,0.3,1)_both]"
-                            style={{ top: menuPos.top, right: menuPos.right }}
+                            style={{ ...menuPos }}
                           >
                             <Link
                               href={`/dashboard/users/${a.traineeId}`}
                               onClick={() => setOpenMenuId(null)}
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <User className="w-3.5 h-3.5" /> View trainee profile
                             </Link>
                             {a.isActiveTraining === false ? (
                               <button
                                 onClick={() => { setOpenMenuId(null); resumeTraining(a.id); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                               >
                                 <Play className="w-3.5 h-3.5" /> Resume Training
                               </button>
                             ) : (
                               <button
                                 onClick={() => { setOpenMenuId(null); markGraduated(a.id); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                               >
                                 <ShieldCheck className="w-3.5 h-3.5" /> Mark Graduated
                               </button>
                             )}
                             <button
                               onClick={() => { setOpenMenuId(null); toast(row.status === 'paused' ? 'Resume handled via rep activation (coming soon)' : 'Pause handled via rep deactivation (coming soon)', 'info'); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <Pause className="w-3.5 h-3.5" /> {row.status === 'paused' ? 'Resume' : 'Pause'}
                             </button>
                             <button
                               onClick={() => { setOpenMenuId(null); toast('Archive coming soon', 'info'); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <Archive className="w-3.5 h-3.5" /> Archive
                             </button>
                             <div className="border-t border-[var(--border-subtle)] my-1" />
+                            {!a.id.startsWith('direct-') && (
+                              <button
+                                onClick={() => { setOpenMenuId(null); setEditAssignmentId(a.id); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" /> Edit assignment
+                              </button>
+                            )}
                             <button
                               onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
                             </button>
                             <div className="border-t border-[var(--border-subtle)] my-1" />
                             <button
                               onClick={() => { setOpenMenuId(null); deleteAssignment(a.id); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--accent-red-text)] hover:bg-red-500/10 hover:text-[var(--accent-red-text)] transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete assignment
                             </button>
@@ -1293,8 +1421,8 @@ function TrainingPageInner() {
       <div className="mb-6">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
-            <GraduationCap className="w-5 h-5 text-amber-400" />
+          <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
+            <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
             Trainer Hub
@@ -1311,7 +1439,7 @@ function TrainingPageInner() {
             ref={(el) => { tabRefs.current[i] = el; }}
             onClick={() => setActiveTab(t.key)}
             className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-              activeTab === t.key ? 'text-white' : 'text-[var(--text-secondary)] hover:text-white'
+              activeTab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {t.label}
@@ -1329,17 +1457,17 @@ function TrainingPageInner() {
       {activeTab === 'overview' && (
         <div key="overview" className="animate-tab-enter space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-amber-400" border="border-l-amber-500/40" accent="rgba(245,158,11,0.08)" glow="rgba(245,158,11,0.25)" stagger={1} icon={<DollarSign className="w-4 h-4 text-amber-400/50" />} />
-            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-orange-400" border="border-l-orange-500/40" accent="rgba(249,115,22,0.08)" glow="rgba(249,115,22,0.25)" stagger={2} icon={<Users className="w-4 h-4 text-orange-400/50" />} />
-            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-yellow-400" border="border-l-yellow-500/40" accent="rgba(234,179,8,0.08)" glow="rgba(234,179,8,0.25)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-yellow-400/50" />} />
-            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-green)]" border="border-l-emerald-500/40" accent="rgba(16,185,129,0.08)" glow="rgba(16,185,129,0.25)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-green)]/50" />} />
+            <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-[var(--accent-amber-text)]" border="border-l-amber-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={1} icon={<DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={2} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
           </div>
 
           <div className="card-surface rounded-2xl p-6">
-            <h3 className="text-white font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
+            <h3 className="text-[var(--text-primary)] font-bold text-sm mb-4 uppercase tracking-wider">Pay Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-green)]" value={fmt$(totalEarned)} />
-              <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-yellow-400" value={fmt$(pendingAmount)} />
+              <BreakdownRow color="bg-emerald-400" label="Paid" textColor="text-[var(--accent-emerald-text)]" value={fmt$(totalEarned)} />
+              <BreakdownRow color="bg-yellow-400" label="Pending" textColor="text-[var(--accent-amber-text)]" value={fmt$(pendingAmount)} />
               <BreakdownRow color="bg-[var(--text-muted)]" label="Draft" textColor="text-[var(--text-secondary)]" value={fmt$(draftAmount)} />
             </div>
           </div>
@@ -1426,7 +1554,7 @@ function TrainingPageInner() {
                 placeholder="Search by customer or trainee..."
                 value={paymentSearch}
                 onChange={(e) => setPaymentSearch(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+                className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
               />
             </div>
             {paymentSearch && (
@@ -1438,7 +1566,7 @@ function TrainingPageInner() {
                   key={s}
                   onClick={() => setPaymentStatusFilter(s)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    paymentStatusFilter === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-white'
+                    paymentStatusFilter === s ? 'bg-amber-500/15 text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {s === 'all' ? 'All' : s}
@@ -1472,9 +1600,9 @@ function TrainingPageInner() {
                         key={entry.id}
                         className={`table-row-enter row-stagger-${Math.min(idx, 24)} hover:bg-[var(--surface-card)]/30 transition-colors`}
                       >
-                        <td className="px-4 py-3 text-white text-sm">{entry.customerName || '—'}</td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan)] transition-colors">{t.name}</Link> : '—'; })()}</td>
-                        <td className="px-4 py-3 text-right text-amber-400 font-semibold tabular-nums">{fmt$(entry.amount)}</td>
+                        <td className="px-4 py-3 text-[var(--text-primary)] text-sm">{entry.customerName || '—'}</td>
+                        <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{(() => { const t = getTraineeForEntry(entry); return t ? <Link href={`/dashboard/users/${t.id}`} className="hover:text-[var(--accent-cyan-text)] transition-colors">{t.name}</Link> : '—'; })()}</td>
+                        <td className="px-4 py-3 text-right text-[var(--accent-amber-text)] font-semibold tabular-nums">{fmt$(entry.amount)}</td>
                         <td className="px-4 py-3 text-center"><StatusBadge status={entry.status} /></td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">{new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                       </tr>
@@ -1498,13 +1626,13 @@ function TrainingPageInner() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                    style={{ backgroundColor: 'var(--navy-card)' }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold"
+                    style={{ backgroundColor: 'var(--surface-pressed)' }}
                   >
                     {getInitials(t.traineeName)}
                   </div>
                 </div>
-                <Link href={`/dashboard/users/${t.traineeId}`} className="text-white font-bold text-sm hover:text-[var(--accent-cyan)] transition-colors">{t.traineeName}</Link>
+                <Link href={`/dashboard/users/${t.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm hover:text-[var(--accent-cyan-text)] transition-colors">{t.traineeName}</Link>
                 <StatusPillBadge status={t.status} />
               </div>
 
@@ -1535,20 +1663,20 @@ function TrainingPageInner() {
                         >
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
-                              <span className={`text-sm font-semibold ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                              <span className={`text-sm font-semibold ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                                 Tier {tierIdx + 1}
                               </span>
                               {isActive && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/25">
                                   ACTIVE
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className={`px-3 py-2.5 text-sm ${isActive ? 'text-white' : 'text-[var(--text-secondary)]'}`}>
+                          <td className={`px-3 py-2.5 text-sm ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {rangeLabel}
                           </td>
-                          <td className={`px-3 py-2.5 text-right text-sm font-bold tabular-nums ${isActive ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                          <td className={`px-3 py-2.5 text-right text-sm font-bold tabular-nums ${isActive ? 'text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)]'}`}>
                             ${tier.ratePerW.toFixed(2)}/W
                           </td>
                         </tr>
@@ -1559,7 +1687,7 @@ function TrainingPageInner() {
               </div>
 
               <div className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                <GraduationCap className="w-3.5 h-3.5 text-amber-400/60" />
+                <GraduationCap className="w-3.5 h-3.5 text-[var(--accent-amber-text)]/60" />
                 <span>
                   {t.traineeName} has {t.dealCount} deal{t.dealCount !== 1 ? 's' : ''} —
                   currently at ${t.currentRate.toFixed(2)}/W
@@ -1579,6 +1707,23 @@ function TrainingPageInner() {
           onClose={() => setSlideProjectId(null)}
         />
       )}
+
+      {editAssignmentId && (() => {
+        const ea = trainerAssignments.find((a) => a.id === editAssignmentId);
+        if (!ea) return null;
+        return (
+          <EditAssignmentModal
+            assignment={ea}
+            reps={reps}
+            onClose={() => setEditAssignmentId(null)}
+            onSaved={(updated) => {
+              setTrainerAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+              setEditAssignmentId(null);
+              toast('Assignment updated', 'success');
+            }}
+          />
+        );
+      })()}
 
       {deleteConfirm && (
         <ConfirmDialog
@@ -1649,7 +1794,7 @@ function TraineeSearch({
           placeholder="Search trainees..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
+          className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 placeholder-slate-500"
         />
       </div>
       {value && (
@@ -1661,7 +1806,7 @@ function TraineeSearch({
             key={s}
             onClick={() => onSort(s)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              sort === s ? 'bg-amber-500/15 text-amber-400' : 'text-[var(--text-secondary)] hover:text-white'
+              sort === s ? 'bg-amber-500/15 text-[var(--accent-amber-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1695,9 +1840,9 @@ function ActiveTraineeCard({
   const progressPct = Math.round((progressVal / progressMax) * 100);
 
   const roleBadgeColor =
-    traineeRole === 'closer' ? 'text-[var(--accent-green)] bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20'
-    : traineeRole === 'setter' ? 'text-purple-400 bg-purple-500/10 border-purple-500/20'
-    : 'text-teal-400 bg-teal-500/10 border-teal-500/20';
+    traineeRole === 'closer' ? 'text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20'
+    : traineeRole === 'setter' ? 'text-[var(--accent-purple-text)] bg-purple-500/10 border-purple-500/20'
+    : 'text-[var(--accent-teal-text)] bg-teal-500/10 border-teal-500/20';
 
   const activeProjects = projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold' && p.phase !== 'Completed');
 
@@ -1705,13 +1850,13 @@ function ActiveTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4">
         <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--navy-card)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-primary)] text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm truncate hover:text-[var(--accent-cyan-text)] transition-colors">
               {traineeName}
             </Link>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${roleBadgeColor}`}>
@@ -1727,14 +1872,14 @@ function ActiveTraineeCard({
           <button
             onClick={onGraduate}
             title="Mark as graduated — moves this trainee to Residuals"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-emerald-text)] hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             Mark Graduated
           </button>
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-[var(--surface-card)]/60 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]/60 transition-colors"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
@@ -1744,7 +1889,7 @@ function ActiveTraineeCard({
 
       <div className="mt-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-amber-400/80 text-xs font-semibold">
+          <span className="text-[var(--accent-amber-text)]/80 text-xs font-semibold">
             Tier {activeTierIndex + 1}: ${currentRate.toFixed(2)}/W
           </span>
           {nextThreshold ? (
@@ -1776,7 +1921,7 @@ function ActiveTraineeCard({
                   onClick={() => onOpenProject(p.id)}
                   className={`w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-[var(--surface-card)]/60 transition-colors group table-row-enter row-stagger-${Math.min(pIdx, 12)}`}
                 >
-                  <span className="flex-1 min-w-0 text-sm text-white truncate group-hover:text-[var(--accent-cyan)] transition-colors">{p.customerName}</span>
+                  <span className="flex-1 min-w-0 text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{p.customerName}</span>
                   <PhasePill phase={p.phase} />
                   <span className="text-[10px] text-[var(--text-muted)] tabular-nums whitespace-nowrap">{formatDate(p.soldDate)}</span>
                   <span className="text-[10px] text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{p.kWSize.toFixed(1)} kW</span>
@@ -1813,13 +1958,13 @@ function ResidualTraineeCard({
     <div className={`card-surface rounded-2xl p-5 animate-slide-in-scale stagger-${Math.min(idx + 1, 6)}`}>
       <div className="flex items-start gap-4 mb-4">
         <div className="bg-gradient-to-br from-slate-500 to-slate-700 p-[2px] rounded-full flex-shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: 'var(--navy-card)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-primary)] text-sm font-bold" style={{ backgroundColor: 'var(--surface-pressed)' }}>
             {getInitials(traineeName)}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/dashboard/users/${data.traineeId}`} className="text-white font-bold text-sm truncate hover:text-[var(--accent-cyan)] transition-colors">
+            <Link href={`/dashboard/users/${data.traineeId}`} className="text-[var(--text-primary)] font-bold text-sm truncate hover:text-[var(--accent-cyan-text)] transition-colors">
               {traineeName}
             </Link>
             <StatusPillBadge status={status} />
@@ -1832,7 +1977,7 @@ function ResidualTraineeCard({
           <button
             onClick={onResume}
             title="Resume training — move back to Active Trainees"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-amber-text)] hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Resume Training
@@ -1844,11 +1989,11 @@ function ResidualTraineeCard({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Current Rate</p>
-          <p className="text-amber-400 font-bold tabular-nums">${currentRate.toFixed(2)}/W</p>
+          <p className="text-[var(--accent-amber-text)] font-bold tabular-nums">${currentRate.toFixed(2)}/W</p>
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Total Earned</p>
-          <p className="text-[var(--accent-green)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
+          <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums">{fmt$(earningsFromTrainee)}</p>
         </div>
         <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Tier Progress</p>
@@ -1881,7 +2026,7 @@ function ResidualTraineeCard({
               <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-[var(--surface-card)]/30">
                 <span className="text-sm text-[var(--text-secondary)] truncate">{e.customerName || e.notes || '—'}</span>
                 <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{formatDate(e.date)}</span>
-                <span className="text-sm text-amber-400 font-semibold tabular-nums whitespace-nowrap">{fmt$(e.amount)}</span>
+                <span className="text-sm text-[var(--accent-amber-text)] font-semibold tabular-nums whitespace-nowrap">{fmt$(e.amount)}</span>
                 <StatusBadge status={e.status} />
               </div>
             ))}
@@ -1948,9 +2093,9 @@ function ProjectSlideOver({
         <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Coaching view · Read-only</p>
-            <h3 className="text-white text-lg font-semibold mt-0.5 truncate">{project.customerName}</h3>
+            <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5 truncate">{project.customerName}</h3>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1971,21 +2116,21 @@ function ProjectSlideOver({
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Installer</p>
-                <p className="text-sm text-white mt-0.5">{project.installer}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{project.installer}</p>
               </div>
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Closer</p>
-                <p className="text-sm text-white mt-0.5">{closerName}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{closerName}</p>
               </div>
               {setterName && (
                 <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Setter</p>
-                  <p className="text-sm text-white mt-0.5">{setterName}</p>
+                  <p className="text-sm text-[var(--text-primary)] mt-0.5">{setterName}</p>
                 </div>
               )}
               <div className="bg-[var(--surface-card)]/40 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Financer</p>
-                <p className="text-sm text-white mt-0.5">{project.financer}</p>
+                <p className="text-sm text-[var(--text-primary)] mt-0.5">{project.financer}</p>
               </div>
             </div>
           </div>
@@ -2011,7 +2156,7 @@ function ProjectSlideOver({
                   <li key={ev.id} className="flex items-start gap-3 text-sm">
                     <span className="w-1.5 h-1.5 mt-[9px] rounded-full bg-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white truncate">{ev.detail}</p>
+                      <p className="text-[var(--text-primary)] truncate">{ev.detail}</p>
                       <p className="text-[10px] text-[var(--text-muted)] tabular-nums">
                         {new Date(ev.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </p>
@@ -2038,13 +2183,13 @@ function MilestoneDot({ label, paid }: { label: string; paid: boolean }) {
     <div className={`rounded-xl px-3 py-2 border text-center ${paid ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[var(--surface-card)]/40 border-[var(--border-subtle)]'}`}>
       <div className="flex items-center justify-center gap-1.5 mb-0.5">
         {paid ? (
-          <Check className="w-3 h-3 text-emerald-400" />
+          <Check className="w-3 h-3 text-[var(--accent-emerald-text)]" />
         ) : (
           <span className="w-2 h-2 rounded-full bg-[var(--text-dim)]" />
         )}
-        <span className={`text-xs font-semibold ${paid ? 'text-emerald-300' : 'text-[var(--text-secondary)]'}`}>{label}</span>
+        <span className={`text-xs font-semibold ${paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`}>{label}</span>
       </div>
-      <p className={`text-[10px] ${paid ? 'text-emerald-400/80' : 'text-[var(--text-muted)]'}`}>
+      <p className={`text-[10px] ${paid ? 'text-[var(--accent-emerald-text)]/80' : 'text-[var(--text-muted)]'}`}>
         {paid ? 'Paid' : 'Pending'}
       </p>
     </div>
@@ -2212,14 +2357,14 @@ function NewAssignmentModal({
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/15">
-              <GraduationCap className="w-6 h-6 text-amber-400" />
+              <GraduationCap className="w-6 h-6 text-[var(--accent-amber-text)]" />
             </div>
             <div>
-              <h2 className="text-white font-semibold text-lg">New Assignment</h2>
+              <h2 className="text-[var(--text-primary)] font-semibold text-lg">New Assignment</h2>
               <p className="text-sm text-[var(--text-muted)]">Create a trainer-trainee relationship</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -2276,7 +2421,7 @@ function NewAssignmentModal({
                         max={MAX_TRAINER_RATE_PER_W}
                         value={tier.ratePerW}
                         onChange={(e) => updateTier(idx, 'ratePerW', e.target.value)}
-                        className="w-full bg-[var(--surface)] border border-[var(--border)] text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                     <div>
@@ -2301,7 +2446,7 @@ function NewAssignmentModal({
                         onChange={(e) => updateTier(idx, 'upToDeal', e.target.value)}
                         placeholder={tier.perpetuity ? 'n/a' : ''}
                         className={`w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
-                          tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-white'
+                          tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
                         }`}
                       />
                     </div>
@@ -2309,7 +2454,7 @@ function NewAssignmentModal({
                   {tiers.length > 1 && (
                     <button
                       onClick={() => removeTier(idx)}
-                      className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
+                      className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
                       title="Remove tier"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2320,7 +2465,7 @@ function NewAssignmentModal({
             </div>
             <button
               onClick={addTier}
-              className="mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+              className="mt-2 text-xs text-[var(--accent-amber-text)] hover:text-[var(--accent-amber-text)] transition-colors flex items-center gap-1"
             >
               <Plus className="w-3 h-3" /> Add tier
             </button>
@@ -2331,16 +2476,16 @@ function NewAssignmentModal({
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-[var(--text-secondary)]">
               {firstTier.cap ? (
                 <>
-                  Next {firstTier.cap} deals by <span className="text-white font-medium">{traineeName}</span> will pay{' '}
-                  <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W.
+                  Next {firstTier.cap} deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
+                  <span className="text-[var(--accent-amber-text)] font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W.
                   {secondTier && (
                     <> After cap, falls back to ${secondTier.rate.toFixed(2)}/W{secondTier.cap === null ? ' perpetuity' : ` for ${secondTier.cap} deals`}.</>
                   )}
                 </>
               ) : (
                 <>
-                  All deals by <span className="text-white font-medium">{traineeName}</span> will pay{' '}
-                  <span className="text-amber-400 font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W perpetuity.
+                  All deals by <span className="text-[var(--text-primary)] font-medium">{traineeName}</span> will pay{' '}
+                  <span className="text-[var(--accent-amber-text)] font-medium">{trainerName}</span> ${firstTier.rate.toFixed(2)}/W perpetuity.
                 </>
               )}
               {' '}Rate kicks in on M2 + M3 per installer pay schedule.
@@ -2349,7 +2494,7 @@ function NewAssignmentModal({
 
           {/* Error */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300 flex items-start gap-2">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-[var(--accent-red-text)] flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -2359,7 +2504,7 @@ function NewAssignmentModal({
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
+              className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
             >
               Cancel
             </button>
@@ -2374,6 +2519,260 @@ function NewAssignmentModal({
             </button>
           </div>
         </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Assignment Modal ───────────────────────────────────────────────────
+// Trainer + trainee are immutable on the API (changing either would require a
+// new TrainerAssignment row), so this modal only edits tiers + the active
+// flag. Mirrors NewAssignmentModal validation, hits PATCH /api/trainer-
+// assignments instead of POST.
+
+function EditAssignmentModal({
+  assignment,
+  reps,
+  onClose,
+  onSaved,
+}: {
+  assignment: TrainerAssignment;
+  reps: Rep[];
+  onClose: () => void;
+  onSaved: (updated: TrainerAssignment) => void;
+}) {
+  const trainerName = reps.find((r) => r.id === assignment.trainerId)?.name ?? 'Trainer';
+  const traineeName = reps.find((r) => r.id === assignment.traineeId)?.name ?? 'Trainee';
+
+  const [isActiveTraining, setIsActiveTraining] = useState<boolean>(assignment.isActiveTraining ?? true);
+  const [tiers, setTiers] = useState<TierRow[]>(() =>
+    (assignment.tiers.length > 0 ? assignment.tiers : [{ upToDeal: null, ratePerW: 0 }]).map((t) => ({
+      ratePerW: t.ratePerW.toString(),
+      upToDeal: t.upToDeal === null ? '' : t.upToDeal.toString(),
+      perpetuity: t.upToDeal === null,
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const addTier = () => setTiers((prev) => [...prev, { ratePerW: '0.10', upToDeal: '', perpetuity: true }]);
+  const removeTier = (idx: number) => setTiers((prev) => prev.filter((_, i) => i !== idx));
+  const updateTier = (idx: number, field: keyof TierRow, value: string | boolean) => {
+    setTiers((prev) => prev.map((t, i) => (i === idx ? { ...t, [field]: value } : t)));
+  };
+
+  const validate = (): string | null => {
+    if (tiers.length === 0) return 'At least one tier is required';
+    for (let i = 0; i < tiers.length; i++) {
+      const rate = parseFloat(tiers[i].ratePerW);
+      if (isNaN(rate) || rate < 0 || rate > MAX_TRAINER_RATE_PER_W) {
+        return `Tier ${i + 1}: rate must be $0–$${MAX_TRAINER_RATE_PER_W}/W`;
+      }
+      if (!tiers[i].perpetuity) {
+        const cap = parseInt(tiers[i].upToDeal);
+        if (isNaN(cap) || cap <= 0 || !Number.isInteger(cap)) {
+          return `Tier ${i + 1}: cap must be a positive integer or Perpetuity`;
+        }
+        if (i > 0 && tiers[i - 1].perpetuity) {
+          return `Tier ${i + 1}: no tiers can follow a perpetuity tier`;
+        }
+        if (i > 0 && !tiers[i - 1].perpetuity) {
+          const prevCap = parseInt(tiers[i - 1].upToDeal);
+          if (cap <= prevCap) {
+            return `Tier ${i + 1}: cap must be greater than tier ${i} cap (${prevCap})`;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleSave = async () => {
+    const validationError = validate();
+    if (validationError) { setError(validationError); return; }
+    setError('');
+    setSaving(true);
+
+    const payload = {
+      id: assignment.id,
+      isActiveTraining,
+      tiers: tiers.map((t) => ({
+        ratePerW: parseFloat(t.ratePerW),
+        upToDeal: t.perpetuity ? null : parseInt(t.upToDeal),
+      })),
+    };
+
+    try {
+      const res = await fetch('/api/trainer-assignments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? 'Failed to update assignment');
+        setSaving(false);
+        return;
+      }
+      const data = await res.json();
+      const updated: TrainerAssignment = {
+        id: data.id,
+        trainerId: data.trainerId,
+        traineeId: data.traineeId,
+        isActiveTraining: data.isActiveTraining ?? true,
+        tiers: (data.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({
+          upToDeal: t.upToDeal,
+          ratePerW: t.ratePerW,
+        })),
+      };
+      onSaved(updated);
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter' && !saving && (e.metaKey || e.ctrlKey)) handleSave();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiers, isActiveTraining, saving]);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="min-h-full grid place-items-center p-4">
+        <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 rounded-2xl p-6 w-full max-w-lg">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/15">
+                <Pencil className="w-5 h-5 text-[var(--accent-amber-text)]" />
+              </div>
+              <div>
+                <h2 className="text-[var(--text-primary)] font-semibold text-lg">Edit Assignment</h2>
+                <p className="text-sm text-[var(--text-muted)]">{trainerName} → {traineeName}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-[var(--surface-card)]/60 border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-xs text-[var(--text-muted)]">
+              Trainer and rep can&apos;t be changed on an existing assignment. Delete and recreate to reassign.
+            </div>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isActiveTraining}
+                onChange={(e) => setIsActiveTraining(e.target.checked)}
+                className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface-card)]"
+              />
+              <span className="text-base text-[var(--text-secondary)]">Active coaching</span>
+              <span className="text-xs text-[var(--text-muted)]">(uncheck for Residuals)</span>
+            </label>
+
+            <div>
+              <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-2">Tier Chain</label>
+              <div className="space-y-2">
+                {tiers.map((tier, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
+                    <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={MAX_TRAINER_RATE_PER_W}
+                          value={tier.ratePerW}
+                          onChange={(e) => updateTier(idx, 'ratePerW', e.target.value)}
+                          className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={tier.perpetuity}
+                              onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
+                              className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
+                            />
+                            <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
+                          </label>
+                        </div>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          value={tier.perpetuity ? '' : tier.upToDeal}
+                          disabled={tier.perpetuity}
+                          onChange={(e) => updateTier(idx, 'upToDeal', e.target.value)}
+                          placeholder={tier.perpetuity ? 'n/a' : ''}
+                          className={`w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                            tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                    {tiers.length > 1 && (
+                      <button
+                        onClick={() => removeTier(idx)}
+                        className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
+                        title="Remove tier"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={addTier}
+                className="mt-2 text-xs text-[var(--accent-amber-text)] hover:text-[var(--accent-amber-text)] transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Add tier
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-[var(--accent-red-text)] flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)] hover:border-[var(--border)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2600,11 +2999,11 @@ function BackfillWizard({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Backfill Trainer Overrides</p>
-              <h3 className="text-white text-lg font-semibold mt-0.5">
+              <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5">
                 {trainerName} on {traineeName}&apos;s deals
               </h3>
             </div>
-            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors p-1">
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -2613,7 +3012,7 @@ function BackfillWizard({
             {assignment.tiers.map((tier, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border bg-amber-500/15 text-amber-300 border-amber-500/40"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums border bg-amber-500/15 text-[var(--accent-amber-text)] border-amber-500/40"
               >
                 ${tier.ratePerW.toFixed(2)}/W
                 <span className="opacity-60">{tier.upToDeal === null ? 'perpetuity' : `cap ${tier.upToDeal}`}</span>
@@ -2643,7 +3042,7 @@ function BackfillWizard({
                     key={key}
                     onClick={() => setStatusFilter(key)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      statusFilter === key ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-white'
+                      statusFilter === key ? 'bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {label}
@@ -2689,7 +3088,7 @@ function BackfillWizard({
                                 className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
                               />
                             </td>
-                            <td className="px-3 py-2 text-white truncate max-w-[160px]">{p.customerName}</td>
+                            <td className="px-3 py-2 text-[var(--text-primary)] truncate max-w-[160px]">{p.customerName}</td>
                             <td className="px-3 py-2 text-[var(--text-secondary)] text-xs tabular-nums">{p.soldDate}</td>
                             <td className="px-3 py-2 text-right text-[var(--text-secondary)] tabular-nums">{p.kWSize.toFixed(1)}</td>
                             <td className="px-3 py-2 text-center"><PhasePill phase={p.phase} /></td>
@@ -2702,7 +3101,7 @@ function BackfillWizard({
                             </td>
                             <td className="px-3 py-2 text-center">
                               {hasTrainer ? (
-                                <span className="text-amber-400 text-[10px] font-medium">Yes</span>
+                                <span className="text-[var(--accent-amber-text)] text-[10px] font-medium">Yes</span>
                               ) : (
                                 <span className="text-[var(--text-dim)] text-[10px]">No</span>
                               )}
@@ -2734,27 +3133,27 @@ function BackfillWizard({
             <div className="space-y-4">
               <button
                 onClick={() => setStep('select')}
-                className="text-xs text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
               >
                 <ChevronDown className="w-3 h-3 rotate-90" /> Back to selection
               </button>
 
               <div className="card-surface rounded-xl p-4 space-y-3">
-                <h4 className="text-white font-semibold text-sm">Preview</h4>
+                <h4 className="text-[var(--text-primary)] font-semibold text-sm">Preview</h4>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Will create <span className="text-white font-medium">{preview.entries.length}</span> Trainer PayrollEntries totaling{' '}
-                  <span className="text-amber-400 font-medium">${(preview.m2Total + preview.m3Total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  Will create <span className="text-[var(--text-primary)] font-medium">{preview.entries.length}</span> Trainer PayrollEntries totaling{' '}
+                  <span className="text-[var(--accent-amber-text)] font-medium">${(preview.m2Total + preview.m3Total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M2 Paid</p>
-                    <p className="text-white font-bold tabular-nums">{preview.m2Count} entries</p>
-                    <p className="text-amber-400 text-sm tabular-nums">${preview.m2Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m2Count} entries</p>
+                    <p className="text-[var(--accent-amber-text)] text-sm tabular-nums">${preview.m2Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-[var(--surface-card)]/50 rounded-lg px-3 py-2">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">M3 Paid</p>
-                    <p className="text-white font-bold tabular-nums">{preview.m3Count} entries</p>
-                    <p className="text-amber-400 text-sm tabular-nums">${preview.m3Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[var(--text-primary)] font-bold tabular-nums">{preview.m3Count} entries</p>
+                    <p className="text-[var(--accent-amber-text)] text-sm tabular-nums">${preview.m3Total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
 
@@ -2764,12 +3163,12 @@ function BackfillWizard({
                     {preview.entries.map((e, i) => (
                       <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-[var(--border-subtle)]/50">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${e.milestone === 'M2' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-blue-500/10 text-blue-300'}`}>{e.milestone}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${e.milestone === 'M2' ? 'bg-emerald-500/10 text-[var(--accent-emerald-text)]' : 'bg-blue-500/10 text-[var(--accent-blue-text)]'}`}>{e.milestone}</span>
                           <span className="text-[var(--text-secondary)] truncate">{e.customerName}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-[var(--text-muted)] tabular-nums">${e.rate.toFixed(2)}/W</span>
-                          <span className="text-amber-400 font-medium tabular-nums">${e.amount.toFixed(2)}</span>
+                          <span className="text-[var(--accent-amber-text)] font-medium tabular-nums">${e.amount.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
@@ -2793,7 +3192,7 @@ function BackfillWizard({
               </div>
 
               <div className="flex items-center justify-between">
-                <p className="text-xs text-[var(--text-muted)]">Entries will be created as <span className="text-white font-medium">Paid</span> status (historical backfill).</p>
+                <p className="text-xs text-[var(--text-muted)]">Entries will be created as <span className="text-[var(--text-primary)] font-medium">Paid</span> status (historical backfill).</p>
                 <button
                   onClick={handleCommit}
                   disabled={committing || preview.entries.length === 0}
@@ -2811,13 +3210,13 @@ function BackfillWizard({
           {step === 'done' && commitResult && (
             <div className="text-center py-12 space-y-4">
               <div className="inline-flex p-4 rounded-2xl bg-emerald-500/10">
-                <CheckCircle className="w-12 h-12 text-emerald-400" />
+                <CheckCircle className="w-12 h-12 text-[var(--accent-emerald-text)]" />
               </div>
-              <h3 className="text-white text-lg font-bold">Backfill Complete</h3>
+              <h3 className="text-[var(--text-primary)] text-lg font-bold">Backfill Complete</h3>
               <p className="text-[var(--text-secondary)] text-sm">
-                Created <span className="text-white font-medium">{commitResult.created}</span> trainer entries
+                Created <span className="text-[var(--text-primary)] font-medium">{commitResult.created}</span> trainer entries
                 {commitResult.skipped.length > 0 && (
-                  <>, skipped <span className="text-amber-400 font-medium">{commitResult.skipped.length}</span></>
+                  <>, skipped <span className="text-[var(--accent-amber-text)] font-medium">{commitResult.skipped.length}</span></>
                 )}
               </p>
               <button

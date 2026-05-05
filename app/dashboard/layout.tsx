@@ -108,11 +108,11 @@ function NavGroup({
         title={sidebarCollapsed ? label : undefined}
         className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[background] w-full ${sidebarCollapsed ? 'justify-center' : ''}`}
         style={isAnyChildActive
-          ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
-          : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'rgba(0,224,122,0.05)' } : {}) }
+          ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
+          : { color: 'var(--text-secondary)', fontWeight: 500, ...(open && !sidebarCollapsed ? { background: 'var(--accent-emerald-soft)' } : {}) }
         }
       >
-        <span style={{ opacity: isAnyChildActive ? 1 : 0.5, color: isAnyChildActive ? 'var(--accent-green)' : 'inherit', display: 'flex' }}><Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${iconPop ? ' nav-group-icon-pop' : ''}`} /></span>
+        <span style={{ opacity: isAnyChildActive ? 1 : 0.5, color: isAnyChildActive ? 'var(--accent-emerald-solid)' : 'inherit', display: 'flex' }}><Icon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${iconPop ? ' nav-group-icon-pop' : ''}`} /></span>
         {!sidebarCollapsed && (
           <>
             <span className="truncate flex-1 text-left">{label}</span>
@@ -132,7 +132,7 @@ function NavGroup({
           style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden">
-            <ul className="ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border" style={{ borderColor: isAnyChildActive ? 'rgba(0,224,122,0.4)' : 'var(--d-border, var(--border))' }}>
+            <ul className="ml-5 mt-0.5 space-y-0.5 border-l nav-sublist-border" style={{ borderColor: isAnyChildActive ? 'var(--accent-emerald-glow)' : 'var(--border-default)' }}>
               {items.map(({ href, label: childLabel, icon: ChildIcon }, idx) => {
                 const isActive = pathname.startsWith(href);
                 // Clamp stagger index to the 6 utility classes we have defined.
@@ -143,11 +143,11 @@ function NavGroup({
                       href={href}
                       className="group flex items-center gap-3 pl-9 pr-3 py-2 rounded-lg text-sm"
                       style={isActive
-                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
-                        : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500 }
+                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
+                        : { color: 'var(--text-secondary)', fontWeight: 500 }
                       }
                     >
-                      <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-green)' : 'inherit', display: 'flex' }}><ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
+                      <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-emerald-solid)' : 'inherit', display: 'flex' }}><ChildIcon className={`w-4 h-4 flex-shrink-0 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                       <span className="truncate">{childLabel}</span>
                     </Link>
                   </li>
@@ -163,10 +163,12 @@ function NavGroup({
 
 // ─── View As Selector (admin only) ──────────────────────────────────────────
 
-function ViewAsSelector({ reps, subDealers, onSelect, self }: {
+function ViewAsSelector({ reps, subDealers, candidates, onSelect, self }: {
   reps: Array<{ id: string; name: string }>;
   subDealers: Array<{ id: string; name: string }>;
-  onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' }) => void;
+  /** Pure admins + project managers — only populated for admin viewers. */
+  candidates: Array<{ id: string; name: string; role: 'admin' | 'project_manager'; scopedInstallerId: string | null }>;
+  onSelect: (user: { id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId?: string | null }) => void;
   /** When the current admin also sells (has repType), pass their own
    *  identity so the picker offers "My Rep View" as a first-class
    *  option. Replaces Glide's two-account hack for selling admins. */
@@ -202,9 +204,10 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
     };
   }, [open, close]);
 
-  const allUsers = [
-    ...reps.map((r) => ({ ...r, role: 'rep' as const })),
-    ...subDealers.map((sd) => ({ ...sd, role: 'sub-dealer' as const })),
+  const allUsers: Array<{ id: string; name: string; role: 'rep' | 'sub-dealer' | 'admin' | 'project_manager'; scopedInstallerId?: string | null }> = [
+    ...reps.map((r) => ({ id: r.id, name: r.name, role: 'rep' as const })),
+    ...subDealers.map((sd) => ({ id: sd.id, name: sd.name, role: 'sub-dealer' as const })),
+    ...candidates.map((c) => ({ id: c.id, name: c.name, role: c.role, scopedInstallerId: c.scopedInstallerId })),
   ];
 
   const filtered = search.trim()
@@ -216,7 +219,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-card)]"
-        style={{ color: 'var(--d-muted, var(--text-muted))' }}
+        style={{ color: 'var(--text-muted)' }}
       >
         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{open ? 'Close' : 'View As...'}</span>
@@ -228,13 +231,13 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search reps..."
-              className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-[var(--text-dim)]"
+              placeholder="Search users..."
+              className="flex-1 bg-transparent px-3 py-2 text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-dim)]"
             />
             <button
               onClick={close}
               aria-label="Close View As selector"
-              className="px-2 py-2 text-[var(--text-dim)] hover:text-white transition-colors"
+              className="px-2 py-2 text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -243,7 +246,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
             {self && !search.trim() && (
               <button
                 onClick={() => { onSelect({ id: self.id, name: self.name, role: 'rep' }); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[var(--accent-green)] hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between border-b border-[var(--border-subtle)]"
+                className="w-full text-left px-3 py-2 text-xs text-[var(--accent-emerald-text)] hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between border-b border-[var(--border-subtle)]"
               >
                 <span className="font-semibold">My Rep View</span>
                 <span className="text-[10px] text-[var(--text-dim)]">see your own rep page</span>
@@ -251,16 +254,22 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
             )}
             {filtered.length === 0 ? (
               <p className="text-xs text-[var(--text-dim)] p-3 text-center">No matches</p>
-            ) : filtered.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => { onSelect(u); close(); }}
-                className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-white transition-colors flex items-center justify-between"
-              >
-                <span>{u.name}</span>
-                <span className="text-[10px] text-[var(--text-dim)] capitalize">{u.role}</span>
-              </button>
-            ))}
+            ) : filtered.map((u) => {
+              const roleLabel = u.role === 'project_manager'
+                ? (u.scopedInstallerId ? 'vendor PM' : 'PM')
+                : u.role === 'sub-dealer' ? 'sub-dealer'
+                : u.role;
+              return (
+                <button
+                  key={`${u.role}-${u.id}`}
+                  onClick={() => { onSelect(u); close(); }}
+                  className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-between"
+                >
+                  <span>{u.name}</span>
+                  <span className="text-[10px] text-[var(--text-dim)]">{roleLabel}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -271,7 +280,7 @@ function ViewAsSelector({ reps, subDealers, onSelect, self }: {
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers } = useApp();
+  const { currentRole, currentRepName, currentRepId, currentUserRepType, trainerAssignments, logout, projects, payrollEntries, dataError, effectiveRole, effectiveRepId, isViewingAs, viewAsUser, setViewAsUser, clearViewAs, pmPermissions, reps, subDealers, viewAsCandidates } = useApp();
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
@@ -337,8 +346,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   useEffect(() => {
-    if (!currentRole) router.push('/');
-  }, [currentRole, router]);
+    if (!currentRole) {
+      // Stash the dashboard path the user was on so the role-resolution
+      // loop in `app/page.tsx` can return them here instead of dumping
+      // them on `/dashboard`. Without this, refresh on any dashboard
+      // route bounced to / → role resolves → push('/dashboard'), losing
+      // the deep-link.
+      if (typeof window !== 'undefined' && pathname?.startsWith('/dashboard')) {
+        try {
+          sessionStorage.setItem(
+            'postAuthRedirect',
+            pathname + (window.location.search ?? ''),
+          );
+        } catch {
+          // Private browsing / sessionStorage disabled — degrade to old behavior.
+        }
+      }
+      router.push('/');
+    }
+  }, [currentRole, router, pathname]);
 
   // Show / hide scroll-to-top button based on main scroll position
   useEffect(() => {
@@ -426,7 +452,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-6 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
+          background: 'linear-gradient(135deg, var(--surface-page) 0%, color-mix(in srgb, var(--accent-blue-solid) 8%, var(--surface-page)) 50%, color-mix(in srgb, var(--accent-blue-solid) 14%, var(--surface-page)) 100%)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -441,7 +467,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             width: '40vmin',
             height: '40vmin',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,229,160,0.25) 0%, transparent 65%)',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)',
             filter: 'blur(20px)',
           }}
         />
@@ -455,14 +481,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           width={80}
           height={80}
           className="relative z-10"
-          style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px rgba(0,229,160,0.35)' }}
+          style={{ borderRadius: '18px', boxShadow: '0 10px 30px -10px color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' }}
         />
         {/* Brand-colored spinner — matches the rest of the emerald accents */}
         <div className="w-6 h-6 relative z-10">
-          <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'rgba(0,229,160,0.15)' }} />
+          <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)' }} />
           <div
             className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-            style={{ borderTopColor: 'var(--accent-emerald)' }}
+            style={{ borderTopColor: 'var(--accent-emerald-solid)' }}
           />
         </div>
       </div>
@@ -521,13 +547,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const showCollapsed = collapsed && !mobileOpen;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--navy-base)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--surface-page)' }}>
       {/* Skip-to-main-content link — visually hidden until focused via
           keyboard (Tab from the top). Lets keyboard users bypass the
           sidebar / nav on every page load. */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--accent-green)] focus:text-black focus:font-semibold focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--accent-emerald-solid)] focus:text-black focus:font-semibold focus:shadow-lg"
       >
         Skip to main content
       </a>
@@ -564,20 +590,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ].join(' ')}
         style={{
           width: collapsed ? '64px' : '220px',
-          backgroundColor: 'var(--navy-card)',
-          borderColor: 'var(--d-border, var(--border))',
+          backgroundColor: 'var(--surface-pressed)',
+          borderColor: 'var(--border-default)',
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
         {/* Logo + collapse/close toggle */}
-        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--d-border, var(--border))' }}>
+        <div className="flex items-center justify-between px-4 py-4 h-[60px]" style={{ borderBottom: '1px solid var(--border-default)' }}>
           {!showCollapsed && (
             <div className="flex items-center gap-2 overflow-hidden min-w-0">
               <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 10px var(--accent-green)', flexShrink: 0 }} />
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald-solid)', boxShadow: '0 0 10px var(--accent-emerald-solid)', flexShrink: 0 }} />
                 <div className="flex items-baseline gap-0.5">
-                  <span className="text-white font-bold tracking-tighter text-xl leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
-                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--d-muted, var(--text-muted))', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 400 }}>energy</span>
+                  <span className="font-bold tracking-tighter text-xl leading-none" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>kilo</span>
+                  <span className="tracking-[0.14em] uppercase" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", fontSize: '10px', fontWeight: 500 }}>energy</span>
                 </div>
               </div>
               {/* ⌘K hint badge — opens command palette on click */}
@@ -585,10 +611,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setPaletteOpen(true)}
                 title="Open command palette (⌘K)"
                 className="flex-shrink-0 hover:text-[var(--text-secondary)] transition-colors"
-                style={{ color: 'var(--d-muted, var(--text-muted))' }}
+                style={{ color: 'var(--text-muted)' }}
                 aria-label="Open command palette"
               >
-                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                   ⌘K
                 </kbd>
               </button>
@@ -597,10 +623,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setShortcutsOpen(true)}
                 title="Keyboard shortcuts (?)"
                 className="flex-shrink-0 hover:text-[var(--text-secondary)] transition-colors"
-                style={{ color: 'var(--d-muted, var(--text-muted))' }}
+                style={{ color: 'var(--text-muted)' }}
                 aria-label="Open keyboard shortcuts"
               >
-                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
+                <kbd className="font-mono text-[9px] rounded px-1.5 py-0.5 leading-none" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                   ?
                 </kbd>
               </button>
@@ -610,8 +636,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => { setCollapsed((v) => { const next = !v; localStorage.setItem('sidebar-collapsed', String(next)); return next; }); }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden md:flex hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
-            style={{ color: 'var(--d-muted, var(--text-muted))' }}
+            className="hidden md:flex hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+            style={{ color: 'var(--text-muted)' }}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -619,7 +645,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation menu"
-            className="md:hidden text-[var(--text-muted)] hover:text-white transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
+            className="md:hidden text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-card)] flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -628,7 +654,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav */}
         <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden relative">
           {/* Depth gradient — fades content as it scrolls under this edge */}
-          <div className="pointer-events-none sticky top-0 left-0 right-0 h-6 z-10 -mb-6" style={{ background: 'linear-gradient(to bottom, var(--navy-card), transparent)' }} />
+          <div className="pointer-events-none sticky top-0 left-0 right-0 h-6 z-10 -mb-6" style={{ background: 'linear-gradient(to bottom, var(--surface-pressed), transparent)' }} />
           <ul className="space-y-0.5 px-2">
             {navItems.map((item, index) => {
               // ── NavGroup (collapsible section) ───────────────────────────
@@ -639,7 +665,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Fragment key={item.label}>
                     {/* 'TOOLS' section divider — only in expanded sidebar */}
                     {!showCollapsed && isFirstGroup && (
-                      <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, var(--text-dim))', letterSpacing: '0.14em' }}>
+                      <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--text-dim)', letterSpacing: '0.14em' }}>
                         TOOLS
                       </li>
                     )}
@@ -665,7 +691,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Fragment key={href}>
                   {/* 'MAIN' section divider before the very first item — expanded only */}
                   {!showCollapsed && index === 0 && (
-                    <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--d-dim, var(--text-dim))', letterSpacing: '0.14em' }}>
+                    <li className="text-[10px] uppercase px-3 pt-4 pb-1" style={{ color: 'var(--text-dim)', letterSpacing: '0.14em' }}>
                       MAIN
                     </li>
                   )}
@@ -675,18 +701,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       title={showCollapsed ? label : undefined}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${showCollapsed ? 'justify-center' : ''}`}
                       style={isActive
-                        ? { background: 'rgba(0,224,122,0.1)', border: '1px solid rgba(0,224,122,0.25)', color: 'var(--accent-green)', fontWeight: 700 }
-                        : { color: 'var(--d-sub, var(--text-secondary))', fontWeight: 500, border: '1px solid transparent' }
+                        ? { background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)', fontWeight: 700 }
+                        : { color: 'var(--text-secondary)', fontWeight: 500, border: '1px solid transparent' }
                       }
                     >
                       {/* Icon bounces once whenever this route becomes active */}
                       <span className="relative flex-shrink-0">
-                        <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-green)' : 'inherit', display: 'inline-flex' }}><Icon className={`w-4 h-4 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
+                        <span style={{ opacity: isActive ? 1 : 0.5, color: isActive ? 'var(--accent-emerald-solid)' : 'inherit', display: 'inline-flex' }}><Icon className={`w-4 h-4 transition-all duration-200${isActive ? ' nav-icon-active' : ''}`} /></span>
                         {(() => {
                           const badgeCount = (navBadges[label] ?? 0) + (label === 'Projects' ? unreadMentionCount : 0);
                           if (badgeCount <= 0) return null;
                           return (
-                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-white bg-red-500 shadow-sm shadow-red-500/30">
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full text-[9px] font-bold leading-none text-[var(--text-primary)] bg-red-500 shadow-sm shadow-red-500/30">
                               {badgeCount > 99 ? '99+' : badgeCount}
                             </span>
                           );
@@ -697,7 +723,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Tooltip popover — only shown when sidebar is collapsed */}
                     {showCollapsed && (
                       <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 nav-tooltip-popover">
-                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[var(--surface-card)]/90 border border-[var(--border)]/40 px-2.5 py-1.5 text-xs font-medium text-white shadow-xl">
+                        <span className="nav-tooltip-bubble whitespace-nowrap rounded-md backdrop-blur-md bg-[var(--surface-card)]/90 border border-[var(--border)]/40 px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] shadow-xl">
                           {label}
                         </span>
                       </div>
@@ -716,6 +742,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <ViewAsSelector
             reps={reps}
             subDealers={subDealers}
+            candidates={viewAsCandidates}
             onSelect={setViewAsUser}
             self={currentUserRepType && currentRepId && currentRepName ? { id: currentRepId, name: currentRepName } : null}
           />
@@ -727,7 +754,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               title="View as…"
               aria-label="Expand sidebar to pick a user to view as"
               className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors hover:bg-[var(--surface-card)]"
-              style={{ color: 'var(--d-muted, var(--text-muted))' }}
+              style={{ color: 'var(--text-muted)' }}
             >
               <Eye className="w-4 h-4" />
             </button>
@@ -740,7 +767,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setShortcutsOpen(true)}
             title="Keyboard shortcuts"
             className="flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-card)]"
-            style={{ color: 'var(--d-muted, var(--text-muted))' }}
+            style={{ color: 'var(--text-muted)' }}
             aria-label="Keyboard shortcuts"
           >
             <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -750,23 +777,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User + Logout */}
         <div>
-          <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--d-border, var(--border)), transparent)' }} />
+          <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border-default), transparent)' }} />
         <div className="px-3 py-4">
           {!showCollapsed ? (
-            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--d-card, var(--surface-card))', border: '1px solid var(--d-border2, var(--border-subtle))' }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }}>
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }}>
                 {initials}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold truncate leading-tight" style={{ color: 'var(--d-text)', fontFamily: "'DM Sans', sans-serif", fontSize: 12 }}>
+                <p className="text-xs font-bold truncate leading-tight" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif", fontSize: 12 }}>
                   {currentRepName}
                 </p>
-                <p className="text-xs capitalize" style={{ color: 'var(--d-muted)', fontSize: 11 }}>{currentRole}</p>
+                <p className="text-xs capitalize" style={{ color: 'var(--text-muted)', fontSize: 11 }}>{currentRole}</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center mb-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--accent-blue), #b47dff)' }} title={currentRepName ?? ''}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)] text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--accent-blue-solid), #b47dff)' }} title={currentRepName ?? ''}>
                 {initials}
               </div>
             </div>
@@ -777,7 +804,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className={`flex items-center gap-2 text-xs transition-colors w-full ${
               showCollapsed ? 'justify-center' : ''
             }`}
-            style={{ color: 'var(--d-red, var(--accent-red))' }}
+            style={{ color: 'var(--accent-red-text)' }}
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
             {!showCollapsed && 'Logout'}
@@ -792,28 +819,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         id="main-content"
         ref={mainRef}
         className="flex-1 overflow-y-auto overflow-x-hidden md:pt-0 pb-20 md:pb-0 relative"
-        style={{ backgroundColor: 'var(--navy-base)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ backgroundColor: 'var(--surface-page)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         {dataError && (
-          <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-[var(--accent-red-text)] text-sm text-center">
             Failed to load data. Please check your connection and refresh.
           </div>
         )}
         {/* View As banner */}
         {isViewingAs && viewAsUser && (() => {
           const isSelfView = viewAsUser.id === currentRepId;
+          const roleLabel = viewAsUser.role === 'project_manager'
+            ? (viewAsUser.scopedInstallerId ? 'vendor PM' : 'project manager')
+            : viewAsUser.role === 'sub-dealer' ? 'sub-dealer'
+            : viewAsUser.role;
           return (
             <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-300 text-sm font-medium">
+                <Eye className="w-4 h-4 text-[var(--accent-amber-text)]" />
+                <span className="text-[var(--accent-amber-text)] text-sm font-medium">
                   {isSelfView
-                    ? <>My Rep View <span className="text-amber-400/60">— same as any rep sees</span></>
-                    : <>Viewing as <span className="text-white font-semibold">{viewAsUser.name}</span> <span className="text-amber-400/60 capitalize">({viewAsUser.role})</span></>
+                    ? <>My Rep View <span className="text-[var(--accent-amber-text)]/60">— same as any rep sees</span></>
+                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-[var(--accent-amber-text)]/60">({roleLabel})</span></>
                   }
                 </span>
               </div>
-              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-amber-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-[var(--accent-amber-text)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
                 <XCircle className="w-3.5 h-3.5" /> Back to admin
               </button>
             </div>
@@ -834,7 +865,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-white hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
+          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
             showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
         >
@@ -863,7 +894,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <InstallPrompt />
 
       {/* ── Bottom navigation bar (mobile only, hidden on md+) ────────── */}
-      <BottomNav role={roleForNav ?? 'rep'} isTrainer={isTrainer} onLogout={handleLogout} />
+      <BottomNav role={roleForNav ?? 'rep'} />
     </div>
   );
 }

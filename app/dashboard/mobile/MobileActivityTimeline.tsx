@@ -25,15 +25,15 @@ function relativeTime(dateStr: string): string {
 // ── Activity type styling ──
 
 const ACTIVITY_STYLES: Record<string, string> = {
-  phase_change:    'var(--m-accent2, var(--accent-cyan2))',
-  flagged:         '#ef4444',
-  unflagged:       '#f87171',
-  m1_paid:         '#10b981',
-  m2_paid:         '#10b981',
-  note_edit:       '#f59e0b',
-  field_edit:      'var(--m-text-muted, var(--text-mobile-muted))',
-  created:         '#a855f7',
-  setter_assigned: '#22d3ee',
+  phase_change:    'var(--accent-cyan-solid)',
+  flagged:         'var(--accent-red-solid)',
+  unflagged:       'var(--accent-red-text)',
+  m1_paid:         'var(--accent-emerald-solid)',
+  m2_paid:         'var(--accent-emerald-solid)',
+  note_edit:       'var(--accent-amber-solid)',
+  field_edit:      'var(--text-muted)',
+  created:         'var(--accent-purple-solid)',
+  setter_assigned: 'var(--accent-teal-solid)',
 };
 
 // ── Activity Timeline ──
@@ -51,14 +51,14 @@ function ActivityTimelineSkeleton() {
     <div className="relative pl-6">
       <div
         className="absolute left-2 top-0 bottom-0 w-px"
-        style={{ background: 'var(--m-border, var(--border-mobile))' }}
+        style={{ background: 'var(--border-subtle)' }}
       />
       {([0, 1, 2] as const).map((i) => (
         <div key={i} className="relative mb-3">
           <div
             className="absolute -left-4 top-1 w-2 h-2 rounded-full"
             style={{
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}
@@ -67,7 +67,7 @@ function ActivityTimelineSkeleton() {
             className="h-4 rounded-md mb-1.5"
             style={{
               width: `${[72, 55, 63][i]}%`,
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}
@@ -76,7 +76,7 @@ function ActivityTimelineSkeleton() {
             className="h-3 rounded-md"
             style={{
               width: '28%',
-              background: 'linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg,color-mix(in srgb, var(--text-primary) 4%, transparent) 25%,color-mix(in srgb, var(--text-primary) 11%, transparent) 50%,color-mix(in srgb, var(--text-primary) 4%, transparent) 75%)',
               backgroundSize: '200% 100%',
               animation: `shimmerSweep 1400ms ease-in-out ${i * 80}ms infinite`,
             }}
@@ -87,7 +87,7 @@ function ActivityTimelineSkeleton() {
   );
 }
 
-export default function MobileActivityTimeline({ projectId }: { projectId: string }) {
+export default function MobileActivityTimeline({ projectId, viewAsUserId }: { projectId: string; viewAsUserId?: string }) {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,8 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
 
   const fetchActivities = useCallback((skip: number, append: boolean) => {
     setLoading(true);
-    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}`)
+    const viewAsParam = viewAsUserId ? `&viewAs=${encodeURIComponent(viewAsUserId)}` : '';
+    fetch(`/api/projects/${projectId}/activity?limit=${LIMIT}&offset=${skip}${viewAsParam}`)
       .then((res) => res.json())
       .then((data) => {
         setActivities((prev) => append ? [...prev, ...data.activities] : data.activities);
@@ -105,7 +106,7 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, viewAsUserId]);
 
   useEffect(() => { fetchActivities(0, false); }, [fetchActivities]);
 
@@ -114,25 +115,25 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-slate-400" />
-        <h2 className="text-base font-semibold text-white">Activity</h2>
-        <span className="text-base text-slate-400">({total})</span>
+        <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+        <h2 className="text-base font-semibold text-[var(--text-primary)]">Activity</h2>
+        <span className="text-base text-[var(--text-muted)]">({total})</span>
       </div>
 
       {loading && activities.length === 0 ? (
         <ActivityTimelineSkeleton />
       ) : activities.length === 0 ? (
-        <p className="text-base text-slate-400">No activity yet</p>
+        <p className="text-base text-[var(--text-muted)]">No activity yet</p>
       ) : (
         <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--m-border, var(--border-mobile))' }} />
+          <div className="absolute left-2 top-0 bottom-0 w-px" style={{ background: 'var(--border-subtle)' }} />
           {activities.map((entry) => {
-            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--m-text-dim, #445577)';
+            const dotColor = ACTIVITY_STYLES[entry.type] ?? 'var(--text-dim)';
             return (
               <div key={entry.id} className="relative mb-3 last:mb-0">
                 <div className="absolute -left-4 top-1 w-2 h-2 rounded-full" style={{ background: dotColor }} />
-                <p className="text-base text-slate-300">{entry.detail}</p>
-                <p className="text-base text-slate-400">{relativeTime(entry.createdAt)}</p>
+                <p className="text-base text-[var(--text-secondary)]">{entry.detail}</p>
+                <p className="text-base text-[var(--text-muted)]">{relativeTime(entry.createdAt)}</p>
               </div>
             );
           })}
@@ -143,7 +144,7 @@ export default function MobileActivityTimeline({ projectId }: { projectId: strin
         <button
           onClick={() => fetchActivities(offset, true)}
           disabled={loading}
-          className="min-h-[48px] text-base text-blue-400 active:text-blue-300 disabled:opacity-50"
+          className="min-h-[48px] text-base text-[var(--accent-blue-text)] active:text-[var(--accent-blue-text)] disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load More'}
         </button>

@@ -9,7 +9,7 @@ import { useToast } from '../../../lib/toast';
 import { TrainerAssignment, TrainerOverrideTier } from '../../../lib/data';
 import {
   Building2, Landmark, BookOpen, Download, Settings,
-  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog, Shield,
+  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog, Shield, Sun,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -25,6 +25,7 @@ import { CustomizationSection } from './sections/CustomizationSection';
 import { ExportSection } from './sections/ExportSection';
 import { BaselinesSection } from './sections/BaselinesSection';
 import { AdminUsersSection } from './sections/AdminUsersSection';
+import AppearanceSection from './sections/AppearanceSection';
 import { SettingsStatGrid } from './components/SettingsStatGrid';
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
@@ -36,7 +37,8 @@ type SettingsSection =
   | 'project-managers'
   | 'admin-users'
   | 'export'
-  | 'customization';
+  | 'customization'
+  | 'appearance';
 
 type NavItem = { id: SettingsSection; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { group: string; items: NavItem[] };
@@ -64,6 +66,7 @@ const NAV: NavGroup[] = [
   {
     group: 'System',
     items: [
+      { id: 'appearance', label: 'Appearance', icon: Sun },
       { id: 'customization', label: 'Customization', icon: Sliders },
       { id: 'export', label: 'Export', icon: Download },
     ],
@@ -96,7 +99,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'admin-users', 'installers', 'financers', 'baselines', 'customization', 'export'];
+  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'admin-users', 'installers', 'financers', 'baselines', 'appearance', 'customization', 'export'];
   const paramSection = searchParams.get('section') as string | null;
 
   // Legacy redirect: Settings > Trainer Overrides was consolidated into
@@ -168,7 +171,9 @@ function SettingsPageInner() {
   useEffect(() => {
     fetch('/api/reps?role=admin').then((r) => r.ok ? r.json() : []).then((users: Array<{ id: string; firstName: string; lastName: string; email: string }>) => {
       setAdminUsers(users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('[settings/page] admin user count load failed:', err instanceof Error ? err.message : err);
+    });
   }, []);
 
   /** Check whether the user has unsaved inline edits or open version-creation modals */
@@ -383,10 +388,10 @@ function SettingsPageInner() {
       {/* Sidebar */}
       <aside className="w-56 flex-shrink-0 p-4 pt-8 hidden md:block" style={{ borderRight: '1px solid var(--border)' }}>
         <div className="mb-6">
-          <div className="h-[3px] w-8 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-green))' }} />
+          <div className="h-[3px] w-8 rounded-full mb-3" style={{ background: 'linear-gradient(90deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }} />
           <div className="flex items-center gap-2 mb-0.5">
-            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,196,240,0.15)' }}>
-              <Settings className="w-4 h-4" style={{ color: 'var(--accent-cyan)' }} />
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)' }}>
+              <Settings className="w-4 h-4" style={{ color: 'var(--accent-cyan-text)' }} />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Settings</h1>
           </div>
@@ -398,12 +403,12 @@ function SettingsPageInner() {
             aria-hidden="true"
             style={{
               position: 'absolute', left: 0, width: '100%', borderRadius: '12px',
-              background: 'rgba(0,196,240,0.1)',
+              background: 'color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)',
               transition: 'top 250ms cubic-bezier(0.4, 0, 0.2, 1), height 250ms cubic-bezier(0.4, 0, 0.2, 1)',
               opacity: 1, zIndex: 0, pointerEvents: 'none',
               top: pillStyle.top, height: pillStyle.height,
-              boxShadow: '0 0 12px rgba(0,196,240,0.1)',
-              border: '1px solid rgba(0,196,240,0.25)',
+              boxShadow: '0 0 12px color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)',
             }}
           />
 
@@ -423,11 +428,11 @@ function SettingsPageInner() {
                         ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full'
                         : 'hover:bg-[var(--surface-card)]/60'
                     }`}
-                    style={isActive ? { color: 'var(--accent-cyan)' } : { color: 'var(--text-secondary)' }}
+                    style={isActive ? { color: 'var(--accent-cyan-text)' } : { color: 'var(--text-secondary)' }}
                   >
-                    <span style={isActive ? { color: 'var(--accent-cyan)' } : { color: 'var(--text-dim)' }}><Icon className="w-4 h-4 flex-shrink-0" /></span>
+                    <span style={isActive ? { color: 'var(--accent-cyan-text)' } : { color: 'var(--text-dim)' }}><Icon className="w-4 h-4 flex-shrink-0" /></span>
                     <span className="truncate">{label}</span>
-                    {isActive && <ChevronRight className="w-3 h-3 ml-auto flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />}
+                    {isActive && <ChevronRight className="w-3 h-3 ml-auto flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />}
                   </button>
                 );
               })}
@@ -450,7 +455,7 @@ function SettingsPageInner() {
               <Settings className="w-3 h-3 text-[var(--text-dim)]" />
               <span>Settings</span>
               <ChevronRight className="w-3 h-3 text-[var(--text-dim)]" />
-              <NavIcon className="w-3 h-3 text-[var(--accent-green)]" />
+              <NavIcon className="w-3 h-3 text-[var(--accent-emerald-text)]" />
               <span className="text-[var(--text-secondary)] font-medium">{currentNav.label}</span>
             </div>
           );
@@ -459,10 +464,10 @@ function SettingsPageInner() {
         {/* Settings Summary Dashboard */}
         {editingInstaller === null && editingAssignmentId === null && editingPrepaid === null && editingProductName === null && (
           <SettingsStatGrid items={[
-            { label: 'Active Installers',   value: installers.filter(i => i.active).length,                                                      color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
-            { label: 'Active Financers',    value: financers.filter(f => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length,  color: 'text-[var(--accent-green)]', bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20' },
-            { label: 'Trainer Assignments', value: trainerAssignments.length,                                                                     color: 'text-violet-400',             bg: 'bg-violet-500/10 border-violet-500/20' },
-            { label: 'Admin Users',         value: adminUsers.length,                                                                             color: 'text-amber-400',              bg: 'bg-amber-500/10 border-amber-500/20' },
+            { label: 'Active Installers',   value: installers.filter(i => i.active).length,                                                      color: 'text-[var(--accent-emerald-text)]', bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20' },
+            { label: 'Active Financers',    value: financers.filter(f => f.active && !hiddenFinancers.has(f.name) && f.name !== 'Cash').length,  color: 'text-[var(--accent-emerald-text)]', bg: 'bg-[var(--accent-emerald-solid)]/10 border-[var(--accent-emerald-solid)]/20' },
+            { label: 'Trainer Assignments', value: trainerAssignments.length,                                                                     color: 'text-[var(--accent-purple-text)]',             bg: 'bg-violet-500/10 border-violet-500/20' },
+            { label: 'Admin Users',         value: adminUsers.length,                                                                             color: 'text-[var(--accent-amber-text)]',              bg: 'bg-amber-500/10 border-amber-500/20' },
           ]} />
         )}
 
@@ -523,6 +528,8 @@ function SettingsPageInner() {
           />
         )}
 
+        {section === 'appearance' && <AppearanceSection />}
+
         {section === 'customization' && <CustomizationSection />}
 
         {section === 'export' && <ExportSection />}
@@ -547,14 +554,14 @@ function SettingsPageInner() {
         return (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 backdrop-blur-xl bg-[var(--surface)]/80 border border-[var(--border)]/50 rounded-2xl px-6 py-3 shadow-2xl shadow-black/40 animate-float-toolbar-in" role="toolbar" aria-label="Batch actions for selected items">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 bg-[var(--accent-green)]/15 border border-[var(--accent-green)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
-                <span className="text-white font-bold tabular-nums">{totalCount}</span>
-                <span className="text-[var(--accent-green)] font-medium">selected</span>
+              <span className="flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/25 text-sm px-3 py-1 rounded-lg whitespace-nowrap select-none">
+                <span className="text-[var(--text-primary)] font-bold tabular-nums">{totalCount}</span>
+                <span className="text-[var(--accent-emerald-text)] font-medium">selected</span>
               </span>
               <div className="h-5 w-px bg-[var(--border)]/80 flex-shrink-0" />
               {hasActive && (
                 <button onClick={() => { selectedActiveInstallers.forEach((n) => setInstallerActive(n, false)); selectedActiveFinancers.forEach((n) => setFinancerActive(n, false)); const count = selectedActiveInstallers.length + selectedActiveFinancers.length; toast(`${count} item${count !== 1 ? 's' : ''} archived`, 'info'); setSelectedInstallers(new Set()); setSelectedFinancers(new Set()); setInstallerSelectMode(false); setFinancerSelectMode(false); }}
-                  className="flex items-center gap-1.5 text-white font-semibold px-4 py-1.5 rounded-xl text-sm bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/20 active:scale-[0.97] transition-all whitespace-nowrap">
+                  className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold px-4 py-1.5 rounded-xl text-sm bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/20 active:scale-[0.97] transition-all whitespace-nowrap">
                   <EyeOff className="w-3.5 h-3.5" /> Archive Selected
                 </button>
               )}
@@ -562,13 +569,13 @@ function SettingsPageInner() {
                 <button
                   onClick={() => { selectedArchivedInstallers.forEach((n) => setInstallerActive(n, true)); selectedArchivedFinancers.forEach((n) => setFinancerActive(n, true)); const count = selectedArchivedInstallers.length + selectedArchivedFinancers.length; toast(`${count} item${count !== 1 ? 's' : ''} restored`, 'info'); setSelectedInstallers(new Set()); setSelectedFinancers(new Set()); setInstallerSelectMode(false); setFinancerSelectMode(false); }}
                   className="flex items-center gap-1.5 font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition-all hover:brightness-110 whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
                 >
                   <Eye className="w-3.5 h-3.5" /> Restore Selected
                 </button>
               )}
               <button onClick={() => { setSelectedInstallers(new Set()); setSelectedFinancers(new Set()); setInstallerSelectMode(false); setFinancerSelectMode(false); }} aria-label="Deselect all and dismiss toolbar"
-                className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-white transition-colors flex-shrink-0">
+                className="btn-secondary p-1.5 rounded-lg bg-[var(--border)]/60 hover:bg-[var(--text-dim)]/80 border border-[var(--border)]/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>

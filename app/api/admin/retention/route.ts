@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { logger } from '../../../../lib/logger';
+import { logChange } from '../../../../lib/audit';
 
 /**
  * POST /api/admin/retention — rotate AuditLog entries older than 2 years.
@@ -27,12 +28,22 @@ export async function POST(req: NextRequest) {
   const presentedSecret = authHeader.replace(/^Bearer\s+/i, '').trim();
 
   let authorized = false;
+  let actorId: string | null = null;
+  let actorEmail: string | null = null;
+  let triggeredBy: 'cron' | 'admin' = 'cron';
   if (expectedSecret && presentedSecret && expectedSecret === presentedSecret) {
     authorized = true;
+    triggeredBy = 'cron';
   } else {
     // Fall back to admin session auth (for manual triggers from an admin UI).
     const { requireAdmin } = await import('../../../../lib/api-auth');
-    try { await requireAdmin(); authorized = true; } catch { /* unauthorized */ }
+    try {
+      const admin = await requireAdmin();
+      authorized = true;
+      triggeredBy = 'admin';
+      actorId = admin.id;
+      actorEmail = admin.email;
+    } catch { /* unauthorized */ }
   }
 
   if (!authorized) {
@@ -47,6 +58,23 @@ export async function POST(req: NextRequest) {
   logger.info('audit_retention_run', {
     cutoff: cutoff.toISOString(),
     deleted: result.count,
+    triggeredBy,
+  });
+
+  // Synthetic audit entry — records that retention ran and how many rows
+  // were dropped. Useful for compliance investigations ("we ran retention
+  // on X date and X records were purged"). actor.id is null for cron runs.
+  await logChange({
+    actor: { id: actorId, email: actorEmail },
+    action: 'audit_retention_run',
+    entityType: 'User',
+    entityId: actorId ?? 'system_cron',
+    detail: {
+      triggeredBy,
+      cutoff: cutoff.toISOString(),
+      deletedCount: result.count,
+      retentionDays: RETENTION_DAYS,
+    },
   });
 
   return NextResponse.json({

@@ -61,6 +61,7 @@ export interface CommissionInputs {
   baselineOverride?: InstallerBaseline | null; // per-project admin override
   trainerId?: string | null;                // per-project trainer override
   trainerRate?: number | null;              // per-project rate override
+  noChainTrainer?: boolean;                 // admin's "remove all trainers" flag — suppresses chain trainer commission
   /** Admin-entered co-party splits. Server treats these as given inputs
    *  and subtracts their sums from the primary's M1/M2/M3 so totals
    *  balance. */
@@ -179,6 +180,9 @@ function resolveTrainerRateForDeal(
     return { rate: inputs.trainerRate };
   }
 
+  // Admin explicitly removed all trainers from this deal — no chain commission.
+  if (inputs.noChainTrainer) return { rate: 0 };
+
   if (!inputs.setterId) return { rate: 0 };
 
   const resolution = resolveTrainerRate(
@@ -280,6 +284,7 @@ export const COMMISSION_INPUT_KEYS = [
   'installerProductId',
   'trainerId',
   'trainerRate',
+  'noChainTrainer',
   'baselineOverrideJson',
   'additionalClosers',
   'additionalSetters',

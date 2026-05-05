@@ -210,6 +210,10 @@ export interface Project {
   // Product Catalog installer: stores the ProductCatalogPricingVersion ID active when the deal was sold
   pcPricingVersionId?: string;
   prepaidSubType?: string;
+  // BVI handoff (and future per-installer intakes). JSON-serialized
+  // string matching lib/installer-intakes/<slug>.ts shape. Optional —
+  // only present when the deal's installer requires intake capture.
+  installerIntakeJson?: string;
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
   m3Paid: boolean;
@@ -232,6 +236,9 @@ export interface Project {
   trainerId?: string;
   trainerName?: string;
   trainerRate?: number;
+  // Admin's "remove all trainers from this deal" flag. true suppresses chain
+  // trainer visibility + commission. Default false preserves current behavior.
+  noChainTrainer?: boolean;
   // Set only when phase changes; null for projects pre-dating this field.
   phaseChangedAt?: string;
   updatedAt?: string;
@@ -1560,8 +1567,17 @@ export function computeIncentiveProgress(
           .reduce((s, e) => s + e.amount, 0);
       }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
+      const primaryRepByProject = new Map(relevantProjects.map((p) => [p.id, p.repId]));
       return payrollEntries
-        .filter((e) => e.projectId !== null && relevantProjectIds.has(e.projectId) && isPaidAndEffective(e) && e.type === 'Deal' && e.paymentStage !== 'Trainer')
+        .filter((e) =>
+          e.projectId !== null &&
+          relevantProjectIds.has(e.projectId) &&
+          isPaidAndEffective(e) &&
+          e.type === 'Deal' &&
+          e.paymentStage !== 'Trainer' &&
+          e.repId === primaryRepByProject.get(e.projectId) &&
+          e.notes !== 'Setter'
+        )
         .reduce((s, e) => s + e.amount, 0);
     }
     default:

@@ -11,6 +11,7 @@ import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
+import { resolveTrainerRate } from '../../../lib/commission';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
   Wallet as PayIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
@@ -63,18 +64,24 @@ interface PayPeriod {
 }
 
 // ── Status badge ─────────────────────────────────────────────────────────────
+// Outlined-ghost treatment: transparent fill + saturated -display border +
+// readable -text label. Matches the MobileBadge refactor — no more
+// green-on-green collapse in light mode.
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Paid:    { bg: 'bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20', text: 'text-[var(--accent-green)]', dot: 'bg-emerald-400' },
-  Pending: { bg: 'bg-yellow-500/10 border-yellow-500/20',   text: 'text-yellow-400',  dot: 'bg-yellow-400'  },
-  Draft:   { bg: 'bg-[var(--text-muted)]/10 border-[var(--border-subtle)]/20',     text: 'text-[var(--text-secondary)]',   dot: 'bg-[var(--text-muted)]'   },
+const STATUS_STYLES: Record<string, { border: string; text: string; dot: string }> = {
+  Paid:    { border: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)', dot: 'var(--accent-emerald-display)' },
+  Pending: { border: 'var(--accent-amber-display)',   text: 'var(--accent-amber-text)',   dot: 'var(--accent-amber-display)'   },
+  Draft:   { border: 'var(--border-strong)',          text: 'var(--text-secondary)',      dot: 'var(--text-muted)'             },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] ?? STATUS_STYLES.Draft;
   return (
-    <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 md:py-0.5 rounded-full text-xs font-medium border ${s.bg} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+    <span
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 md:py-0.5 rounded-full text-xs font-medium"
+      style={{ background: 'transparent', border: `1.5px solid ${s.border}`, color: s.text }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
       {status}
     </span>
   );
@@ -82,13 +89,19 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Stage badge ──────────────────────────────────────────────────────────────
 
+const STAGE_STYLES: Record<string, { border: string; text: string }> = {
+  M1: { border: 'var(--accent-emerald-display)', text: 'var(--accent-emerald-text)' },
+  M2: { border: 'var(--accent-purple-display)',  text: 'var(--accent-purple-text)'  },
+  M3: { border: 'var(--accent-teal-display)',    text: 'var(--accent-teal-text)'    },
+};
+
 function StageBadge({ stage }: { stage: string }) {
-  const color = stage === 'M1' ? 'text-[var(--accent-green)] bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20'
-    : stage === 'M2' ? 'text-violet-400 bg-violet-500/10 border-violet-500/20'
-    : stage === 'M3' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20'
-    : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+  const s = STAGE_STYLES[stage] ?? { border: 'var(--accent-amber-display)', text: 'var(--accent-amber-text)' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold border ${color}`}>
+    <span
+      className="inline-flex items-center px-2.5 py-1 md:py-0.5 md:px-2 rounded-full text-xs font-semibold"
+      style={{ background: 'transparent', border: `1.5px solid ${s.border}`, color: s.text }}
+    >
       {stage}
     </span>
   );
@@ -107,7 +120,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
+  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady, trainerAssignments } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -310,6 +323,20 @@ function MyPayPageInner() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
+  // Forward-looking trainer pipeline. Trainer entries fire alongside M2,
+  // so this counts un-paid trainer totals on deals still in pre-Install
+  // phases. Uses resolveTrainerRate so the per-project override path AND
+  // the rep-level assignment-chain path are both included.
+  const projectedTrainer = useMemo(() => {
+    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
+    return projects.reduce((s, p) => {
+      if (!preInstalled.includes(p.phase)) return s;
+      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      if (res.trainerId !== effectiveRepId) return s;
+      return s + res.rate * (p.kWSize ?? 0) * 1000;
+    }, 0);
+  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
+
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
   const annualProjection = useMemo(() => {
@@ -327,12 +354,21 @@ function MyPayPageInner() {
       return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
     }
 
-    // Average commission per deal (M1 + M2)
+    // Average commission per deal (M1 + M2 + trainer override).
+    // Reps who are also trainers earn a per-kW override on top of their
+    // closer/setter share. resolveTrainerRate handles both the per-deal
+    // override path and the rep-level assignment-chain path. A rep who's
+    // both closer and trainer on the same deal contributes m1+m2+trainer
+    // — exactly what they actually earn from that deal.
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
       const isSetterRole = p.setterId === effectiveRepId;
       const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
       const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      return s + m1 + m2;
+      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+      const trainerEarn = trainerRes.trainerId === effectiveRepId
+        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
+        : 0;
+      return s + m1 + m2 + trainerEarn;
     }, 0) / totalDeals;
 
     // --- Signal 2: Deals per month pace ---
@@ -372,12 +408,14 @@ function MyPayPageInner() {
       details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
     }
 
-    // Add pipeline boost: active deals not yet at milestones add to the projection
-    const pipelineBoost = Math.round((projectedM1 + projectedM2) * 0.15); // conservative 15%
+    // Add pipeline boost: active deals not yet at milestones add to the
+    // projection. Trainer pipeline rolls in here too so trainers see
+    // their forward-looking override pay reflected in the on-pace number.
+    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15); // conservative 15%
     annual += pipelineBoost;
 
     return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2]);
+  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -483,11 +521,11 @@ function MyPayPageInner() {
       />
 
       {/* ── Hero Banner — Next Payout + Page Title ── */}
-      <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-[var(--accent-green)]/15">
+      <div className="card-surface rounded-2xl mb-4 animate-slide-in-scale border-b-2 border-[var(--accent-emerald-solid)]/15">
         <div className="px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-3 mb-5">
-            <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-              <PayIcon className="w-5 h-5 text-[var(--accent-green)]" />
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 12%, transparent)' }}>
+              <PayIcon className="w-5 h-5 text-[var(--accent-emerald-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>My Pay</h1>
           </div>
@@ -496,12 +534,12 @@ function MyPayPageInner() {
             <div>
               <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest mb-1.5">Next Payout</p>
               <p className="font-black tabular-nums tracking-tight leading-none break-words"
-                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-green)', textShadow: '0 0 32px rgba(16,185,129,0.30)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
+                 style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--accent-emerald-display)', textShadow: '0 0 32px color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)', fontSize: 'clamp(1.5rem, 8vw, 3rem)' }}>
                 {fmt$(nextPayoutTotal)}
               </p>
               <p className="text-[var(--text-muted)] text-xs mt-2">{formatFridayLong(nextFridayStr)}</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 text-[var(--accent-green)] text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
+            <span className="inline-flex items-center gap-1.5 bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-end">
               <Clock className="w-3 h-3 shrink-0" />
               {daysUntilFriday === 0 ? 'Today!' : daysUntilFriday === 1 ? 'Tomorrow' : `${daysUntilFriday} days away`}
             </span>
@@ -519,25 +557,25 @@ function MyPayPageInner() {
           .sort((a, b) => a.date.localeCompare(b.date));
         return (
           <div id="pending-chargebacks" className="card-surface rounded-2xl p-5 mb-6 border-l-2 border-l-amber-500/40 scroll-mt-20"
-               style={{ '--card-accent': 'rgba(245,158,11,0.08)' } as React.CSSProperties}>
+               style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
+                <p className="text-[var(--accent-amber-text)] text-xs font-semibold uppercase tracking-widest">Pending Chargebacks</p>
                 <p className="text-[var(--text-dim)] text-[11px] mt-0.5">Amounts to be clawed back from a future paycheck.</p>
               </div>
-              <p className="font-black tabular-nums text-amber-400 text-2xl">-{fmt$(pendingChargebackTotal)}</p>
+              <p className="font-black tabular-nums text-[var(--accent-amber-display)] text-2xl">-{fmt$(pendingChargebackTotal)}</p>
             </div>
             <div className="space-y-2">
               {pendingEntries.map((e) => (
                 <div key={e.id} className="card-surface rounded-xl p-3 flex items-center justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
                     <p className="text-[var(--text-dim)] text-[11px]">
                       {e.paymentStage} · {e.status} · <RelativeDate date={e.date} />
                       {e.notes && <span className="ml-2 text-[var(--text-muted)]">· {e.notes}</span>}
                     </p>
                   </div>
-                  <p className="text-red-400 font-bold tabular-nums ml-3 shrink-0">{fmt$(e.amount)}</p>
+                  <p className="text-[var(--accent-red-text)] font-bold tabular-nums ml-3 shrink-0">{fmt$(e.amount)}</p>
                 </div>
               ))}
             </div>
@@ -549,28 +587,28 @@ function MyPayPageInner() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         {/* Lifetime Earned — anchor card with emerald left border */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-1 border-l-2 border-l-emerald-500/40"
-             style={{ '--card-accent': 'rgba(16,185,129,0.08)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Lifetime Earned</p>
-            <DollarSign className="w-4 h-4 text-[var(--accent-green)]/50" />
+            <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-green)] stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(16,185,129,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
+          <p className="font-black tabular-nums text-[var(--accent-emerald-display)] stat-value break-words"
+             style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>{fmt$(lifetimeEarned)}</p>
           {pendingChargebackCount > 0 && (
-            <p className="text-amber-400/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
+            <p className="text-[var(--accent-amber-text)]/70 text-[10px] font-semibold mt-1.5 tabular-nums break-words">
               {pendingChargebackCount} pending chargeback{pendingChargebackCount === 1 ? '' : 's'} · -{fmt$(pendingChargebackTotal)}
             </p>
           )}
         </div>
         {/* On Pace For — standout card with amber left border + larger number */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-2 border-l-2 border-l-amber-500/40"
-             style={{ '--card-accent': 'rgba(245,158,11,0.10)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-amber-solid) 10%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">On Pace For {new Date().getFullYear()}</p>
-            <TrendingUp className="w-4 h-4 text-amber-400/50" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-amber-400 stat-value break-words"
-             style={{ textShadow: '0 0 20px rgba(245,158,11,0.25)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
+          <p className="font-black tabular-nums text-[var(--accent-amber-display)] stat-value break-words"
+             style={{ textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)', fontSize: 'clamp(1.3rem, 6vw, 1.875rem)', lineHeight: 1.1 }}>
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1.5">
@@ -583,13 +621,13 @@ function MyPayPageInner() {
         </div>
         {/* Pipeline — blue left border */}
         <div className="card-surface card-surface-stat rounded-2xl p-3 md:p-5 animate-slide-in-scale stagger-3 col-span-2 sm:col-span-1 border-l-2 border-l-blue-500/40"
-             style={{ '--card-accent': 'rgba(59,130,246,0.08)' } as React.CSSProperties}>
+             style={{ '--card-accent': 'color-mix(in srgb, var(--accent-blue-solid) 8%, transparent)' } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-widest">Pipeline</p>
-            <TrendingUp className="w-4 h-4 text-[var(--accent-green)]/50" />
+            <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
-          <p className="font-black tabular-nums text-[var(--accent-green)] stat-value break-words"
-             style={{ textShadow: '0 0 16px rgba(59,130,246,0.3)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
+          <p className="font-black tabular-nums text-[var(--accent-emerald-display)] stat-value break-words"
+             style={{ textShadow: '0 0 16px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>
@@ -600,7 +638,7 @@ function MyPayPageInner() {
         {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
           <div className="card-surface rounded-2xl p-5 animate-slide-in-scale stagger-6">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-4 h-4 text-[var(--accent-green)]" />
+              <Calendar className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Projected Pipeline</p>
             </div>
             <p className="text-[var(--text-muted)] text-xs mb-4">Expected if deals progress through milestones</p>
@@ -608,15 +646,15 @@ function MyPayPageInner() {
               {projectedM1 > 0 && (
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-green)]/15 flex items-center justify-center">
-                      <span className="text-[var(--accent-green)] text-xs font-bold">M1</span>
+                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-emerald-solid)]/15 flex items-center justify-center">
+                      <span className="text-[var(--accent-emerald-text)] text-xs font-bold">M1</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M1</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M1</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Acceptance</p>
                     </div>
                   </div>
-                  <p className="text-[var(--accent-green)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(59,130,246,0.3)' }}>
+                  <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' }}>
                     {fmt$(projectedM1)}
                   </p>
                 </div>
@@ -625,14 +663,14 @@ function MyPayPageInner() {
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                      <span className="text-violet-400 text-xs font-bold">M2</span>
+                      <span className="text-[var(--accent-purple-text)] text-xs font-bold">M2</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M2</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M2</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting Installation</p>
                     </div>
                   </div>
-                  <p className="text-violet-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(139,92,246,0.3)' }}>
+                  <p className="text-[var(--accent-purple-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}>
                     {fmt$(projectedM2)}
                   </p>
                 </div>
@@ -641,14 +679,14 @@ function MyPayPageInner() {
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
-                      <span className="text-teal-400 text-xs font-bold">M3</span>
+                      <span className="text-[var(--accent-teal-text)] text-xs font-bold">M3</span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-semibold">Pending M3</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M3</p>
                       <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
                     </div>
                   </div>
-                  <p className="text-teal-400 font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px rgba(20,184,166,0.3)' }}>
+                  <p className="text-[var(--accent-teal-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-teal-solid) 30%, transparent)' }}>
                     {fmt$(projectedM3)}
                   </p>
                 </div>
@@ -661,9 +699,9 @@ function MyPayPageInner() {
       {/* ── Reimbursements ── */}
       <div className="card-surface rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center gap-3">
-          <Receipt className="w-4 h-4 text-violet-400" />
+          <Receipt className="w-4 h-4 text-[var(--accent-purple-text)]" />
           <div>
-            <p className="text-white text-sm font-medium">Reimbursements</p>
+            <p className="text-[var(--text-primary)] text-sm font-medium">Reimbursements</p>
             <p className="text-[var(--text-muted)] text-xs">
               {pendingReimbs.length > 0 || approvedReimbTotal > 0
                 ? `${pendingReimbs.length} pending${approvedReimbTotal > 0 ? ` · ${fmt$(approvedReimbTotal)} approved` : ''}`
@@ -671,7 +709,7 @@ function MyPayPageInner() {
             </p>
           </div>
         </div>
-        <button onClick={() => setShowReimbModal(true)} className="flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] sm:min-h-0 px-3 py-1.5 text-sm font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
+        <button onClick={() => setShowReimbModal(true)} className="flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[48px] sm:min-h-0 px-3 py-1.5 text-sm font-semibold text-[var(--accent-purple-text)] bg-violet-500/10 border border-violet-500/20 rounded-lg hover:bg-violet-500/20 transition-colors">
           <Receipt className="w-3.5 h-3.5" /> New Request
         </button>
       </div>
@@ -688,7 +726,7 @@ function MyPayPageInner() {
             onChange={(e) => { setSearchQuery(e.target.value); setPeriodPage(1); }}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
-            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-white rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
+            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl pl-10 pr-8 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder-slate-600"
           />
           {!searchQuery && !searchFocused && (
             <kbd
@@ -725,7 +763,7 @@ function MyPayPageInner() {
         {(payFilterFrom || payFilterTo) && (
           <button
             onClick={() => { setPayFilterFrom(''); setPayFilterTo(''); setPeriodPage(1); }}
-            className="text-xs text-[var(--accent-green)] hover:text-emerald-300 font-medium transition-colors whitespace-nowrap"
+            className="text-xs text-[var(--accent-emerald-text)] hover:text-[var(--accent-emerald-text)] font-medium transition-colors whitespace-nowrap"
           >
             Clear
           </button>
@@ -762,7 +800,7 @@ function MyPayPageInner() {
             {myProjects.length > 0 ? (
               <>
                 <p className="text-[var(--text-secondary)] text-sm font-medium">
-                  You have <span className="text-[var(--accent-green)] font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-[var(--accent-green)] font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
+                  You have <span className="text-[var(--accent-emerald-text)] font-semibold">{myProjects.length}</span> active deal{myProjects.length !== 1 ? 's' : ''} worth ~<span className="text-[var(--accent-emerald-text)] font-semibold">${(projectedM1 + projectedM2).toLocaleString()}</span> in projected commissions.
                 </p>
                 <p className="text-[var(--text-muted)] text-xs mt-1">
                   Payroll entries will appear here as your deals hit milestones.
@@ -771,9 +809,9 @@ function MyPayPageInner() {
                   {(() => {
                     const preAccCount = myProjects.filter((p) => ['New'].includes(p.phase)).length;
                     return preAccCount > 0 ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20">
-                        <Clock className="w-3.5 h-3.5 text-[var(--accent-green)]" />
-                        <span className="text-[var(--accent-green)] text-xs font-medium">{preAccCount} awaiting M1</span>
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20">
+                        <Clock className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
+                        <span className="text-[var(--accent-emerald-text)] text-xs font-medium">{preAccCount} awaiting M1</span>
                       </div>
                     ) : null;
                   })()}
@@ -781,8 +819,8 @@ function MyPayPageInner() {
                     const preInstCount = myProjects.filter((p) => ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'].includes(p.phase)).length;
                     return preInstCount > 0 ? (
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                        <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
-                        <span className="text-violet-400 text-xs font-medium">{preInstCount} awaiting M2</span>
+                        <TrendingUp className="w-3.5 h-3.5 text-[var(--accent-purple-text)]" />
+                        <span className="text-[var(--accent-purple-text)] text-xs font-medium">{preInstCount} awaiting M2</span>
                       </div>
                     ) : null;
                   })()}
@@ -793,7 +831,7 @@ function MyPayPageInner() {
                 <div className="w-12 h-12 rounded-full bg-[var(--surface-card)]/80 flex items-center justify-center mx-auto mb-3">
                   <Banknote className="w-6 h-6 text-[var(--text-dim)] animate-pulse" />
                 </div>
-                <p className="text-white font-bold text-sm mb-1">No earnings yet</p>
+                <p className="text-[var(--text-primary)] font-bold text-sm mb-1">No earnings yet</p>
                 <p className="text-[var(--text-muted)] text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
                 <Link
                   href="/dashboard/new-deal"
@@ -815,7 +853,7 @@ function MyPayPageInner() {
               key={period.friday}
               className={`card-surface rounded-2xl overflow-hidden border-l-2 transition-colors ${
                 isOpen ? 'border-l-blue-500/40' : 'border-l-transparent'
-              } ${period.isUpcoming ? 'border border-[var(--accent-green)]/20' : ''} ${
+              } ${period.isUpcoming ? 'border border-[var(--accent-emerald-solid)]/20' : ''} ${
                 isOpen ? 'bg-gradient-to-r from-blue-500/5 to-transparent' : ''
               }`}
             >
@@ -827,28 +865,28 @@ function MyPayPageInner() {
                 className="w-full flex items-center gap-3 md:gap-4 px-3 md:px-5 py-4 min-h-[44px] text-left hover:bg-[var(--surface-card)]/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  period.isUpcoming ? 'bg-[var(--accent-green)]/15' : period.isPast ? 'bg-[var(--surface-card)]' : 'bg-[var(--accent-green)]/10'
+                  period.isUpcoming ? 'bg-[var(--accent-emerald-solid)]/15' : period.isPast ? 'bg-[var(--surface-card)]' : 'bg-[var(--accent-emerald-solid)]/10'
                 }`}>
                   {period.isUpcoming ? (
-                    <Clock className="w-4 h-4 text-[var(--accent-green)]" />
+                    <Clock className="w-4 h-4 text-[var(--accent-emerald-text)]" />
                   ) : (
-                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-[var(--text-muted)]' : 'text-[var(--accent-green)]'}`} />
+                    <DollarSign className={`w-4 h-4 ${period.isPast ? 'text-[var(--text-muted)]' : 'text-[var(--accent-emerald-text)]'}`} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-white text-sm font-semibold">
+                    <p className="text-[var(--text-primary)] text-sm font-semibold">
                       {period.isUpcoming ? 'Upcoming Pay Period' : 'Pay Period'} — {formatFridayLabel(period.friday)}
                     </p>
                     {period.isUpcoming && (
-                      <span className="text-[10px] font-semibold text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-1.5 py-0.5 rounded-full">
                         Next
                       </span>
                     )}
                   </div>
                   <p className="text-[var(--text-muted)] text-xs mt-0.5">{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</p>
                 </div>
-                <p className={`text-lg font-bold tabular-nums shrink-0 break-words ${period.isUpcoming ? 'text-[var(--accent-green)]' : period.isPast ? 'text-[var(--text-secondary)]' : 'text-white'}`}>
+                <p className={`text-lg font-bold tabular-nums shrink-0 break-words ${period.isUpcoming ? 'text-[var(--accent-emerald-text)]' : period.isPast ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
                   {fmt$(period.total)}
                 </p>
                 <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] shrink-0 nav-chevron-spring ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
@@ -878,7 +916,7 @@ function MyPayPageInner() {
                             <tr key={entry.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--surface-card)]/20 transition-colors min-h-[44px]">
                               <td className="px-5 py-3">
                                 {entry.projectId ? (
-                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-white hover:text-[var(--accent-green)] transition-colors font-medium text-xs">
+                                  <Link href={`/dashboard/projects/${entry.projectId}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors font-medium text-xs">
                                     {entry.customerName || '—'}
                                   </Link>
                                 ) : (
@@ -888,7 +926,7 @@ function MyPayPageInner() {
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
                               <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
                               <td className="px-5 py-3 text-right">
-                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-green)]' : 'text-white')}`}>
+                                <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-[var(--accent-red-text)]' : (entry.status === 'Paid' && entry.date <= todayStr ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-primary)]')}`}>
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>
@@ -913,7 +951,7 @@ function MyPayPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.max(1, p - 1))}
             disabled={safePeriodPage <= 1}
-            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -925,7 +963,7 @@ function MyPayPageInner() {
                 key={page}
                 onClick={() => setPeriodPage(page)}
                 className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)]'
+                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
                 }`}
               >
                 {page}
@@ -935,7 +973,7 @@ function MyPayPageInner() {
           <button
             onClick={() => setPeriodPage((p) => Math.min(totalPeriodPages, p + 1))}
             disabled={safePeriodPage >= totalPeriodPages}
-            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:opacity-30 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

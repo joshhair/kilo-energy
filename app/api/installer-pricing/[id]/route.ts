@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchInstallerPricingSchema } from '../../../../lib/schemas/pricing';
 import { logger } from '../../../../lib/logger';
+import { logChange } from '../../../../lib/audit';
 
 // PATCH /api/installer-pricing/[id] — Update pricing version (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -46,6 +47,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     fieldsChanged: Object.keys(data),
     tiersReplaced: !!body.tiers,
   });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'installer_pricing_version_update',
+    entityType: 'InstallerPricingVersion',
+    entityId: id,
+    detail: {
+      fieldsChanged: Object.keys(data),
+      label: version.label,
+      effectiveFrom: version.effectiveFrom,
+      effectiveTo: version.effectiveTo,
+      tierCount: version.tiers.length,
+      tiersReplaced: !!body.tiers,
+    },
+  });
   return NextResponse.json(version);
 }
 
@@ -54,8 +69,21 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+  const before = await prisma.installerPricingVersion.findUnique({
+    where: { id },
+    include: { tiers: true },
+  });
   // Cascade delete will remove associated tiers automatically
   await prisma.installerPricingVersion.delete({ where: { id } });
   logger.info('installer_pricing_version_deleted', { versionId: id, actorId: actor.id });
+  await logChange({
+    actor: { id: actor.id, email: actor.email },
+    action: 'installer_pricing_version_delete',
+    entityType: 'InstallerPricingVersion',
+    entityId: id,
+    detail: before
+      ? { installerId: before.installerId, label: before.label, effectiveFrom: before.effectiveFrom, tierCount: before.tiers.length }
+      : { id },
+  });
   return NextResponse.json({ ok: true });
 }

@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, UserCog } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
+import { validateEmail, validateName } from '../../../../lib/validation';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { EmptyState } from '../../components/EmptyState';
+import { PrimaryButton, IconButton, TextInput, FormField } from '@/components/ui';
 
 export function AdminUsersSection() {
   const { toast } = useToast();
@@ -25,12 +28,29 @@ export function AdminUsersSection() {
   };
   useEffect(() => { loadAdmins(); }, []);
 
+  // Live validation: only show error after the field has user input, so
+  // the inline error doesn't render on an empty initial form.
+  const firstNameCheck = newFirstName.trim().length > 0
+    ? validateName(newFirstName, { minLength: 1, maxLength: 100 })
+    : null;
+  const emailCheck = newEmail.trim().length > 0
+    ? validateEmail(newEmail, { siblings: admins.map((a) => ({ id: a.id, email: a.email })) })
+    : null;
+
+  const canSubmit =
+    firstNameCheck?.ok === true && emailCheck?.ok === true;
+
   const handleAdd = async () => {
-    if (!newFirstName.trim() || !newEmail.trim()) return;
+    if (!canSubmit || !firstNameCheck?.ok || !emailCheck?.ok) return;
     const res = await fetch('/api/users/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName: newFirstName.trim(), lastName: newLastName.trim(), email: newEmail.trim(), role: 'admin' }),
+      body: JSON.stringify({
+        firstName: firstNameCheck.value,
+        lastName: newLastName.trim(),
+        email: emailCheck.value,
+        role: 'admin',
+      }),
     });
     if (res.ok) {
       toast('Admin user invited');
@@ -54,47 +74,70 @@ export function AdminUsersSection() {
     <div className="space-y-4">
       <p className="text-xs text-[var(--text-muted)]">Admin users have full access to all settings, payroll, and data.</p>
 
-      {/* Add form */}
       <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">First Name</label>
-          <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="First" />
-        </div>
-        <div className="flex-1">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Last Name</label>
-          <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="Last" />
-        </div>
-        <div className="flex-[2]">
-          <label className="block text-[10px] text-[var(--text-muted)] mb-0.5">Email</label>
-          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-2 text-sm text-white" placeholder="email@example.com" />
-        </div>
-        <button
+        <FormField
+          label="First Name"
+          className="flex-1"
+          error={firstNameCheck && !firstNameCheck.ok ? firstNameCheck.reason : undefined}
+        >
+          <TextInput
+            value={newFirstName}
+            onChange={(e) => setNewFirstName(e.target.value)}
+            placeholder="First"
+            invalid={firstNameCheck?.ok === false}
+          />
+        </FormField>
+        <FormField label="Last Name" className="flex-1">
+          <TextInput
+            value={newLastName}
+            onChange={(e) => setNewLastName(e.target.value)}
+            placeholder="Last"
+          />
+        </FormField>
+        <FormField
+          label="Email"
+          className="flex-[2]"
+          error={emailCheck && !emailCheck.ok ? emailCheck.reason : undefined}
+        >
+          <TextInput
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="email@example.com"
+            invalid={emailCheck?.ok === false}
+          />
+        </FormField>
+        <PrimaryButton
           onClick={handleAdd}
-          disabled={!newFirstName.trim() || !newEmail.trim()}
-          className="btn-primary px-3 py-2 rounded-xl active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, var(--accent-green), var(--accent-cyan))', color: '#050d18' }}
+          disabled={!canSubmit}
+          aria-label="Add admin user"
         >
           <Plus className="w-4 h-4" />
-        </button>
+        </PrimaryButton>
       </div>
 
-      {/* List */}
       {admins.length === 0 ? (
-        <p className="text-xs text-[var(--text-muted)] py-4 text-center">No admin users found.</p>
+        <EmptyState
+          icon={UserCog}
+          title="No admin users yet"
+          description="Add an admin above. Admin users have full access to all settings, payroll, and data."
+          variant="inline"
+        />
       ) : (
         <div className="card-surface rounded-2xl overflow-hidden divide-y divide-[var(--border-subtle)]">
           {admins.map((admin) => (
             <div key={admin.id} className="flex items-center gap-3 px-4 py-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{admin.name}</p>
+                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{admin.name}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">{admin.email}</p>
               </div>
-              <button
+              <IconButton
+                variant="danger"
+                aria-label={`Remove ${admin.name}`}
                 onClick={() => setConfirmDeleteId(admin.id)}
-                className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </IconButton>
             </div>
           ))}
         </div>

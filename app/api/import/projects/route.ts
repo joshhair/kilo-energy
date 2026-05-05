@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
 import { fromDollars } from '../../../../lib/money';
+import { logChange } from '../../../../lib/audit';
 
 /**
  * POST /api/import/projects — Bulk project import endpoint.
@@ -205,7 +206,8 @@ function validateRow(row: ProjectRow): { errors: string[]; normalized: Normalize
 }
 
 export async function POST(req: NextRequest) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
 
   let body: { projects?: unknown; commit?: unknown };
   try {
@@ -451,6 +453,26 @@ export async function POST(req: NextRequest) {
         }),
       ),
     );
+
+    // Single batch-summary audit entry per import run. Per-project rows
+     // would drown the audit signal on a 50k-row Glide import; the
+     // summary captures actor + counts + the first/last created project
+     // ids so an investigator can navigate from the summary into the
+     // individual project audit timelines.
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'project_bulk_import',
+      entityType: 'Project',
+      entityId: created[0]?.id ?? 'no_created',
+      detail: {
+        total: input.length,
+        createdCount: created.length,
+        skippedCount: wouldSkip.length,
+        errorCount: wouldError.length,
+        firstCreatedId: created[0]?.id ?? null,
+        lastCreatedId: created[created.length - 1]?.id ?? null,
+      },
+    });
 
     return NextResponse.json({
       ...base,

@@ -24,6 +24,9 @@ export default function Icon() {
           position: 'relative',
           // Deep navy base with an emerald → cyan diagonal sweep, plus an
           // inner radial highlight in the top-left to suggest a glow source.
+          // Literals only: next/og ImageResponse renders outside the CSS-
+          // var scope (no globals.css), so var() and color-mix(var(),...)
+          // resolve to invalid `initial` and break the build.
           background:
             'radial-gradient(circle at 25% 20%, rgba(0,229,160,0.55), transparent 60%), linear-gradient(135deg, #061018 0%, #0a2540 45%, #00b478 100%)',
           boxShadow: 'inset 0 0 0 1px rgba(0,229,160,0.35)',
@@ -45,7 +48,7 @@ export default function Icon() {
         />
         <span
           style={{
-            color: 'white',
+            color: '#f0f2f7',
             fontSize: 20,
             fontWeight: 900,
             fontFamily: 'system-ui, sans-serif',

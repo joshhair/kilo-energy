@@ -33,9 +33,9 @@ export function RepCommissionCard({
     <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-white text-sm font-semibold">{name}</p>
+          <p className="text-[var(--text-primary)] text-sm font-semibold">{name}</p>
           <p className="text-[var(--text-muted)] text-xs">{role}</p>
-          <p className="text-[var(--accent-green)] text-xs font-semibold mt-0.5">
+          <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">
             Total expected: ${totalExpected.toLocaleString()}
           </p>
         </div>
@@ -43,7 +43,7 @@ export function RepCommissionCard({
           {expectedAmounts.map((e, i) => (
             <div key={i} className={i < expectedAmounts.length - 1 ? 'mb-1' : undefined}>
               <p className="text-[var(--text-secondary)] text-xs">{e.label}</p>
-              <p className="text-[var(--accent-green)] font-bold text-sm">
+              <p className="text-[var(--accent-emerald-text)] font-bold text-sm">
                 ${e.amount.toLocaleString()}
               </p>
             </div>
@@ -61,11 +61,11 @@ export function RepCommissionCard({
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  entry.status === 'Paid' ? 'bg-emerald-900/50 text-[var(--accent-green)]' :
-                  entry.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                  entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                  entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
                   'bg-[var(--border)] text-[var(--text-secondary)]'
                 }`}>{entry.status}</span>
-                <span className="text-[var(--accent-green)] font-bold text-sm">
+                <span className="text-[var(--accent-emerald-text)] font-bold text-sm">
                   ${entry.amount.toLocaleString()}
                 </span>
               </div>

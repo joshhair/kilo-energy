@@ -6,12 +6,14 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
 import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS } from '../../../lib/data';
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import { Calculator, Zap, RotateCcw, ClipboardCopy, HelpCircle, Share2, ChevronDown, ChevronUp, Clock, Trash2, Link2 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { useToast } from '../../../lib/toast';
 import { todayLocalDateStr } from '../../../lib/utils';
+import { CalculatorSkeleton } from './CalculatorSkeleton';
 
 // ─── Calc History ──────────────────────────────────────────────────────────────
 const CALC_HISTORY_KEY = 'kilo-calc-history';
@@ -138,64 +140,6 @@ function FieldTooltip({ text }: { text: string }) {
   );
 }
 
-// ─── Commission Bar ────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- WIP visualization, keep for future page wire-up
-function CommissionBar({
-  closer,
-  setter,
-  trainer,
-  kilo,
-  showKilo,
-}: {
-  closer: number;
-  setter: number;
-  trainer: number;
-  kilo: number;
-  showKilo: boolean;
-}) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // One rAF so the browser paints width:0% first, then transitions to real widths
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  const total = closer + setter + trainer + (showKilo ? kilo : 0);
-  if (total <= 0) return null;
-
-  const pct = (v: number) => `${(v / total) * 100}%`;
-
-  const segments = [
-    { key: 'closer',  value: closer,  colorClass: 'bg-[var(--accent-green)]',    label: 'Closer'   },
-    { key: 'setter',  value: setter,  colorClass: 'bg-[var(--accent-cyan)]', label: 'Setter'   },
-    { key: 'trainer', value: trainer, colorClass: 'bg-amber-500',   label: 'Trainer'  },
-    ...(showKilo ? [{ key: 'kilo', value: kilo, colorClass: 'bg-[var(--text-muted)]', label: 'Kilo Rev' }] : []),
-  ].filter((s) => s.value > 0);
-
-  return (
-    <div className="mt-4 space-y-2">
-      <div className="h-3 rounded-full bg-[var(--surface-card)] overflow-hidden flex">
-        {segments.map((seg) => (
-          <div
-            key={seg.key}
-            className={`${seg.colorClass} transition-all duration-700 ease-out`}
-            style={{ width: mounted ? pct(seg.value) : '0%' }}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-4 flex-wrap">
-        {segments.map((seg) => (
-          <div key={seg.key} className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${seg.colorClass}`} />
-            <span className="text-[var(--text-muted)] text-xs">{seg.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function StackedBar({ segments, total }: { segments: { key: string; value: number; color: string }[]; total: number }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -225,7 +169,7 @@ export default function CalculatorPageWrapper() {
 function CalculatorPage() {
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
-  const { currentRepId, effectiveRole, trainerAssignments, projects, payrollEntries, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
+  const { effectiveRepId, effectiveRole, trainerAssignments, projects, payrollEntries, activeInstallers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, installerPayConfigs, productCatalogPricingVersions, solarTechProducts } = useApp();
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
   const [installer, setInstaller] = useState('');
   const [solarTechFamily, setSolarTechFamily] = useState('');
@@ -286,14 +230,19 @@ function CalculatorPage() {
   };
 
   // ── Recent deals for Quick Fill ──────────────────────────────────────────────
+  // Scope by `effectiveRepId`, not `currentRepId`. When an admin uses
+  // View-As to model a rep's situation, `effectiveRole` becomes 'rep'
+  // but `currentRepId` is still the admin's own (often null) rep id —
+  // matching null repIds leaks every Glide-imported / unassigned deal
+  // (customer name + PPW) into the dropdown. Privacy gate parity.
   const recentDeals = useMemo(() => {
     const filtered = effectiveRole === 'admin'
       ? projects
-      : projects.filter((p) => p.repId === currentRepId || p.setterId === currentRepId);
+      : projects.filter((p) => p.repId === effectiveRepId || p.setterId === effectiveRepId);
     return [...filtered]
       .sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? ''))
       .slice(0, 10);
-  }, [projects, currentRepId, effectiveRole]);
+  }, [projects, effectiveRepId, effectiveRole]);
 
   const handleQuickFill = (projectId: string) => {
     setQuickFillValue(projectId);
@@ -471,8 +420,10 @@ function CalculatorPage() {
     ? Math.round(trainerRate * kW * 1000 * 100) / 100
     : 0;
 
-  // Closer trainer assignment — use the Quick Fill rep when an admin models another rep's deal
-  const effectiveCloserId = quickFillRepId ?? currentRepId;
+  // Closer trainer assignment — use the Quick Fill rep when an admin models another rep's deal,
+  // otherwise fall back to the View-As rep (or signed-in rep) so the trainer override
+  // reflects the right person's assignment, not the admin's.
+  const effectiveCloserId = quickFillRepId ?? effectiveRepId;
   const closerAssignment = effectiveCloserId
     ? trainerAssignments.find((a) => a.traineeId === effectiveCloserId)
     : null;
@@ -488,8 +439,13 @@ function CalculatorPage() {
   const isSelfGen = !hasSetter || !selectedSetterId || setterBaselinePerW === 0;
   const installPayPct = installerPayConfigs[installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3Split = installPayPct < 100;
-  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } =
-    splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
+  // Raw split — `splitCloserSetterPay` does not factor in closer trainer
+  // overrides. Server payroll (project-transitions.ts) carves the closer-
+  // trainer slice out of M2/M3 after the split; we mirror that locally
+  // via `applyCloserTrainerDeduction` so calc reflects actual paid amount.
+  const rawSplit = splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
+  const adjustedSplit = applyCloserTrainerDeduction(rawSplit, closerTrainerRate, kW, installPayPct);
+  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = adjustedSplit;
 
   /** Copies a formatted deal summary to the clipboard with a toast confirmation. */
   const handleCopyResult = () => {
@@ -516,7 +472,7 @@ function CalculatorPage() {
     if (hasSetter && setterTotal > 0) {
       lines.push(`Setter: $${setterTotal.toLocaleString()}${hasM3Split ? ` (M1: $${setterM1.toLocaleString()} / M2: $${setterM2.toLocaleString()} / M3: $${setterM3.toLocaleString()})` : ''}`);
     }
-    lines.push(`Baseline: $${closerPerW.toFixed(2)}/W | Break-even: $${breakEvenPPW.toFixed(2)}/W`);
+    lines.push(`Baseline: $${closerBaselineDisplay.toFixed(2)}/W | Break-even: $${breakEvenPPW.toFixed(2)}/W`);
     navigator.clipboard.writeText(lines.join('\n')).then(
       () => toast('Share summary copied to clipboard', 'success'),
       () => toast('Could not access clipboard', 'error'),
@@ -574,24 +530,35 @@ function CalculatorPage() {
     toast('History cleared', 'info');
   };
 
-  // Break-even PPW (minimum PPW to earn anything as closer)
-  const breakEvenPPW = closerPerW;
+  // Personal break-even — what THIS rep needs to clear before they earn $1.
+  // Includes any closer-trainer override, since that slice sits above the
+  // installer baseline and comes out of closer pay (see commission rules
+  // memory: trainer override sits ABOVE the trainee's baseline). Setter
+  // side mirrors the same idea — installer baseline + setter trainer override.
+  const closerBaselineDisplay = closerPerW + closerTrainerRate;
+  const setterBaselineDisplay = setterBaselinePerW + trainerRate;
+  const breakEvenPPW = closerBaselineDisplay;
   // PPW needed to earn a target amount
   const targetAmount = parseFloat(targetEarning) || 0;
   const requiredPPW = (() => {
     if (!hasInput || kW <= 0) return 0;
+    // Closer trainer override sits above the closer baseline, so the rep's
+    // *personal* break-even is closerPerW + closerTrainerRate. Reverse-solve
+    // uses that effective baseline so target=0 returns the same number as
+    // breakEvenPPW above.
+    const adjustedCloser = closerPerW + closerTrainerRate;
     if (!isSelfGen) {
-      // With setter: closer earns the differential band + half of everything above splitPoint.
-      // Reverse-solve: if target fits within the differential band, use simple formula;
-      // otherwise solve for the PPW where half-of-above-split makes up the remainder.
-      const closerDiff = (setterBaselinePerW - closerPerW) * kW * 1000;
-      if (targetAmount <= closerDiff) {
-        return targetAmount / (kW * 1000) + closerPerW;
+      // With setter: closer earns the (adjusted) differential band, then half
+      // of everything above splitPoint. The override eats into the differential
+      // band — once it's exhausted, additional overage comes off the 50/50 zone.
+      const closerDiffCap = Math.max(0, (setterBaselinePerW - adjustedCloser) * kW * 1000);
+      if (targetAmount <= closerDiffCap) {
+        return targetAmount / (kW * 1000) + adjustedCloser;
       }
       const splitPoint = setterBaselinePerW + trainerRate;
-      return ((targetAmount - closerDiff) * 2) / (kW * 1000) + splitPoint;
+      return ((targetAmount - closerDiffCap) * 2) / (kW * 1000) + splitPoint;
     }
-    return targetAmount / (kW * 1000) + closerPerW;
+    return targetAmount / (kW * 1000) + adjustedCloser;
   })();
 
   // Hash of all inputs — forces React to remount the results container on each
@@ -633,7 +600,7 @@ function CalculatorPage() {
 
   const inputCls = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all duration-200 placeholder-slate-500';
   const inputStyle: CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" };
-  const inputFocusRing = 'focus:ring-2 focus:ring-[var(--accent-green)]/50 focus:border-[var(--accent-green)]';
+  const inputFocusRing = 'focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)]';
   const labelCls = 'block text-xs font-medium mb-1.5 uppercase tracking-wider';
   const labelStyle: CSSProperties = { color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" };
 
@@ -664,11 +631,11 @@ function CalculatorPage() {
 
   // Bar segment data for the stacked breakdown bar
   const breakdownSegments = [
-    { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-green)' },
-    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan)' }] : []),
-    ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: '#b47dff' }] : []),
-    ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: '#b47dff' }] : []),
-    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber)' }] : []),
+    { key: 'closer', label: 'Closer', value: closerTotal, color: 'var(--accent-emerald-text)' },
+    ...(hasSetter && setterTotal > 0 ? [{ key: 'setter', label: 'Setter', value: setterTotal, color: 'var(--accent-cyan-text)' }] : []),
+    ...(trainerTotal > 0 ? [{ key: 'trainer', label: 'Trainer Override', value: trainerTotal, color: 'var(--accent-purple-text)' }] : []),
+    ...(closerTrainerTotal > 0 ? [{ key: 'closerTrainer', label: 'Closer Trainer Override', value: closerTrainerTotal, color: 'var(--accent-purple-text)' }] : []),
+    ...(effectiveRole === 'admin' && kiloTotal > 0 ? [{ key: 'kilo', label: 'Kilo Margin', value: Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal), color: 'var(--accent-amber-text)' }] : []),
   ].filter(s => s.value > 0);
   const breakdownTotal = breakdownSegments.reduce((s, seg) => s + seg.value, 0);
 
@@ -678,8 +645,8 @@ function CalculatorPage() {
       <div className="mb-8">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
-            <Calculator className="w-5 h-5 text-[var(--accent-green)]" />
+          <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)' }}>
+            <Calculator className="w-5 h-5 text-[var(--accent-emerald-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>Commission Calculator</h1>
         </div>
@@ -693,8 +660,8 @@ function CalculatorPage() {
           {recentDeals.length > 0 && (
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan)' }} />
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
+                <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent-cyan-text)' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-cyan-display)', fontFamily: "'DM Sans', sans-serif" }}>Quick Fill</span>
               </div>
               <div className="flex items-center gap-2">
                 <SearchableSelect
@@ -711,7 +678,7 @@ function CalculatorPage() {
                   type="button"
                   onClick={handleReset}
                   title="Clear all fields"
-                  className="flex-shrink-0 p-2 rounded-lg hover:text-white transition-colors"
+                  className="flex-shrink-0 p-2 rounded-lg hover:text-[var(--text-primary)] transition-colors"
                   style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -843,7 +810,7 @@ function CalculatorPage() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => { setHasSetter((v) => { if (v) setSelectedSetterId(''); return !v; }); }}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-green)]' : 'bg-[var(--border)]'}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${hasSetter ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[color-mix(in_srgb,var(--text-primary)_15%,transparent)]'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${hasSetter ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
@@ -867,13 +834,26 @@ function CalculatorPage() {
                       const ta = trainerAssignments.find((a) => a.traineeId === r.id);
                       const trainerName = ta ? reps.find((tr) => tr.id === ta.trainerId)?.name : null;
                       return trainerName ? (
-                        <span className="text-amber-400 text-[10px] font-medium flex-shrink-0">* {trainerName}</span>
+                        <span className="text-[var(--accent-amber-text)] text-[10px] font-medium flex-shrink-0">* {trainerName}</span>
                       ) : null;
                     }}
                   />
                 </div>
               )}
             </div>
+
+            {/* Pricing date — admin-only, for modeling historical rates */}
+            {effectiveRole === 'admin' && (
+              <div>
+                <label className={labelCls} style={labelStyle}>Pricing Date (optional)</label>
+                <input
+                  type="date"
+                  value={pricingDate}
+                  onChange={(e) => setPricingDate(e.target.value)}
+                  className={`${inputCls} ${inputFocusRing}`} style={inputStyle}
+                />
+              </div>
+            )}
 
             {/* Target earnings tool */}
             {hasInput && (
@@ -893,10 +873,10 @@ function CalculatorPage() {
                     </div>
                     <div className="text-right min-w-[100px]">
                       {targetEarning.trim() !== '' && closerPerW === 0 ? (
-                        <p style={{ color: 'var(--accent-amber)', fontSize: 12 }}>Baseline unknown</p>
+                        <p style={{ color: 'var(--accent-amber-display)', fontSize: 12 }}>Baseline unknown</p>
                       ) : targetEarning.trim() !== '' && requiredPPW > 0 ? (
                         <>
-                          <p style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
+                          <p style={{ color: 'var(--accent-blue-display)', fontWeight: 700, fontSize: 20, fontFamily: "'DM Serif Display', serif" }}>${requiredPPW.toFixed(2)}<span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 400 }}>/W</span></p>
                           <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>required PPW</p>
                         </>
                       ) : (
@@ -950,7 +930,7 @@ function CalculatorPage() {
                         type="button"
                         onClick={() => handleLoadHistory(entry)}
                         className="flex-shrink-0 text-xs font-medium rounded-md px-2.5 py-1 transition-colors"
-                        style={{ color: 'var(--accent-blue)', background: 'rgba(77,159,255,0.1)' }}
+                        style={{ color: 'var(--accent-blue-text)', background: 'var(--accent-blue-soft)' }}
                       >
                         Load
                       </button>
@@ -984,7 +964,7 @@ function CalculatorPage() {
                 <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
-                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px rgba(0,229,160,0.25)' }}>
+                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                   ${Math.round(closerTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
@@ -993,14 +973,14 @@ function CalculatorPage() {
 
                 {/* Below-baseline warning */}
                 {soldPPW <= closerPerW && (
-                  <div style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', borderLeft: '3px solid var(--accent-red)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-display)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>
                 )}
 
                 {/* Tier gap warning — baselines couldn't be resolved for this kW size */}
                 {closerPerW === 0 && soldPPW > 0 && (
-                  <div style={{ background: 'rgba(255,176,32,0.08)', border: '1px solid rgba(255,176,32,0.3)', borderLeft: '3px solid var(--accent-amber)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber)' }}>
+                  <div style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', borderLeft: '3px solid var(--accent-amber-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-amber-display)' }}>
                     No pricing tier found for {kW.toFixed(1)} kW — baselines could not be resolved. Results below are unreliable. Select a product or check that a tier covers this system size.
                   </div>
                 )}
@@ -1010,16 +990,21 @@ function CalculatorPage() {
                   <StackedBar segments={breakdownSegments} total={breakdownTotal} />
                 )}
 
-                {/* Baseline rates row */}
+                {/* Baseline rates row — display values include trainer override
+                    so the redline reflects the rep's *personal* break-even.
+                    Setter Baseline is hidden on self-gen since there's no
+                    setter pay path to inform the rep about. */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerPerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerBaselineDisplay.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Closer Baseline</p>
                   </div>
-                  <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterBaselinePerW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Setter Baseline</p>
-                  </div>
+                  {hasSetter && (
+                    <div>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterBaselineDisplay.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Setter Baseline</p>
+                    </div>
+                  )}
                   <div>
                     <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${breakEvenPPW.toFixed(2)}<span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>/W</span></p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Break-Even</p>
@@ -1031,7 +1016,7 @@ function CalculatorPage() {
                   {/* Closer */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-green)', flexShrink: 0 }} />
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald-solid)', flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -1040,11 +1025,11 @@ function CalculatorPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
                     </div>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-green)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
                     </div>
@@ -1061,7 +1046,7 @@ function CalculatorPage() {
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', flexShrink: 0 }} />
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan-solid)', flexShrink: 0 }} />
                           <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -1070,11 +1055,11 @@ function CalculatorPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
                         </div>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
                         </div>
@@ -1092,7 +1077,7 @@ function CalculatorPage() {
                   {trainerRep && trainerTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -1106,7 +1091,7 @@ function CalculatorPage() {
                   {closerTrainerRep && closerTrainerTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#b47dff', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -1120,7 +1105,7 @@ function CalculatorPage() {
                   {effectiveRole === 'admin' && kiloTotal > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber)', flexShrink: 0 }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -1133,16 +1118,16 @@ function CalculatorPage() {
 
                 {/* Your Commission highlight */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #00160d, #001c10)',
-                  border: '1px solid #00e07a35',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 21%, transparent)',
                   borderRadius: 14,
                   padding: '18px 20px',
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-green), transparent 70%)' }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent-emerald-solid), transparent 70%)' }} />
                   <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 8 }}>Your Commission</p>
-                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
+                  <p style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', textShadow: '0 0 20px #00e07a50', lineHeight: 1 }}>
                     ${((reps.find(r => r.id === effectiveCloserId)?.repType === 'setter' && selectedSetterId === effectiveCloserId || (reps.find(r => r.id === effectiveCloserId)?.repType === 'both' && selectedSetterId === effectiveCloserId)) && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                   </p>
                 </div>
@@ -1187,75 +1172,3 @@ function CalculatorPage() {
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function CalculatorSkeleton() {
-  return (
-    <div className="p-4 md:p-8 max-w-2xl">
-      {/* Page header shimmer */}
-      <div className="mb-8">
-        <div className="h-[3px] w-12 rounded-full bg-[var(--border)] animate-skeleton mb-3" />
-        <div className="flex items-center gap-3 mb-1">
-          <div
-            className="h-9 w-9 bg-[var(--surface-card)] rounded-lg animate-skeleton"
-            style={{ animationDelay: '50ms' }}
-          />
-          <div
-            className="h-8 w-56 bg-[var(--surface-card)] rounded animate-skeleton"
-            style={{ animationDelay: '100ms' }}
-          />
-        </div>
-        <div
-          className="h-3 w-72 bg-[var(--surface-card)]/70 rounded animate-skeleton ml-12 mt-1"
-          style={{ animationDelay: '150ms' }}
-        />
-      </div>
-
-      {/* Form section — 4 input field placeholders (label + input bar) */}
-      <div className="card-surface rounded-2xl p-6 space-y-5 mb-6 overflow-visible">
-        {[
-          { labelW: 'w-16', delay: 0 },
-          { labelW: 'w-24', delay: 75 },
-          { labelW: 'w-20', delay: 150 },
-          { labelW: 'w-20', delay: 225 },
-        ].map(({ labelW, delay }, i) => (
-          <div key={i}>
-            <div
-              className={`h-3 ${labelW} bg-[var(--border)]/70 rounded animate-skeleton mb-2`}
-              style={{ animationDelay: `${delay}ms` }}
-            />
-            <div
-              className="h-10 w-full bg-[var(--surface-card)] rounded-xl animate-skeleton"
-              style={{ animationDelay: `${delay + 30}ms` }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Results panel — 3 stat-card-sized shimmer blocks */}
-      <div className="space-y-4">
-        {[
-          { delay: 0,   bodyH: 'h-16' },
-          { delay: 75,  bodyH: 'h-24' },
-          { delay: 150, bodyH: 'h-16' },
-        ].map(({ delay, bodyH }, i) => (
-          <div
-            key={i}
-            className="card-surface rounded-2xl p-5"
-          >
-            {/* Card label row */}
-            <div
-              className="h-3 w-28 bg-[var(--border)]/50 rounded animate-skeleton mb-4"
-              style={{ animationDelay: `${delay}ms` }}
-            />
-            {/* Card body shimmer */}
-            <div
-              className={`${bodyH} w-full bg-[var(--surface-card)]/70 rounded-xl animate-skeleton`}
-              style={{ animationDelay: `${delay + 50}ms` }}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

@@ -56,14 +56,14 @@ function matchesPeriod(dateStr: string, period: Period): boolean {
 
 function StatusDot({ status }: { status: string }) {
   const color =
-    status === 'Paid' ? 'var(--accent-emerald)' :
-    status === 'Pending' ? '#f5a623' :
-    status === 'Approved' ? 'var(--accent-emerald)' :
-    status === 'Denied' ? 'var(--accent-danger)' :
-    status === 'Draft' ? '#64748b' :
-    'var(--text-mobile-muted)';
+    status === 'Paid' ? 'var(--accent-emerald-solid)' :
+    status === 'Pending' ? 'var(--accent-amber-solid)' :
+    status === 'Approved' ? 'var(--accent-emerald-solid)' :
+    status === 'Denied' ? 'var(--accent-red-solid)' :
+    status === 'Draft' ? 'var(--text-muted)' :
+    'var(--text-muted)';
   return (
-    <span className="inline-flex items-center gap-1.5 text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+    <span className="inline-flex items-center gap-1.5 text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
       {status}
     </span>
@@ -89,6 +89,7 @@ export default function MobileEarnings() {
   const [dealSortKey, setDealSortKey] = useState<DealSortKey>('date');
 
   useEffect(() => { setMonthFilter(null); }, [period]);
+  useEffect(() => { setDealRoleFilter(null); }, [monthFilter]);
   const [dealSortDir, setDealSortDir] = useState<SortDir>('desc');
   const [bonusSortKey, setBonusSortKey] = useState<BonusSortKey>('date');
   const [bonusSortDir, setBonusSortDir] = useState<SortDir>('desc');
@@ -101,10 +102,10 @@ export default function MobileEarnings() {
   // ── PM guard ─────────────────────────────────────────────────────────────
   if (effectiveRole === 'project_manager') {
     return (
-      <div className="px-5 pt-4 pb-24">
+      <div className="px-5 pt-4 pb-28">
         <MobilePageHeader title="My Pay" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <p className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
+          <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -170,16 +171,16 @@ export default function MobileEarnings() {
 
   if (!isHydrated) {
     return (
-      <div className="px-5 pt-4 pb-24 space-y-4">
+      <div className="px-5 pt-4 pb-28 space-y-4">
         <MobilePageHeader title="My Pay" />
-        <div className="rounded-2xl p-5 h-24 animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }} />
-        <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }} />
+        <div className="rounded-2xl p-5 h-24 animate-pulse" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }} />
+        <div className="rounded-2xl p-5 h-48 animate-pulse" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }} />
       </div>
     );
   }
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="My Pay" />
 
       {/* ── Next Payout Hero ────────────────────────────────────────────── */}
@@ -187,18 +188,18 @@ export default function MobileEarnings() {
         <MobileCard hero>
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Next Payout</p>
-              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+              <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Next Payout</p>
+              <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                 {fmt$(nextPayoutTotal)}
               </p>
-              <p className="text-sm mt-1" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 Friday, {nextFridayStr}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {nextPayoutCount} pending {nextPayoutCount === 1 ? 'entry' : 'entries'}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-emerald)' }}>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 20%, transparent)', color: 'var(--accent-emerald-text)' }}>
               <Clock className="w-3 h-3" />
               {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
             </span>
@@ -208,8 +209,8 @@ export default function MobileEarnings() {
 
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
-        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--m-text-dim, #445577)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
-        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
+        <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
@@ -222,8 +223,8 @@ export default function MobileEarnings() {
             onClick={() => setPeriod(p.key)}
             className="min-h-[48px] px-4 rounded-xl text-base font-medium whitespace-nowrap transition-colors"
             style={{
-              background: period === p.key ? 'var(--accent-emerald)' : 'transparent',
-              color: period === p.key ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
+              background: period === p.key ? 'var(--accent-emerald-solid)' : 'transparent',
+              color: period === p.key ? '#000' : 'var(--text-muted)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -242,13 +243,13 @@ export default function MobileEarnings() {
       )}
       {monthFilter && (
         <div className="flex items-center gap-2 -mt-2">
-          <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} {monthFilter.slice(0, 4)}
           </span>
           <button
             onClick={() => setMonthFilter(null)}
             className="text-xs underline"
-            style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}
+            style={{ color: 'var(--text-muted)' }}
           >
             Clear
           </button>
@@ -268,7 +269,7 @@ export default function MobileEarnings() {
             }}
             disabled={sortedDeals.length === 0 && sortedReimbs.length === 0}
             className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
           >
             <Download className="w-3 h-3" /> CSV
           </button>
@@ -283,9 +284,9 @@ export default function MobileEarnings() {
               }}
               className="min-h-[32px] px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
               style={{
-                background: dealSortKey === key ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: dealSortKey === key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: dealSortKey === key ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                color: dealSortKey === key ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -307,9 +308,9 @@ export default function MobileEarnings() {
                 onClick={() => setDealRoleFilter(key)}
                 className="min-h-[36px] px-3 rounded-xl text-sm font-medium whitespace-nowrap transition-colors"
                 style={{
-                  background: dealRoleFilter === key ? 'var(--accent-emerald)' : 'var(--m-card, var(--surface-mobile-card))',
-                  color: dealRoleFilter === key ? '#000' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                  border: '1px solid var(--m-border, var(--border-mobile))',
+                  background: dealRoleFilter === key ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
+                  color: dealRoleFilter === key ? '#000' : 'var(--text-muted)',
+                  border: '1px solid var(--border-subtle)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                 }}
               >
@@ -320,24 +321,24 @@ export default function MobileEarnings() {
         )}
         {dealRoleFilter === 'Reimb.' ? (
           sortedReimbs.length === 0 ? (
-            <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
+            <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
           ) : (
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
               {sortedReimbs.map((entry, idx) => (
                 <div
                   key={entry.id}
                   className="px-4 py-3 flex items-center justify-between gap-3"
-                  style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}
+                  style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <StatusDot status={entry.status} />
-                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimb.</span>
-                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
+                      <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimb.</span>
+                      <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(entry.amount)}
                   </span>
                 </div>
@@ -345,26 +346,26 @@ export default function MobileEarnings() {
             </div>
           )
         ) : sortedDeals.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No deal payments for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No deal payments for this period</p>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             {sortedDeals.map((entry, idx) => (
               <div
                 key={entry.id}
                 className="px-4 py-3 flex items-center justify-between gap-3"
-                style={{ borderBottom: idx < sortedDeals.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}
+                style={{ borderBottom: idx < sortedDeals.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
-                      <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.paymentStage}</span>
+                      <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.paymentStage}</span>
                     )}
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -385,7 +386,7 @@ export default function MobileEarnings() {
             }}
             disabled={sortedBonuses.length === 0}
             className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
           >
             <Download className="w-3 h-3" /> CSV
           </button>
@@ -400,9 +401,9 @@ export default function MobileEarnings() {
               }}
               className="min-h-[32px] px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
               style={{
-                background: bonusSortKey === key ? 'rgba(0,229,160,0.15)' : 'var(--m-card, var(--surface-mobile-card))',
-                color: bonusSortKey === key ? 'var(--accent-emerald)' : 'var(--m-text-muted, var(--text-mobile-muted))',
-                border: '1px solid var(--m-border, var(--border-mobile))',
+                background: bonusSortKey === key ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+                color: bonusSortKey === key ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -411,23 +412,23 @@ export default function MobileEarnings() {
           ))}
         </div>
         {sortedBonuses.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No bonuses for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No bonuses for this period</p>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             {sortedBonuses.map((entry, idx) => (
               <div
                 key={entry.id}
                 className="px-4 py-3 flex items-center justify-between gap-3"
-                style={{ borderBottom: idx < sortedBonuses.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}
+                style={{ borderBottom: idx < sortedBonuses.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -448,29 +449,29 @@ export default function MobileEarnings() {
             }}
             disabled={sortedReimbs.length === 0}
             className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg disabled:opacity-40"
-            style={{ background: 'var(--m-card, var(--surface-mobile-card))', color: 'var(--m-text-muted, var(--text-mobile-muted))', border: '1px solid var(--m-border, var(--border-mobile))' }}
+            style={{ background: 'var(--surface-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
           >
             <Download className="w-3 h-3" /> CSV
           </button>
         </div>
         {sortedReimbs.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reimbursements for this period</p>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             {sortedReimbs.map((entry, idx) => (
               <div
                 key={entry.id}
                 className="px-4 py-3 flex items-center justify-between gap-3"
-                style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--m-border, var(--border-mobile))' : 'none' }}
+                style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
-                    <span className="text-base" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
+                    <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
                   </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                   {fmt$(entry.amount)}
                 </span>
               </div>
@@ -553,7 +554,7 @@ export function MobileAdminEarnings() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-24 space-y-4">
+    <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Earnings" />
       <MobileSection
         title="Reimbursement Review"
@@ -562,21 +563,21 @@ export function MobileAdminEarnings() {
         defaultOpen
       >
         <div className="flex items-center justify-between mb-2 px-1">
-          <span className="text-xs" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {adminReimbsForReview.filter((r) => r.status === 'Pending').length} pending · {adminReimbsForReview.length} total
           </span>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" style={{ color: 'var(--text-muted)' }}>
             <input
               type="checkbox"
               checked={adminShowArchived}
               onChange={(e) => setAdminShowArchived(e.target.checked)}
-              className="accent-[var(--accent-green)]"
+              className="accent-[var(--accent-emerald-solid)]"
             />
             Show archived
           </label>
         </div>
         {adminReimbsForReview.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             {adminShowArchived ? 'No reimbursements' : 'All caught up — no pending reimbursements'}
           </p>
         ) : (
@@ -585,19 +586,19 @@ export function MobileAdminEarnings() {
               <div
                 key={r.id}
                 className="rounded-2xl p-3"
-                style={{ background: 'var(--m-card, var(--surface-mobile-card))', border: '1px solid var(--m-border, var(--border-mobile))', opacity: r.archivedAt ? 0.55 : 1 }}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: r.archivedAt ? 0.55 : 1 }}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-white truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
-                    <p className="text-sm truncate" style={{ color: 'var(--m-text-muted, var(--text-mobile-muted))' }}>{r.description}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                    <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <StatusDot status={r.status} />
-                      <span className="text-xs" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>{r.date}</span>
-                      {r.receiptName && <span className="text-xs" style={{ color: 'var(--m-text-dim, var(--text-mobile-dim))' }}>· 📎 receipt</span>}
+                      <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{r.date}</span>
+                      {r.receiptName && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>· 📎 receipt</span>}
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--m-accent, var(--accent-emerald))', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                     {fmt$(r.amount)}
                   </span>
                 </div>
@@ -607,14 +608,14 @@ export function MobileAdminEarnings() {
                       <button
                         onClick={() => setReimbStatus(r.id, 'Approved')}
                         className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'rgba(0,229,160,0.15)', color: 'var(--accent-emerald)' }}
+                        style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                       </button>
                       <button
                         onClick={() => setReimbStatus(r.id, 'Denied')}
                         className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'rgba(239,68,68,0.15)', color: 'rgb(248,113,113)' }}
+                        style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'rgb(248,113,113)' }}
                       >
                         <XCircle className="w-3.5 h-3.5" /> Deny
                       </button>
@@ -626,7 +627,7 @@ export function MobileAdminEarnings() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'rgba(0,180,216,0.15)', color: 'var(--accent-cyan)' }}
+                      style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
                     >
                       View receipt
                     </a>
@@ -634,14 +635,14 @@ export function MobileAdminEarnings() {
                   <button
                     onClick={() => archiveReimbAdmin(r.id)}
                     className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: 'var(--m-border, var(--border-mobile))', color: 'var(--m-text-secondary, var(--text-mobile-secondary))' }}
+                    style={{ background: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
                   >
                     <Archive className="w-3.5 h-3.5" /> {r.archivedAt ? 'Restore' : 'Archive'}
                   </button>
                   <button
                     onClick={() => setDeleteReimbId(r.id)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(239,68,68,0.08)', color: 'rgb(248,113,113)', border: '1px solid rgba(239,68,68,0.2)' }}
+                    style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', color: 'rgb(248,113,113)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 20%, transparent)' }}
                   >
                     Delete
                   </button>

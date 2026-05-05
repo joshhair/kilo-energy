@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
 import { SectionHeader } from '../components/SectionHeader';
+import { PrimaryButton, TextInput, FormField } from '@/components/ui';
 
 export function ExportSection() {
   const {
@@ -42,24 +43,18 @@ export function ExportSection() {
 
       {/* Date range filter */}
       <div className="card-surface rounded-2xl p-5 mb-6">
-        <h2 className="text-white font-semibold mb-3">Date Range Filter</h2>
+        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Date Range Filter</h2>
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">From</label>
-            <input type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">To</label>
-            <input type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)}
-              className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]"
-            />
-          </div>
+          <FormField label="From">
+            <TextInput type="date" value={exportDateFrom} onChange={(e) => setExportDateFrom(e.target.value)} />
+          </FormField>
+          <FormField label="To">
+            <TextInput type="date" value={exportDateTo} onChange={(e) => setExportDateTo(e.target.value)} />
+          </FormField>
         </div>
         {(exportDateFrom || exportDateTo) && (
           <button onClick={() => { setExportDateFrom(''); setExportDateTo(''); }}
-            className="text-[var(--text-muted)] hover:text-white text-xs mt-2 transition-colors">Clear dates</button>
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs mt-2 transition-colors">Clear dates</button>
         )}
       </div>
 
@@ -68,19 +63,19 @@ export function ExportSection() {
           onClick={() => toggleExport('payments')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('payments')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('payments') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('payments') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('payments') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Payments Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Payments Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">All payroll entries including deal commissions, bonuses, and payment status.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{filteredPayroll.length} of {payrollEntries.length} records</p>
         </button>
@@ -88,19 +83,19 @@ export function ExportSection() {
           onClick={() => toggleExport('projects')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('projects')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('projects') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('projects') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('projects') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Projects Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Projects Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Full project pipeline with installers, financers, kW size, PPW, and payment milestones.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{filteredProjects.length} of {projects.length} records</p>
         </button>
@@ -108,19 +103,19 @@ export function ExportSection() {
           onClick={() => toggleExport('baselines')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('baselines')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('baselines') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('baselines') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('baselines') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Baselines Export</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Baselines Export</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Installer baselines, SolarTech tiers, and Product Catalog tiers with closer/kilo rates.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{installerPricingVersions.length + solarTechProducts.length + productCatalogProducts.length} total rows</p>
         </button>
@@ -128,19 +123,19 @@ export function ExportSection() {
           onClick={() => toggleExport('trainers')}
           className={`bg-[var(--surface)] rounded-2xl p-6 text-left transition-all duration-200 hover:translate-y-[-2px] ${
             exportSelected.has('trainers')
-              ? 'border border-[var(--accent-green)]/40 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+              ? 'border border-[var(--accent-emerald-solid)]/40 shadow-[0_0_12px_color-mix(in srgb, var(--accent-blue-solid) 15%, transparent)]'
               : 'border border-[var(--border-subtle)] hover:border-[var(--border)]/50'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[var(--accent-green)]/15' : 'bg-[var(--surface-card)]/80'}`}>
-              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+            <div className={`p-2.5 rounded-xl transition-colors ${exportSelected.has('trainers') ? 'bg-[var(--accent-emerald-solid)]/15' : 'bg-[var(--surface-card)]/80'}`}>
+              <FileSpreadsheet className={`w-5 h-5 transition-colors ${exportSelected.has('trainers') ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)]'}`} />
             </div>
             {exportSelected.has('trainers') && (
-              <span className="text-xs font-medium text-[var(--accent-green)] bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/20 px-2 py-0.5 rounded-full">Selected</span>
+              <span className="text-xs font-medium text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10 border border-[var(--accent-emerald-solid)]/20 px-2 py-0.5 rounded-full">Selected</span>
             )}
           </div>
-          <h2 className="text-white font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
+          <h2 className="text-[var(--text-primary)] font-bold tracking-tight text-base mb-1">Trainer Assignments</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed mb-3">Trainee/trainer pairs with tier breakdowns and completed deal counts.</p>
           <p className="text-[var(--text-secondary)] text-xs font-medium tabular-nums">{trainerAssignments.length} assignments</p>
         </button>
@@ -149,11 +144,11 @@ export function ExportSection() {
         <div className="mb-6">
           <div className="card-surface rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--accent-green)]/10">
-                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-green)]" />
+              <div className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/10">
+                <FileSpreadsheet className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               </div>
               <div>
-                <p className="text-white text-sm font-semibold">
+                <p className="text-[var(--text-primary)] text-sm font-semibold">
                   {[...exportSelected].map((t) => ({ payments: 'Payments', projects: 'Projects', baselines: 'Baselines', trainers: 'Trainers' }[t])).join(' + ')} Export ready
                 </p>
                 <p className="text-[var(--text-muted)] text-xs">
@@ -167,7 +162,8 @@ export function ExportSection() {
                 </p>
               </div>
             </div>
-            <button
+            <PrimaryButton
+              className="whitespace-nowrap"
               onClick={() => {
                 const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
                 const toCSV = (headers: string[], rows: string[][]) =>
@@ -241,11 +237,10 @@ export function ExportSection() {
                 }
                 toast(`Export started — ${exportSelected.size} file${exportSelected.size > 1 ? 's' : ''} downloading`, 'info');
               }}
-              className="flex items-center gap-2 bg-[var(--accent-green)] hover:bg-[var(--accent-green)] active:scale-[0.97] text-black text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
               Download CSV{exportSelected.size > 1 ? 's' : ''}
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       )}

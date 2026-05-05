@@ -1,0 +1,34 @@
+{
+  "$schema": "Inventory of Prisma models that intentionally do NOT have a row-level gate in lib/db-gated.ts. Each entry needs a one-sentence reason that survives review. Removing an entry is fine once the model gets a gate. Adding an entry means committing — in code review — that there's a non-row-level mechanism (route guard, scrubber, admin-only by construction) that protects the data.",
+
+  "User": "Identity model. Visibility is controlled at the route boundary (admin/PM-only listing endpoints) and PII fields are scrubbed via lib/serialize.ts before reaching non-admin viewers.",
+
+  "Installer": "Lookup data. All write endpoints under /api/installers/* are admin-only via requireAdmin(); reads are non-sensitive (installer names appear on every project). Pricing rows under InstallerPricingVersion are filtered by the schema-level @sensitivity admin annotation enforced by lib/serialize.ts.",
+  "InstallerPrepaidOption": "Lookup data. Admin-write only via /api/prepaid-options/* route guards; option name reads are non-sensitive.",
+  "InstallerPricingVersion": "Pricing structure. Sensitive @sensitivity admin fields (kiloPerW etc.) are scrubbed via lib/serialize.ts; reads are admin-only via /api/installer-pricing route guard.",
+  "InstallerPricingTier": "Per-tier pricing rows under InstallerPricingVersion. Same scrubbing/route-guard rationale.",
+  "Financer": "Lookup data. All writes under /api/financers/* are admin-only; reads (financer names) are non-sensitive and shown to reps on the deal form.",
+  "ProductCatalogConfig": "Per-installer config. Admin-only writes via /api/installers/[id]/config; reads expose family lists which reps need on the deal form.",
+  "Product": "Lookup data. Admin-only writes via /api/products; reads are non-sensitive (product names + family).",
+  "ProductPricingVersion": "Pricing structure. Same rationale as InstallerPricingVersion — scrubbed by lib/serialize.ts, admin-only routes.",
+  "ProductPricingTier": "Per-tier pricing rows under ProductPricingVersion. Same scrubbing/route-guard rationale.",
+
+  "ProjectCloser": "Junction table. Visibility delegates to the parent Project — Prisma relational queries naturally inherit the Project gate when accessed via project.additionalClosers.",
+  "ProjectSetter": "Junction table. Same rationale as ProjectCloser — accessed via project.additionalSetters.",
+  "ProjectCheckItem": "Project-scoped child rows. Accessed only via project.checkItems include, inheriting the Project gate. No standalone /api/check-items endpoint exists.",
+
+  "TrainerAssignment": "Trainer-trainee link rows. Read at the /api/trainer-assignments route which already gates by viewer (admin sees all, trainer sees own). TODO PR 4a — add a gate function for direct prisma reads.",
+  "TrainerOverrideTier": "Admin-sensitive (trainer override payout structure). Currently read only at /api/trainer-assignments where the route is admin-only. TODO PR 4a — add admin-only gate so direct prisma reads default-deny.",
+
+  "Incentive": "Admin-managed reward configs. /api/incentives is admin-only for writes; rep-visible reads only show 'their' progress via /api/data which already filters by repId. TODO PR 4a — formalize as an admin-only gate.",
+  "IncentiveMilestone": "Per-incentive milestone rows. Accessed via incentive.milestones include, inheriting the Incentive boundary.",
+
+  "Blitz": "Rep-visible (blitz events list). Visibility is currently 'all blitzes visible to all authenticated users' which matches the product intent — blitz signup is open. TODO PR 4a if visibility narrows.",
+  "BlitzParticipant": "Rep-self-managed (a rep can join/leave a blitz). Read at /api/blitzes/[id]/participants which is open to authenticated users; participant rows are not sensitive.",
+  "BlitzRequest": "Rep-submitted blitz proposals. /api/blitz-requests reads are admin-only via route guard; rep-visible state is exposed only through the bulk /api/data endpoint which filters by submitter.",
+
+  "AuditLog": "Admin-only by construction. Read endpoint /dashboard/admin/audit is admin-only; writes go through lib/audit.logChange which uses prisma directly (intentional — audit must record even when the actor's gate would deny).",
+  "DataAccessLog": "Admin-only observability surface. Same rationale as AuditLog.",
+
+  "StalledAlertConfig": "Admin singleton config for the daily stalled-projects digest. All read/write through /api/admin/stalled-config which is admin-only via route guard; no rep / vendor PM exposure path."
+}

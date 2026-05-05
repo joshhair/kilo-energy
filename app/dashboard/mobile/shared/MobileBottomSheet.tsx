@@ -22,13 +22,13 @@ function SheetItem({
       onClick={onTap}
       className="w-full flex items-center gap-3 min-h-[52px] px-5 py-3 text-left active:opacity-70 transition-opacity"
       style={{
-        color: active ? 'var(--accent-emerald)' : danger ? 'var(--m-danger, var(--accent-danger))' : '#fff',
-        background: active ? 'rgba(0,229,160,0.06)' : undefined,
+        color: active ? 'var(--accent-emerald-solid)' : danger ? 'var(--accent-red-solid)' : 'var(--text-primary)',
+        background: active ? 'var(--accent-emerald-soft)' : undefined,
       }}
     >
       {Icon && <Icon className="w-5 h-5 shrink-0 opacity-60" aria-hidden="true" />}
       <span className="text-base flex-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</span>
-      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald)' }} aria-hidden="true" />}
+      {active && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-emerald-text)' }} aria-hidden="true" />}
     </button>
   );
 }
@@ -46,6 +46,14 @@ export default function MobileBottomSheet({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // Stash onClose in a ref so the focus/keydown effect can call the latest
+  // version without re-running every time the parent re-renders. Without
+  // this, callers passing an inline `onClose={() => ...}` (the common case)
+  // re-trigger the cleanup on every keystroke, which steals focus from the
+  // active input and dismisses the on-screen keyboard on mobile (Spencer
+  // McCrary edit-contact regression, 2026-04-27).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   // Render via portal to document.body so position:fixed anchors to the
   // viewport regardless of any ancestor's transform/filter/perspective.
@@ -66,19 +74,27 @@ export default function MobileBottomSheet({
 
     // Auto-focus the first interactive element inside the panel on open.
     // Runs in a microtask so the DOM is committed before we try to focus.
+    // preventScroll: the panel is position:fixed at the bottom of the
+    // viewport — without preventScroll, calling .focus() on a button
+    // inside the panel asks the browser to scroll-into-view, which
+    // scrolls the *page* underneath (the panel itself doesn't move).
+    // On taller routes (project detail) the page leaps to align with
+    // the focused button, making it look like the sheet opened off-
+    // screen. preventScroll keeps the page exactly where the user
+    // tapped from.
     const autoFocus = () => {
       const panel = panelRef.current;
       if (!panel) return;
       const focusable = panel.querySelector<HTMLElement>(
         'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
-      focusable?.focus();
+      focusable?.focus({ preventScroll: true });
     };
     const t = setTimeout(autoFocus, 0);
 
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === 'Tab' && panelRef.current) {
@@ -94,10 +110,10 @@ export default function MobileBottomSheet({
         const active = document.activeElement as HTMLElement | null;
         if (e.shiftKey && active === first) {
           e.preventDefault();
-          last.focus();
+          last.focus({ preventScroll: true });
         } else if (!e.shiftKey && active === last) {
           e.preventDefault();
-          first.focus();
+          first.focus({ preventScroll: true });
         }
       }
     };
@@ -108,9 +124,12 @@ export default function MobileBottomSheet({
       window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
       // Restore focus to the element that triggered the sheet opening.
-      previouslyFocusedRef.current?.focus?.();
+      // preventScroll matches the open path so closing also doesn't
+      // jump the page back to align with the trigger button.
+      previouslyFocusedRef.current?.focus?.({ preventScroll: true });
     };
-  }, [open, onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -118,7 +137,7 @@ export default function MobileBottomSheet({
 
   const sheet = (
     <>
-      <div className="fixed inset-0 bg-black/50 z-[60] animate-modal-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[60] animate-modal-backdrop" style={{ background: 'var(--surface-overlay)' }} onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
@@ -126,8 +145,8 @@ export default function MobileBottomSheet({
         aria-labelledby={titleId}
         className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-2xl animate-modal-panel flex flex-col"
         style={{
-          background: 'var(--m-card, var(--surface-mobile-card))',
-          borderTop: '1px solid var(--m-border, var(--border-mobile))',
+          background: 'var(--surface-card)',
+          borderTop: '1px solid var(--border-subtle)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           // Cap height so tall sheets (edit forms with many fields) don't push
           // their own chrome up under the status bar. Header + scroll body.
@@ -135,16 +154,16 @@ export default function MobileBottomSheet({
         }}
       >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border, var(--border-mobile))' }} aria-hidden="true" />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-subtle)' }} aria-hidden="true" />
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2 shrink-0">
-            <p id={titleId} className="text-base font-semibold text-white" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+            <p id={titleId} className="text-base font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
             <button
               onClick={onClose}
               aria-label="Close"
               className="p-2 active:opacity-50"
-              style={{ color: 'var(--m-text-dim, #445577)' }}
+              style={{ color: 'var(--text-dim)' }}
             ><X className="w-5 h-5" aria-hidden="true" /></button>
           </div>
         )}

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM } from '../../../lib/api-auth';
+import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM, isInternalPM } from '../../../lib/api-auth';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
+import {
+  canViewKiloOnBaselineTier,
+  canViewKiloOnProjectOverride,
+} from '../../../lib/baseline-visibility';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -17,12 +21,30 @@ export async function GET() {
   const isPM = user.role === 'project_manager';
   const isRep = user.role === 'rep';
   const isSubDealer = user.role === 'sub-dealer';
+  // Routed through lib/baseline-visibility helpers so the privacy
+  // contract has one source of truth (tested in
+  // tests/unit/baseline-visibility.test.ts). DO NOT inline new
+  // role-based pricing-visibility checks — extend the helpers instead.
+  const showKiloOnTier = canViewKiloOnBaselineTier({ role: user.role });
+  const showKiloOnProjectOverride = canViewKiloOnProjectOverride({ role: user.role });
   // Vendor PM (role=project_manager AND scopedInstallerId set): sees only
   // projects whose installerId matches their scope. No payroll, no
   // reimbursements, no trainer assignments, no incentives, no rep
   // directory. The field-visibility matrix additionally scrubs commission
   // + margin fields from every project they do see.
   const isVendor = isVendorPM(user);
+  // Misconfigured PM: project_manager with no scopedInstallerId AND
+  // not on the INTERNAL_PM_EMAILS allowlist. Default-deny rather than
+  // silently granting org-wide access (the previous behavior — a
+  // vendor PM created without a scope ended up seeing everything).
+  const isMisconfiguredPM = isPM && !user.scopedInstallerId && !isInternalPM(user);
+  if (isMisconfiguredPM) {
+    logger.warn('misconfigured_pm_blocked', {
+      userId: user.id,
+      email: user.email,
+      message: 'project_manager without scopedInstallerId and not on INTERNAL_PM_EMAILS allowlist — denying access',
+    });
+  }
 
   // ─── Trainer-chain lookup ──────────────────────────────────────────────
   // A rep who's assigned as trainer to other reps needs to see those reps'
@@ -34,63 +56,97 @@ export async function GET() {
   const chainTraineeIds = Array.from(chainTrainees);
 
   // ─── Project filter: who sees which projects? ───
-  // Admin: all. PM (internal): all. Vendor PM: installerId scoped.
-  // Rep: closer/setter/co-party + projects they train.
-  // Sub-dealer: subDealerId match.
-  const projectWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    projectWhere.installerId = user.scopedInstallerId!;
+  // Defense-in-depth: positive allowlist + default-DENY at the end. The
+  // previous shape ("empty where = full access") leaked when a user's
+  // role didn't match any branch — every misconfigured row, every typo,
+  // every future role got admin-level visibility by accident. The
+  // Joe-Dale-BVI leak (2026-04-26) was traced to exactly this fall-
+  // through. Any unknown user shape now returns zero rows + logs loud.
+  const isInternal = isInternalPM(user);
+  const isAllowlisted = isAdmin || isInternal;
+  let projectWhere: Record<string, unknown>;
+  if (isAllowlisted) {
+    projectWhere = {};
+  } else if (isMisconfiguredPM) {
+    projectWhere = { id: '__deny_misconfigured_pm__' };
+  } else if (isVendor) {
+    projectWhere = { installerId: user.scopedInstallerId! };
   } else if (isRep) {
-    projectWhere.OR = [
-      { closerId: user.id },
-      { setterId: user.id },
-      { additionalClosers: { some: { userId: user.id } } },
-      { additionalSetters: { some: { userId: user.id } } },
-      // Per-project trainer override
-      { trainerId: user.id },
-      // Rep-chain trainer: projects where this user trains the closer
-      ...(chainTraineeIds.length > 0 ? [{ closerId: { in: chainTraineeIds } }] : []),
-    ];
+    projectWhere = {
+      OR: [
+        { closerId: user.id },
+        { setterId: user.id },
+        { additionalClosers: { some: { userId: user.id } } },
+        { additionalSetters: { some: { userId: user.id } } },
+        { trainerId: user.id },
+        // Chain-trainee visibility — suppressed for projects where admin
+        // explicitly cleared the trainer (project.noChainTrainer = true).
+        ...(chainTraineeIds.length > 0
+          ? [{ AND: [{ closerId: { in: chainTraineeIds } }, { noChainTrainer: false }] }]
+          : []),
+      ],
+    };
   } else if (isSubDealer) {
-    projectWhere.OR = [{ subDealerId: user.id }, { closerId: user.id }];
-  }
-  // Admin + internal PM: no filter (empty where)
-
-  // ─── Payroll filter: rep/sub-dealer only see own. PM sees own (if any).
-  // Vendor PM sees NOTHING — payroll is all commission data. ───
-  const payrollWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    // Impossible repId so the query returns nothing. Cheaper than a
-    // branch around the Promise.all below.
-    payrollWhere.repId = '__vendor_pm_no_payroll__';
-  } else if (!isAdmin) {
-    payrollWhere.repId = user.id;
+    projectWhere = { OR: [{ subDealerId: user.id }, { closerId: user.id }] };
+  } else {
+    // Default DENY. Unknown / null / unexpected role shape — block
+    // and log. Reaching this branch is a configuration bug.
+    logger.warn('default_deny_project_access', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      reason: 'role does not match any allowed branch',
+    });
+    projectWhere = { id: '__deny_unknown_role__' };
   }
 
-  // ─── Reimbursements: rep/sub-dealer/PM only see own. Vendor PM: none. ───
-  const reimbWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    reimbWhere.repId = '__vendor_pm_no_reimb__';
-  } else if (!isAdmin) {
-    reimbWhere.repId = user.id;
+  // ─── Payroll filter: positive allowlist + default-deny. ───
+  let payrollWhere: Record<string, unknown>;
+  if (isAdmin) {
+    payrollWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    payrollWhere = { repId: '__deny_vendor_pm_no_payroll__' };
+  } else if (isInternal || isRep || isSubDealer) {
+    // PM (internal), rep, sub-dealer all see only their OWN payroll.
+    payrollWhere = { repId: user.id };
+  } else {
+    payrollWhere = { repId: '__deny_unknown_role__' };
   }
 
-  // ─── Trainer assignments: rep sees where they're trainer or trainee.
-  // Admin sees all. Vendor PM: none. ───
-  const trainerWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    trainerWhere.id = '__vendor_pm_no_training__';
-  } else if (!isAdmin) {
-    trainerWhere.OR = [{ trainerId: user.id }, { traineeId: user.id }];
+  // ─── Reimbursements: same shape. ───
+  let reimbWhere: Record<string, unknown>;
+  if (isAdmin) {
+    reimbWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    reimbWhere = { repId: '__deny_vendor_pm_no_reimb__' };
+  } else if (isInternal || isRep || isSubDealer) {
+    reimbWhere = { repId: user.id };
+  } else {
+    reimbWhere = { repId: '__deny_unknown_role__' };
   }
 
-  // ─── Incentives: rep/sub-dealer see incentives targeting them or
-  // company-wide. Vendor PM: none. ───
-  const incentiveWhere: Record<string, unknown> = {};
-  if (isVendor) {
-    incentiveWhere.id = '__vendor_pm_no_incentives__';
-  } else if (!isAdmin) {
-    incentiveWhere.OR = [{ targetRepId: user.id }, { targetRepId: null }];
+  // ─── Trainer assignments: rep sees self-as-trainer or trainee. ───
+  let trainerWhere: Record<string, unknown>;
+  if (isAdmin || isInternal) {
+    trainerWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    trainerWhere = { id: '__deny_vendor_pm_no_training__' };
+  } else if (isRep || isSubDealer) {
+    trainerWhere = { OR: [{ trainerId: user.id }, { traineeId: user.id }] };
+  } else {
+    trainerWhere = { id: '__deny_unknown_role__' };
+  }
+
+  // ─── Incentives: rep/SD see targeted-at-them OR company-wide. ───
+  let incentiveWhere: Record<string, unknown>;
+  if (isAdmin || isInternal) {
+    incentiveWhere = {};
+  } else if (isVendor || isMisconfiguredPM) {
+    incentiveWhere = { id: '__deny_vendor_pm_no_incentives__' };
+  } else if (isRep || isSubDealer) {
+    incentiveWhere = { OR: [{ targetRepId: user.id }, { targetRepId: null }] };
+  } else {
+    incentiveWhere = { id: '__deny_unknown_role__' };
   }
 
   // Ensure the Cash financer always exists so reps can submit Cash deals on
@@ -124,7 +180,12 @@ export async function GET() {
     // contact directory. We scrub the returned list to empty to block
     // any accidental exposure elsewhere in the client.
     prisma.user.findMany({
-      where: isVendor ? { id: '__vendor_pm_no_users__' } : (isAdmin ? {} : { active: true }),
+      where: (() => {
+        if (isAdmin) return {}; // includes deactivated for historical contexts
+        if (isVendor || isMisconfiguredPM) return { id: '__deny_vendor_pm_no_users__' };
+        if (isInternal || isRep || isSubDealer) return { active: true };
+        return { id: '__deny_unknown_role__' };
+      })(),
       orderBy: { lastName: 'asc' },
     }),
     prisma.installer.findMany({ orderBy: { name: 'asc' } }),
@@ -173,6 +234,12 @@ export async function GET() {
       include: { tiers: true },
       orderBy: { effectiveFrom: 'desc' },
     }),
+    // Active products only by default. Archived products (active=false)
+    // are surfaced via the dedicated /api/products?archived=1 admin
+    // endpoint or by the Archived-tab toggle in the Baselines UI, which
+    // calls the existing list endpoints. Keeping the main hydration
+    // payload free of archived rows means rep / sub-dealer / vendor PM
+    // contexts never see soft-deleted products.
     prisma.product.findMany({
       where: { active: true },
       include: {
@@ -213,6 +280,22 @@ export async function GET() {
       canRequestBlitz: u.canRequestBlitz ?? false,
       canCreateBlitz: u.canCreateBlitz ?? false,
     }));
+
+  // ─── View-As candidates: admins + project managers (admin only) ───
+  // Admins use this to impersonate PMs and admin colleagues from the View
+  // As picker. Reps + sub-dealers + PMs get an empty list — view-as is an
+  // admin-only privilege. PII (email/phone) is omitted; only id+name+role
+  // are needed for the picker.
+  const viewAsCandidates = isAdmin
+    ? users
+        .filter((u) => u.active && (u.role === 'admin' || u.role === 'project_manager'))
+        .map((u) => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          role: u.role as 'admin' | 'project_manager',
+          scopedInstallerId: u.scopedInstallerId ?? null,
+        }))
+    : [];
 
   const subDealers = users
     .filter((u) => u.role === 'sub-dealer')
@@ -288,7 +371,7 @@ export async function GET() {
     baselineOverride: stripFinancials ? undefined : (p.baselineOverrideJson ? (() => {
       let bo: Record<string, unknown> | undefined;
       try { bo = JSON.parse(p.baselineOverrideJson); } catch { bo = undefined; }
-      if (!isAdmin && bo) { delete bo.kiloPerW; }
+      if (!showKiloOnProjectOverride && bo) { delete bo.kiloPerW; }
       return bo;
     })() : undefined),
     prepaidSubType: p.prepaidSubType ?? undefined,
@@ -335,6 +418,13 @@ export async function GET() {
       setterId: raw.setterId,
       subDealerId: raw.subDealerId,
       trainerId: raw.trainerId,
+      // Required for the vendor_pm branch in relationshipToProject —
+      // without this, vendor PMs silently degrade to 'none'. The
+      // field-visibility actions for 'vendor_pm' and 'none' happen to be
+      // identical today, so this was a latent bug rather than an active
+      // leak. Wiring it up removes the silent-fail and makes intent
+      // explicit if the matrix ever diverges.
+      installerId: raw.installerId,
       additionalClosers: raw.additionalClosers.map((c) => ({ userId: c.userId })),
       additionalSetters: raw.additionalSetters.map((s) => ({ userId: s.userId })),
     }, chainTrainees);
@@ -427,7 +517,7 @@ export async function GET() {
               maxKW: t.maxKW ?? undefined,
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
-              ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+              ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
               subDealerPerW: t.subDealerPerW ?? undefined,
             })),
           }
@@ -435,7 +525,7 @@ export async function GET() {
             type: 'flat' as const,
             closerPerW: v.tiers[0].closerPerW,
             setterPerW: v.tiers[0].setterPerW ?? undefined,
-            ...(isAdmin || isSubDealer ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
+            ...(showKiloOnTier ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
             subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
           },
     }];
@@ -466,7 +556,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+          ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -488,7 +578,7 @@ export async function GET() {
           maxKW: t.maxKW ?? null,
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
-          ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+          ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           subDealerPerW: t.subDealerPerW ?? undefined,
         })),
       };
@@ -519,7 +609,7 @@ export async function GET() {
       maxKW: t.maxKW ?? null,
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
-      ...(isAdmin || isSubDealer ? { kiloPerW: t.kiloPerW } : {}),
+      ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
       subDealerPerW: t.subDealerPerW ?? undefined,
     })),
   }));
@@ -536,6 +626,7 @@ export async function GET() {
   return NextResponse.json({
     reps,
     subDealers,
+    viewAsCandidates,
     installers: installerNames,
     financers: financerNames,
     installerPayConfigs,
