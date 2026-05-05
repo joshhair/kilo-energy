@@ -24,6 +24,11 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { Collapse } from '../components/Collapse';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import { ProjectNotes } from '../components/ProjectNotes';
+import { EquipmentSnapshot } from '../projects/components/detail/EquipmentSnapshot';
+import { InstallerFiles } from '../projects/components/detail/InstallerFiles';
+import { SiteSurveyLinks } from '../projects/components/detail/SiteSurveyLinks';
+import { InstallerNotes } from '../projects/components/detail/InstallerNotes';
+import { HandoffStatusCard } from '../projects/components/detail/HandoffStatusCard';
 
 // ── Pipeline steps ──
 
@@ -1197,6 +1202,33 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           </p>
           <ProjectNotes projectId={projectId} kind="admin" />
         </MobileSection>
+      )}
+
+      {/* Equipment Snapshot — non-sensitive, all roles */}
+      <MobileSection title="Equipment" collapsible defaultOpen={false}>
+        <EquipmentSnapshot projectId={projectId} />
+      </MobileSection>
+
+      {/* Installer-handoff surfaces — admin + PM only. Vendor PM scope
+          enforced at the endpoint via the privacy gate. */}
+      {(isAdmin || isPM) && (
+        <>
+          <MobileSection title="Installer Handoff" collapsible defaultOpen={false}>
+            <HandoffStatusCard
+              projectId={projectId}
+              canResend={isAdmin || (isPM && !viewAsUser?.scopedInstallerId)}
+            />
+          </MobileSection>
+          <MobileSection title="Installer Files" collapsible defaultOpen={false}>
+            <InstallerFiles projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+          <MobileSection title="Site Survey Links" collapsible defaultOpen={false}>
+            <SiteSurveyLinks projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+          <MobileSection title="Installer Notes" collapsible defaultOpen={false}>
+            <InstallerNotes projectId={projectId} canManage={isAdmin || isPM} />
+          </MobileSection>
+        </>
       )}
 
       {/* Messages / Chatter */}

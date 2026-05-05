@@ -25,6 +25,11 @@ import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { ProjectNotes } from '../../components/ProjectNotes';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
+import { EquipmentSnapshot } from '../components/detail/EquipmentSnapshot';
+import { InstallerFiles } from '../components/detail/InstallerFiles';
+import { SiteSurveyLinks } from '../components/detail/SiteSurveyLinks';
+import { InstallerNotes } from '../components/detail/InstallerNotes';
+import { HandoffStatusCard } from '../components/detail/HandoffStatusCard';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
@@ -605,6 +610,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Pipeline stage tracker */}
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
+
+      {/* Equipment Snapshot — non-sensitive, visible to all roles */}
+      <div className="mb-4">
+        <EquipmentSnapshot projectId={id} />
+      </div>
 
       {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
       {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
@@ -1294,6 +1304,32 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </p>
           <ProjectNotes projectId={id} kind="admin" />
         </div>
+      )}
+
+      {/* Installer-handoff surfaces — admin + PM only (gate uses
+          effectiveRole, not currentRole, so admin View-As-Rep correctly
+          hides these per project_kilo_client_filter_leaks.md). Server's
+          privacy gate is the load-bearing enforcement; this client-side
+          gate prevents reps from seeing the section headers at all. */}
+      {(effectiveRole === 'admin' || isPM) && (
+        <>
+          <HandoffStatusCard
+            projectId={id}
+            canResend={effectiveRole === 'admin' || (isPM && !viewAsUser?.scopedInstallerId)}
+          />
+          <InstallerFiles
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+          <SiteSurveyLinks
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+          <InstallerNotes
+            projectId={id}
+            canManage={effectiveRole === 'admin' || isPM}
+          />
+        </>
       )}
 
       {/* Chatter — above Activity so in-project discussion is the

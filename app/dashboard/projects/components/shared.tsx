@@ -68,20 +68,56 @@ export const PHASE_PILL: Record<string, { gradient: string; border: string; shad
 };
 
 /**
- * Badge shown on Kanban cards when a project has been in the pipeline for
- * more than 30 days since the sold date.
+ * Terminal phases never get a stale badge. PTO + Completed are
+ * effectively done from a workflow standpoint; Cancelled / On Hold are
+ * already off-track and the user has explicit signal there. Mirrors
+ * Filter A in the daily stalled-digest cron.
+ */
+const STALE_TERMINAL_PHASES: ReadonlySet<Phase> = new Set([
+  'PTO', 'Completed', 'Cancelled', 'On Hold',
+] as Phase[]);
+
+/**
+ * Badge shown on project cards/rows when a project has been sitting in
+ * its current phase too long.
+ *
+ * Refactored 2026-04-29: now uses `phaseChangedAt` (time-in-current-phase)
+ * with fallback to `soldDate` for legacy rows that pre-date the column.
+ * The per-phase thresholds live in the daily-digest cron — this badge
+ * is a quick-glance, simple-global "30/60 day" signal.
+ *
  *   30–59 days → amber
  *   60+ days   → red
  */
-export function StaleBadge({ soldDate, phase }: { soldDate: string | null; phase: Phase }) {
-  if (!ACTIVE_PHASES.includes(phase) || phase === 'Completed') return null;
-  if (!soldDate) return null;
-  const days = daysSince(soldDate);
+export function StaleBadge({
+  soldDate,
+  phase,
+  phaseChangedAt,
+}: {
+  soldDate: string | null;
+  phase: Phase;
+  phaseChangedAt?: string | Date | null;
+}) {
+  if (!ACTIVE_PHASES.includes(phase)) return null;
+  if (STALE_TERMINAL_PHASES.has(phase)) return null;
+
+  // Prefer phaseChangedAt — captures "stuck in current phase" semantics.
+  // Legacy rows fall back to soldDate (which is what the badge originally
+  // measured before the column was added). daysSince expects ISO date
+  // string `YYYY-MM-DD`, so normalize Dates first.
+  const reference = phaseChangedAt ?? soldDate;
+  if (!reference) return null;
+
+  const referenceIso =
+    typeof reference === 'string'
+      ? reference.slice(0, 10)
+      : reference.toISOString().slice(0, 10);
+  const days = daysSince(referenceIso);
   if (days < 30) return null;
   const isRed = days >= 60;
   return (
     <span
-      title={`${days} days since sold`}
+      title={`${days} days in ${phase}`}
       className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
       style={isRed
         ? { background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }
