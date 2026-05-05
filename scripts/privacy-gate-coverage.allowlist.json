@@ -28,5 +28,7 @@
   "BlitzRequest": "Rep-submitted blitz proposals. /api/blitz-requests reads are admin-only via route guard; rep-visible state is exposed only through the bulk /api/data endpoint which filters by submitter.",
 
   "AuditLog": "Admin-only by construction. Read endpoint /dashboard/admin/audit is admin-only; writes go through lib/audit.logChange which uses prisma directly (intentional — audit must record even when the actor's gate would deny).",
-  "DataAccessLog": "Admin-only observability surface. Same rationale as AuditLog."
+  "DataAccessLog": "Admin-only observability surface. Same rationale as AuditLog.",
+
+  "StalledAlertConfig": "Admin singleton config for the daily stalled-projects digest. All read/write through /api/admin/stalled-config which is admin-only via route guard; no rep / vendor PM exposure path."
 }

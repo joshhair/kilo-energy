@@ -251,6 +251,57 @@ export function projectAdminNoteVisibilityWhere(): Prisma.ProjectAdminNoteWhereI
 }
 
 /**
+ * Project visibility WHERE for "installer-surface" child models —
+ * ProjectFile, ProjectSurveyLink, ProjectInstallerNote, EmailDelivery.
+ *
+ * The audience is admin + internal PM + vendor PM whose scopedInstallerId
+ * matches the project's installerId. Reps, setters, sub-dealers,
+ * misconfigured PMs, and unknown roles all DENY. Distinct from
+ * projectVisibilityWhere (which lets reps see their own deals): reps
+ * should never see installer-handoff files, links, or notes — those are
+ * operational comms between Kilo and the installer that the rep isn't
+ * party to.
+ *
+ * Returned shape is intended for use as `{ project: <this> }` on a
+ * project-scoped child model.
+ */
+function installerSurfaceProjectWhere(): Prisma.ProjectWhereInput {
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager' && user.email && isInternalPM(user as Parameters<typeof isInternalPM>[0])) {
+    return {};
+  }
+  if (isVendorPM(user)) return { installerId: user.scopedInstallerId! };
+  // Everyone else — rep, setter, sub-dealer, misconfigured PM, unknown role —
+  // is denied. Different from projectVisibilityWhere which lets reps see
+  // their own deals; installer-surface comms are not for reps.
+  logger.warn('gated_db_default_deny', {
+    userId: user.id,
+    role: user.role,
+    reason: 'non-installer-surface audience',
+  });
+  return { id: '__deny_non_installer_surface__' };
+}
+
+/**
+ * ProjectFile / ProjectSurveyLink / ProjectInstallerNote / EmailDelivery
+ * visibility — all four delegate to installerSurfaceProjectWhere() via a
+ * Prisma relational filter on `project`.
+ */
+export function projectFileVisibilityWhere(): Prisma.ProjectFileWhereInput {
+  return { project: installerSurfaceProjectWhere() };
+}
+export function projectSurveyLinkVisibilityWhere(): Prisma.ProjectSurveyLinkWhereInput {
+  return { project: installerSurfaceProjectWhere() };
+}
+export function projectInstallerNoteVisibilityWhere(): Prisma.ProjectInstallerNoteWhereInput {
+  return { project: installerSurfaceProjectWhere() };
+}
+export function emailDeliveryVisibilityWhere(): Prisma.EmailDeliveryWhereInput {
+  return { project: installerSurfaceProjectWhere() };
+}
+
+/**
  * Combine the caller's WHERE with the gate's visibility WHERE. Uses AND
  * so the gate is restrictive — a caller can only see records that are
  * BOTH a match for their query AND visible to them.
@@ -275,7 +326,14 @@ function intersectWhere<W extends Record<string, unknown>>(
  * post-filter — fetch the row, then check it against the gate's WHERE
  * via a follow-up findFirst. Slightly less efficient but correct.
  */
-export const db = prisma.$extends({
+// The $extends return type loses some inference under Prisma 7's strict
+// generics — TypeScript collapses model accessors to `unknown` at consumer
+// call sites. The extension only intercepts queries (doesn't ADD methods
+// or change the API surface), so the runtime `prisma.$extends(...)` value
+// is type-cast (via the export below) to `typeof prisma` so callers get
+// the original model surface. Lifecycle methods ($on, $connect, $tx, etc.)
+// remain available on `prisma` directly for the rare paths that need them.
+const extendedDb = prisma.$extends({
   name: 'privacyGate',
   query: {
     project: {
@@ -569,7 +627,122 @@ export const db = prisma.$extends({
         return query(args);
       },
     },
+    projectFile: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectFileVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectFileVisibilityWhere());
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        args.where = intersectWhere(args.where, projectFileVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectFile.findFirst({
+          where: { AND: [{ id: result.id }, projectFileVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectFileVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectSurveyLink: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectSurveyLinkVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectSurveyLinkVisibilityWhere());
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        args.where = intersectWhere(args.where, projectSurveyLinkVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectSurveyLink.findFirst({
+          where: { AND: [{ id: result.id }, projectSurveyLinkVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectSurveyLinkVisibilityWhere());
+        return query(args);
+      },
+    },
+    projectInstallerNote: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, projectInstallerNoteVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, projectInstallerNoteVisibilityWhere());
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        args.where = intersectWhere(args.where, projectInstallerNoteVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.projectInstallerNote.findFirst({
+          where: { AND: [{ id: result.id }, projectInstallerNoteVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, projectInstallerNoteVisibilityWhere());
+        return query(args);
+      },
+    },
+    emailDelivery: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, emailDeliveryVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, emailDeliveryVisibilityWhere());
+        return query(args);
+      },
+      async findFirstOrThrow({ args, query }) {
+        args.where = intersectWhere(args.where, emailDeliveryVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.emailDelivery.findFirst({
+          where: { AND: [{ id: result.id }, emailDeliveryVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, emailDeliveryVisibilityWhere());
+        return query(args);
+      },
+    },
   },
 });
 
-export type GatedDb = typeof db;
+// Type-stable re-export. Runtime: the gate-injecting extended client.
+// Compile-time: `typeof prisma`, so consumers get full model typing.
+export const db = extendedDb as unknown as typeof prisma;
+export type GatedDb = typeof prisma;

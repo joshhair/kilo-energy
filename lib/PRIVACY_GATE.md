@@ -6,18 +6,32 @@ Read this before adding any API endpoint that touches a sensitive model.
 
 These tables contain data that not every user is allowed to see:
 
-| Model               | Why sensitive                                    |
-| ------------------- | ------------------------------------------------ |
-| `Project`           | Customer PII, commission, cross-rep visibility   |
-| `PayrollEntry`      | Per-rep financial data                           |
-| `Reimbursement`     | Per-rep financial data                           |
-| `ProjectMessage`    | Private chat between deal participants           |
-| `ProjectActivity`   | Audit trail with financial change history        |
-| `ProjectMention`    | Cross-references private chat                    |
-| `BlitzCost`         | Operating costs (admin-only)                     |
-| `ProjectAdminNote`  | Admin/PM annotations                             |
+| Model                    | Why sensitive                                              |
+| ------------------------ | ---------------------------------------------------------- |
+| `Project`                | Customer PII, commission, cross-rep visibility             |
+| `PayrollEntry`           | Per-rep financial data                                     |
+| `Reimbursement`          | Per-rep financial data                                     |
+| `ProjectMessage`         | Private chat between deal participants                     |
+| `ProjectActivity`        | Audit trail with financial change history                  |
+| `ProjectMention`         | Cross-references private chat                              |
+| `ProjectNote`            | Per-project notes (rep-visible, project-scoped)            |
+| `BlitzCost`              | Operating costs (admin-only)                               |
+| `ProjectAdminNote`       | Admin/PM annotations                                       |
+| `ProjectFile`            | Utility bills + installer docs (PII; installer-surface)    |
+| `ProjectSurveyLink`      | Site-survey photo links (installer-surface)                |
+| `ProjectInstallerNote`   | Per-installer ops notes (installer-surface)                |
+| `EmailDelivery`          | Handoff email delivery records (installer-surface)         |
+
+13 sensitive models gated as of 2026-04-28.
 
 If a route touches one of these, **it must go through the gate**.
+
+**Audience policies:**
+
+- *Per-rep* models (`PayrollEntry`, `Reimbursement`) — scoped by `repId` to the calling user; vendor PMs explicitly denied.
+- *Project-scoped* models (`ProjectMessage`, `ProjectActivity`, `ProjectMention`, `ProjectNote`) — visibility delegated to parent project; reps see their own deals' rows.
+- *Admin-only* models (`BlitzCost`, `ProjectAdminNote`) — admin + internal PM only; vendor PMs blocked even if they can see the project.
+- *Installer-surface* models (`ProjectFile`, `ProjectSurveyLink`, `ProjectInstallerNote`, `EmailDelivery`) — admin + internal PM + vendor PM whose `scopedInstallerId` matches the project's `installerId`. **Reps DENY** (these are operational comms between Kilo and the installer, not rep-facing). Implemented via shared helper `installerSurfaceProjectWhere()` in `lib/db-gated.ts`.
 
 ## Two clients
 

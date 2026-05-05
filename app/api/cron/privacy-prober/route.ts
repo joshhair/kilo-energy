@@ -29,6 +29,10 @@ import {
   reimbursementVisibilityWhere,
   blitzCostVisibilityWhere,
   projectAdminNoteVisibilityWhere,
+  projectFileVisibilityWhere,
+  projectSurveyLinkVisibilityWhere,
+  projectInstallerNoteVisibilityWhere,
+  emailDeliveryVisibilityWhere,
 } from '../../../../lib/db-gated';
 import type { InternalUser } from '../../../../lib/api-auth';
 import { logger } from '../../../../lib/logger';
@@ -145,12 +149,29 @@ export async function GET(req: NextRequest) {
       { user: f.user, chainTraineeIds: [] },
       () => projectAdminNoteVisibilityWhere(),
     );
+    const projectFileWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => projectFileVisibilityWhere(),
+    );
+    const surveyLinkWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => projectSurveyLinkVisibilityWhere(),
+    );
+    const installerNoteWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => projectInstallerNoteVisibilityWhere(),
+    );
+    const emailDeliveryWhere = withRequestContext(
+      { user: f.user, chainTraineeIds: [] },
+      () => emailDeliveryVisibilityWhere(),
+    );
 
     if (f.name === 'vendor_pm_scoped_to_fake_installer') {
       // Special case: vendor PM with a real-looking scope returns an
       // installerId where for Project (not a deny sentinel). Validate
-      // the where matches the fake-installer policy. Other models all
-      // deny vendor PMs entirely.
+      // the where matches the fake-installer policy. The four installer-
+      // surface models also wrap installerId in a `project: { ... }`
+      // relational filter — same fake-installer string must appear.
       const projectOk = JSON.stringify(projectWhere).includes('inst_prober_fake');
       results.push({
         fixture: f.name,
@@ -163,12 +184,34 @@ export async function GET(req: NextRequest) {
       results.push(assertWhereDeniesAll(f.name, 'Reimbursement', reimbWhere));
       results.push(assertWhereDeniesAll(f.name, 'BlitzCost', blitzCostWhere));
       results.push(assertWhereDeniesAll(f.name, 'ProjectAdminNote', adminNoteWhere));
+      // Installer-surface models: vendor PM with valid scope SEES rows
+      // whose project.installerId matches. Validate the relational
+      // filter contains the fake-installer string.
+      for (const [model, where] of [
+        ['ProjectFile', projectFileWhere],
+        ['ProjectSurveyLink', surveyLinkWhere],
+        ['ProjectInstallerNote', installerNoteWhere],
+        ['EmailDelivery', emailDeliveryWhere],
+      ] as const) {
+        const ok = JSON.stringify(where).includes('inst_prober_fake');
+        results.push({
+          fixture: f.name,
+          model,
+          ok,
+          whereJson: JSON.stringify(where),
+          reason: ok ? undefined : `Vendor PM scope did not produce installerId-bound WHERE on ${model}`,
+        });
+      }
     } else {
       results.push(assertWhereDeniesAll(f.name, 'Project', projectWhere));
       results.push(assertWhereDeniesAll(f.name, 'PayrollEntry', payrollWhere));
       results.push(assertWhereDeniesAll(f.name, 'Reimbursement', reimbWhere));
       results.push(assertWhereDeniesAll(f.name, 'BlitzCost', blitzCostWhere));
       results.push(assertWhereDeniesAll(f.name, 'ProjectAdminNote', adminNoteWhere));
+      results.push(assertWhereDeniesAll(f.name, 'ProjectFile', projectFileWhere));
+      results.push(assertWhereDeniesAll(f.name, 'ProjectSurveyLink', surveyLinkWhere));
+      results.push(assertWhereDeniesAll(f.name, 'ProjectInstallerNote', installerNoteWhere));
+      results.push(assertWhereDeniesAll(f.name, 'EmailDelivery', emailDeliveryWhere));
     }
   }
 
