@@ -77,6 +77,9 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   // trainerId clears the override (rate is meaningless without trainer).
   if ('trainerId' in updates) dbUpdates.trainerId = updates.trainerId ?? null;
   if ('trainerRate' in updates) dbUpdates.trainerRate = updates.trainerRate ?? null;
+  // Admin's "remove all trainers" flag — suppresses chain trainer
+  // visibility + commission. Set true by the project sheet's Clear button.
+  if ('noChainTrainer' in updates) dbUpdates.noChainTrainer = updates.noChainTrainer ?? false;
   return dbUpdates;
 }
 

@@ -111,7 +111,10 @@ describe('projectVisibilityWhere', () => {
     });
   });
 
-  it('rep with chain trainees → OR includes "closerId in trainee list"', () => {
+  it('rep with chain trainees → OR includes "closerId in trainee list", suppressed by noChainTrainer flag', () => {
+    // Chain-trainee path is gated on noChainTrainer = false so admin can
+    // explicitly remove a trainer from a deal (project sheet Clear button)
+    // and have the deal disappear from that trainer's project list.
     const user = fixtureUser({ id: 'paul', role: 'rep' });
     const trainees = ['rep_a', 'rep_b'];
     const where = withRequestContext(ctx(user, trainees), () => projectVisibilityWhere());
@@ -122,7 +125,7 @@ describe('projectVisibilityWhere', () => {
         { additionalClosers: { some: { userId: 'paul' } } },
         { additionalSetters: { some: { userId: 'paul' } } },
         { trainerId: 'paul' },
-        { closerId: { in: ['rep_a', 'rep_b'] } },
+        { AND: [{ closerId: { in: ['rep_a', 'rep_b'] } }, { noChainTrainer: false }] },
       ],
     });
   });

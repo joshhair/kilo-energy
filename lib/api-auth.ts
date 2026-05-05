@@ -139,7 +139,7 @@ export async function userCanAccessProject(
   }
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
+    select: { closerId: true, setterId: true, subDealerId: true, trainerId: true, noChainTrainer: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
   });
   if (!project) return false;
 
@@ -147,16 +147,20 @@ export async function userCanAccessProject(
   // to verify their own override amount. Two ways a user qualifies:
   //   1. Per-project trainer override (project.trainerId === user.id)
   //   2. Rep-chain trainer: active TrainerAssignment where this user is
-  //      the trainer and the project's closer is the trainee.
+  //      the trainer and the project's closer is the trainee — UNLESS
+  //      admin explicitly suppressed the chain trainer for this project
+  //      via the project sheet's Clear button (project.noChainTrainer = true).
   // Note: this is purely for access; what they *see* once inside is scrubbed
   // by the field-visibility matrix (trainer relationship), which hides
   // closer/setter commission and kiloMargin.
   if (project.trainerId === user.id) return true;
-  const chainTrainer = await prisma.trainerAssignment.findFirst({
-    where: { trainerId: user.id, traineeId: project.closerId, active: true },
-    select: { id: true },
-  });
-  if (chainTrainer) return true;
+  if (!project.noChainTrainer) {
+    const chainTrainer = await prisma.trainerAssignment.findFirst({
+      where: { trainerId: user.id, traineeId: project.closerId, active: true },
+      select: { id: true },
+    });
+    if (chainTrainer) return true;
+  }
 
   if (user.role === 'rep') {
     if (project.closerId === user.id || project.setterId === user.id) return true;

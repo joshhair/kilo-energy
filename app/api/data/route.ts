@@ -79,7 +79,11 @@ export async function GET() {
         { additionalClosers: { some: { userId: user.id } } },
         { additionalSetters: { some: { userId: user.id } } },
         { trainerId: user.id },
-        ...(chainTraineeIds.length > 0 ? [{ closerId: { in: chainTraineeIds } }] : []),
+        // Chain-trainee visibility — suppressed for projects where admin
+        // explicitly cleared the trainer (project.noChainTrainer = true).
+        ...(chainTraineeIds.length > 0
+          ? [{ AND: [{ closerId: { in: chainTraineeIds } }, { noChainTrainer: false }] }]
+          : []),
       ],
     };
   } else if (isSubDealer) {

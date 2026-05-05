@@ -87,6 +87,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // values instead of the chain.
     trainerId: '',
     trainerRate: '',
+    // Admin's "remove all trainers" flag — true means chain trainer is
+    // suppressed for this deal (deal disappears from chain trainer's view
+    // and they no longer earn override). Only set true via the Clear button.
+    noChainTrainer: false,
     solarTechProductId: '',
   });
 
@@ -380,6 +384,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       })),
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
+      noChainTrainer: project.noChainTrainer ?? false,
       solarTechProductId: project.solarTechProductId ?? '',
     });
     setEditErrors({});
@@ -499,6 +504,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
+      noChainTrainer: editVals.noChainTrainer,
       solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
       ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
     });
@@ -1495,11 +1501,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="bg-[var(--surface-card)]/60 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Per-project trainer override</label>
-                  {editVals.trainerId && (
+                  {(editVals.trainerId || !editVals.noChainTrainer) && (
                     <button
                       type="button"
-                      onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '' }))}
+                      onClick={() => setEditVals((v) => ({ ...v, trainerId: '', trainerRate: '', noChainTrainer: true }))}
                       className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors"
+                      title="Remove all trainers from this deal — chain trainer will no longer see it or earn override"
                     >
                       Clear
                     </button>
@@ -1514,7 +1521,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <label className="text-[var(--text-secondary)] text-[11px] block mb-1">Trainer</label>
                     <select
                       value={editVals.trainerId}
-                      onChange={(e) => setEditVals((v) => ({ ...v, trainerId: e.target.value }))}
+                      onChange={(e) => setEditVals((v) => ({
+                        ...v,
+                        trainerId: e.target.value,
+                        // Picking any dropdown option (including "— none —") clears the
+                        // explicit-removal flag — chain trainer can apply again.
+                        noChainTrainer: false,
+                      }))}
                       className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
                     >
                       <option value="">— none —</option>
@@ -1546,6 +1559,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-[var(--accent-amber-text)] text-xs mt-2">
                     Rate is required — without a rate the trainer override calculates as $0.
                     Typical: $0.10–$0.20 per watt.
+                  </p>
+                )}
+                {!editVals.trainerId && editVals.noChainTrainer && (
+                  <p className="text-[var(--accent-red-text)] text-xs mt-2">
+                    Trainer removed — chain trainer (if any) will not see this deal or earn override.
+                    Pick a trainer above to restore.
                   </p>
                 )}
               </div>

@@ -131,7 +131,12 @@ export function projectVisibilityWhere(): Prisma.ProjectWhereInput {
         { additionalClosers: { some: { userId: user.id } } },
         { additionalSetters: { some: { userId: user.id } } },
         { trainerId: user.id },
-        ...(chainTraineeIds.length > 0 ? [{ closerId: { in: [...chainTraineeIds] } }] : []),
+        // Chain-trainee visibility: trainer sees their trainees' projects,
+        // EXCEPT projects where admin has explicitly suppressed the chain
+        // trainer via the project sheet's Clear button.
+        ...(chainTraineeIds.length > 0
+          ? [{ AND: [{ closerId: { in: [...chainTraineeIds] } }, { noChainTrainer: false }] }]
+          : []),
       ],
     };
   }

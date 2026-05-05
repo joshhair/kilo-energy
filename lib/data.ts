@@ -236,6 +236,9 @@ export interface Project {
   trainerId?: string;
   trainerName?: string;
   trainerRate?: number;
+  // Admin's "remove all trainers from this deal" flag. true suppresses chain
+  // trainer visibility + commission. Default false preserves current behavior.
+  noChainTrainer?: boolean;
   // Set only when phase changes; null for projects pre-dating this field.
   phaseChangedAt?: string;
   updatedAt?: string;

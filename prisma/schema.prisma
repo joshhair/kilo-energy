@@ -376,6 +376,14 @@ model Project {
   /// Override rate in $/W. Paired with trainerId. Admin-set in project sheet.
   trainerRate Float?
 
+  /// Admin's explicit "remove all trainers from this deal" flag. Set true by
+  /// the project sheet's Clear button. When true: chain-trainee visibility AND
+  /// chain-trainee commission are suppressed for this project. The trainee's
+  /// chain trainer no longer sees the project in their list and no longer
+  /// earns M2/M3 override on it. Default false preserves current behavior —
+  /// new projects auto-attach the closer's chain trainer as today.
+  noChainTrainer Boolean @default(false)
+
   /// Set only when phase changes — used by Needs Attention staleness calc.
   /// Null for projects created before this field was added.
   phaseChangedAt DateTime?

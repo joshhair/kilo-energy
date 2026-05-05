@@ -129,5 +129,8 @@ export const patchProjectSchema = z.object({
   // null to clear.
   trainerId:   optionalId,
   trainerRate: finiteNumber.min(0).max(5).nullable().optional(),
+  // Admin's "remove all trainers from this deal" flag. true suppresses the
+  // chain-trainee visibility + chain commission for this project.
+  noChainTrainer: z.boolean().optional(),
 }).strict();
 export type PatchProjectInput = z.infer<typeof patchProjectSchema>;
