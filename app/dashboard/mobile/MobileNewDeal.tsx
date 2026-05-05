@@ -17,6 +17,8 @@ import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPart
 import { evenSplit } from '../../../lib/commission-split';
 import { splitCloserSetterPay } from '../../../lib/commission';
 import MobileCard from './shared/MobileCard';
+import { BviIntakePanel } from '../new-deal/components/BviIntakePanel';
+import { EMPTY_BVI_INTAKE, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
 // ── Validation (mirrors desktop exactly) ────────────────────────────────────
 
@@ -256,6 +258,10 @@ export default function MobileNewDeal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [_touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  // BVI handoff: per-installer intake + utility bill (mirrors desktop).
+  const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
+  const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const isBviInstaller = form.installer === 'BVI';
   const [_stepping, setStepping] = useState(false);
   const [exitAnimClass, setExitAnimClass] = useState('');
   // Synchronous lock — React batches state updates inside the same event
@@ -395,6 +401,11 @@ export default function MobileNewDeal() {
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    // Reset BVI intake when installer is no longer BVI.
+    if (value !== 'BVI') {
+      setBviIntake(EMPTY_BVI_INTAKE);
+      setUtilityBill(null);
+    }
   };
 
   const handleFinancerChange = (value: string) => {
@@ -710,7 +721,7 @@ export default function MobileNewDeal() {
 
   // ── Submit (mirrors desktop exactly) ──────────────────────────────────────
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -897,20 +908,44 @@ export default function MobileNewDeal() {
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
+      installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
     };
 
-    let dealAccepted: boolean;
+    let dealResult: { id: string } | null;
     if (isSubDealer) {
-      dealAccepted = addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+      dealResult = await addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
     } else {
-      dealAccepted = addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+      dealResult = await addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
         trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
     }
+    const dealAccepted = dealResult !== null;
 
     if (!dealAccepted) {
       setSubmitting(false);
       submittingRef.current = false;
       return;
+    }
+
+    // BVI handoff utility-bill upload (best-effort; failure shows toast but
+    // doesn't roll back the deal — rep can re-upload from the project page).
+    if (isBviInstaller && utilityBill && dealResult?.id) {
+      try {
+        const fd = new FormData();
+        fd.append('file', utilityBill);
+        fd.append('kind', 'utility_bill');
+        fd.append('label', 'Homeowner utility bill');
+        const res = await fetch(`/api/projects/${dealResult.id}/files`, {
+          method: 'POST',
+          body: fd,
+        });
+        if (!res.ok) {
+          console.error('[MobileNewDeal] utility bill upload failed:', await res.text().catch(() => ''));
+          toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+        }
+      } catch (err) {
+        console.error('[MobileNewDeal] utility bill upload threw:', err);
+        toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+      }
     }
 
     if (form.installer) {
@@ -1000,6 +1035,8 @@ export default function MobileNewDeal() {
           setErrors({});
           setTouched(new Set());
           setCurrentStep(0);
+          setBviIntake(EMPTY_BVI_INTAKE);
+          setUtilityBill(null);
         }}
       />
     );
@@ -1847,6 +1884,16 @@ export default function MobileNewDeal() {
 
             {/* Divider */}
             <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border-default), transparent)' }} />
+
+            {/* BVI conditional intake — appears when installer = BVI on mobile too */}
+            {isBviInstaller && (
+              <BviIntakePanel
+                value={bviIntake}
+                onChange={setBviIntake}
+                utilityBill={utilityBill}
+                onUtilityBillChange={setUtilityBill}
+              />
+            )}
 
             {/* Notes */}
             <div>

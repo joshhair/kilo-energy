@@ -211,6 +211,7 @@ export async function POST(req: NextRequest) {
       leadSource: body.leadSource ?? null,
       blitzId: body.blitzId ?? null,
       subDealerId: body.subDealerId ?? null,
+      installerIntakeJson: body.installerIntakeJson ?? null,
       ...(additionalClosersCreate.length ? { additionalClosers: { create: additionalClosersCreate } } : {}),
       ...(additionalSettersCreate.length ? { additionalSetters: { create: additionalSettersCreate } } : {}),
     },

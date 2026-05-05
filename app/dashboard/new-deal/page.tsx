@@ -25,6 +25,8 @@ import { CommissionPreview } from './components/CommissionPreview';
 import { SuccessScreen } from './components/SuccessScreen';
 import { DealEntryPage } from './components/DealEntryPage';
 import { NewDealSkeleton } from './components/NewDealSkeleton';
+import { BviIntakePanel } from './components/BviIntakePanel';
+import { EMPTY_BVI_INTAKE, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,13 @@ function NewDealPage() {
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<SubmittedDeal | null>(null);
+
+  // BVI intake — separate from `form` because BviIntake includes booleans
+  // and unions that don't fit the string-only form-state shape. The
+  // utility bill is a File ref, also kept out of `form`.
+  const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
+  const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const isBviInstaller = form.installer === 'BVI';
 
   const formRef = useRef<HTMLFormElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -189,6 +198,22 @@ function NewDealPage() {
   const hasPcProducts = isPcInstaller && pcFamily !== '' && pcFamilyProducts.length > 0;
 
   // ── Unsaved-changes guard ──────────────────────────────────────────────────
+  // Per project_kilo_setter_regression.md — every field that captures user input
+  // must be in this expression. Missing one means navigating away after typing
+  // silently loses data. Adding a new form field? Add it here too.
+  const bviIntakeDirty =
+    bviIntake.customerPhone.trim() !== '' ||
+    bviIntake.customerEmail.trim() !== '' ||
+    bviIntake.customerAddress.trim() !== '' ||
+    bviIntake.exportType !== null ||
+    bviIntake.existingSystemInfo.trim() !== '' ||
+    bviIntake.siteSurveyNeeded !== null ||
+    bviIntake.batteryLocation !== null ||
+    bviIntake.batteryLocationOther.trim() !== '' ||
+    bviIntake.dogsOnProperty !== null ||
+    bviIntake.lockedGates !== null ||
+    bviIntake.gateCode.trim() !== '' ||
+    bviIntake.additionalNotes.trim() !== '';
   const isFormDirty =
     form.customerName.trim() !== '' || form.installer !== '' || form.financer !== '' ||
     form.productType !== '' || form.kWSize !== '' || form.netPPW !== '' ||
@@ -196,7 +221,8 @@ function NewDealPage() {
     form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
     form.leadSource !== '' || form.blitzId !== '' ||
     (effectiveRole === 'admin' && form.repId !== '') ||
-    form.additionalClosers.length > 0 || form.additionalSetters.length > 0;
+    form.additionalClosers.length > 0 || form.additionalSetters.length > 0 ||
+    bviIntakeDirty || utilityBill !== null;
 
   useEffect(() => {
     if (!isFormDirty) return;
@@ -253,6 +279,12 @@ function NewDealPage() {
   const handleInstallerChange = (value: string) => {
     setForm((prev) => ({ ...prev, installer: value, financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     setErrors((prev) => ({ ...prev, installer: validateField('installer', value), financer: '', productType: '', solarTechFamily: '', solarTechProductId: '', pcFamily: '', installerProductId: '', prepaidSubType: '' }));
+    // Reset BVI intake + utility bill when switching installer — switching
+    // away from BVI shouldn't carry intake data into a non-BVI deal.
+    if (value !== 'BVI') {
+      setBviIntake(EMPTY_BVI_INTAKE);
+      setUtilityBill(null);
+    }
   };
 
   const handleFinancerChange = (value: string) => {
@@ -530,7 +562,7 @@ function NewDealPage() {
 
   // ── Submit ─────────────────────────────────────────────────────────────────
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -738,22 +770,49 @@ function NewDealPage() {
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
+      installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
     };
 
     isDirty.current = false;
-    let dealAccepted: boolean;
+    let dealResult: { id: string } | null;
     if (isSubDealer) {
       // Sub-dealer deals: no M1, M2 = sub-dealer commission, no setter/trainer entries
-      dealAccepted = addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
+      dealResult = await addDeal(newProject, 0, subDealerCommission, 0, 0, 0, 0, undefined);
     } else {
-      dealAccepted = addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
+      dealResult = await addDeal(newProject, closerM1, closerM2, setterM1, setterM2, trainerM1, trainerM2,
         trainerTotal > 0 ? setterAssignment?.trainerId : undefined);
     }
+    const dealAccepted = dealResult !== null;
 
     if (!dealAccepted) {
       setSubmitting(false);
       submittingRef.current = false;
       return;
+    }
+
+    // BVI handoff: if a utility bill was attached, upload it against the
+    // real DB id returned by the server. We deliberately don't fail the
+    // whole deal submission if the upload fails — the project is already
+    // saved; the rep can re-upload from the project page later.
+    if (isBviInstaller && utilityBill && dealResult?.id) {
+      try {
+        const fd = new FormData();
+        fd.append('file', utilityBill);
+        fd.append('kind', 'utility_bill');
+        fd.append('label', 'Homeowner utility bill');
+        const res = await fetch(`/api/projects/${dealResult.id}/files`, {
+          method: 'POST',
+          body: fd,
+        });
+        if (!res.ok) {
+          const detail = await res.text().catch(() => `HTTP ${res.status}`);
+          console.error('[handleSubmit] utility bill upload failed:', detail);
+          toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+        }
+      } catch (err) {
+        console.error('[handleSubmit] utility bill upload threw:', err);
+        toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+      }
     }
 
     // Remember installer for next deal
@@ -828,6 +887,8 @@ function NewDealPage() {
           setCurrentStep(0);
           autoAdvancedSteps.current = new Set();
           userNavigatedBack.current = false;
+          setBviIntake(EMPTY_BVI_INTAKE);
+          setUtilityBill(null);
         }}
       />
     );
@@ -1566,6 +1627,18 @@ function NewDealPage() {
                 </div>
               </div>
             </div>
+
+            {/* BVI conditional intake panel — appears when installer = BVI.
+             *  Captures the per-installer fields BVI ops needs and a utility-
+             *  bill upload that gets attached to the handoff email at submit. */}
+            {isBviInstaller && (
+              <BviIntakePanel
+                value={bviIntake}
+                onChange={setBviIntake}
+                utilityBill={utilityBill}
+                onUtilityBillChange={setUtilityBill}
+              />
+            )}
 
             {/* Notes */}
             <div className="transition-all duration-200">
