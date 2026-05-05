@@ -60,6 +60,13 @@ const ENTITY_TYPES = [
   'InstallerPricingVersion',
   'ProductPricingVersion',
   'Product',
+  // BVI handoff entity types — added 2026-04-28 in lockstep with
+  // AuditEntityType in lib/audit.ts.
+  'ProjectFile',
+  'ProjectSurveyLink',
+  'ProjectInstallerNote',
+  'EmailDelivery',
+  'StalledAlertConfig',
 ] as const;
 
 function formatTimestamp(iso: string): string {

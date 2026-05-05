@@ -5,5 +5,7 @@
   "app/api/projects/[id]/messages/[messageId]/route.ts": "Chat-volume exempt — paired with messages POST.",
   "app/api/projects/[id]/notes/route.ts": "Rep-note volume exempt — high-frequency UX, not commission-affecting.",
   "app/api/projects/[id]/notes/[noteId]/route.ts": "Rep-note volume exempt — paired with notes POST.",
-  "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular."
+  "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular.",
+  "app/api/webhooks/resend/route.ts": "Webhook receiver — no human actor to attribute. The audit signal is the EmailDelivery row itself (status / deliveredAt / bouncedAt / errorReason all written by this handler). HMAC verification gates the call.",
+  "app/api/cron/stalled-digest/route.ts": "Cron handler — no user actor. Persists nothing on success (just sends an email); structured logger.info('stalled_digest_sent') captures the run signal."
 }

@@ -79,7 +79,13 @@ export type AuditEntityType =
   | "TrainerAssignment"
   | "PrepaidOption"
   | "AdminInvitation"
-  | "ProductCatalogConfig";
+  | "ProductCatalogConfig"
+  // BVI handoff
+  | "ProjectFile"
+  | "ProjectSurveyLink"
+  | "ProjectInstallerNote"
+  | "EmailDelivery"
+  | "StalledAlertConfig";
 
 export async function logChange(params: {
   actor: AuditActor;
@@ -152,7 +158,17 @@ export const AUDITED_FIELDS = {
   ] as const,
   User: ["role", "repType", "active", "email", "firstName", "lastName", "scopedInstallerId"] as const,
   PayrollEntry: ["status", "amountCents", "paymentStage"] as const,
-  Installer: ["name", "active", "installPayPct", "usesProductCatalog"] as const,
+  Installer: [
+    "name",
+    "active",
+    "installPayPct",
+    "usesProductCatalog",
+    "primaryEmail",
+    "ccEmails",
+    "subjectPrefix",
+    "handoffEnabled",
+    "customNotes",
+  ] as const,
   Financer: ["name", "active"] as const,
   SubDealer: ["name", "active"] as const,
   Reimbursement: ["amountCents", "status", "category"] as const,

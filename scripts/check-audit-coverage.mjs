@@ -48,7 +48,12 @@ if (existsSync(allowlistPath)) {
 }
 
 // ── Walk routes ───────────────────────────────────────────────────────
-const MUTATING_METHOD_RE = /export\s+async\s+function\s+(POST|PUT|PATCH|DELETE)\b/;
+// Matches both legacy `export async function POST(...)` and the newer
+// `export const POST = withApiHandler(...)` pattern. The withApiHandler
+// wrapper (Phase 4 BVI handoff routes) is only compatible with the
+// `export const X = withApiHandler(...)` shape, so the regex has to
+// recognize both.
+const MUTATING_METHOD_RE = /export\s+(?:async\s+function|const)\s+(POST|PUT|PATCH|DELETE)\b/;
 const LOG_CHANGE_RE = /\blogChange\s*\(/;
 
 const violations = [];
@@ -71,7 +76,7 @@ function walk(dir) {
     if (allowlist[rel]) continue; // explicitly exempt
 
     const methods = [];
-    const re = /export\s+async\s+function\s+(POST|PUT|PATCH|DELETE)\b/g;
+    const re = /export\s+(?:async\s+function|const)\s+(POST|PUT|PATCH|DELETE)\b/g;
     let m;
     while ((m = re.exec(src)) !== null) methods.push(m[1]);
     violations.push({ file: rel, methods: [...new Set(methods)] });
