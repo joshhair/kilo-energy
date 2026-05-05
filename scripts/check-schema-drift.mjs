@@ -52,6 +52,13 @@ const PRISMA_TO_SQL_TYPE = {
   Bytes: 'BLOB',
 };
 
+// SQLite has type affinity, not strict types. A few declared types are
+// interchangeable in practice — match them so we don't false-positive on
+// migrations that used the more idiomatic SQLite spelling.
+const SQL_TYPE_COMPATIBLE = {
+  BOOLEAN: ['BOOLEAN', 'INTEGER'], // booleans are commonly declared INTEGER 0/1 in SQLite
+};
+
 function parsePrisma(src) {
   const tables = new Map();
   const modelRe = /^model\s+(\w+)\s*\{([\s\S]*?)\n\}/gm;
@@ -205,12 +212,15 @@ for (const [tableName, prismaCols] of prismaTables.entries()) {
       continue;
     }
     if (tursoCol.sqlType !== prismaCol.sqlType) {
-      issues.push({
-        severity: 'error',
-        table: tableName,
-        column: colName,
-        message: `Type mismatch. Prisma: ${prismaCol.prismaType} (→${prismaCol.sqlType}). Turso: ${tursoCol.sqlType}.`,
-      });
+      const compatible = SQL_TYPE_COMPATIBLE[prismaCol.sqlType] ?? [prismaCol.sqlType];
+      if (!compatible.includes(tursoCol.sqlType)) {
+        issues.push({
+          severity: 'error',
+          table: tableName,
+          column: colName,
+          message: `Type mismatch. Prisma: ${prismaCol.prismaType} (→${prismaCol.sqlType}). Turso: ${tursoCol.sqlType}.`,
+        });
+      }
     }
     if (tursoCol.nullable !== prismaCol.nullable) {
       issues.push({
