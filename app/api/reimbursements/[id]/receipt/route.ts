@@ -6,6 +6,12 @@ import { REP_PUBLIC_SELECT } from '../../../../../lib/redact';
 import { serializeReimbursement } from '../../../../../lib/serialize';
 import { logger, errorContext } from '../../../../../lib/logger';
 import { logChange } from '../../../../../lib/audit';
+import {
+  RECEIPT_ALLOWED_CONTENT_TYPES,
+  validateUploadedFile,
+  buildBlobKey,
+  assertBlobConfigured,
+} from '../../../../../lib/file-uploads';
 
 // POST /api/reimbursements/[id]/receipt — Upload a receipt file.
 // Multipart: `file` field, max 10 MB, images + PDF.
@@ -21,16 +27,6 @@ import { logChange } from '../../../../../lib/audit';
 //
 // DELETE /api/reimbursements/[id]/receipt — Remove the attached receipt.
 // Rep (own) or admin only.
-
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_CONTENT_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/heic',
-  'image/heif',
-  'image/webp',
-  'application/pdf',
-]);
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let viewer;
@@ -56,44 +52,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Missing `file` field' }, { status: 400 });
   }
 
-  if (file.size === 0) {
-    return NextResponse.json({ error: 'Empty file' }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE_BYTES) {
-    return NextResponse.json(
-      { error: `File exceeds ${MAX_SIZE_BYTES / 1024 / 1024} MB limit` },
-      { status: 413 },
-    );
-  }
-  if (!ALLOWED_CONTENT_TYPES.has(file.type)) {
-    return NextResponse.json(
-      { error: `Unsupported file type: ${file.type}. Allowed: images (jpeg/png/heic/webp) or PDF.` },
-      { status: 415 },
-    );
+  const validation = validateUploadedFile(file, { allowedTypes: RECEIPT_ALLOWED_CONTENT_TYPES });
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: validation.status });
   }
 
   // Preflight: receipt storage is Vercel Blob. If the token isn't set in
   // this environment (e.g., admin hasn't provisioned blob storage yet),
   // return a clear, human-readable 503 instead of letting put() throw a
-  // cryptic "missing token" error. The rest of the reimbursement flow
-  // (create row, approve/deny, delete) still works — only file upload
-  // is gated on this env var.
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  // cryptic "missing token" error.
+  const blobReady = assertBlobConfigured();
+  if (!blobReady.ok) {
     logger.error('vercel_blob_token_missing', { reimbursementId: id });
-    return NextResponse.json(
-      {
-        error: 'Receipt upload is not configured yet. Your reimbursement was saved, but the attached file was not uploaded. Ask an admin to finish setting up receipt storage.',
-        code: 'BLOB_NOT_CONFIGURED',
-      },
-      { status: 503 },
-    );
+    return blobReady.response;
   }
 
   // Namespace per-reimbursement so uploads don't clash, and include a
   // timestamp so re-upload creates a new URL (cache-bust for admins).
-  const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '';
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-  const key = `reimbursements/${id}/${Date.now()}-${safeName}${ext.endsWith(ext) ? '' : ext}`;
+  const key = buildBlobKey(`reimbursements/${id}`, file.name);
 
   let uploaded;
   try {
