@@ -45,8 +45,14 @@ interface AppContextType {
   setTrainerAssignments: React.Dispatch<React.SetStateAction<TrainerAssignment[]>>;
   incentives: Incentive[];
   setIncentives: React.Dispatch<React.SetStateAction<Incentive[]>>;
-  // Adds a project and auto-creates Draft payroll entries for all involved reps
-  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => boolean;
+  // Adds a project and auto-creates Draft payroll entries for all involved reps.
+  // Returns a Promise that resolves with the persisted project's real DB id
+  // (after /api/projects responds), or null if validation fails synchronously
+  // (e.g. missing installer name → id mapping). Optimistic local-state update
+  // happens immediately; awaiters block on the actual server response so they
+  // can chain follow-up calls (e.g. uploading a utility bill against the
+  // newly-created project).
+  addDeal: (project: Project, closerM1: number, closerM2: number, setterM1?: number, setterM2?: number, trainerM1?: number, trainerM2?: number, trainerId?: string) => Promise<{ id: string } | null>;
   // Marks individual payroll entries as Pending
   markForPayroll: (entryIds: string[]) => Promise<void>;
   // Persists a new payroll entry to the DB, registers its temp ID in the resolution map
@@ -194,6 +200,10 @@ interface AppContextType {
   viewAsCandidates: ViewAsCandidate[];
   // PM permissions
   pmPermissions: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null;
+  /** Lookup map for converting installer/financer display names to DB IDs.
+   *  Project DTOs use names; admin surfaces calling ID-keyed APIs
+   *  (e.g. /api/installers/[id]/handoff-config) need the inverse. */
+  getIdMaps: () => { installerNameToId: Record<string, string>; financerNameToId: Record<string, string> };
 }
 
 export type ViewAsUser = {
@@ -1246,7 +1256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('kilo-rep-name');
   };
 
-  const addDeal = (
+  const addDeal = async (
     project: Project,
     _closerM1: number,
     _closerM2: number,
@@ -1255,7 +1265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     _trainerM1 = 0,
     _trainerM2 = 0,
     _trainerId?: string,
-  ) => {
+  ): Promise<{ id: string } | null> => {
     // Validate installer mapping before mutating local state to avoid split-brain
     const installerId = idMaps.installerNameToId[project.installer];
     if (!installerId) {
@@ -1263,7 +1273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — installer not yet saved. Please refresh and try again.' }));
       }
-      return false;
+      return null;
     }
 
     // Validate financer mapping before mutating local state to avoid split-brain.
@@ -1275,7 +1285,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: 'Failed to save deal — financer not found. Please refresh and try again.' }));
       }
-      return false;
+      return null;
     }
 
     // Only add the project. Payroll entries are now auto-drafted when
@@ -1283,9 +1293,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Trainer override entries are auto-drafted at M2 (80%) and M3 (20%).
     setProjects((prev) => [...prev, project]);
 
-    // Persist to DB
-    const persistProject = (fId: string) => {
-      fetch('/api/projects', {
+    // Persist to DB. Awaited so callers receive the real DB id.
+    const persistProject = (fId: string): Promise<{ id: string } | null> => {
+      return fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1329,6 +1339,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             m3Amount: s.m3Amount ?? undefined,
             position: s.position,
           })),
+          // Per-installer intake JSON (BVI Sales Intake fields). Optional —
+          // null/omitted for non-BVI deals or when intake panel wasn't shown.
+          installerIntakeJson: project.installerIntakeJson || null,
         }),
       }).then(async (res) => {
         if (!res.ok) {
@@ -1356,6 +1369,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         // Log creation activity only after the project exists in the DB, using the real DB id
         logProjectActivity(dbId, 'created', 'Project created');
+        return { id: dbId };
       }).catch((err) => {
         console.error('[addDeal] persist failed:', err);
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
@@ -1363,12 +1377,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const msg = err instanceof Error ? err.message : 'Failed to save new deal';
           window.dispatchEvent(new CustomEvent('kilo-persist-error', { detail: `Failed to save new deal — ${msg}` }));
         }
+        return null;
       });
     };
 
-    // Cash deals: server auto-resolves the financer via upsert, so pass empty string
-    persistProject(financerId || '');
-    return true;
+    // Cash deals: server auto-resolves the financer via upsert, so pass empty string.
+    // Await so callers can chain follow-up work (e.g. utility-bill upload) on the
+    // real DB id.
+    return persistProject(financerId || '');
   };
 
   // markForPayroll delegated to payrollActions (defined above)
@@ -1499,6 +1515,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         effectiveScopedInstallerName,
         viewAsCandidates,
         pmPermissions,
+        getIdMaps: () => idMaps,
       }}
     >
       {children}

@@ -210,6 +210,10 @@ export interface Project {
   // Product Catalog installer: stores the ProductCatalogPricingVersion ID active when the deal was sold
   pcPricingVersionId?: string;
   prepaidSubType?: string;
+  // BVI handoff (and future per-installer intakes). JSON-serialized
+  // string matching lib/installer-intakes/<slug>.ts shape. Optional —
+  // only present when the deal's installer requires intake capture.
+  installerIntakeJson?: string;
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
   m3Paid: boolean;

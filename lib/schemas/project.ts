@@ -64,6 +64,15 @@ export const createProjectSchema = z.object({
   /// thousands of rows would blow up the createMany batch.
   additionalClosers: z.array(additionalPartySchema).max(10).optional(),
   additionalSetters: z.array(additionalPartySchema).max(10).optional(),
+
+  /// Per-installer intake JSON. Shape depends on the installer (BVI vs
+  /// future Lumio/Sunova/etc.) — typed at lib/installer-intakes/<slug>.ts.
+  /// Stored as JSON string on Project.installerIntakeJson. Server doesn't
+  /// validate the shape here (it would need per-installer dispatch); the
+  /// PDF renderer + downstream consumers parse defensively via
+  /// `parseBviIntake()` which falls back to EMPTY_BVI_INTAKE on bad data.
+  /// Hard length cap to prevent abuse.
+  installerIntakeJson: z.string().max(20000).optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
