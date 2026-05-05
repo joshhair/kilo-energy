@@ -1,0 +1,34 @@
+name: Stalled Projects Digest
+
+# Daily morning digest of stalled projects (and last-24h bounced handoffs).
+# Lives in GitHub Actions instead of vercel.json because the Hobby plan
+# caps cron entries at 2 (already used by retention + privacy-prober). When
+# we upgrade to Pro, this can fold back into vercel.json.
+#
+# Triggers:
+#   - schedule: 8:00 AM Pacific (15:00 UTC)
+#   - workflow_dispatch: manual run from the GitHub UI for testing
+#
+# Auth: GitHub repo secret STALLED_DIGEST_TOKEN must match Vercel env
+# of the same name. Mismatch → endpoint returns 401.
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger stalled-digest endpoint
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "${APP_URL}/api/cron/stalled-digest" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://app.kiloenergies.com' }}
+          TOKEN: ${{ secrets.STALLED_DIGEST_TOKEN }}
