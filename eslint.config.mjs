@@ -228,6 +228,7 @@ const eslintConfig = defineConfig([
       "app/api/auth/**",
       "app/api/admin/**",
       "app/api/import/**",
+      "app/api/webhooks/**",
     ],
     rules: {
       "no-restricted-imports": [
