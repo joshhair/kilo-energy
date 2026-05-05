@@ -187,7 +187,15 @@ export default function MobileBlitz() {
             || p.additionalSetters?.some((as) => as.userId === effectiveRepId));
     };
     return [...list].sort((a, b) => {
-      if (sortKey === 'newest') return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      if (sortKey === 'newest') {
+        // Upcoming first, soonest-first; everything else most-recent-first.
+        const aUp = a.status === 'upcoming';
+        const bUp = b.status === 'upcoming';
+        if (aUp && bUp) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        if (aUp) return -1;
+        if (bUp) return 1;
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      }
       if (sortKey === 'oldest') return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
       if (sortKey === 'deals') return blitzDeals(b).length - blitzDeals(a).length;
       if (sortKey === 'kw') {
@@ -817,7 +825,10 @@ export default function MobileBlitz() {
               <input
                 type="date"
                 value={createForm.startDate}
-                onChange={(e) => setCreateForm((f) => ({ ...f, startDate: e.target.value }))}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCreateForm((f) => ({ ...f, startDate: v, endDate: v && (!f.endDate || f.endDate < v) ? v : f.endDate }));
+                }}
                 className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{
                   background: 'var(--surface-card)',
@@ -832,6 +843,7 @@ export default function MobileBlitz() {
               <input
                 type="date"
                 value={createForm.endDate}
+                min={createForm.startDate || undefined}
                 onChange={(e) => setCreateForm((f) => ({ ...f, endDate: e.target.value }))}
                 className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
                 style={{

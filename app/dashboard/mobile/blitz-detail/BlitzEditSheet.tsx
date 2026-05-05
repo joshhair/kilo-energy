@@ -127,7 +127,10 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
             <input
               type="date"
               value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              onChange={(e) => {
+                const v = e.target.value;
+                setForm((f) => ({ ...f, startDate: v, endDate: v && (!f.endDate || f.endDate < v) ? v : f.endDate }));
+              }}
               className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={SELECT_STYLE}
             />
@@ -136,6 +139,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
             <input
               type="date"
               value={form.endDate}
+              min={form.startDate || undefined}
               onChange={(e) => setForm({ ...form, endDate: e.target.value })}
               className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
               style={SELECT_STYLE}

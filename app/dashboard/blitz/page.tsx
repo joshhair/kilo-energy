@@ -298,12 +298,16 @@ function CreateBlitzModal({ onClose, onCreated, userId, reps, isAdmin }: { onClo
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              <input type="date" value={startDate} onChange={(e) => {
+                const v = e.target.value;
+                setStartDate(v);
+                if (v && (!endDate || endDate < v)) setEndDate(v);
+              }} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
               {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
@@ -410,12 +414,16 @@ function RequestBlitzModal({ onClose, onSubmitted, userId }: { onClose: () => vo
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start Date *</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              <input type="date" value={startDate} onChange={(e) => {
+                const v = e.target.value;
+                setStartDate(v);
+                if (v && (!endDate || endDate < v)) setEndDate(v);
+              }} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && !startDate ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !startDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">End Date *</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
+              <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} className={`w-full bg-[var(--surface-card)] border rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none input-focus-glow transition-colors ${touched && (!endDate || (startDate && new Date(endDate) < new Date(startDate))) ? 'border-red-500/60' : 'border-[var(--border)]'}`} />
               {touched && !endDate && <p className="text-xs text-[var(--accent-red-text)] mt-1">Required</p>}
               {touched && endDate && startDate && new Date(endDate) < new Date(startDate) && <p className="text-xs text-[var(--accent-red-text)] mt-1">Must be after start date</p>}
             </div>
@@ -591,7 +599,19 @@ function BlitzPageInner() {
   const sortedBlitzes = useMemo(() => {
     const sorted = [...filteredBlitzes];
     switch (sortBy) {
-      case 'newest': sorted.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); break;
+      case 'newest':
+        // Upcoming blitzes appear first, soonest-first (ASC). Other statuses
+        // follow, most-recent-first (DESC) — so active/completed history stays
+        // chronologically intuitive while what's about to happen sits on top.
+        sorted.sort((a, b) => {
+          const aUp = a.status === 'upcoming';
+          const bUp = b.status === 'upcoming';
+          if (aUp && bUp) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          if (aUp) return -1;
+          if (bUp) return 1;
+          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        });
+        break;
       case 'oldest': sorted.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); break;
       case 'deals': {
         const scopedDeals = (blitz: BlitzData) => {
