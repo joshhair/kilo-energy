@@ -68,6 +68,10 @@ const allowlistPatterns = [
   /^lib[\\/]data\.ts$/,
   // Admin-only API endpoints that explicitly serve baseline data.
   /^app[\\/]api[\\/]baseline-data[\\/]/,
+  // Admin-only baseline mutation routes — bulk-tier-adjust + bulk-version-create
+  // legitimately compose tier rows including kiloPerW / subDealerPerW. Auth is
+  // enforced by the route handlers (admin-only via getAuthenticatedUser).
+  /^app[\\/]api[\\/]baselines[\\/]/,
   /^app[\\/]api[\\/]admin[\\/]/,
   /^app[\\/]api[\\/]products[\\/]/,
   /^app[\\/]api[\\/]product-pricing[\\/]/,
