@@ -180,8 +180,25 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
   const cc = isTest ? [] : ccEmails;
   const subject = isTest ? `[TEST] ${baseSubject}` : baseSubject;
 
+  // BCC list — combines:
+  //   - The archive bcc (EMAIL_ARCHIVE_BCC, e.g. bvi-archive@kiloenergies.com)
+  //   - The rep on real sends, so they have a paper trail of the exact
+  //     email BVI received (PDF + utility bill). BCC keeps them invisible
+  //     to the installer; replies still reach them via Reply-To.
+  // Skipped on test mode — test sends go to admin's own email only.
+  const archiveEmail = process.env.EMAIL_ARCHIVE_BCC;
+  const directRecipients = [...to, ...cc].map((e) => e.toLowerCase());
+  const bccList: string[] = [];
+  if (archiveEmail && !directRecipients.includes(archiveEmail.toLowerCase())) {
+    bccList.push(archiveEmail);
+  }
+  if (!isTest && project.closer.email && !directRecipients.includes(project.closer.email.toLowerCase())) {
+    bccList.push(project.closer.email);
+  }
+
   const sendResult = await sendEmail({
     to, cc, replyTo, subject, html,
+    bccArchive: bccList.length > 0 ? bccList : null,
     attachments: [
       { filename: bviHandoffFilename(customerLastName, dateIso), content: Buffer.from(pdfBytes), contentType: 'application/pdf' },
       ...(utilityBillAttachment ? [utilityBillAttachment] : []),
