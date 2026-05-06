@@ -8,6 +8,8 @@ import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNulla
 import { logger, errorContext } from '../../../lib/logger';
 import { logChange } from '../../../lib/audit';
 import { sendInstallerHandoff } from '../../../lib/handoff-service';
+import { withRequestContext } from '../../../lib/request-context';
+import { loadChainTrainees } from '../../../lib/api-auth';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -279,19 +281,36 @@ export async function POST(req: NextRequest) {
   // logged but do NOT roll back the deal — the project exists, the rep's
   // submit succeeded, and the failure surfaces on the project page as a
   // failed-status EmailDelivery row that admin/PM can inspect or retry.
+  //
+  // The service uses lib/db-gated which requires a RequestContext (set up
+  // by withApiHandler in other routes). This route uses requireInternalUser
+  // directly, so we wrap the service call ourselves — otherwise the gated
+  // db throws and the auto-send silently fails.
   if (body.requestHandoff && project.installer.handoffEnabled) {
     try {
-      const result = await sendInstallerHandoff({
-        projectId: project.id,
-        mode: 'auto',
-        actor: { id: user.id, email: user.email },
-      });
+      const chainTrainees = user.role === 'rep'
+        ? await loadChainTrainees(user.id)
+        : new Set<string>();
+      const result = await withRequestContext(
+        { user, chainTraineeIds: Array.from(chainTrainees) },
+        () => sendInstallerHandoff({
+          projectId: project.id,
+          mode: 'auto',
+          actor: { id: user.id, email: user.email },
+        }),
+      );
       if (!result.ok) {
         logger.error('handoff_auto_send_failed', {
           projectId: project.id,
           status: result.status,
           error: result.error,
           code: result.code,
+        });
+      } else {
+        logger.info('handoff_auto_send_ok', {
+          projectId: project.id,
+          deliveryId: result.deliveryId,
+          providerMessageId: result.providerMessageId,
         });
       }
     } catch (err) {

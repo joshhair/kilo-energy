@@ -165,7 +165,7 @@ export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChan
                 key={opt}
                 type="button"
                 onClick={() => set('batteryLocation', opt)}
-                className={`py-2 rounded-xl text-[11px] font-semibold border transition-all ${
+                className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all leading-tight ${
                   value.batteryLocation === opt
                     ? 'bg-[var(--accent-emerald-solid)]/20 border-[var(--accent-emerald-solid)] text-[var(--accent-cyan-text)]'
                     : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'

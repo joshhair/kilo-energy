@@ -187,6 +187,18 @@ function NewDealPage() {
   // ── Multi-step navigation ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
   const [_slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+
+  // Reset scroll position to the top of the next step when navigating
+  // forward or backward. Without this the rep stays scrolled near the
+  // bottom of the previous step's content, missing the top of the new
+  // step (regression noted earlier — mirror of the mobile fix at
+  // MobileNewDeal.tsx ~line 290). Targets <main> (the dashboard's
+  // scroll container) + window.scrollTo as belt-and-suspenders.
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentStep]);
   // Track whether the user manually navigated backward (suppress auto-advance)
   const userNavigatedBack = useRef(false);
   // Track which steps have already been auto-advanced (so we only auto-advance once per step)
