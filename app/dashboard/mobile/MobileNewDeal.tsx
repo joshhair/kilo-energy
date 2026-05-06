@@ -1138,7 +1138,7 @@ export default function MobileNewDeal() {
             {/* Setter (optional) */}
             {!isSubDealer && (
               <div>
-                <label className={labelCls} style={labelStyle}>Setter <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+                <label className={labelCls} style={labelStyle}>Setter <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-primary) 14%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
                 <SetterPickerPopover
                   setterId={form.setterId}
                   onChange={(repId) => update('setterId', repId)}
@@ -1918,7 +1918,7 @@ export default function MobileNewDeal() {
 
             {/* Notes */}
             <div>
-              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-primary) 14%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <textarea
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
@@ -1935,7 +1935,7 @@ export default function MobileNewDeal() {
 
             {/* Lead Source */}
             <div>
-              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
+              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-primary) 14%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
               <select
                 value={form.leadSource}
                 onChange={(e) => {
@@ -2036,12 +2036,14 @@ export default function MobileNewDeal() {
         )}
       </form>
 
-      {/* Floating commission pill — slides up from nav when preview unlocks on Step 2 */}
+      {/* Floating commission pill — anchors directly above the bottom nav
+          so it visually belongs to the bottom action band, not floating
+          mid-screen. Slides up from nav when preview unlocks on Step 2. */}
       {pillMount && (
         <div
           className="fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5"
           style={{
-            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
             background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent))',
             border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
             backdropFilter: 'blur(12px)',

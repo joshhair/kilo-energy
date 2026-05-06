@@ -861,17 +861,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ErrorBoundary>
         </div>
 
-        {/* Scroll-to-top button */}
-        <button
-          onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="Back to top"
-          className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
-            showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
-        >
-          <ChevronUp className="w-4 h-4" />
-          <span className="text-xs font-medium hidden sm:inline">Top</span>
-        </button>
+        {/* Scroll-to-top button. Suppressed on /dashboard/new-deal because
+            the mobile commission pill occupies the same bottom-right band
+            and the two would overlap. New-deal is multi-step + short
+            scroll per step, so scroll-to-top has minimal value there. */}
+        {!pathname.startsWith('/dashboard/new-deal') && (
+          <button
+            onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Back to top"
+            className={`sticky bottom-20 ml-auto mr-4 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] shadow-lg shadow-black/30 transition-all duration-300 ${
+              showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
+            }`}
+          >
+            <ChevronUp className="w-4 h-4" />
+            <span className="text-xs font-medium hidden sm:inline">Top</span>
+          </button>
+        )}
       </main>
 
       {/* ── Command palette (⌘K) ────────────────────────────────────────── */}
