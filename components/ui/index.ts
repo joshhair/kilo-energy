@@ -9,3 +9,4 @@ export { PrimaryButton, SecondaryButton, DangerButton, IconButton } from './Butt
 export { TextInput } from './Input';
 export { FormField } from './FormField';
 export { SearchInput } from './SearchInput';
+export { Switch } from './Switch';

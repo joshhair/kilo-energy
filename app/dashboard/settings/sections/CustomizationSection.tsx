@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, AlertCircle, Loader2, Save } from 'lucide-react';
 import { SectionHeader } from '../components/SectionHeader';
 import { useToast } from '../../../../lib/toast';
-import { PrimaryButton, SecondaryButton, TextInput, FormField, IconButton } from '@/components/ui';
+import { PrimaryButton, SecondaryButton, TextInput, FormField, IconButton, Switch } from '@/components/ui';
 
 /**
  * CustomizationSection — admin-managed config for the daily stalled-projects digest.
@@ -185,20 +185,11 @@ export function CustomizationSection() {
             <p className="text-sm text-[var(--text-primary)] font-medium">Enabled</p>
             <p className="text-[10px] text-[var(--text-muted)] mt-0.5">When OFF, no digest emails are sent regardless of cron firing.</p>
           </div>
-          <button
-            role="switch"
-            aria-checked={state.enabled}
-            onClick={() => setState((s) => ({ ...s, enabled: !s.enabled }))}
-            className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer ${
-              state.enabled ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--border)]'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                state.enabled ? 'translate-x-5' : 'translate-x-0.5'
-              }`}
-            />
-          </button>
+          <Switch
+            checked={state.enabled}
+            onChange={(next) => setState((s) => ({ ...s, enabled: next }))}
+            ariaLabel={`${state.enabled ? 'Disable' : 'Enable'} stalled-project digest`}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -269,6 +260,9 @@ export function CustomizationSection() {
         {state.digestRecipients.length === 0 && (
           <p className="text-[10px] text-[var(--text-dim)] mt-2">No recipients configured. The digest will not send.</p>
         )}
+        <p className="text-[10px] text-[var(--text-dim)] mt-2">
+          Adding a recipient updates the list above; click <span className="text-[var(--text-secondary)] font-medium">Save Changes</span> below to persist.
+        </p>
       </div>
 
       {/* Phase thresholds */}
@@ -295,19 +289,8 @@ export function CustomizationSection() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mb-6">
-        <PrimaryButton disabled={!dirty || saving} loading={saving} onClick={onSave}>
-          <Save className="w-4 h-4" /> Save Changes
-        </PrimaryButton>
-        <SecondaryButton
-          disabled={!dirty || saving}
-          onClick={() => {
-            if (initial) setState(initial);
-            setNewRecipient('');
-          }}
-        >
-          Reset
-        </SecondaryButton>
+      {/* Reset thresholds — secondary action, lives in-flow. */}
+      <div className="mb-6">
         <SecondaryButton
           disabled={saving}
           onClick={() => {
@@ -317,6 +300,34 @@ export function CustomizationSection() {
           Reset Phase Thresholds to Defaults
         </SecondaryButton>
       </div>
+
+      {/* Sticky Save bar — visible whenever there are unsaved changes,
+          regardless of scroll position. Eliminates the discovery problem
+          where users add a recipient + Enter and don't realize they need
+          to scroll down to commit. */}
+      {dirty && (
+        <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 card-surface rounded-2xl px-4 py-3 shadow-lg backdrop-blur border border-[var(--accent-amber-text)]/30">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-[var(--accent-amber-text)]" />
+            <span className="text-sm text-[var(--text-primary)] font-medium">Unsaved changes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <SecondaryButton
+              size="sm"
+              disabled={saving}
+              onClick={() => {
+                if (initial) setState(initial);
+                setNewRecipient('');
+              }}
+            >
+              Reset
+            </SecondaryButton>
+            <PrimaryButton size="sm" loading={saving} onClick={onSave}>
+              <Save className="w-3.5 h-3.5" /> Save Changes
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

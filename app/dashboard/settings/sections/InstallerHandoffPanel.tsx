@@ -27,6 +27,7 @@ import {
   TextInput,
   FormField,
   IconButton,
+  Switch,
 } from '@/components/ui';
 
 interface HandoffConfig {
@@ -234,33 +235,29 @@ export function InstallerHandoffPanel({ installerId, installerName }: Props) {
           />
         </FormField>
 
-        <div className="flex items-center justify-between bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
-          <div>
-            <p className="text-sm text-[var(--text-primary)] font-medium flex items-center gap-2">
-              <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan-text)]" />
-              Auto-send on deal submission
-            </p>
-            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-              {canEnable
-                ? 'When ON, every new BVI deal triggers the handoff email automatically.'
-                : 'Set a primary email first to enable auto-send.'}
-            </p>
-          </div>
-          <button
-            role="switch"
-            aria-checked={handoffEnabled}
-            disabled={!canEnable}
-            onClick={() => setHandoffEnabled((v) => !v)}
-            className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-              handoffEnabled ? 'bg-[var(--accent-emerald-solid)]' : 'bg-[var(--border)]'
-            } ${!canEnable ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                handoffEnabled ? 'translate-x-5' : 'translate-x-0.5'
-              }`}
+        <div>
+          <div className="flex items-center justify-between bg-[var(--surface-card)]/40 rounded-xl px-3 py-2.5">
+            <div>
+              <p className="text-sm text-[var(--text-primary)] font-medium flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan-text)]" />
+                Auto-send on deal submission
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                When ON, every new {installerName} deal triggers the handoff email automatically.
+              </p>
+            </div>
+            <Switch
+              checked={handoffEnabled}
+              onChange={setHandoffEnabled}
+              ariaLabel={`${handoffEnabled ? 'Disable' : 'Enable'} auto-send for ${installerName}`}
             />
-          </button>
+          </div>
+          {handoffEnabled && !canEnable && (
+            <p className="flex items-center gap-1.5 text-[var(--accent-amber-text)] text-xs mt-2">
+              <AlertCircle className="w-3 h-3" />
+              Set a primary email above before saving — handoff can&apos;t send without one.
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-1">
