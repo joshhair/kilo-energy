@@ -17,8 +17,8 @@
  */
 
 import React from 'react';
-import { Upload, FileCheck2, X } from 'lucide-react';
-import { TextInput, FormField } from '@/components/ui';
+import { Upload, FileCheck2, X, Mail } from 'lucide-react';
+import { TextInput, FormField, Switch } from '@/components/ui';
 import type { BviIntake } from '@/lib/installer-intakes/bvi';
 
 interface Props {
@@ -26,6 +26,9 @@ interface Props {
   onChange: (next: BviIntake) => void;
   utilityBill: File | null;
   onUtilityBillChange: (file: File | null) => void;
+  /** Whether the rep wants the handoff email to fire on submit. Default ON. */
+  sendOnSubmit: boolean;
+  onSendOnSubmitChange: (next: boolean) => void;
 }
 
 type ToggleProps = {
@@ -66,7 +69,7 @@ function YesNoToggle({ label, value, onChange }: ToggleProps) {
   );
 }
 
-export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChange }: Props) {
+export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChange, sendOnSubmit, onSendOnSubmitChange }: Props) {
   const set = <K extends keyof BviIntake>(key: K, v: BviIntake[K]) => {
     onChange({ ...value, [key]: v });
   };
@@ -249,6 +252,27 @@ export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChan
           </label>
         )}
       </FormField>
+
+      {/* Auto-send toggle — controls whether the deal-create POST fires the
+          handoff email after the project is persisted. Default ON so reps
+          get the expected behavior; can be turned off if e.g. the rep wants
+          to fix the intake before BVI ops sees it. */}
+      <div className="mt-5 flex items-center justify-between gap-3 bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/50 rounded-xl px-3 py-2.5">
+        <div className="flex items-start gap-2 min-w-0">
+          <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan-text)] mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm text-[var(--text-primary)] font-medium">Send to BVI on submit</p>
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+              When ON, BVI ops gets the intake PDF + utility bill emailed automatically once you submit.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={sendOnSubmit}
+          onChange={onSendOnSubmitChange}
+          ariaLabel={sendOnSubmit ? 'Disable auto-send to BVI' : 'Enable auto-send to BVI'}
+        />
+      </div>
     </div>
   );
 }

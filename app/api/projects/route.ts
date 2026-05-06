@@ -5,8 +5,9 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../lib/serialize';
-import { logger } from '../../../lib/logger';
+import { logger, errorContext } from '../../../lib/logger';
 import { logChange } from '../../../lib/audit';
+import { sendInstallerHandoff } from '../../../lib/handoff-service';
 
 // POST /api/projects — Create a new project/deal.
 // - admin: can create deals with any closer/setter/sub-dealer
@@ -272,5 +273,31 @@ export async function POST(req: NextRequest) {
       additionalSetterCount: project.additionalSetters.length,
     },
   });
+
+  // Auto-send installer handoff email if rep opted in via the BVI intake
+  // panel + admin has handoff enabled for the installer. Failures are
+  // logged but do NOT roll back the deal — the project exists, the rep's
+  // submit succeeded, and the failure surfaces on the project page as a
+  // failed-status EmailDelivery row that admin/PM can inspect or retry.
+  if (body.requestHandoff && project.installer.handoffEnabled) {
+    try {
+      const result = await sendInstallerHandoff({
+        projectId: project.id,
+        mode: 'auto',
+        actor: { id: user.id, email: user.email },
+      });
+      if (!result.ok) {
+        logger.error('handoff_auto_send_failed', {
+          projectId: project.id,
+          status: result.status,
+          error: result.error,
+          code: result.code,
+        });
+      }
+    } catch (err) {
+      logger.error('handoff_auto_send_threw', { projectId: project.id, ...errorContext(err) });
+    }
+  }
+
   return NextResponse.json(scrubProjectForViewer(dto, rel), { status: 201 });
 }

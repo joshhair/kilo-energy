@@ -83,6 +83,7 @@ function NewDealPage() {
   // utility bill is a File ref, also kept out of `form`.
   const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const [bviSendOnSubmit, setBviSendOnSubmit] = useState(true);
   const isBviInstaller = form.installer === 'BVI';
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -771,6 +772,7 @@ function NewDealPage() {
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
+      requestHandoff: isBviInstaller ? bviSendOnSubmit : undefined,
     };
 
     isDirty.current = false;
@@ -1637,6 +1639,8 @@ function NewDealPage() {
                 onChange={setBviIntake}
                 utilityBill={utilityBill}
                 onUtilityBillChange={setUtilityBill}
+                sendOnSubmit={bviSendOnSubmit}
+                onSendOnSubmitChange={setBviSendOnSubmit}
               />
             )}
 

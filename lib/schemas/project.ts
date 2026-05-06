@@ -73,6 +73,12 @@ export const createProjectSchema = z.object({
   /// `parseBviIntake()` which falls back to EMPTY_BVI_INTAKE on bad data.
   /// Hard length cap to prevent abuse.
   installerIntakeJson: z.string().max(20000).optional(),
+  /// When true and the installer has handoffEnabled=true, the deal-create
+  /// route fires the installer handoff email immediately after persist.
+  /// Set by the rep via the BVI intake panel's "Send to BVI on submit" toggle.
+  /// Failure to send does NOT roll back the deal — the project is created
+  /// regardless; the failure surfaces as a failed-status EmailDelivery row.
+  requestHandoff: z.boolean().optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 

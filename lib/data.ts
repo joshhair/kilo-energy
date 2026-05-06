@@ -214,6 +214,10 @@ export interface Project {
   // string matching lib/installer-intakes/<slug>.ts shape. Optional —
   // only present when the deal's installer requires intake capture.
   installerIntakeJson?: string;
+  // Submit-time only flag: rep's choice to fire the installer handoff
+  // email when the deal is created. Not stored on Project — consumed by
+  // /api/projects POST and discarded.
+  requestHandoff?: boolean;
   // M3: remaining commission paid at PTO for installers that don't pay 100% at install
   m3Amount?: number;
   m3Paid: boolean;

@@ -261,6 +261,7 @@ export default function MobileNewDeal() {
   // BVI handoff: per-installer intake + utility bill (mirrors desktop).
   const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const [bviSendOnSubmit, setBviSendOnSubmit] = useState(true);
   const isBviInstaller = form.installer === 'BVI';
   const [_stepping, setStepping] = useState(false);
   const [exitAnimClass, setExitAnimClass] = useState('');
@@ -909,6 +910,7 @@ export default function MobileNewDeal() {
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
+      requestHandoff: isBviInstaller ? bviSendOnSubmit : undefined,
     };
 
     let dealResult: { id: string } | null;
@@ -1892,6 +1894,8 @@ export default function MobileNewDeal() {
                 onChange={setBviIntake}
                 utilityBill={utilityBill}
                 onUtilityBillChange={setUtilityBill}
+                sendOnSubmit={bviSendOnSubmit}
+                onSendOnSubmitChange={setBviSendOnSubmit}
               />
             )}
 
