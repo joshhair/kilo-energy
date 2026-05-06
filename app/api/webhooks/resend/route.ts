@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { dbAdmin } from '@/lib/db';
 import { logger, errorContext } from '@/lib/logger';
+import { verifySvixSignature } from '@/lib/svix-verify';
 
 // POST /api/webhooks/resend — Resend delivery-status webhook receiver.
 //
@@ -35,26 +35,7 @@ interface ResendWebhookEvent {
   };
 }
 
-/**
- * Verify Resend's webhook signature. Returns true iff the signature
- * matches a freshly-computed HMAC-SHA256 of the raw body using the
- * shared secret. Constant-time comparison.
- */
-function verifySignature(rawBody: string, signature: string | null, secret: string): boolean {
-  if (!signature) return false;
-  // Resend sends `svix-signature: v1,<base64>` (Svix format) — strip prefix
-  const sigPart = signature.split(',').pop()?.trim() ?? signature;
-
-  const expected = createHmac('sha256', secret).update(rawBody).digest();
-  let received: Buffer;
-  try {
-    received = Buffer.from(sigPart, 'base64');
-  } catch {
-    return false;
-  }
-  if (received.length !== expected.length) return false;
-  return timingSafeEqual(received, expected);
-}
+// Svix signature verification lives in lib/svix-verify.ts (tested unit).
 
 export async function POST(req: NextRequest) {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
@@ -65,17 +46,19 @@ export async function POST(req: NextRequest) {
 
   // Read raw body BEFORE parsing JSON — signature is computed over raw bytes
   const rawBody = await req.text();
-  // Resend supports several header names depending on integration variant;
-  // try the common ones.
-  const signatureHeader =
-    req.headers.get('svix-signature') ??
-    req.headers.get('webhook-signature') ??
-    req.headers.get('resend-signature') ??
-    null;
+  // Resend's Svix integration sends headers under both `webhook-*` and
+  // `svix-*` namespaces depending on configuration / version. Try both.
+  const webhookId = req.headers.get('webhook-id') ?? req.headers.get('svix-id');
+  const webhookTimestamp = req.headers.get('webhook-timestamp') ?? req.headers.get('svix-timestamp');
+  const webhookSignature = req.headers.get('webhook-signature') ?? req.headers.get('svix-signature');
 
-  if (!verifySignature(rawBody, signatureHeader, secret)) {
-    logger.error('resend_webhook_signature_mismatch', {
-      hasHeader: !!signatureHeader,
+  const verify = verifySvixSignature(rawBody, webhookId, webhookTimestamp, webhookSignature, secret);
+  if (!verify.ok) {
+    logger.error('resend_webhook_signature_invalid', {
+      reason: verify.reason,
+      hasId: !!webhookId,
+      hasTimestamp: !!webhookTimestamp,
+      hasSignature: !!webhookSignature,
       bodyLength: rawBody.length,
     });
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
