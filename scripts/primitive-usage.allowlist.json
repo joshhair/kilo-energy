@@ -27,8 +27,8 @@
 
   "CustomizationSection.tsx": {
     "rawInputs": 0,
-    "rawButtons": 1,
-    "reason": "PR 5 migrated everything to primitives; +1 button bump in 2026-04-29 added a custom toggle switch for the stalled-digest enable flag (same pattern as InstallerHandoffPanel toggle; no shared toggle primitive yet)."
+    "rawButtons": 0,
+    "reason": "PR 5 fully migrated. The custom toggle for the stalled-digest enable flag was replaced with the shared Switch primitive (added 2026-05-05) — same component now used by InstallerHandoffPanel."
   },
 
   "ExportSection.tsx": {
@@ -51,8 +51,8 @@
 
   "InstallerHandoffPanel.tsx": {
     "rawInputs": 0,
-    "rawButtons": 1,
-    "reason": "Per-installer handoff email config editor (added 2026-04-29 for BVI integration). Inputs/textarea use TextInput/FormField primitives. The 1 raw button is a custom toggle switch (handoffEnabled on/off) — same pattern as BlitzPermissionsSection toggle pills; no shared toggle primitive yet."
+    "rawButtons": 0,
+    "reason": "Per-installer handoff email config editor (added 2026-04-29 for BVI integration). Inputs/textarea use TextInput/FormField primitives. Toggle switch migrated to the shared Switch primitive on 2026-05-05."
   },
 
   "PMSection.tsx": {
