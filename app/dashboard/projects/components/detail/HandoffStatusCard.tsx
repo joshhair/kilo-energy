@@ -18,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, AlertCircle, Mail, Check, X, Clock, Send } from 'lucide-react';
 import { useToast } from '@/lib/toast';
-import { SecondaryButton, PrimaryButton } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 
 interface DeliveryRow {
   id: string;
@@ -74,12 +74,11 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
 
   useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId]);
 
-  const onSend = async (opts: { resend?: boolean; test?: boolean } = {}) => {
+  const onSend = async (opts: { resend?: boolean } = {}) => {
     if (opts.resend && !confirm('Resend the handoff to the installer? They will receive another email.')) return;
     setSending(true);
     try {
-      const url = `/api/projects/${projectId}/handoff${opts.test ? '?test=true' : ''}`;
-      const res = await fetch(url, {
+      const res = await fetch(`/api/projects/${projectId}/handoff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(opts.resend ? { confirm: 'resend' } : {}),
@@ -89,7 +88,7 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
         toast(data.error || `Send failed (${res.status})`, 'error');
         return;
       }
-      toast(opts.test ? 'Test email sent' : (opts.resend ? 'Handoff resent' : 'Handoff sent'), 'success');
+      toast(opts.resend ? 'Handoff resent' : 'Handoff sent', 'success');
       await refresh();
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Send failed', 'error');
@@ -110,24 +109,14 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Installer Handoff</p>
         </div>
         {canResend && (
-          <div className="flex items-center gap-2">
-            <SecondaryButton
-              size="sm"
-              disabled={sending}
-              onClick={() => void onSend({ test: true })}
-              title="Send the handoff email to your own admin email instead of the installer (no EmailDelivery row, no handoffSentAt update)"
-            >
-              <Send className="w-3 h-3" /> Test
-            </SecondaryButton>
-            <PrimaryButton
-              size="sm"
-              disabled={sending}
-              loading={sending}
-              onClick={() => void onSend({ resend: hasBeenSent })}
-            >
-              <Send className="w-3 h-3" /> {hasBeenSent ? 'Resend' : 'Send Handoff'}
-            </PrimaryButton>
-          </div>
+          <PrimaryButton
+            size="sm"
+            disabled={sending}
+            loading={sending}
+            onClick={() => void onSend({ resend: hasBeenSent })}
+          >
+            <Send className="w-3 h-3" /> {hasBeenSent ? 'Resend' : 'Send Handoff'}
+          </PrimaryButton>
         )}
       </div>
 

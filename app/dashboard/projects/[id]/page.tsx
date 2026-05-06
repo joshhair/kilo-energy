@@ -30,6 +30,7 @@ import { InstallerFiles } from '../components/detail/InstallerFiles';
 import { SiteSurveyLinks } from '../components/detail/SiteSurveyLinks';
 import { InstallerNotes } from '../components/detail/InstallerNotes';
 import { HandoffStatusCard } from '../components/detail/HandoffStatusCard';
+import { CollapsibleSection } from '../components/detail/CollapsibleSection';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
@@ -617,11 +618,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Pipeline stage tracker */}
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
-      {/* Equipment Snapshot — non-sensitive, visible to all roles */}
-      <div className="mb-4">
-        <EquipmentSnapshot projectId={id} />
-      </div>
-
       {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
       {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
         const phaseIdx = PIPELINE_STEPS.indexOf(project.phase as typeof PIPELINE_STEPS[number]);
@@ -669,7 +665,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {(effectiveRole === 'admin' || isPM) ? (
-          <div className="flex flex-col md:flex-row md:flex-nowrap items-stretch md:items-center gap-2 md:whitespace-nowrap">
+          <div className="md:sticky md:top-4 md:z-30 md:self-start flex flex-col md:flex-row md:flex-nowrap items-stretch md:items-center gap-2 md:whitespace-nowrap md:bg-[var(--surface-page)]/85 md:backdrop-blur md:rounded-xl md:p-2 md:-m-2 md:shadow-sm md:shadow-black/20">
             {!isPM && (
               <button
                 onClick={openEditModal}
@@ -1287,10 +1283,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           the single-textarea InlineNotesEditor on 2026-04-23. Legacy
           Project.notes content was migrated into ProjectNote rows by
           scripts/migrate-add-project-notes-table.mjs. */}
-      <div className="card-surface rounded-2xl p-6">
-        <h2 className="text-[var(--text-primary)] font-semibold mb-3">Notes</h2>
-        <ProjectNotes projectId={id} />
-      </div>
+      <CollapsibleSection title="Notes">
+        <div className="card-surface rounded-2xl p-6">
+          <ProjectNotes projectId={id} />
+        </div>
+      </CollapsibleSection>
 
       {/* Admin Notes — per-note list, admin + internal PM only.
           Vendor PMs are blocked at the endpoint level (GET returns 403)
@@ -1298,19 +1295,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           than leaked data. Replaced the single-textarea
           AdminNotesEditor on 2026-04-23. */}
       {(effectiveRole === 'admin' || isPM) && (
-        <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 4%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-[var(--text-primary)] font-semibold">Admin Notes</h2>
+        <CollapsibleSection
+          title="Admin Notes"
+          badge={
             <span className="text-[10px] text-[var(--accent-amber-text)] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-semibold uppercase tracking-wider">
               Admin · PM Only
             </span>
+          }
+        >
+          <div className="card-surface rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 4%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
+            <p className="text-xs text-[var(--text-muted)] mb-3">
+              Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
+            </p>
+            <ProjectNotes projectId={id} kind="admin" />
           </div>
-          <p className="text-xs text-[var(--text-muted)] mb-3">
-            Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
-          </p>
-          <ProjectNotes projectId={id} kind="admin" />
-        </div>
+        </CollapsibleSection>
       )}
+
+      {/* Equipment Snapshot — moved out of the top slot; demoted to a
+          collapsible card alongside the other installer-surface sections
+          for parity with mobile. Visible to all roles. */}
+      <CollapsibleSection title="Equipment">
+        <EquipmentSnapshot projectId={id} />
+      </CollapsibleSection>
 
       {/* Installer-handoff surfaces — admin + PM only (gate uses
           effectiveRole, not currentRole, so admin View-As-Rep correctly
@@ -1319,31 +1326,43 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           gate prevents reps from seeing the section headers at all. */}
       {(effectiveRole === 'admin' || isPM) && (
         <>
-          <HandoffStatusCard
-            projectId={id}
-            canResend={effectiveRole === 'admin' || (isPM && !viewAsUser?.scopedInstallerId)}
-          />
-          <InstallerFiles
-            projectId={id}
-            canManage={effectiveRole === 'admin' || isPM}
-          />
-          <SiteSurveyLinks
-            projectId={id}
-            canManage={effectiveRole === 'admin' || isPM}
-          />
-          <InstallerNotes
-            projectId={id}
-            canManage={effectiveRole === 'admin' || isPM}
-          />
+          <CollapsibleSection title="Installer Handoff">
+            <HandoffStatusCard
+              projectId={id}
+              canResend={effectiveRole === 'admin' || (isPM && !viewAsUser?.scopedInstallerId)}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection title="Installer Files">
+            <InstallerFiles
+              projectId={id}
+              canManage={effectiveRole === 'admin' || isPM}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection title="Site Survey Links">
+            <SiteSurveyLinks
+              projectId={id}
+              canManage={effectiveRole === 'admin' || isPM}
+            />
+          </CollapsibleSection>
+          <CollapsibleSection title="Installer Notes">
+            <InstallerNotes
+              projectId={id}
+              canManage={effectiveRole === 'admin' || isPM}
+            />
+          </CollapsibleSection>
         </>
       )}
 
       {/* Chatter — above Activity so in-project discussion is the
           primary surface, with the activity log reachable just below. */}
-      <ProjectChatter projectId={id} />
+      <CollapsibleSection title="Messages">
+        <ProjectChatter projectId={id} />
+      </CollapsibleSection>
 
       {/* Activity Timeline */}
-      <ActivityTimeline projectId={id} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
+      <CollapsibleSection title="Activity">
+        <ActivityTimeline projectId={id} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
+      </CollapsibleSection>
 
       {/* Edit Project Modal
           Portaled to document.body so fixed positioning is relative to the
