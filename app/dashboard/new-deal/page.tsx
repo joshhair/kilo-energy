@@ -26,7 +26,7 @@ import { SuccessScreen } from './components/SuccessScreen';
 import { DealEntryPage } from './components/DealEntryPage';
 import { NewDealSkeleton } from './components/NewDealSkeleton';
 import { BviIntakePanel } from './components/BviIntakePanel';
-import { EMPTY_BVI_INTAKE, type BviIntake } from '../../../lib/installer-intakes/bvi';
+import { EMPTY_BVI_INTAKE, validateBviIntake, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -84,7 +84,15 @@ function NewDealPage() {
   const [bviIntake, setBviIntake] = useState<BviIntake>(EMPTY_BVI_INTAKE);
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
   const [bviSendOnSubmit, setBviSendOnSubmit] = useState(true);
+  // BVI validation errors are shown only AFTER a submit attempt; once
+  // shown they recompute live as the rep edits, so corrections clear
+  // their errors immediately.
+  const [bviErrorsShown, setBviErrorsShown] = useState(false);
   const isBviInstaller = form.installer === 'BVI';
+  const bviErrors = useMemo(
+    () => (bviErrorsShown && isBviInstaller ? validateBviIntake(bviIntake) : {}),
+    [bviErrorsShown, isBviInstaller, bviIntake],
+  );
 
   const formRef = useRef<HTMLFormElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -629,6 +637,19 @@ function NewDealPage() {
       toast('Setter accounts cannot submit deals directly. Please contact an admin.', 'error');
       submittingRef.current = false;
       return;
+    }
+
+    // BVI intake validation — phone, email, and address are required so
+    // BVI ops can reach the homeowner. Errors render inline in the panel
+    // and recompute live as the rep types fixes.
+    if (isBviInstaller) {
+      const bviIntakeErrors = validateBviIntake(bviIntake);
+      if (Object.keys(bviIntakeErrors).length > 0) {
+        setBviErrorsShown(true);
+        toast('Customer phone, email, and address are required for BVI deals.', 'error');
+        submittingRef.current = false;
+        return;
+      }
     }
 
     // Guard: if a blitz is selected, both the closer and setter (if chosen) must
@@ -1641,6 +1662,7 @@ function NewDealPage() {
                 onUtilityBillChange={setUtilityBill}
                 sendOnSubmit={bviSendOnSubmit}
                 onSendOnSubmitChange={setBviSendOnSubmit}
+                errors={bviErrors}
               />
             )}
 

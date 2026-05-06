@@ -127,6 +127,64 @@ export function parseBviIntake(json: string | null | undefined): BviIntake {
 // needed unless field names change.
 
 /**
+ * Required-field validation for the BVI intake.
+ *
+ * Reps must give BVI ops a real customer phone, email, and address — these
+ * are how BVI scheduling reaches the homeowner. The other intake fields
+ * (export type, battery location, dogs/locked-gates, additional notes)
+ * are informational and may legitimately be blank, so we don't gate them.
+ *
+ * Returns a per-field error map. An empty object means the intake is
+ * ready to submit. Callers (new-deal page + mobile equivalent) check this
+ * before allowing submission and pass the result to BviIntakePanel for
+ * inline display.
+ *
+ * Phone uses lib/validation.validatePhone (US 10-digit, normalized).
+ * Email uses a minimal regex shape check (sufficient for ops handoff).
+ * Address is presence-checked with a sanity min length.
+ */
+export interface BviIntakeErrors {
+  customerPhone?: string;
+  customerEmail?: string;
+  customerAddress?: string;
+}
+
+const SIMPLE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export function validateBviIntake(intake: BviIntake): BviIntakeErrors {
+  const errors: BviIntakeErrors = {};
+
+  // Phone — strip non-digits, expect 10 (or 11 with leading 1).
+  const phoneDigits = intake.customerPhone.replace(/[^\d]/g, '');
+  const normalizedPhone = phoneDigits.length === 11 && phoneDigits.startsWith('1')
+    ? phoneDigits.slice(1)
+    : phoneDigits;
+  if (!intake.customerPhone.trim()) {
+    errors.customerPhone = 'Required';
+  } else if (normalizedPhone.length !== 10) {
+    errors.customerPhone = 'Enter a 10-digit US phone number';
+  }
+
+  // Email — non-empty + simple format check.
+  const trimmedEmail = intake.customerEmail.trim();
+  if (!trimmedEmail) {
+    errors.customerEmail = 'Required';
+  } else if (!SIMPLE_EMAIL_RE.test(trimmedEmail)) {
+    errors.customerEmail = 'Enter a valid email address';
+  }
+
+  // Address — must be substantive (5 chars filters out garbage like "x").
+  const trimmedAddress = intake.customerAddress.trim();
+  if (!trimmedAddress) {
+    errors.customerAddress = 'Required';
+  } else if (trimmedAddress.length < 5) {
+    errors.customerAddress = 'Enter a full street address';
+  }
+
+  return errors;
+}
+
+/**
  * Filename used when this PDF is generated and attached to the handoff
  * email. Customer last name + ISO date for predictable filing.
  */

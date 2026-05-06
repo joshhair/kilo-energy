@@ -19,7 +19,7 @@
 import React from 'react';
 import { Upload, FileCheck2, X, Mail } from 'lucide-react';
 import { TextInput, FormField, Switch } from '@/components/ui';
-import type { BviIntake } from '@/lib/installer-intakes/bvi';
+import type { BviIntake, BviIntakeErrors } from '@/lib/installer-intakes/bvi';
 
 interface Props {
   value: BviIntake;
@@ -29,6 +29,8 @@ interface Props {
   /** Whether the rep wants the handoff email to fire on submit. Default ON. */
   sendOnSubmit: boolean;
   onSendOnSubmitChange: (next: boolean) => void;
+  /** Per-field validation errors. Set by parent on submit attempt. */
+  errors?: BviIntakeErrors;
 }
 
 type ToggleProps = {
@@ -69,7 +71,7 @@ function YesNoToggle({ label, value, onChange }: ToggleProps) {
   );
 }
 
-export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChange, sendOnSubmit, onSendOnSubmitChange }: Props) {
+export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChange, sendOnSubmit, onSendOnSubmitChange, errors }: Props) {
   const set = <K extends keyof BviIntake>(key: K, v: BviIntake[K]) => {
     onChange({ ...value, [key]: v });
   };
@@ -88,30 +90,34 @@ export function BviIntakePanel({ value, onChange, utilityBill, onUtilityBillChan
         These fields ship to BVI ops along with the homeowner&apos;s utility bill on submit.
       </p>
 
-      {/* Customer contact */}
+      {/* Customer contact — phone/email/address required for BVI ops to
+          reach the homeowner; gated at submit time by validateBviIntake. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-        <FormField label="Customer phone">
+        <FormField label="Customer phone" required error={errors?.customerPhone}>
           <TextInput
             type="tel"
             placeholder="555-0100"
             value={value.customerPhone}
             onChange={(e) => set('customerPhone', e.target.value)}
+            invalid={!!errors?.customerPhone}
           />
         </FormField>
-        <FormField label="Customer email">
+        <FormField label="Customer email" required error={errors?.customerEmail}>
           <TextInput
             type="email"
             placeholder="customer@example.com"
             value={value.customerEmail}
             onChange={(e) => set('customerEmail', e.target.value)}
+            invalid={!!errors?.customerEmail}
           />
         </FormField>
       </div>
-      <FormField label="Customer address" className="mb-4">
+      <FormField label="Customer address" required error={errors?.customerAddress} className="mb-4">
         <TextInput
           placeholder="123 Sunny Lane, Solar City, CA 90210"
           value={value.customerAddress}
           onChange={(e) => set('customerAddress', e.target.value)}
+          invalid={!!errors?.customerAddress}
         />
       </FormField>
 
