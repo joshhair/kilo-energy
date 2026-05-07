@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../../lib/context';
+import { useToast } from '../../../lib/toast';
 import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ function MentionDropdown({ query, anchorRect, reps, onSelect, onClose: _onClose,
 
 export default function ProjectChatter({ projectId }: { projectId: string }) {
   const { currentRepId, currentRepName, currentRole, reps, subDealers } = useApp();
+  const { toast } = useToast();
   // Per-project mentionable user list, fetched from a dedicated
   // endpoint so vendor PMs (who have an empty reps[] in context)
   // can still tag people. Names only — not a contact directory.
@@ -348,8 +350,21 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         mentionUserIds,
       }),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to send');
+      .then(async (res) => {
+        if (!res.ok) {
+          // Capture server error detail so the user sees *why* it failed
+          // (validation reason, 403, etc.) instead of the message just
+          // appearing-then-vanishing on next refresh.
+          let detail = `HTTP ${res.status}`;
+          try {
+            const body = await res.json();
+            if (body?.error) detail = body.error;
+            else if (Array.isArray(body?.issues) && body.issues.length > 0) {
+              detail = body.issues.map((i: { path: string; message: string }) => i.message).join(', ');
+            }
+          } catch { /* non-JSON response — keep HTTP code */ }
+          throw new Error(detail);
+        }
         return res.json();
       })
       .then((saved) => {
@@ -358,11 +373,16 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           prev.map((m) => (m.id === optimisticId ? saved : m))
         );
       })
-      .catch(() => {
-        // Keep optimistic message on failure (offline-friendly)
+      .catch((err) => {
+        // Surface the failure + roll back the optimistic message so the
+        // user sees their compose text restored and a clear toast — no
+        // more "looked saved but disappeared on refresh" silent fail.
+        toast(err instanceof Error ? `Couldn't send: ${err.message}` : "Couldn't send message", 'error');
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setComposeText(messageText + (checkItems.length > 0 ? '\n' + checkItems.map((ci) => `☐ ${ci.text}`).join('\n') : ''));
       })
       .finally(() => setSending(false));
-  }, [composeText, sending, projectId, currentRepId, currentRepName, currentRole, mentionableUsers]);
+  }, [composeText, sending, projectId, currentRepId, currentRepName, currentRole, mentionableUsers, toast]);
 
   // ── Toggle check item ──────────────────────────────────────────────────────
   const toggleCheckItem = useCallback(

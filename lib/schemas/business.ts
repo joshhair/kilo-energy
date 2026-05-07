@@ -177,10 +177,16 @@ const checkItemInputSchema = z.union([
 ]);
 
 export const createProjectMessageSchema = z.object({
-  text: z.string().min(1, 'message text is required').max(10_000),
+  // Text body OR check items must be present — a tasks-only message
+  // (e.g. rep typing only `☐ Follow up` lines without commentary) is a
+  // legitimate use case that the previous min(1) on text rejected.
+  text: z.string().max(10_000).default(''),
   checkItems: z.array(checkItemInputSchema).max(50).optional(),
   mentionUserIds: z.array(idSchema).max(50).optional(),
-});
+}).refine(
+  (d) => d.text.trim().length > 0 || (d.checkItems && d.checkItems.length > 0),
+  { message: 'Message must have body text or at least one task', path: ['text'] },
+);
 export type CreateProjectMessageInput = z.infer<typeof createProjectMessageSchema>;
 
 /** PATCH /api/projects/[id]/messages/[messageId] — polymorphic.
