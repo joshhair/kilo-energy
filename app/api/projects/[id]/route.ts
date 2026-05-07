@@ -69,7 +69,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } else if (user.role === 'project_manager') {
     for (const field of PM_BLOCKED_FIELDS) delete body[field];
   } else if (user.role === 'rep' || user.role === 'sub-dealer') {
-    for (const field of REP_BLOCKED_FIELDS) delete body[field];
+    // Carve-out: a rep who is the project's PRIMARY closer can cancel
+    // their own deal. Setters / additional closers / additional setters
+    // / sub-dealers cannot. Phase can ONLY be set to 'Cancelled' via
+    // this carve-out — no other phase transitions for reps.
+    let allowPhaseCancel = false;
+    if (user.role === 'rep' && body.phase === 'Cancelled') {
+      const primaryCheck = await prisma.project.findUnique({
+        where: { id },
+        select: { closerId: true },
+      });
+      if (primaryCheck?.closerId === user.id) {
+        allowPhaseCancel = true;
+      }
+    }
+    for (const field of REP_BLOCKED_FIELDS) {
+      if (field === 'phase' && allowPhaseCancel) continue;
+      delete body[field];
+    }
   }
 
   // Validate blitz participation and window before writing (mirrors POST /api/projects validation)
