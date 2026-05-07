@@ -481,9 +481,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── 1. Find old project & log activity ──
     const old = projectsRef.current.find((p) => p.id === id);
     if (old) {
-      if (updates.phase !== undefined && updates.phase !== old.phase) {
-        logProjectActivity(id, 'phase_change', `Phase changed from ${old.phase} to ${updates.phase}`, JSON.stringify({ oldPhase: old.phase, newPhase: updates.phase }));
-      }
+      // Phase changes are NOT logged optimistically — the server may
+      // strip the phase field (e.g. rep PATCH on a non-cancelled phase)
+      // and we don't want the activity feed to claim a transition that
+      // never happened. Logged below from the PATCH .then() handler
+      // only when the server's returned phase actually differs.
       if (updates.flagged !== undefined && updates.flagged !== old.flagged) {
         logProjectActivity(id, updates.flagged ? 'flagged' : 'unflagged', updates.flagged ? 'Project flagged' : 'Project unflagged');
       }
@@ -948,6 +950,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const serverProject = await res.json();
             if (!serverProject || !serverProject.id) return;
             setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
+            // Log phase_change activity only if the server's returned
+            // phase differs from the pre-PATCH phase. This avoids the
+            // class of bug where a stripped phase update (rep blocked
+            // from a transition) left the activity feed claiming the
+            // transition happened.
+            if (old && serverProject.phase && serverProject.phase !== old.phase) {
+              logProjectActivity(
+                id,
+                'phase_change',
+                `Phase changed from ${old.phase} to ${serverProject.phase}`,
+                JSON.stringify({ oldPhase: old.phase, newPhase: serverProject.phase }),
+              );
+            }
           } catch (parseErr) {
             // Non-JSON response — leave optimistic state alone, but log
             // because it usually means the server returned an HTML error

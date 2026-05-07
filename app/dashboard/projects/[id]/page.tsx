@@ -38,7 +38,7 @@ import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
   const isPM = effectiveRole === 'project_manager';
   // Internal-only gate: admin OR an internal PM (no installer scope on
   // either the signed-in user or the View-As target). Vendor PMs are
@@ -717,7 +717,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
         ) : (
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-            {(currentRepId === project.repId) && (
+            {(effectiveRepId === project.repId) && (
               <Link
                 href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
                 className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors"
@@ -725,7 +725,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
             )}
-            {(currentRepId === project.repId) && project.phase !== 'Cancelled' && (
+            {(effectiveRepId === project.repId) && project.phase !== 'Cancelled' && (
               <button
                 onClick={() => setShowCancelConfirm(true)}
                 className="bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
