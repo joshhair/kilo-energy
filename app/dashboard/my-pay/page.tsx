@@ -571,7 +571,8 @@ function MyPayPageInner() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[var(--text-primary)] text-sm font-medium truncate">{e.customerName || '(no project)'}</p>
                     <p className="text-[var(--text-dim)] text-[11px]">
-                      {e.paymentStage} · {e.status} · <RelativeDate date={e.date} />
+                      {e.paymentStage} · {e.status}
+                      {e.status !== 'Draft' && <> · <RelativeDate date={e.date} /></>}
                       {e.notes && <span className="ml-2 text-[var(--text-muted)]">· {e.notes}</span>}
                     </p>
                   </div>
@@ -930,7 +931,9 @@ function MyPayPageInner() {
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-[var(--text-muted)] text-xs whitespace-nowrap"><RelativeDate date={entry.date} /></td>
+                              <td className="px-3 py-3 text-[var(--text-muted)] text-xs whitespace-nowrap">
+                                {entry.status === 'Draft' ? '—' : <RelativeDate date={entry.date} />}
+                              </td>
                               <td className="px-3 py-3 text-[var(--text-dim)] text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
                             </tr>
                           ))}

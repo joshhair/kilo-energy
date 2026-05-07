@@ -650,7 +650,7 @@ export default function MobileMyPay() {
                 >
                   <div>
                     <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{e.customerName || '(no project)'}</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{e.paymentStage} · {e.status} · {e.date}</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{e.paymentStage} · {e.status}{e.status !== 'Draft' ? ` · ${e.date}` : ''}</p>
                   </div>
                   <p className="font-bold tabular-nums" style={{ color: 'var(--accent-red, #ef4444)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{fmt$(e.amount)}</p>
                 </div>
@@ -804,7 +804,7 @@ export default function MobileMyPay() {
                         <div>
                           {labelEl}
                           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
-                            {entry.paymentStage} &middot; {entry.date}
+                            {entry.paymentStage}{entry.status !== 'Draft' ? ` · ${entry.date}` : ''}
                           </p>
                         </div>
                         <p className="font-bold tabular-nums" style={{ color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
