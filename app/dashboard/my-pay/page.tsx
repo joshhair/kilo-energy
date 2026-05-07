@@ -130,6 +130,7 @@ function MyPayPageInner() {
   const initialStatus = (searchParams.get('status') ?? 'all') as 'all' | 'Draft' | 'Pending' | 'Paid';
 
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
+  const [pipelineOpen, setPipelineOpen] = useState(false);
   const [showReimbModal, setShowReimbModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterTypeState] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>(['all', 'M1', 'M2', 'M3', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'all');
@@ -211,9 +212,15 @@ function MyPayPageInner() {
   }, [payrollEntries, effectiveRepId, searchQuery, filterType, filterStatus]);
 
   // ── Group into pay periods (Friday weeks) ──
+  // Drafts are EXCLUDED from period grouping — they aren't actually
+  // scheduled for any date yet, and reps were reading the period
+  // header as a payment commitment ("Pay Period — May 15 · $3,306"
+  // when half the total was Draft). Drafts render in a separate
+  // dateless "Pipeline" section below the periods.
   const payPeriods = useMemo((): PayPeriod[] => {
     const groups = new Map<string, PayrollEntry[]>();
     for (const entry of myEntries) {
+      if (entry.status === 'Draft') continue;
       const friday = getFridayForDate(entry.date);
       if (!groups.has(friday)) groups.set(friday, []);
       groups.get(friday)!.push(entry);
@@ -233,6 +240,14 @@ function MyPayPageInner() {
         return true;
       });
   }, [myEntries, nextFridayStr, todayStr, payFilterFrom, payFilterTo]);
+
+  // Draft entries — rendered separately, no date, no period grouping.
+  const draftPipelineEntries = useMemo(() => {
+    return myEntries
+      .filter((e) => e.status === 'Draft')
+      .sort((a, b) => a.customerName.localeCompare(b.customerName));
+  }, [myEntries]);
+  const draftPipelineTotal = draftPipelineEntries.reduce((s, e) => s + e.amount, 0);
 
   // ── Paginate periods ──
   const totalPeriodPages = Math.max(1, Math.ceil(payPeriods.length / periodsPerPage));
@@ -946,6 +961,80 @@ function MyPayPageInner() {
             </div>
           );
         })}
+
+        {/* ── Pipeline (Draft entries) — no date, not in any pay period ──
+            Drafts haven't been moved to Pending by admin yet, so we
+            don't pretend they're scheduled for any specific Friday. */}
+        {draftPipelineEntries.length > 0 && (
+          <div
+            className={`card-surface rounded-2xl overflow-hidden border-l-2 transition-colors ${
+              pipelineOpen ? 'border-l-blue-500/40' : 'border-l-transparent'
+            } ${pipelineOpen ? 'bg-gradient-to-r from-blue-500/5 to-transparent' : ''}`}
+          >
+            <button
+              type="button"
+              onClick={() => setPipelineOpen(!pipelineOpen)}
+              aria-label={`${pipelineOpen ? 'Collapse' : 'Expand'} pipeline (draft entries)`}
+              className="w-full flex items-center gap-3 md:gap-4 px-3 md:px-5 py-4 min-h-[44px] text-left hover:bg-[var(--surface-card)]/30 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:outline-none rounded-2xl"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[var(--surface-card)]">
+                <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[var(--text-primary)] text-sm font-semibold">Pipeline</p>
+                  <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--surface-card)] border border-[var(--border-subtle)]/60 px-1.5 py-0.5 rounded-full">
+                    Awaiting payroll approval · no date yet
+                  </span>
+                </div>
+                <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                  {draftPipelineEntries.length} {draftPipelineEntries.length === 1 ? 'entry' : 'entries'}
+                </p>
+              </div>
+              <p className="text-lg font-bold tabular-nums shrink-0 break-words text-[var(--text-secondary)]">
+                {fmt$(draftPipelineTotal)}
+              </p>
+              <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] shrink-0 nav-chevron-spring ${pipelineOpen ? 'rotate-0' : '-rotate-90'}`} />
+            </button>
+            <div
+              className="grid transition-[grid-template-rows] duration-300"
+              style={{ gridTemplateRows: pipelineOpen ? '1fr' : '0fr' }}
+            >
+              <div className="overflow-hidden">
+                <div className="border-t border-[var(--border-subtle)]/50">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="table-header-frost">
+                        <tr className="border-b border-[var(--border-subtle)]/50">
+                          <th className="text-left px-5 py-2.5 text-[var(--text-muted)] font-medium text-xs uppercase tracking-wider">Customer</th>
+                          <th className="text-left px-3 py-2.5 text-[var(--text-muted)] font-medium text-xs uppercase tracking-wider">Stage</th>
+                          <th className="text-left px-3 py-2.5 text-[var(--text-muted)] font-medium text-xs uppercase tracking-wider">Status</th>
+                          <th className="text-right px-5 py-2.5 text-[var(--text-muted)] font-medium text-xs uppercase tracking-wider">Amount</th>
+                          <th className="text-left px-3 py-2.5 text-[var(--text-muted)] font-medium text-xs uppercase tracking-wider">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {draftPipelineEntries.map((entry) => (
+                          <tr key={entry.id} className="border-b border-[var(--border-subtle)]/30 hover:bg-[var(--surface-card)]/20 transition-colors min-h-[44px]">
+                            <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{entry.customerName || '(no project)'}</td>
+                            <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
+                            <td className="px-3 py-3"><StatusBadge status={entry.status} /></td>
+                            <td className="px-5 py-3 text-right">
+                              <span className={`font-semibold tabular-nums ${entry.amount < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-primary)]'}`}>
+                                {fmt$(entry.amount)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-[var(--text-dim)] text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Pagination ── */}
@@ -987,6 +1076,9 @@ function MyPayPageInner() {
       <div className="mt-6 text-center">
         <p className="text-[var(--text-dim)] text-xs">
           {myEntries.length} total {myEntries.length === 1 ? 'entry' : 'entries'} across {payPeriods.length} pay {payPeriods.length === 1 ? 'period' : 'periods'}
+          {draftPipelineEntries.length > 0 && (
+            <> · {draftPipelineEntries.length} in pipeline</>
+          )}
         </p>
       </div>
     </div>
