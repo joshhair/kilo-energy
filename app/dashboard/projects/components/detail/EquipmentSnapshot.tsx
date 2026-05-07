@@ -62,13 +62,13 @@ export function EquipmentSnapshot({ projectId }: Props) {
 
   if (!data) return null;
 
-  const rows: Array<[string, string]> = [
-    ['Installer', data.installerName],
-    ['Financer', data.financerName],
-    ...(data.family ? [['Product family', data.family] as [string, string]] : []),
-    ...(data.productName ? [['Product', data.productName] as [string, string]] : []),
-    ...(data.exportType ? [['Export type', data.exportType] as [string, string]] : []),
-  ];
+  // Equipment = the physical product sold (panels, inverter, batteries),
+  // not the financer or installer (those live in Project Details). When
+  // there's no product info on the deal — common for legacy SolarTech
+  // deals where productId wasn't captured at sale time — show an
+  // explicit empty state instead of a half-populated card that made it
+  // look like "Cash" was the equipment.
+  const hasProductInfo = !!(data.productName || data.family);
 
   return (
     <div className="card-surface rounded-2xl p-5">
@@ -76,14 +76,32 @@ export function EquipmentSnapshot({ projectId }: Props) {
         <Package className="w-3.5 h-3.5 text-[var(--accent-cyan-text)]" />
         <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Equipment</p>
       </div>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between sm:block">
-            <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">{label}</dt>
-            <dd className="text-[var(--text-primary)] font-medium truncate">{value || '—'}</dd>
-          </div>
-        ))}
-      </dl>
+      {!hasProductInfo ? (
+        <p className="text-xs text-[var(--text-muted)] italic">
+          Product details weren&apos;t recorded for this deal. (Common for older deals.) Edit the project to set the product.
+        </p>
+      ) : (
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          {data.family && (
+            <div className="flex justify-between sm:block">
+              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Product family</dt>
+              <dd className="text-[var(--text-primary)] font-medium truncate">{data.family}</dd>
+            </div>
+          )}
+          {data.productName && (
+            <div className="flex justify-between sm:block">
+              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Product</dt>
+              <dd className="text-[var(--text-primary)] font-medium truncate">{data.productName}</dd>
+            </div>
+          )}
+          {data.exportType && (
+            <div className="flex justify-between sm:block">
+              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Export type</dt>
+              <dd className="text-[var(--text-primary)] font-medium truncate">{data.exportType}</dd>
+            </div>
+          )}
+        </dl>
+      )}
     </div>
   );
 }

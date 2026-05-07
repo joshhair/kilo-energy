@@ -3,6 +3,7 @@ import { db } from '@/lib/db-gated';
 import { withApiHandler } from '@/lib/with-api-handler';
 import { serializeEquipmentForProjectPage } from '@/lib/serializers/equipment';
 import { parseBviIntake } from '@/lib/installer-intakes/bvi';
+import { SOLARTECH_PRODUCTS } from '@/lib/data';
 
 // GET /api/projects/[id]/equipment — equipment snapshot for the project page.
 //
@@ -22,6 +23,7 @@ export const GET = withApiHandler<{ id: string }>(async (_req, { params }) => {
     where: { id },
     select: {
       id: true,
+      productId: true,
       installerIntakeJson: true,
       installer: { select: { name: true } },
       financer: { select: { name: true } },
@@ -37,12 +39,26 @@ export const GET = withApiHandler<{ id: string }>(async (_req, { params }) => {
   });
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  // SolarTech fallback: SolarTech products live in a hardcoded array
+  // (lib/data.SOLARTECH_PRODUCTS), not the Product table. When the
+  // project.product Prisma include returns null but productId is set,
+  // try resolving from the hardcoded array. This is what makes the
+  // Equipment snapshot show real product info on SolarTech deals
+  // instead of the empty state that Bryce reported as "just shows Cash".
+  let resolvedProduct = project.product
+    ? { id: project.product.id, name: project.product.name, family: project.product.family ?? null }
+    : null;
+  if (!resolvedProduct && project.productId) {
+    const st = SOLARTECH_PRODUCTS.find((p) => p.id === project.productId);
+    if (st) {
+      resolvedProduct = { id: st.id, name: st.name, family: st.family };
+    }
+  }
+
   const intake = parseBviIntake(project.installerIntakeJson);
   return NextResponse.json(
     serializeEquipmentForProjectPage({
-      product: project.product
-        ? { id: project.product.id, name: project.product.name, family: project.product.family ?? null }
-        : null,
+      product: resolvedProduct,
       installerName: project.installer.name,
       financerName: project.financer.name,
       exportType: intake.exportType,
