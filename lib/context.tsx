@@ -33,7 +33,13 @@ interface AppContextType {
   /// surfaces: rep-dropdown visibility, My Pay tab injection, My Pay
   /// access gate. Null for pure admins / PMs.
   currentUserRepType: 'closer' | 'setter' | 'both' | null;
-  setRole: (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null) => void;
+  /// Signed-in user's installer scope (vendor PM only). Non-null marks
+  /// the user as a vendor PM so UI surfaces meant for admin/internal-PM
+  /// only (Admin Notes, etc.) can hide. Null for pure admins, internal
+  /// PMs, reps, sub-dealers — all of whom are NOT scoped to a specific
+  /// installer at the user level.
+  currentUserScopedInstallerId: string | null;
+  setRole: (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null, scopedInstallerId?: string | null) => void;
   logout: () => void;
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
@@ -235,6 +241,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // or during view-as mode (below — we swap to the target's repType so
   // rep-dropdown + My Pay gating reflects the viewed-as user's capability).
   const [currentUserRepType, setCurrentUserRepType] = useState<'closer' | 'setter' | 'both' | null>(null);
+  // Signed-in user's installer scope (vendor PM only). Populated from
+  // /api/auth/me. UI uses it to hide surfaces that are admin/internal-PM
+  // only — the server already 403s these, but without this flag the UI
+  // would render section headers + empty states for vendor PMs, leaking
+  // the existence of the section.
+  const [currentUserScopedInstallerId, setCurrentUserScopedInstallerId] = useState<string | null>(null);
   // Initial state is empty across the board. Previously these were
   // seeded with the pre-DB-era constants (PROJECTS, PAYROLL_ENTRIES, …)
   // from lib/data.ts, which caused a flash of *dummy* data on every
@@ -1230,11 +1242,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   } = installerActions;
   const getInstallerPrepaidOptions = (installer: string) => installerPrepaidOptions[installer] ?? [];
 
-  const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null) => {
+  const setRole = (role: Role, repId?: string, repName?: string, pmPerms?: { canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean }, repType?: 'closer' | 'setter' | 'both' | null, scopedInstallerId?: string | null) => {
     setCurrentRole(role);
     setCurrentRepId(repId ?? null);
     setCurrentRepName(repName ?? null);
     setCurrentUserRepType(repType ?? null);
+    setCurrentUserScopedInstallerId(scopedInstallerId ?? null);
     setPmPermissions(role === 'project_manager' && pmPerms ? pmPerms : null);
     if (role) localStorage.setItem('kilo-role', role);
     else localStorage.removeItem('kilo-role');
@@ -1249,6 +1262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentRepId(null);
     setCurrentRepName(null);
     setCurrentUserRepType(null);
+    setCurrentUserScopedInstallerId(null);
     setViewAsUserState(null);
     setPmPermissions(null);
     localStorage.removeItem('kilo-role');
@@ -1427,6 +1441,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentRepId,
         currentRepName,
         currentUserRepType,
+        currentUserScopedInstallerId,
         setRole,
         logout,
         projects: visibleProjects,

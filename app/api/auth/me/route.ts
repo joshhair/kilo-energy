@@ -36,5 +36,11 @@ export async function GET() {
     canExport: user.canExport,
     canCreateDeals: user.canCreateDeals,
     canAccessBlitz: user.canAccessBlitz,
+    // Vendor-PM scope marker. Non-null only for vendor PMs (PM sessions
+    // scoped to a single installer). Used client-side to hide UI
+    // surfaces that should be admin/internal-PM-only — most notably
+    // the Admin Notes section, which would otherwise render its header
+    // for vendor PMs even though the API 403s the read.
+    scopedInstallerId: user.scopedInstallerId,
   });
 }

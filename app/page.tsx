@@ -70,6 +70,10 @@ export default function LoginPage() {
             // Pass repType so the context can enable "admin who sells" surfaces
             // (My Pay tab, rep-dropdown visibility) on the signed-in session.
             user.repType ?? null,
+            // Pass scopedInstallerId so vendor-PM-only UI surfaces (Admin
+            // Notes header, etc.) can hide for vendor PMs without waiting
+            // for an API 403 to silence them.
+            user.scopedInstallerId ?? null,
           );
           router.push(consumePostAuthRedirect());
         } else if (res.status === 404) {

@@ -38,8 +38,13 @@ import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, currentRepId, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
   const isPM = effectiveRole === 'project_manager';
+  // Internal-only gate: admin OR an internal PM (no installer scope on
+  // either the signed-in user or the View-As target). Vendor PMs are
+  // hidden from admin-only UI surfaces like the Admin Notes section.
+  const canSeeInternalOnlyUi = effectiveRole === 'admin'
+    || (isPM && !currentUserScopedInstallerId && !viewAsUser?.scopedInstallerId);
   const { toast } = useToast();
   const router = useRouter();
   const isHydrated = useIsHydrated();
@@ -1289,12 +1294,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </CollapsibleSection>
 
-      {/* Admin Notes — per-note list, admin + internal PM only.
-          Vendor PMs are blocked at the endpoint level (GET returns 403)
-          so if one reaches this branch they see an empty list rather
-          than leaked data. Replaced the single-textarea
-          AdminNotesEditor on 2026-04-23. */}
-      {(effectiveRole === 'admin' || isPM) && (
+      {/* Admin Notes — per-note list, admin + internal PM only. Vendor
+          PMs are also blocked at the endpoint level (GET returns 403),
+          but the section header itself was rendering for them prior to
+          2026-05-06 because the UI gate was just `isPM` — now uses
+          canSeeInternalOnlyUi which respects scopedInstallerId on both
+          the signed-in user and the View-As target. */}
+      {canSeeInternalOnlyUi && (
         <CollapsibleSection
           title="Admin Notes"
           badge={
