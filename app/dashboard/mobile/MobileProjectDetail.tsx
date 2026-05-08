@@ -64,7 +64,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    effectiveRole, effectiveRepId, currentRepId, projects, setProjects, payrollEntries, reps,
+    effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
     trainerAssignments, persistPayrollEntry,
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
@@ -1289,7 +1289,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             onTap={openEditSheet}
           />
         )}
-        {(isAdmin && !isPM || currentRepId === project.repId) && (
+        {(isAdmin && !isPM || effectiveRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Duplicate Deal"
             icon={Copy}
@@ -1304,7 +1304,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           icon={project.flagged ? FlagOff : Flag}
           onTap={handleFlag}
         />
-        {project.phase !== 'Cancelled' && (isAdmin || isPM || currentRepId === project.repId) && (
+        {/* Cancel gate uses effectiveRepId so View-As surfaces it for the
+            target rep (e.g. admin viewing as Bryce). currentRepId would
+            keep showing the admin's own rep id and fail the equality
+            check — same desktop bug fixed in cycle ?, parity for mobile. */}
+        {project.phase !== 'Cancelled' && (isAdmin || isPM || effectiveRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Cancel Project"
             icon={XIcon}

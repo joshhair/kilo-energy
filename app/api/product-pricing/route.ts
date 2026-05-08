@@ -5,6 +5,7 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createProductPricingSchema } from '../../../lib/schemas/pricing';
 import { logChange } from '../../../lib/audit';
 import { logger } from '../../../lib/logger';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // POST /api/product-pricing — Create a new product pricing version (admin only)
 export async function POST(req: NextRequest) {
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
     const admin = await requireAdmin();
     actor = { id: admin.id, email: admin.email ?? null };
   } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/product-pricing');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createProductPricingSchema);
   if (!parsed.ok) return parsed.response;

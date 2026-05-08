@@ -5,12 +5,16 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchInstallerPricingSchema } from '../../../../lib/schemas/pricing';
 import { logger } from '../../../../lib/logger';
 import { logChange } from '../../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../../lib/rate-limit';
 
 // PATCH /api/installer-pricing/[id] — Update pricing version (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'PATCH /api/installer-pricing/[id]');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchInstallerPricingSchema);
   if (!parsed.ok) return parsed.response;
@@ -69,6 +73,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'DELETE /api/installer-pricing/[id]');
+  if (limited) return limited;
+
   const before = await prisma.installerPricingVersion.findUnique({
     where: { id },
     include: { tiers: true },

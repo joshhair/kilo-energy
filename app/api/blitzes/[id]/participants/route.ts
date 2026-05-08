@@ -9,6 +9,7 @@ import {
   patchBlitzParticipantSchema,
 } from '../../../../../lib/schemas/business';
 import { logChange } from '../../../../../lib/audit';
+import { enforceRateLimit } from '../../../../../lib/rate-limit';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +21,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const caller = await prisma.user.findFirst({ where: { email } });
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Rate limit per-caller — 50 join/approve writes per hour. Caps the
+  // damage from a compromised non-admin token (e.g. a setter using a
+  // leaked token to spam-join blitzes or churn pending requests).
+  const limited = await enforceRateLimit(`POST /api/blitzes/[id]/participants:${caller.id}`, 50, 60 * 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createBlitzParticipantSchema);
   if (!parsed.ok) return parsed.response;
@@ -174,6 +181,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const caller = await prisma.user.findFirst({ where: { email } });
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const limited = await enforceRateLimit(`PATCH /api/blitzes/[id]/participants:${caller.id}`, 50, 60 * 60_000);
+  if (limited) return limited;
+
   // Only the blitz owner or an admin may approve/decline participants
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
@@ -319,6 +329,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const caller = await prisma.user.findFirst({ where: { email } });
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = await enforceRateLimit(`DELETE /api/blitzes/[id]/participants:${caller.id}`, 50, 60 * 60_000);
+  if (limited) return limited;
 
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });

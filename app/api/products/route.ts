@@ -6,6 +6,7 @@ import { createProductSchema } from '../../../lib/schemas/pricing';
 import { logger, errorContext } from '../../../lib/logger';
 import { recordAdminAction } from '../../../lib/anomaly-detector';
 import { logChange } from '../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // In-memory idempotency cache. Lives for the duration of the lambda's
 // warm window — sufficient for "admin double-clicked Save" within a
@@ -80,6 +81,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/products');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createProductSchema);
   if (!parsed.ok) return parsed.response;

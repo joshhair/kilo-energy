@@ -4,11 +4,15 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createPrepaidOptionSchema } from '../../../lib/schemas/business';
 import { logChange } from '../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // POST /api/prepaid-options — Add a prepaid option (admin only)
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/prepaid-options');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createPrepaidOptionSchema);
   if (!parsed.ok) return parsed.response;

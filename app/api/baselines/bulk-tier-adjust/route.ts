@@ -31,6 +31,7 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { logger, errorContext } from '../../../../lib/logger';
 import { logChange } from '../../../../lib/audit';
 import { recordAdminAction } from '../../../../lib/anomaly-detector';
+import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { z } from 'zod';
 
 const tierSelectionSchema = z.object({
@@ -74,6 +75,12 @@ const MAGNITUDE_THRESHOLDS = {
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  // Rate limit even though admin-gated. A compromised admin token is the
+  // single highest-impact attack surface — capping at 10 bulk apply/min
+  // bounds blast radius without affecting legitimate manual workflows.
+  const limited = await enforceRateLimit(`POST /api/baselines/bulk-tier-adjust:${actor.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, bulkAdjustSchema);
   if (!parsed.ok) return parsed.response;

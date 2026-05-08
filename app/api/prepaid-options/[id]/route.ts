@@ -4,12 +4,16 @@ import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { renamePrepaidOptionSchema } from '../../../../lib/schemas/business';
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../../lib/rate-limit';
 
 // PATCH /api/prepaid-options/[id] — Rename a prepaid option (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'PATCH /api/prepaid-options/[id]');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, renamePrepaidOptionSchema);
   if (!parsed.ok) return parsed.response;
@@ -38,6 +42,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'DELETE /api/prepaid-options/[id]');
+  if (limited) return limited;
+
   const before = await prisma.installerPrepaidOption.findUnique({ where: { id } });
   await prisma.installerPrepaidOption.delete({ where: { id } });
   await logChange({

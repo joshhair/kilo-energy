@@ -169,10 +169,41 @@ export async function PATCH(req: NextRequest) {
   const updateData: Record<string, unknown> = { status };
   if (status === 'Paid') updateData.paidAt = new Date();
 
+  // Capture which IDs are actually eligible for the transition before we
+  // run updateMany — gives us the exact set to audit. Cheap (PK lookup,
+  // bulk publishes top out around 100 rows per call).
+  const eligible = await prisma.payrollEntry.findMany({
+    where: { id: { in: ids }, status: sourceStatus },
+    select: { id: true, repId: true, projectId: true, amountCents: true, paymentStage: true },
+  });
+
   const result = await prisma.payrollEntry.updateMany({
     where: { id: { in: ids }, status: sourceStatus },
     data: updateData,
   });
+
+  // Per-entry audit of the bulk transition. Forensics ("who moved this
+  // entry to Paid?") would otherwise dead-end at the single-entry log,
+  // missing the bulk-publish path entirely.
+  const action = status === 'Paid' ? 'payroll_bulk_pay' : 'payroll_bulk_publish';
+  for (const e of eligible) {
+    await logChange({
+      actor: { id: actor.id, email: actor.email ?? null },
+      action,
+      entityType: 'PayrollEntry',
+      entityId: e.id,
+      before: { status: sourceStatus },
+      after: { status, paidAt: status === 'Paid' ? (updateData.paidAt as Date | undefined) ?? null : null },
+      detail: {
+        repId: e.repId,
+        projectId: e.projectId,
+        amountCents: e.amountCents,
+        paymentStage: e.paymentStage,
+        bulk: true,
+      },
+    });
+  }
+
   logger.info('payroll_bulk_transition', {
     actorId: actor.id,
     fromStatus: sourceStatus,

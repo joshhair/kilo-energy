@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createInstallerSchema } from '../../../lib/schemas/pricing';
 import { logChange } from '../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // GET /api/installers — admin only.
 //   - ?name=X: look up a single installer by name
@@ -24,6 +25,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/installers');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createInstallerSchema);
   if (!parsed.ok) return parsed.response;

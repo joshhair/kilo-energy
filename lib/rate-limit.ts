@@ -175,6 +175,24 @@ export async function enforceRateLimit(
   return r.ok ? null : rateLimitResponse(r);
 }
 
+/** Admin mutation rate-limit preset.
+ *
+ *  Catches runaway scripts and bounds the blast radius of a compromised
+ *  admin token. 30 ops/min is well above any sane manual workflow (a
+ *  human clicking through the admin UI tops out around 5/min, and the
+ *  bulk apply endpoints already use tighter dedicated limits at 10/min).
+ *
+ *  Use as:
+ *    const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/financers');
+ *    if (limited) return limited;
+ */
+export async function enforceAdminMutationLimit(
+  actorId: string,
+  routeKey: string,
+): Promise<NextResponse | null> {
+  return enforceRateLimit(`admin-mutation:${routeKey}:${actorId}`, 30, 60_000);
+}
+
 // Internal test hook — resets both in-memory state and the Ratelimit
 // memoization cache so suites can run independently.
 export function _resetForTests() {

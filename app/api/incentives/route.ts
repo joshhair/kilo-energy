@@ -4,11 +4,15 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createIncentiveSchema } from '../../../lib/schemas/incentive';
 import { logChange } from '../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // POST /api/incentives — Create an incentive (admin only)
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/incentives');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createIncentiveSchema);
   if (!parsed.ok) return parsed.response;

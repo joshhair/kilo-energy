@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createFinancerSchema } from '../../../lib/schemas/business';
 import { logChange } from '../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../lib/rate-limit';
 
 // GET /api/financers?name=X — Look up a single financer by name (admin only)
 export async function GET(req: NextRequest) {
@@ -19,6 +20,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/financers');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createFinancerSchema);
   if (!parsed.ok) return parsed.response;

@@ -4,12 +4,16 @@ import { requireAdmin } from '../../../../lib/api-auth';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchIncentiveSchema } from '../../../../lib/schemas/business';
 import { logChange } from '../../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../../lib/rate-limit';
 
 // PATCH /api/incentives/[id] — Update an incentive (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'PATCH /api/incentives/[id]');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchIncentiveSchema);
   if (!parsed.ok) return parsed.response;
@@ -86,6 +90,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'DELETE /api/incentives/[id]');
+  if (limited) return limited;
+
   const before = await prisma.incentive.findUnique({ where: { id } });
   await prisma.incentive.delete({ where: { id } });
   await logChange({

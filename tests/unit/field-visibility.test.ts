@@ -223,6 +223,34 @@ describe('scrubProjectForViewer — field visibility contract', () => {
     });
   });
 
+  describe('kiloMargin — internal P&L, admin/pm only', () => {
+    it('passes through for admin', () => {
+      const p = { ...sampleProject(), kiloMargin: 0.45 };
+      const out = scrubProjectForViewer(p, 'admin');
+      expect(out.kiloMargin).toBe(0.45);
+    });
+    it('passes through for pm', () => {
+      const p = { ...sampleProject(), kiloMargin: 0.45 };
+      const out = scrubProjectForViewer(p, 'pm');
+      expect(out.kiloMargin).toBe(0.45);
+    });
+    for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'vendor_pm', 'none'] as const) {
+      it(`is stripped for ${rel}`, () => {
+        const p = { ...sampleProject(), kiloMargin: 0.45 };
+        const out = scrubProjectForViewer(p as unknown as ReturnType<typeof sampleProject>, rel);
+        expect((out as Record<string, unknown>).kiloMargin).toBeUndefined();
+      });
+    }
+    it('is stripped from baselineOverride for non-admin/pm', () => {
+      const p = sampleProject();
+      (p.baselineOverride as Record<string, unknown>).kiloMargin = 0.45;
+      for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'none'] as const) {
+        const out = scrubProjectForViewer(p, rel);
+        expect((out.baselineOverride as Record<string, unknown>).kiloMargin).toBeUndefined();
+      }
+    });
+  });
+
   describe('invariants across all relationships', () => {
     it('returns a new object — never mutates the input', () => {
       for (const rel of ALL_RELATIONSHIPS) {

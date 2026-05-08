@@ -5,21 +5,40 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchProductSchema } from '../../../../lib/schemas/pricing';
 import { logChange } from '../../../../lib/audit';
 import { recordAdminAction } from '../../../../lib/anomaly-detector';
+import { enforceAdminMutationLimit } from '../../../../lib/rate-limit';
 
 // PATCH /api/products/[id] — Update product name or replace active version tiers (admin only)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); } catch (r) { return r as NextResponse; }
+  let actor;
+  try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'PATCH /api/products/[id]');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, patchProductSchema);
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
+
+  // Capture before-state for audit. Cheap (single row by PK).
+  const before = await prisma.product.findUnique({
+    where: { id },
+    select: { id: true, name: true, family: true },
+  });
 
   if (body.name !== undefined || body.family !== undefined) {
     const data: Record<string, unknown> = {};
     if (body.name !== undefined) data.name = body.name;
     if (body.family !== undefined) data.family = body.family;
     await prisma.product.update({ where: { id }, data });
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'product_update',
+      entityType: 'Product',
+      entityId: id,
+      before: before ? { name: before.name, family: before.family } : undefined,
+      after: { name: body.name ?? before?.name, family: body.family ?? before?.family },
+    });
   }
 
   if (body.tiers) {
@@ -51,6 +70,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       },
       include: { tiers: true },
+    });
+    // Tier replacement is commission-affecting — audit the version cut.
+    await logChange({
+      actor: { id: actor.id, email: actor.email },
+      action: 'product_pricing_version_create',
+      entityType: 'ProductPricingVersion',
+      entityId: newVersion.id,
+      detail: {
+        productId: id,
+        closedPreviousVersionId: activeVersion?.id ?? null,
+        effectiveFrom: today,
+        tierCount: newVersion.tiers.length,
+        source: 'PATCH /api/products/[id]',
+      },
     });
     return NextResponse.json({
       success: true,
@@ -89,6 +122,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'DELETE /api/products/[id]');
+  if (limited) return limited;
 
   const before = await prisma.product.findUnique({
     where: { id },

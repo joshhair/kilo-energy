@@ -85,6 +85,18 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
     none: 'undefined',
   },
 
+  // Kilo margin — internal P&L number. Even if a future schema change
+  // promotes it to a top-level Project field (Phase 2 baseline-versioning
+  // work), the matrix is pre-armed. Strip for everyone except admin + pm.
+  kiloMargin: {
+    vendor_pm: 'undefined',
+    closer: 'undefined',
+    setter: 'undefined',
+    trainer: 'undefined',
+    'sub-dealer': 'undefined',
+    none: 'undefined',
+  },
+
   // Co-party arrays — nuanced per relationship.
   //   admin/pm: passthrough (full structure + amounts).
   //   vendor_pm: empty-array for both — vendor PMs don't need to know
@@ -162,11 +174,14 @@ export function applyProjectVisibility<T extends Record<string, unknown>>(
     scrubbed[field] = applyAction(scrubbed[field], action);
   }
 
-  // Strip kiloPerW from nested baselineOverride for non-admin/pm.
-  // Not expressible as a top-level action; handled here.
+  // Strip internal-only fields from nested baselineOverride for non-admin/pm.
+  // Not expressible as top-level actions; handled here.
+  //   kiloPerW    — Kilo's per-watt cost (sensitive)
+  //   kiloMargin  — Kilo's margin/profit (sensitive)
   if (scrubbed.baselineOverride && typeof scrubbed.baselineOverride === 'object') {
     const bo = { ...(scrubbed.baselineOverride as Record<string, unknown>) };
     delete bo.kiloPerW;
+    delete bo.kiloMargin;
     scrubbed.baselineOverride = bo;
   }
 

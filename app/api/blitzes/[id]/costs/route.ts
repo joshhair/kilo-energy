@@ -7,12 +7,16 @@ import { serializeBlitzCost } from '../../../../../lib/serialize';
 import { fromDollars } from '../../../../../lib/money';
 import { logger, errorContext } from '../../../../../lib/logger';
 import { logChange } from '../../../../../lib/audit';
+import { enforceAdminMutationLimit } from '../../../../../lib/rate-limit';
 
 // POST /api/blitzes/[id]/costs — Add a cost
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'POST /api/blitzes/[id]/costs');
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, createBlitzCostSchema);
   if (!parsed.ok) return parsed.response;
@@ -66,6 +70,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
   const { id: blitzId } = await params;
+
+  const limited = await enforceAdminMutationLimit(actor.id, 'DELETE /api/blitzes/[id]/costs');
+  if (limited) return limited;
+
   const costId = req.nextUrl.searchParams.get('costId');
   if (!costId) return NextResponse.json({ error: 'costId required' }, { status: 400 });
 

@@ -30,6 +30,7 @@ import { parseJsonBody } from '../../../../lib/api-validation';
 import { logger, errorContext } from '../../../../lib/logger';
 import { logChange } from '../../../../lib/audit';
 import { recordAdminAction } from '../../../../lib/anomaly-detector';
+import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { z } from 'zod';
 
 const tierInputSchema = z.object({
@@ -60,6 +61,11 @@ const bulkVersionCreateSchema = z.object({
 export async function POST(req: NextRequest) {
   let actor;
   try { actor = await requireAdmin(); } catch (r) { return r as NextResponse; }
+
+  // Bulk version create — bound at 10/min to cap blast radius of a
+  // compromised admin token. Above human-pace.
+  const limited = await enforceRateLimit(`POST /api/baselines/bulk-version-create:${actor.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, bulkVersionCreateSchema);
   if (!parsed.ok) return parsed.response;
