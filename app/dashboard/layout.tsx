@@ -17,6 +17,7 @@ import {
   Wallet,
   Eye,
   XCircle,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -798,6 +799,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
           )}
+          {/* Per-user Preferences (theme + notifications). Same href for
+              every role — admins, reps, sub-dealers, PMs all land in the
+              user-scoped preferences page. */}
+          <Link
+            href="/dashboard/preferences"
+            title={showCollapsed ? 'Preferences' : undefined}
+            className={`flex items-center gap-2 text-xs transition-colors w-full mb-2 hover:bg-[var(--surface-card)] p-1.5 rounded-lg -mx-1.5 ${
+              showCollapsed ? 'justify-center' : ''
+            }`}
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 flex-shrink-0" />
+            {!showCollapsed && 'Preferences'}
+          </Link>
           <button
             onClick={handleLogout}
             title={showCollapsed ? 'Logout' : undefined}

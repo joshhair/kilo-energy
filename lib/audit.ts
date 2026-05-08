@@ -85,7 +85,11 @@ export type AuditEntityType =
   | "ProjectSurveyLink"
   | "ProjectInstallerNote"
   | "EmailDelivery"
-  | "StalledAlertConfig";
+  | "StalledAlertConfig"
+  // Notification system
+  | "NotificationPreference"
+  | "NotificationDelivery"
+  | "PushSubscription";
 
 export async function logChange(params: {
   actor: AuditActor;

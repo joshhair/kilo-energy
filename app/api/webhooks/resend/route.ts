@@ -111,19 +111,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, ignored: event.type });
   }
 
-  try {
-    const updated = await dbAdmin.emailDelivery.updateMany({
+  // Dual-write: update BOTH the legacy EmailDelivery row (handoff /
+  // stalled-digest UX still reads from it) AND any NotificationDelivery
+  // row sharing the same providerMessageId (the unified log Phase 3+
+  // events write into). Keys are unique per table; missing-row updates
+  // are no-ops.
+  //
+  // allSettled (not all): if NotificationDelivery is missing, malformed,
+  // or the migration is mid-flight, we MUST NOT take the EmailDelivery
+  // bounce-tracking path down with it. EmailDelivery is the live UX
+  // surface for the BVI handoff bounce alerts; NotificationDelivery is
+  // the new unified log. Each side fails independently.
+  const [emailResult, notificationResult] = await Promise.allSettled([
+    dbAdmin.emailDelivery.updateMany({
       where: { providerMessageId: messageId },
       data: updates,
-    });
-    logger.info('resend_webhook_status_updated', {
+    }),
+    dbAdmin.notificationDelivery.updateMany({
+      where: { providerMessageId: messageId },
+      data: updates,
+    }),
+  ]);
+
+  const emailRowsUpdated = emailResult.status === 'fulfilled' ? emailResult.value.count : 0;
+  const notificationRowsUpdated = notificationResult.status === 'fulfilled' ? notificationResult.value.count : 0;
+
+  if (emailResult.status === 'rejected') {
+    logger.error('resend_webhook_email_update_failed', {
       messageId,
-      eventType: event.type,
-      rowsUpdated: updated.count,
+      ...errorContext(emailResult.reason),
     });
-    return NextResponse.json({ ok: true, rowsUpdated: updated.count });
-  } catch (err) {
-    logger.error('resend_webhook_update_failed', { messageId, ...errorContext(err) });
+  }
+  if (notificationResult.status === 'rejected') {
+    // Soft-fail: don't 500 just because the new table isn't ready yet.
+    // Resend would otherwise retry the webhook indefinitely.
+    logger.error('resend_webhook_notification_update_failed', {
+      messageId,
+      ...errorContext(notificationResult.reason),
+    });
+  }
+
+  // 500 only if BOTH legs failed — partial failures still ack so Resend
+  // doesn't retry forever and pile up duplicates.
+  if (emailResult.status === 'rejected' && notificationResult.status === 'rejected') {
     return NextResponse.json({ error: 'Update failed' }, { status: 500 });
   }
+
+  logger.info('resend_webhook_status_updated', {
+    messageId,
+    eventType: event.type,
+    emailRowsUpdated,
+    notificationRowsUpdated,
+    emailOk: emailResult.status === 'fulfilled',
+    notificationOk: notificationResult.status === 'fulfilled',
+  });
+  return NextResponse.json({
+    ok: true,
+    rowsUpdated: emailRowsUpdated + notificationRowsUpdated,
+  });
 }

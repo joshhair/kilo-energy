@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useMediaQuery } from '../../../lib/hooks';
 import AppearanceSection from '../settings/sections/AppearanceSection';
+import NotificationsSection from '../settings/sections/NotificationsSection';
 
 export default function PreferencesPage() {
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -39,6 +40,7 @@ export default function PreferencesPage() {
       </div>
 
       <AppearanceSection />
+      <NotificationsSection />
     </div>
   );
 }

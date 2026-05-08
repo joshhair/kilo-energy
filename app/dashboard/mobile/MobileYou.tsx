@@ -27,9 +27,9 @@ type QuickAction = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-// Preferences is the rep / sub-dealer / PM entry point for theme and other
-// per-user settings. Admins manage these under Settings → Appearance, so
-// the Preferences shortcut is intentionally absent from ADMIN_ACTIONS.
+// Preferences is the per-user entry for theme + notification settings.
+// Available to every role — notification prefs are user-scoped (rows in
+// NotificationPreference are keyed by userId), even for admins.
 const PREFERENCES_ACTION: QuickAction = {
   href: '/dashboard/preferences',
   label: 'Preferences',
@@ -59,6 +59,7 @@ const ADMIN_ACTIONS: QuickAction[] = [
   { href: '/dashboard/incentives', label: 'Incentives', icon: Trophy },
   { href: '/dashboard/calculator', label: 'Calculator', icon: Calculator },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  PREFERENCES_ACTION,
 ];
 
 function resolveActions(role: string, isTrainer: boolean): QuickAction[] {

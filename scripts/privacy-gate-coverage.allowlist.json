@@ -30,5 +30,9 @@
   "AuditLog": "Admin-only by construction. Read endpoint /dashboard/admin/audit is admin-only; writes go through lib/audit.logChange which uses prisma directly (intentional — audit must record even when the actor's gate would deny).",
   "DataAccessLog": "Admin-only observability surface. Same rationale as AuditLog.",
 
-  "StalledAlertConfig": "Admin singleton config for the daily stalled-projects digest. All read/write through /api/admin/stalled-config which is admin-only via route guard; no rep / vendor PM exposure path."
+  "StalledAlertConfig": "Admin singleton config for the daily stalled-projects digest. All read/write through /api/admin/stalled-config which is admin-only via route guard; no rep / vendor PM exposure path.",
+
+  "NotificationPreference": "User-self-only by construction. /api/notifications/preferences endpoint scopes every read/write by user.id from requireInternalUser(); no cross-user listing endpoint exists. The admin override path (audit + impersonation) goes through dbAdmin which is route-guarded admin-only.",
+  "NotificationDelivery": "User-scoped delivery log. Reads via /api/notifications/deliveries are filtered by user.id at the route handler. Writes happen only inside lib/notifications/service.ts which uses the un-gated prisma intentionally — service fans out across users (a phase change notifies multiple parties on the deal) and the service is the boundary, not the gate.",
+  "PushSubscription": "User-self-only. Subscribe/unsubscribe via /api/notifications/push-subscribe scopes by requireInternalUser(); no cross-user listing endpoint."
 }

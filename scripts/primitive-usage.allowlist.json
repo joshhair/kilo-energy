@@ -55,6 +55,12 @@
     "reason": "Per-installer handoff email config editor (added 2026-04-29 for BVI integration). Inputs/textarea use TextInput/FormField primitives. Toggle switch migrated to the shared Switch primitive on 2026-05-05."
   },
 
+  "NotificationsSection.tsx": {
+    "rawInputs": 0,
+    "rawButtons": 0,
+    "reason": "Per-user notification preferences UI (added 2026-05-07 for the unified notification system, Phase 2). All toggles use the Switch primitive; cadence selectors use native <select> for accessibility and no inline buttons."
+  },
+
   "PMSection.tsx": {
     "rawInputs": 0,
     "rawButtons": 1,

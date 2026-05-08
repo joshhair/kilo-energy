@@ -89,6 +89,23 @@ model User {
   projectInstallerNotes   ProjectInstallerNote[]
   emailDeliveriesCreated  EmailDelivery[]
 
+  // Notification system back-relations
+  notificationPreferences NotificationPreference[]
+  notificationDeliveries  NotificationDelivery[]
+  pushSubscriptions       PushSubscription[]
+
+  /// Optional E.164 phone number used for SMS notifications.
+  /// Verified out-of-band (one-time code via Twilio); only populated
+  /// after the user has confirmed ownership.
+  notificationPhone        String?
+  notificationPhoneVerifiedAt DateTime?
+
+  /// User-controlled "do not send" window (server-enforced for SMS/push;
+  /// email always immediate). Stored as ints 0–23 in UTC. Both null or
+  /// equal → no quiet hours.
+  quietHoursStartUtc Int?
+  quietHoursEndUtc   Int?
+
   @@index([role])
   @@index([active])
   @@index([clerkUserId])
@@ -418,6 +435,7 @@ model Project {
   surveyLinks      ProjectSurveyLink[]
   installerNotes   ProjectInstallerNote[]
   emailDeliveries  EmailDelivery[]
+  notificationDeliveries NotificationDelivery[]
 
   /// Tag-team support: extra closers / setters on a deal beyond the primary.
   /// Empty for a standard single-closer, single-setter deal — no query cost.
@@ -1104,4 +1122,131 @@ model StalledAlertConfig {
 
   updatedAt           DateTime @updatedAt
   updatedById         String?
+}
+
+// ============================================================================
+// NOTIFICATION SYSTEM
+// ============================================================================
+// Per-user opt-in/opt-out for each notification event type, plus a
+// generalized delivery log (replaces EmailDelivery as the long-term home;
+// EmailDelivery stays for back-compat during the migration window).
+//
+// The NotificationService facade in lib/notifications/service.ts is the
+// only writer to NotificationDelivery; route handlers fire `notify(...)`
+// events and the service handles preference lookup, channel fan-out,
+// and per-channel adapter dispatch (Resend / Twilio / Web Push).
+//
+// Privacy gate: Notification* models are user-scoped. The privacy gate
+// allowlist treats them as "owner-self only" — a user only ever sees
+// their own preferences and deliveries (admin override via dedicated
+// admin route, audited).
+
+/// One row per (user, eventType). Missing row = use the event-type's
+/// default policy from lib/notifications/events.ts.
+model NotificationPreference {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Identifier from the event-type registry (lib/notifications/events.ts).
+  /// Examples: 'mention', 'project_phase_change', 'pay_pending', 'pay_paid',
+  /// 'milestone_install_scheduled', 'handoff_bounced', 'admin_user_invited'.
+  eventType   String
+
+  /// Channel toggles. Independent — opt in to email but not SMS, etc.
+  emailEnabled Boolean @default(true)
+  smsEnabled   Boolean @default(false)
+  pushEnabled  Boolean @default(false)
+
+  /// 'instant' | 'daily_digest' | 'weekly_digest' | 'off'.
+  /// 'off' is a master kill switch — overrides individual channel toggles.
+  digestMode  String   @default("instant")
+
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, eventType])
+  @@index([userId])
+}
+
+/// Generalized delivery log. Every notify() call produces one row per
+/// channel attempt; provider webhooks update status/timestamps.
+model NotificationDelivery {
+  id        String   @id @default(cuid())
+
+  /// Recipient user. Null for system-only emails (e.g. legacy stalled
+  /// digest to a configured admin list — those addresses are ad-hoc).
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Event type — vocabulary aligned with NotificationPreference.eventType.
+  eventType String
+
+  /// 'email' | 'sms' | 'push' | 'in_app'. Adapter-coupled dispatch key.
+  channel   String
+
+  /// Recipient address — email, E.164 phone, or push subscription endpoint.
+  toAddress String
+
+  /// Provider-side message id (Resend/Twilio/Web Push) for webhook joins.
+  providerMessageId String? @unique
+
+  /// 'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed'.
+  status    String
+
+  /// Webhook reason on bounce/complaint/failure — surfaced to admin in the
+  /// notification audit view.
+  errorReason String?
+
+  /// JSON-encoded payload for forensics + future replay capability.
+  /// Keep small — large bodies belong in entity-specific tables, not here.
+  payloadJson String?
+
+  /// Optional project context. Drives the privacy-gate exposure — a user
+  /// can only see their own deliveries OR deliveries on a project they
+  /// can access (via userCanAccessProject).
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  sentAt    DateTime  @default(now())
+  deliveredAt DateTime?
+  bouncedAt   DateTime?
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([providerMessageId])
+  @@index([eventType, sentAt])
+}
+
+/// Web Push / native push token registry. One row per (user, device).
+/// Web Push (today, VAPID-signed) populates endpoint+p256dh+auth.
+/// Native (post-app-store, APNs/FCM) populates nativeToken instead.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 'web_push' (today) | 'apns' (iOS native, post-app-store)
+  /// | 'fcm' (Android native, post-app-store).
+  provider  String   @default("web_push")
+
+  /// Web Push API endpoint URL. Unique per device-browser pair —
+  /// re-subscribing with the same endpoint is idempotent (upsert by endpoint).
+  /// For native push, this stores the platform-specific endpoint URL or
+  /// is left empty and nativeToken is populated instead.
+  endpoint  String   @unique
+
+  /// Web Push key material (split to avoid stringly-typed JSON blob).
+  p256dh    String?
+  auth      String?
+
+  /// Native push token (APNs device token / FCM registration token).
+  /// Populated only for provider='apns'|'fcm'; null for web_push.
+  nativeToken String?
+
+  userAgent String?
+
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
 }
