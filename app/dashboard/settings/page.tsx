@@ -9,7 +9,7 @@ import { useToast } from '../../../lib/toast';
 import { TrainerAssignment, TrainerOverrideTier } from '../../../lib/data';
 import {
   Building2, Landmark, BookOpen, Download, Settings,
-  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog, Shield, Sun,
+  ChevronRight, Sliders, Tent, EyeOff, Eye, X, Handshake, UserCog, Shield, Sun, Bell,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -26,6 +26,7 @@ import { ExportSection } from './sections/ExportSection';
 import { BaselinesSection } from './sections/BaselinesSection';
 import { AdminUsersSection } from './sections/AdminUsersSection';
 import AppearanceSection from './sections/AppearanceSection';
+import NotificationsSection from './sections/NotificationsSection';
 import { SettingsStatGrid } from './components/SettingsStatGrid';
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
@@ -38,7 +39,8 @@ type SettingsSection =
   | 'admin-users'
   | 'export'
   | 'customization'
-  | 'appearance';
+  | 'appearance'
+  | 'notifications';
 
 type NavItem = { id: SettingsSection; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { group: string; items: NavItem[] };
@@ -67,6 +69,7 @@ const NAV: NavGroup[] = [
     group: 'System',
     items: [
       { id: 'appearance', label: 'Appearance', icon: Sun },
+      { id: 'notifications', label: 'Notifications', icon: Bell },
       { id: 'customization', label: 'Customization', icon: Sliders },
       { id: 'export', label: 'Export', icon: Download },
     ],
@@ -99,7 +102,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'admin-users', 'installers', 'financers', 'baselines', 'appearance', 'customization', 'export'];
+  const validSections: SettingsSection[] = ['blitz-permissions', 'sub-dealers', 'project-managers', 'admin-users', 'installers', 'financers', 'baselines', 'appearance', 'notifications', 'customization', 'export'];
   const paramSection = searchParams.get('section') as string | null;
 
   // Legacy redirect: Settings > Trainer Overrides was consolidated into
@@ -529,6 +532,8 @@ function SettingsPageInner() {
         )}
 
         {section === 'appearance' && <AppearanceSection />}
+
+        {section === 'notifications' && <NotificationsSection />}
 
         {section === 'customization' && <CustomizationSection />}
 

@@ -185,16 +185,16 @@ export default function NotificationsSection() {
           className="rounded-xl overflow-hidden"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
         >
-          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+          <div className="px-5 md:px-6 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
               {CATEGORY_LABEL[category]}
             </h3>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {CATEGORY_HINT[category]}
             </p>
           </div>
 
-          {/* Channel header (desktop only — mobile shows inline labels) */}
+          {/* Channel header (desktop only — mobile uses per-channel rows) */}
           <div
             className="hidden md:grid px-6 py-2 text-[11px] uppercase tracking-wider items-center"
             style={{
@@ -214,7 +214,7 @@ export default function NotificationsSection() {
             {events.map((e, idx) => (
               <li
                 key={e.type}
-                className="px-6 py-4 md:grid md:items-center"
+                className="px-5 md:px-6 py-4 md:grid md:items-center"
                 style={{
                   gridTemplateColumns: '1fr 64px 64px 64px 132px',
                   borderBottom: idx < events.length - 1 ? '1px solid var(--border-default)' : undefined,
@@ -222,7 +222,7 @@ export default function NotificationsSection() {
               >
                 {/* Event label + description */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {e.label}
                     </span>
@@ -232,7 +232,7 @@ export default function NotificationsSection() {
                         style={{
                           background: 'var(--accent-emerald-soft)',
                           color: 'var(--accent-emerald-text)',
-                          border: '1px solid var(--accent-emerald-border, var(--accent-emerald-solid))',
+                          border: '1px solid var(--accent-emerald-solid)',
                         }}
                       >
                         <Lock className="w-2.5 h-2.5" /> Required
@@ -242,40 +242,76 @@ export default function NotificationsSection() {
                       <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--text-muted)' }} />
                     )}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--text-muted)' }}>
                     {e.description}
                   </p>
                 </div>
 
-                {/* Channels — mobile shows inline labels, desktop uses grid columns */}
-                <div className="mt-3 md:mt-0 grid grid-cols-3 gap-3 md:contents">
-                  <ChannelToggle
-                    icon={Mail}
-                    label="Email"
-                    enabled={e.emailEnabled}
-                    locked={e.mandatory}
+                {/* ── Mobile: stacked per-channel rows ─────────────────── */}
+                {/* Each channel renders as label-on-left, switch-on-right.
+                    Tappable, scannable, matches the rest of the app's mobile
+                    settings rows (see InstallerHandoffPanel, CustomizationSection). */}
+                <div className="md:hidden mt-4 space-y-1.5 -mx-1">
+                  <MobileChannelRow
+                    icon={Mail} label="Email"
+                    enabled={e.emailEnabled} locked={e.mandatory}
                     onToggle={(v) => updateRow(e.type, { emailEnabled: v })}
                   />
-                  <ChannelToggle
-                    icon={MessageSquare}
-                    label="SMS"
-                    enabled={e.smsEnabled}
-                    locked={false}
-                    comingSoon
+                  <MobileChannelRow
+                    icon={MessageSquare} label="SMS"
+                    enabled={e.smsEnabled} locked={false} comingSoon
                     onToggle={(v) => updateRow(e.type, { smsEnabled: v })}
                   />
-                  <ChannelToggle
-                    icon={Smartphone}
-                    label="Push"
-                    enabled={e.pushEnabled}
-                    locked={false}
-                    comingSoon
+                  <MobileChannelRow
+                    icon={Smartphone} label="Push"
+                    enabled={e.pushEnabled} locked={false} comingSoon
                     onToggle={(v) => updateRow(e.type, { pushEnabled: v })}
                   />
+                  {/* Cadence as its own labeled row on mobile */}
+                  <div
+                    className="flex items-center justify-between gap-3 px-1 py-2 rounded-md"
+                  >
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Cadence
+                    </span>
+                    <select
+                      aria-label={`Cadence for ${e.label}`}
+                      value={e.digestMode}
+                      onChange={(ev) => updateRow(e.type, { digestMode: ev.target.value as DigestMode })}
+                      disabled={e.mandatory}
+                      className="text-sm rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] disabled:opacity-50"
+                      style={{
+                        background: 'var(--surface-pressed)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-default)',
+                        minWidth: 132,
+                      }}
+                    >
+                      <option value="instant">Instant</option>
+                      <option value="daily_digest">Daily digest</option>
+                      <option value="weekly_digest">Weekly digest</option>
+                      <option value="off">Off</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Digest mode */}
-                <div className="mt-3 md:mt-0 md:text-right">
+                {/* ── Desktop: 5-column grid (channels + cadence) ───────── */}
+                <DesktopChannelCell
+                  enabled={e.emailEnabled} locked={e.mandatory}
+                  onToggle={(v) => updateRow(e.type, { emailEnabled: v })}
+                  ariaLabel="Toggle Email"
+                />
+                <DesktopChannelCell
+                  enabled={e.smsEnabled} locked={false} comingSoon
+                  onToggle={(v) => updateRow(e.type, { smsEnabled: v })}
+                  ariaLabel="Toggle SMS"
+                />
+                <DesktopChannelCell
+                  enabled={e.pushEnabled} locked={false} comingSoon
+                  onToggle={(v) => updateRow(e.type, { pushEnabled: v })}
+                  ariaLabel="Toggle Push"
+                />
+                <div className="hidden md:block md:text-right">
                   <select
                     aria-label={`Cadence for ${e.label}`}
                     value={e.digestMode}
@@ -367,38 +403,95 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-interface ChannelToggleProps {
-  icon: React.ComponentType<{ className?: string }>;
+/** Mobile per-channel row: icon + label on the left, switch on the right.
+ *  Mirrors the mobile settings-row pattern used in InstallerHandoffPanel
+ *  and CustomizationSection — full-width tap target, comfortable spacing,
+ *  no horizontal cramming. */
+function MobileChannelRow({
+  icon: Icon,
+  label,
+  enabled,
+  locked,
+  comingSoon,
+  onToggle,
+}: {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   enabled: boolean;
   locked: boolean;
   comingSoon?: boolean;
   onToggle: (next: boolean) => void;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-3 px-1 py-2 rounded-md"
+    >
+      <span className="inline-flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <Icon className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+        {label}
+        {comingSoon && (
+          <span
+            className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded"
+            style={{
+              color: 'var(--text-dim)',
+              border: '1px solid var(--border-default)',
+              background: 'var(--surface-pressed)',
+            }}
+          >
+            Soon
+          </span>
+        )}
+      </span>
+      {locked ? (
+        <span
+          className="inline-flex items-center gap-1 text-xs"
+          style={{ color: 'var(--accent-emerald-text)' }}
+        >
+          <Lock className="w-3.5 h-3.5" />
+          Locked
+        </span>
+      ) : (
+        <div className={comingSoon ? 'opacity-50 pointer-events-none select-none' : ''}>
+          <Switch
+            checked={enabled}
+            onChange={onToggle}
+            ariaLabel={`Toggle ${label}`}
+            size="md"
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
-function ChannelToggle({ icon: Icon, label, enabled, locked, comingSoon, onToggle }: ChannelToggleProps) {
+/** Desktop grid cell: just the switch (or lock icon), centered in its column.
+ *  Hidden on mobile — replaced by MobileChannelRow above. */
+function DesktopChannelCell({
+  enabled,
+  locked,
+  comingSoon,
+  onToggle,
+  ariaLabel,
+}: {
+  enabled: boolean;
+  locked: boolean;
+  comingSoon?: boolean;
+  onToggle: (next: boolean) => void;
+  ariaLabel: string;
+}) {
   return (
-    <div className="flex items-center justify-center md:flex-col md:justify-self-center md:gap-1.5">
-      {/* Mobile-only inline label */}
-      <span
-        className="md:hidden inline-flex items-center gap-1 text-xs mr-2"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        <Icon className="w-3.5 h-3.5" />
-        {label}
-      </span>
-
+    <div className="hidden md:flex items-center justify-center">
       {locked ? (
         <Lock className="w-4 h-4" style={{ color: 'var(--accent-emerald-text)' }} />
       ) : (
         <div
           className={comingSoon ? 'opacity-50 pointer-events-none select-none' : ''}
-          title={comingSoon ? `${label} ships in a future phase` : undefined}
+          title={comingSoon ? `${ariaLabel} — ships in a future phase` : undefined}
         >
           <Switch
             checked={enabled}
             onChange={onToggle}
-            ariaLabel={`Toggle ${label}`}
+            ariaLabel={ariaLabel}
             size="sm"
           />
         </div>
