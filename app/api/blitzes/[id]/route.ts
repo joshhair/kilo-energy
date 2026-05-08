@@ -59,26 +59,24 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // basis — that closes the additionalClosers/additionalSetters leak that
   // the old top-level-only zeroing missed.
   const isBlitzOwner = blitz.ownerId === user.id;
-  if (user.role !== 'admin' && !isBlitzOwner) {
-    (blitz as unknown as { costs: unknown[] }).costs = [];
-  }
+  const visibleCosts = (user.role === 'admin' || isBlitzOwner) ? blitz.costs : [];
 
   return NextResponse.json({
     ...blitz,
-    costs: blitz.costs.map(serializeBlitzCost),
+    costs: visibleCosts.map(serializeBlitzCost),
     projects: blitz.projects.map((p) => {
       const s = serializeProject(p);
       const withParties = {
         ...s,
-        additionalClosers: (p as { additionalClosers?: Parameters<typeof serializeProjectParty>[0][] }).additionalClosers?.map(serializeProjectParty) ?? [],
-        additionalSetters: (p as { additionalSetters?: Parameters<typeof serializeProjectParty>[0][] }).additionalSetters?.map(serializeProjectParty) ?? [],
+        additionalClosers: p.additionalClosers.map(serializeProjectParty),
+        additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
       if (user.role !== 'admin') {
         const rel = relationshipToProject(user, {
           closerId: p.closerId,
           setterId: p.setterId,
-          subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
-          trainerId: (p as { trainerId?: string | null }).trainerId ?? null,
+          subDealerId: p.subDealerId,
+          trainerId: p.trainerId,
           additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
           additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
         });

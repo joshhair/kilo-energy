@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { requireAdmin } from '../../../../lib/api-auth';
-import { parseJsonBody } from '../../../../lib/api-validation';
+import { parseJsonBody, parseJsonSafe } from '../../../../lib/api-validation';
 import { patchStalledConfigSchema } from '../../../../lib/schemas/pricing';
 import { logChange } from '../../../../lib/audit';
 import { validateEmail } from '../../../../lib/validation';
+import { z } from 'zod';
 
 // GET   /api/admin/stalled-config — Read the singleton config row (admin)
 // PATCH /api/admin/stalled-config — Update the singleton config row (admin)
@@ -32,21 +33,11 @@ function shapeResponse(row: {
   digestSendHourUtc: number;
   updatedAt: Date;
 }): StalledConfigResponse {
-  let recipients: string[] = [];
-  try {
-    const parsed = JSON.parse(row.digestRecipients) as unknown;
-    if (Array.isArray(parsed)) recipients = parsed.filter((x): x is string => typeof x === 'string');
-  } catch { recipients = []; }
-
-  let thresholds: Record<string, number> = {};
-  try {
-    const parsed = JSON.parse(row.phaseThresholds) as unknown;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      for (const [k, v] of Object.entries(parsed)) {
-        if (typeof v === 'number' && Number.isFinite(v)) thresholds[k] = v;
-      }
-    }
-  } catch { thresholds = {}; }
+  const recipients = parseJsonSafe(row.digestRecipients, z.array(z.string())) ?? [];
+  const thresholds = parseJsonSafe(
+    row.phaseThresholds,
+    z.record(z.string(), z.number().refine(Number.isFinite)),
+  ) ?? {};
 
   return {
     enabled: row.enabled,

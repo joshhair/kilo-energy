@@ -68,6 +68,33 @@ function formatIssues(error: ZodError): Array<{ path: string; message: string }>
   }));
 }
 
+/**
+ * Parse + validate a JSON string against a Zod schema. Returns the typed
+ * value on success, or `null` on parse OR validation failure.
+ *
+ * Use for non-request JSON: stringified DB columns (e.g. installer.ccEmails,
+ * StalledAlertConfig.phaseThresholds), webhook payloads where we own the
+ * fallback path. Replaces the `JSON.parse(json) as unknown` + hand-rolled
+ * narrowing pattern that scattered across cron + admin + handoff routes.
+ *
+ * Why no thrown errors: callers all want a graceful fallback (empty list,
+ * default object) when stored JSON is malformed. Returning null lets the
+ * caller use `parseJsonSafe(...) ?? defaultValue`.
+ *
+ *   const recipients = parseJsonSafe(row.digestRecipients, z.array(z.string())) ?? [];
+ */
+export function parseJsonSafe<T>(input: string | null | undefined, schema: ZodSchema<T>): T | null {
+  if (input == null || input === '') return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(input);
+  } catch {
+    return null;
+  }
+  const result = schema.safeParse(raw);
+  return result.success ? result.data : null;
+}
+
 // ─── Shared atoms used across domain schemas ────────────────────────────────
 
 export const idSchema = z.string().min(1, 'id required').max(100);

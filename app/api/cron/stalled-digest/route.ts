@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dbAdmin } from '@/lib/db';
 import { sendEmail } from '@/lib/email-helpers';
 import { logger, errorContext } from '@/lib/logger';
+import { parseJsonSafe } from '@/lib/api-validation';
+import { z } from 'zod';
 
 // POST /api/cron/stalled-digest — Daily summary of stalled projects + recent bounces.
 //
@@ -39,25 +41,14 @@ function daysBetween(from: Date | string, to: Date): number {
 }
 
 function parseRecipients(json: string): string[] {
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    if (Array.isArray(parsed)) return parsed.filter((x): x is string => typeof x === 'string');
-  } catch { /* ignore */ }
-  return [];
+  return parseJsonSafe(json, z.array(z.string())) ?? [];
 }
 
 function parseThresholds(json: string): Record<string, number> {
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const out: Record<string, number> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[k] = v;
-      }
-      return out;
-    }
-  } catch { /* ignore */ }
-  return {};
+  return parseJsonSafe(
+    json,
+    z.record(z.string(), z.number().refine((v) => Number.isFinite(v) && v > 0)),
+  ) ?? {};
 }
 
 async function authenticate(req: NextRequest): Promise<NextResponse | null> {

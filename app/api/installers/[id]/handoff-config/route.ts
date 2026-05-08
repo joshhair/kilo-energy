@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
 import { requireAdmin } from '../../../../../lib/api-auth';
-import { parseJsonBody } from '../../../../../lib/api-validation';
+import { parseJsonBody, parseJsonSafe } from '../../../../../lib/api-validation';
 import { patchInstallerHandoffConfigSchema } from '../../../../../lib/schemas/pricing';
 import { logChange, AUDITED_FIELDS } from '../../../../../lib/audit';
 import { validateEmail } from '../../../../../lib/validation';
+import { z } from 'zod';
 
 // GET  /api/installers/[id]/handoff-config — Read installer handoff config (admin)
 // PATCH /api/installers/[id]/handoff-config — Update installer handoff config (admin)
@@ -35,16 +36,10 @@ function shapeResponse(installer: {
   handoffEnabled: boolean;
   customNotes: string;
 }): HandoffConfigResponse {
-  let ccEmails: string[] = [];
-  try {
-    const parsed = JSON.parse(installer.ccEmails) as unknown;
-    if (Array.isArray(parsed)) {
-      ccEmails = parsed.filter((x): x is string => typeof x === 'string');
-    }
-  } catch {
-    // Malformed legacy JSON — return empty rather than failing the response.
-    ccEmails = [];
-  }
+  // Malformed legacy JSON returns null and falls through to []. Don't
+  // fail the response on bad stored data — admin needs to be able to
+  // open the form to fix it.
+  const ccEmails = parseJsonSafe(installer.ccEmails, z.array(z.string())) ?? [];
   return {
     id: installer.id,
     primaryEmail: installer.primaryEmail,
