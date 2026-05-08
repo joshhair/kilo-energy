@@ -340,12 +340,6 @@ export default function MobileMyPay() {
       .sort((a, b) => b.friday.localeCompare(a.friday));
   }, [myEntries, payFilterFrom, payFilterTo]);
 
-  const draftPipelineEntries = useMemo(() => {
-    return myEntries
-      .filter((e) => e.status === 'Draft')
-      .sort((a, b) => a.customerName.localeCompare(b.customerName));
-  }, [myEntries]);
-  const draftPipelineTotal = draftPipelineEntries.reduce((s, e) => s + e.amount, 0);
 
   // ── Reimbursements — only show active ones ──
   // Show all non-archived reimbursements (including Denied) so reps see
@@ -768,7 +762,7 @@ export default function MobileMyPay() {
 
       {/* ── Pay History ── */}
       <MobileSection title="Pay History" count={myEntries.length} collapsible defaultOpen>
-        {payPeriods.length === 0 && draftPipelineEntries.length === 0 ? (
+        {payPeriods.length === 0 ? (
           <MobileEmptyState
             icon={Banknote}
             title="No payments yet"
@@ -827,58 +821,6 @@ export default function MobileMyPay() {
                 </div>
               </MobileCard>
             ))}
-            {/* Pipeline (Drafts) — separate card, no Friday header, no
-                row date. Drafts haven't been moved to Pending yet, so
-                rendering them under a date would imply a commitment
-                that isn't there. */}
-            {draftPipelineEntries.length > 0 && (
-              <MobileCard>
-                <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <div>
-                    <p className="font-bold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '0.9rem' }}>
-                      Pipeline
-                    </p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem', marginTop: '2px' }}>Awaiting payroll approval · no date yet</p>
-                  </div>
-                  <p className="tabular-nums" style={{ color: 'var(--text-secondary)', fontFamily: FONT_DISPLAY, fontSize: '1.1rem', fontWeight: 700 }}>{fmt$(draftPipelineTotal)}</p>
-                </div>
-                <div>
-                  {draftPipelineEntries.map((entry, i) => {
-                    const label = entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--');
-                    const labelEl = entry.projectId ? (
-                      <Link
-                        href={`/dashboard/projects/${entry.projectId}`}
-                        className="font-semibold text-[var(--text-primary)] active:opacity-70 transition-opacity"
-                        style={{ fontFamily: FONT_BODY, fontSize: '1rem', textDecoration: 'underline', textDecorationColor: 'color-mix(in srgb, var(--text-primary) 15%, transparent)', textUnderlineOffset: '3px' }}
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>
-                        {label}
-                      </p>
-                    );
-                    return (
-                      <div
-                        key={entry.id}
-                        className={`flex items-center justify-between py-3 ${i < draftPipelineEntries.length - 1 ? 'border-b' : ''}`}
-                        style={{ borderColor: 'var(--border-subtle)' }}
-                      >
-                        <div>
-                          {labelEl}
-                          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
-                            {entry.paymentStage}
-                          </p>
-                        </div>
-                        <p className="font-bold tabular-nums" style={{ color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>
-                          {fmt$(entry.amount)}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </MobileCard>
-            )}
           </div>
         )}
       </MobileSection>
