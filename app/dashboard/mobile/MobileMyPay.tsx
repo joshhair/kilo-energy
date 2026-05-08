@@ -107,7 +107,7 @@ export default function MobileMyPay() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'Pending' | 'Paid'>('all');
   const [payFilterFrom, setPayFilterFrom] = useState('');
   const [payFilterTo, setPayFilterTo] = useState('');
 
@@ -725,7 +725,6 @@ export default function MobileMyPay() {
             style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
           >
             <option value="all">All Statuses</option>
-            <option value="Draft">Draft</option>
             <option value="Pending">Pending</option>
             <option value="Paid">Paid</option>
           </select>
@@ -809,7 +808,7 @@ export default function MobileMyPay() {
                         <div>
                           {labelEl}
                           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
-                            {entry.paymentStage}{entry.status !== 'Draft' ? ` · ${entry.date}` : ''}
+                            {entry.paymentStage} · {entry.date}
                           </p>
                         </div>
                         <p className="font-bold tabular-nums" style={{ color: entry.amount < 0 ? 'var(--accent-red, #ef4444)' : statusColor(entry.status), fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>

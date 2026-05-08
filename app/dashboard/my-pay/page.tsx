@@ -127,13 +127,16 @@ function MyPayPageInner() {
 
   // URL-persisted filters
   const initialType = (searchParams.get('type') ?? 'all') as 'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer';
-  const initialStatus = (searchParams.get('status') ?? 'all') as 'all' | 'Draft' | 'Pending' | 'Paid';
+  // 'Draft' was removed from the filter options — Drafts are excluded
+  // from the period list entirely, so a Draft filter would yield empty.
+  const initialStatusRaw = searchParams.get('status') ?? 'all';
+  const initialStatus = (['all', 'Pending', 'Paid'].includes(initialStatusRaw) ? initialStatusRaw : 'all') as 'all' | 'Pending' | 'Paid';
 
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
   const [showReimbModal, setShowReimbModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterTypeState] = useState<'all' | 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer'>(['all', 'M1', 'M2', 'M3', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'all');
-  const [filterStatus, setFilterStatusState] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>(['all', 'Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'all');
+  const [filterStatus, setFilterStatusState] = useState<'all' | 'Pending' | 'Paid'>(['all', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'all');
 
   const setFilterType = (v: typeof filterType) => {
     setFilterTypeState(v);
@@ -794,7 +797,6 @@ function MyPayPageInner() {
           className="bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Statuses</option>
-          <option value="Draft">Draft</option>
           <option value="Pending">Pending</option>
           <option value="Paid">Paid</option>
         </select>
@@ -938,9 +940,7 @@ function MyPayPageInner() {
                                   {fmt$(entry.amount)}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-[var(--text-muted)] text-xs whitespace-nowrap">
-                                {entry.status === 'Draft' ? '—' : <RelativeDate date={entry.date} />}
-                              </td>
+                              <td className="px-3 py-3 text-[var(--text-muted)] text-xs whitespace-nowrap"><RelativeDate date={entry.date} /></td>
                               <td className="px-3 py-3 text-[var(--text-dim)] text-xs truncate max-w-[150px]">{entry.notes || '—'}</td>
                             </tr>
                           ))}
@@ -993,7 +993,14 @@ function MyPayPageInner() {
       {/* ── Footer stat ── */}
       <div className="mt-6 text-center">
         <p className="text-[var(--text-dim)] text-xs">
-          {myEntries.length} total {myEntries.length === 1 ? 'entry' : 'entries'} across {payPeriods.length} pay {payPeriods.length === 1 ? 'period' : 'periods'}
+          {(() => {
+            // Count what's actually rendered (non-Draft entries grouped
+            // into pay periods). Earlier this used myEntries.length which
+            // included Drafts and made the math not add up against the
+            // pay-period count.
+            const shownEntries = payPeriods.reduce((s, p) => s + p.entries.length, 0);
+            return `${shownEntries} ${shownEntries === 1 ? 'entry' : 'entries'} across ${payPeriods.length} pay ${payPeriods.length === 1 ? 'period' : 'periods'}`;
+          })()}
         </p>
       </div>
     </div>
