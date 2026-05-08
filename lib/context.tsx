@@ -1369,8 +1369,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             position: s.position,
           })),
           // Per-installer intake JSON (BVI Sales Intake fields). Optional —
-          // null/omitted for non-BVI deals or when intake panel wasn't shown.
-          installerIntakeJson: project.installerIntakeJson || null,
+          // omit (undefined) for non-BVI deals so the field doesn't serialize.
+          // Schema is `z.string().nullable().optional()` so the server tolerates
+          // either shape, but sending undefined keeps the wire payload tidy.
+          installerIntakeJson: project.installerIntakeJson || undefined,
           // Auto-send-on-submit toggle from the BVI intake panel. When true
           // and admin has installer.handoffEnabled, the create endpoint
           // fires the handoff email immediately after persisting the deal.

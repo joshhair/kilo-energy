@@ -72,6 +72,11 @@ export const createProjectSchema = z.object({
   /// PDF renderer + downstream consumers parse defensively via
   /// `parseBviIntake()` which falls back to EMPTY_BVI_INTAKE on bad data.
   /// Hard length cap to prevent abuse.
+  ///
+  /// String-or-omitted only. `null` is intentionally rejected — that was
+  /// the symptom of the 2026-05-08 client bug (lib/context.tsx coerced
+  /// undefined → null). A future null arriving here is a real regression
+  /// we want to surface, not silently accept.
   installerIntakeJson: z.string().max(20000).optional(),
   /// When true and the installer has handoffEnabled=true, the deal-create
   /// route fires the installer handoff email immediately after persist.
