@@ -132,7 +132,11 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     label: 'Daily stalled-project digest',
     description: 'Summary of deals stuck in their phase past threshold.',
     category: 'admin',
-    defaults: { email: true, sms: false, push: false, digestMode: 'daily_digest' },
+    // digestMode 'instant' here means "send when fired" — the cron itself
+    // is the daily aggregation. Setting it to daily_digest would defer
+    // sending to a non-existent secondary aggregator and silently drop
+    // the digest entirely.
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
     audience: ['admin', 'project_manager'],
   },
 

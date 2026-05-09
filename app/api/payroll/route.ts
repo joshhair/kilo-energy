@@ -140,6 +140,43 @@ export async function POST(req: NextRequest) {
     type: entry.type,
   });
 
+  // Chargeback notification — mandatory event the rep MUST see (per the
+  // event registry's mandatory flag). Fires regardless of the rep's
+  // preference, force-routes to email at minimum.
+  if (entry.isChargeback) {
+    const amount = (entry.amountCents / 100).toLocaleString('en-US', {
+      style: 'currency', currency: 'USD',
+    });
+    const projectName = entry.project?.customerName ?? 'a deal';
+    const myPayUrl = `${process.env.APP_URL || 'https://app.kiloenergies.com'}/dashboard/my-pay`;
+    const repFirstName = entry.rep?.firstName ?? 'there';
+    notify({
+      type: 'pay_chargeback',
+      userId: entry.repId,
+      projectId: entry.projectId ?? undefined,
+      forceMandatory: true,
+      subject: `Chargeback issued — ${amount} on ${projectName}`,
+      emailHtml: renderNotificationEmail({
+        heading: 'A chargeback was issued',
+        bodyHtml: `
+          <p style="margin:0 0 12px 0;">Hi ${escapeHtml(repFirstName)} — a chargeback of <strong>${amount}</strong> was recorded against the <strong>${escapeHtml(projectName)}</strong> deal at the <strong>${escapeHtml(entry.paymentStage)}</strong> stage.</p>
+          ${entry.notes ? `<p style="margin:0 0 12px 0;color:#5b6477;font-size:13px;">Reason: ${escapeHtml(entry.notes)}</p>` : ''}
+          <p style="margin:0;color:#5b6477;font-size:13px;">If you have questions, reach out to your admin.</p>
+        `,
+        cta: { label: 'Open My Pay', url: myPayUrl },
+        footerNote: 'Chargeback alerts are required and cannot be turned off.',
+      }),
+      smsBody: `Kilo: chargeback of ${amount} on ${projectName} (${entry.paymentStage}).`,
+      pushBody: `Chargeback ${amount} — ${projectName}`,
+    }).catch((err) => {
+      logger.error('chargeback_notification_failed', {
+        entryId: entry.id,
+        repId: entry.repId,
+        ...errorContext(err),
+      });
+    });
+  }
+
   return NextResponse.json(serializePayrollEntry(entry), { status: 201 });
 }
 

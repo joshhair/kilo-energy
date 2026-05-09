@@ -5,6 +5,8 @@ import { requireAdmin } from '../../../../../lib/api-auth';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
 import { logger, errorContext } from '../../../../../lib/logger';
 import { logChange } from '../../../../../lib/audit';
+import { notify } from '../../../../../lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '../../../../../lib/email-templates/notification';
 
 /**
  * POST /api/users/[id]/invite — Idempotent send/resend of a Clerk invitation
@@ -96,6 +98,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         clerkInvitationId: invitation.id,
         revokedCount: pending.length,
       },
+    });
+
+    // Admin-team notification — let other admins know someone was invited.
+    // Audience-gated by the registry to admin role only; quietly defaults
+    // to daily_digest cadence so this isn't a notification spam vector.
+    const otherAdmins = await prisma.user.findMany({
+      where: { role: 'admin', active: true, id: { not: actor.id } },
+      select: { id: true },
+    });
+    const inviterName = `${actor.firstName} ${actor.lastName}`.trim() || actor.email || 'An admin';
+    const inviteeName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+    Promise.all(
+      otherAdmins.map((a) =>
+        notify({
+          type: 'admin_user_invited',
+          userId: a.id,
+          subject: `${inviterName} invited ${inviteeName} (${user.role})`,
+          emailHtml: renderNotificationEmail({
+            heading: 'New user invited',
+            bodyHtml: `
+              <p style="margin:0 0 12px 0;"><strong>${escapeHtml(inviterName)}</strong> invited <strong>${escapeHtml(inviteeName)}</strong> as <strong>${escapeHtml(user.role)}</strong>.</p>
+              <p style="margin:0;color:#5b6477;font-size:13px;">Email: ${escapeHtml(user.email)}</p>
+            `,
+            footerNote: 'Sent because you have admin user-invite alerts on. Manage at /dashboard/preferences.',
+          }),
+          smsBody: `Kilo: ${inviterName} invited ${inviteeName} (${user.role}).`,
+          pushBody: `New user invited: ${inviteeName}`,
+        }),
+      ),
+    ).catch((err) => {
+      logger.error('admin_user_invited_notification_failed', {
+        invitedUserId: id,
+        recipientCount: otherAdmins.length,
+        ...errorContext(err),
+      });
     });
 
     return NextResponse.json({

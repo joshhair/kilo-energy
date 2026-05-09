@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAdmin } from '@/lib/db';
-import { sendEmail } from '@/lib/email-helpers';
 import { logger, errorContext } from '@/lib/logger';
+import { notify } from '@/lib/notifications/service';
 import { parseJsonSafe } from '@/lib/api-validation';
 import { z } from 'zod';
 
@@ -233,28 +233,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: 'nothing_to_report' });
   }
 
+  // Route through the notification service so the digest lands in the
+  // unified NotificationDelivery log alongside every other event. One
+  // notify() call per recipient (vs the old single sendEmail with all
+  // recipients on To:) so:
+  //   - Each recipient sees only their own address (less context leakage)
+  //   - Bounces affect one person, not the whole batch
+  //   - Per-recipient delivery status is queryable
+  //
+  // userId is null because the digest's recipients are configured email
+  // strings, not registered users. The event-type's defaults govern
+  // (email-on, instant cadence) since there's no preference row to
+  // consult for an anonymous recipient.
   try {
-    const result = await sendEmail({
-      to: recipients,
-      subject,
-      html,
-      bccArchive: null, // skip BCC archive on digest emails (recipients already capture)
-    });
-    if (!result.ok) {
-      logger.error('stalled_digest_send_failed', { code: result.code, error: result.error });
-      return NextResponse.json({ ok: false, error: result.error, code: result.code }, { status: 502 });
+    const results = await Promise.all(
+      recipients.map((addr) =>
+        notify({
+          type: 'stalled_project_digest',
+          userId: null,
+          toAddressOverride: addr,
+          subject,
+          emailHtml: html,
+        }),
+      ),
+    );
+    const okCount = results.filter((r) => r.ok && !r.skipped).length;
+    const failedCount = results.length - okCount;
+    if (okCount === 0 && results.length > 0) {
+      logger.error('stalled_digest_all_recipients_failed', {
+        recipientCount: results.length,
+        attempts: results.map((r) => ({ ok: r.ok, skipped: r.skipped, skipReason: r.skipReason })),
+      });
+      return NextResponse.json({ ok: false, error: 'All recipients failed' }, { status: 502 });
     }
     logger.info('stalled_digest_sent', {
-      messageId: result.providerMessageId,
       stalled: totalStalled,
       bounced: bouncedRows.length,
       recipientCount: recipients.length,
+      okCount,
+      failedCount,
     });
     return NextResponse.json({
       ok: true,
-      providerMessageId: result.providerMessageId,
       stalled: totalStalled,
       bounced: bouncedRows.length,
+      recipients: { ok: okCount, failed: failedCount },
     });
   } catch (err) {
     logger.error('stalled_digest_threw', errorContext(err));

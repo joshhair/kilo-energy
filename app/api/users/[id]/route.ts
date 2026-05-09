@@ -12,6 +12,8 @@ import {
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchUserSchema } from '../../../../lib/schemas/user';
 import { logChange, AUDITED_FIELDS } from '../../../../lib/audit';
+import { notify } from '../../../../lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '../../../../lib/email-templates/notification';
 
 /**
  * GET /api/users/[id] — Single user. Admins see everything; a non-admin
@@ -252,6 +254,38 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     before: existing, after: user,
     fields: AUDITED_FIELDS.User,
   });
+
+  // Security notification — mandatory event the user MUST see when their
+  // role changes. Force-routes to email regardless of preference. Skip on
+  // self-edits (admin tweaking own permissions); the audit log captures
+  // it for forensics either way.
+  const roleChanged = data.role !== undefined && existing.role !== data.role;
+  if (roleChanged && viewer.id !== id) {
+    const newRole = data.role as string;
+    const actorName = `${viewer.firstName} ${viewer.lastName}`.trim() || viewer.email || 'An admin';
+    notify({
+      type: 'security_role_changed',
+      userId: id,
+      forceMandatory: true,
+      subject: `Your Kilo role changed — ${existing.role} → ${newRole}`,
+      emailHtml: renderNotificationEmail({
+        heading: 'Your account role changed',
+        bodyHtml: `
+          <p style="margin:0 0 12px 0;">Your role on Kilo Energy was changed from <strong>${escapeHtml(existing.role)}</strong> to <strong>${escapeHtml(newRole)}</strong> by <strong>${escapeHtml(actorName)}</strong>.</p>
+          <p style="margin:0;color:#5b6477;font-size:13px;">If this looks unexpected, contact your admin immediately.</p>
+        `,
+        footerNote: 'Security alerts are required and cannot be turned off.',
+      }),
+      smsBody: `Kilo: your role changed to ${newRole}. If unexpected, contact admin.`,
+      pushBody: `Role changed to ${newRole}`,
+    }).catch((err) => {
+      logger.error('security_role_changed_notification_failed', {
+        userId: id,
+        ...errorContext(err),
+      });
+    });
+  }
+
   return NextResponse.json({
     ...user,
     hasClerkAccount: !!user.clerkUserId,
