@@ -799,11 +799,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
           )}
-          {/* Per-user Preferences (theme + notifications). Reps, sub-dealers,
-              and PMs only — admins manage these from Settings → Appearance and
-              Settings → Notifications, so the sidebar link would be redundant
-              for them. */}
-          {currentRole !== 'admin' && (
+          {/* Per-user Preferences (theme + notifications). Visible to reps,
+              sub-dealers, PMs, AND admins-viewing-as-rep — admins managing
+              their own settings go through Settings → Appearance / Notifications,
+              so the sidebar link is hidden for actual admins (effectiveRole is
+              admin only when not impersonating). Same View-As parity rule the
+              rest of the app follows. */}
+          {effectiveRole !== 'admin' && (
             <Link
               href="/dashboard/preferences"
               title={showCollapsed ? 'Preferences' : undefined}

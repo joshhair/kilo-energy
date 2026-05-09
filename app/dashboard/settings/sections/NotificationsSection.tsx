@@ -165,25 +165,20 @@ export default function NotificationsSection() {
 
   return (
     <div className="space-y-5">
-      {/* Header card */}
-      <div
-        className="rounded-xl p-6"
-        style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <Bell className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+      {/* Header — inline strip, not a heavyweight card. Title + one
+          short helper line; the per-category cards below carry the
+          rest of the context. Internal phasing notes intentionally
+          dropped — users don't need to read about Phase 4/5 internals. */}
+      <div className="flex items-center gap-3 px-1">
+        <Bell className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent-emerald-text)' }} />
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
             Notifications
           </h2>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Choose how Kilo reaches you. SMS and Push are coming soon.
+          </p>
         </div>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Choose how you want Kilo to reach out. Email is on by default for most events;
-          SMS and push add immediacy for the moments you don&apos;t want to miss.
-        </p>
-        <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-          SMS rolls out next sprint (Phase 4 — Twilio). Web Push lands shortly after
-          (Phase 5). Native app push follows the iOS/Android launches.
-        </p>
       </div>
 
       {/* Per-category preference cards */}
