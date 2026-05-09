@@ -192,9 +192,15 @@ export default function NotificationsSection() {
             <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
               {CATEGORY_LABEL[category]}
             </h3>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {CATEGORY_HINT[category]}
-            </p>
+            {/* Hide the category hint when the group contains a single event
+                — the event's own description below would just restate it
+                (see Mentions and Security). Multi-event groups keep the hint
+                so the user gets a feel for the category before scanning rows. */}
+            {events.length > 1 && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {CATEGORY_HINT[category]}
+              </p>
+            )}
           </div>
 
           {/* Channel header (desktop only — mobile uses per-channel rows) */}
