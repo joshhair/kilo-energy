@@ -81,22 +81,29 @@ export function EquipmentSnapshot({ projectId }: Props) {
           Product details weren&apos;t recorded for this deal. (Common for older deals.) Edit the project to set the product.
         </p>
       ) : (
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        // Always stack label-above-value, on every viewport. The previous
+        // `flex justify-between sm:block` flipped to side-by-side on mobile,
+        // which crammed long product names ("Hyundai/SEG 440 DC + P…") into
+        // the same row as the label and overlapped them. Vertical stacking
+        // is the rest-of-the-app pattern (see Project Details fields) and
+        // gives `truncate` actual room to clip cleanly. Each <div> uses
+        // min-w-0 so the truncate works inside the grid column.
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           {data.family && (
-            <div className="flex justify-between sm:block">
-              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Product family</dt>
+            <div className="min-w-0">
+              <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Product family</dt>
               <dd className="text-[var(--text-primary)] font-medium truncate">{data.family}</dd>
             </div>
           )}
           {data.productName && (
-            <div className="flex justify-between sm:block">
-              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Product</dt>
+            <div className="min-w-0">
+              <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Product</dt>
               <dd className="text-[var(--text-primary)] font-medium truncate">{data.productName}</dd>
             </div>
           )}
           {data.exportType && (
-            <div className="flex justify-between sm:block">
-              <dt className="text-[var(--text-muted)] text-xs sm:mb-0.5">Export type</dt>
+            <div className="min-w-0">
+              <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Export type</dt>
               <dd className="text-[var(--text-primary)] font-medium truncate">{data.exportType}</dd>
             </div>
           )}
