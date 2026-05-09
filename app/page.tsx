@@ -98,7 +98,7 @@ export default function LoginPage() {
   if (!clerkLoaded || !isSignedIn || (loading && !error)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-8"
-           style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
+           style={{ background: 'linear-gradient(135deg, #03060c 0%, #060a14 60%, #060a14 100%)' }}>
         {/* Logo icon — uses the designed PWA icon so splash matches the
             app icon on the home screen and the dashboard loading variant */}
         <div className="animate-splash flex flex-col items-center gap-6">
@@ -136,7 +136,7 @@ export default function LoginPage() {
   // Access denied or error state
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-         style={{ background: 'linear-gradient(135deg, #0b0d11 0%, #0f1117 60%, #0f1117 100%)' }}>
+         style={{ background: 'linear-gradient(135deg, #03060c 0%, #060a14 60%, #060a14 100%)' }}>
 
       {/* Background grid */}
       <div className="absolute inset-0 opacity-[0.03]"

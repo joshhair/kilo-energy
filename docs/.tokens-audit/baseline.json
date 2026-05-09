@@ -1,5 +1,5 @@
 {
-  "hex": 437,
-  "rgba": 679,
-  "_comment": "Frozen baseline for check-design-tokens.mjs. Counts are total raw color literals across app/ and lib/ (excluding tests, generated code, SVG illustration files). hex includes #fff/#000 (kept-raw per docs/design-tokens.md), brand mark color, and SVG fills. rgba includes white-overlay glass effects with varying alphas, dark surface scrims, and one-off effect colors. The check fails if either count grows above this baseline. If you intentionally add a raw color, update this baseline in the same commit and explain why in the commit message."
+  "hex": 316,
+  "rgba": 159,
+  "_comment": "Frozen baseline for check-design-tokens.mjs. Counts are total raw color literals across app/ and lib/ (excluding tests, generated code, SVG illustration files). hex includes #fff/#000 (kept-raw per docs/design-tokens.md), brand mark color, and SVG fills. rgba includes white-overlay glass effects with varying alphas, dark surface scrims, and one-off effect colors. The check fails if either count grows above this baseline. If you intentionally add a raw color, update this baseline in the same commit and explain why in the commit message. Bumped 2026-05-08 to lock in the dark-mode rebalance + prior consistency-infra wins (hex 437 → 316, rgba 679 → 159)."
 }

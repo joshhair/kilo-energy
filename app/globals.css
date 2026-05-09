@@ -15,11 +15,17 @@
      ═══════════════════════════════════════════════════════════════════════ */
 
   /* ── Surface (5) ────────────────────────────────────────────────────── */
-  --surface-page: #050d18;
-  --surface-card: #161920;
+  /* Dark-mode rebalance 2026-05-08: page bg pulled toward near-black to
+     match Josh's "even darker navy" preference. Surface ladder preserves
+     the elevation pattern (page → pressed → card, lightest at the front).
+     Pressed is intentionally between page and card — used for hover /
+     pressed states on top of cards, where it should read as INSET
+     (slightly darker) rather than lifted. */
+  --surface-page: #03060c;     /* was #050d18 — near-black with navy hint */
+  --surface-card: #11151e;     /* was #161920 — slightly deeper to keep elevation gap */
   --surface-elevated: #1d2028;
   --surface-overlay: rgba(0, 0, 0, 0.5);
-  --surface-pressed: #0d1525;
+  --surface-pressed: #0a0e16;  /* was #0d1525 — between page and card */
 
   /* ── Text (4) ───────────────────────────────────────────────────────── */
   --text-primary: #f0f2f7;
@@ -28,8 +34,11 @@
   --text-dim: #7a86a0;          /* tuned to ≥4.5:1 on surface-card+page (was #445577 → 2.35:1, failed AA) */
 
   /* ── Border (3) ─────────────────────────────────────────────────────── */
-  --border-default: #272b35;
-  --border-subtle: #1a2840;
+  /* Bumped slightly lighter (2026-05-08) so borders stay visible against
+     the deeper page bg. Old #272b35 read fine on #161920 but felt thin
+     against #11151e/#03060c. */
+  --border-default: #2c3140;   /* was #272b35 */
+  --border-subtle: #1d2535;    /* was #1a2840 — slightly cooler, still subtle */
   --border-strong: #334155;
 
   /* ── Accent — 7 colors × 4 variants (28 tokens) ─────────────────────── */
@@ -229,17 +238,17 @@
    data-theme="light" applied. */
 [data-force-dark] {
   color-scheme: dark;
-  --surface-page: #050d18;
-  --surface-card: #161920;
+  --surface-page: #03060c;
+  --surface-card: #11151e;
   --surface-elevated: #1d2028;
   --surface-overlay: rgba(0, 0, 0, 0.5);
-  --surface-pressed: #0d1525;
+  --surface-pressed: #0a0e16;
   --text-primary: #f0f2f7;
   --text-secondary: #c2c8d8;
   --text-muted: #8899aa;
   --text-dim: #7a86a0;
-  --border-default: #272b35;
-  --border-subtle: #1a2840;
+  --border-default: #2c3140;
+  --border-subtle: #1d2535;
   --border-strong: #334155;
   --accent-emerald-soft: rgba(0, 229, 160, 0.10);
   --accent-emerald-glow: rgba(0, 229, 160, 0.30);

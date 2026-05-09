@@ -6,7 +6,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #03060c 0%, #050b18 50%, #0a1830 100%)' }}
     >
       <header className="px-6 py-5 border-b border-white/5">
         <Link href="/" className="inline-flex items-baseline gap-1.5">

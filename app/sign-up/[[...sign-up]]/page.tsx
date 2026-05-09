@@ -14,7 +14,7 @@ export default function SignUpPage() {
       data-force-dark
       className="min-h-screen flex flex-col items-center justify-center px-1 sm:px-5 relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #050d18 0%, #0a1628 50%, #0d2040 100%)',
+        background: 'linear-gradient(135deg, #03060c 0%, #050b18 50%, #0a1830 100%)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
       }}
