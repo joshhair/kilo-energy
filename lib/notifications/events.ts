@@ -71,13 +71,6 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
   },
   {
-    type: 'milestone_install_scheduled',
-    label: 'Install scheduled',
-    description: 'An install date was booked on one of your deals.',
-    category: 'projects',
-    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
-  },
-  {
     type: 'milestone_pto_granted',
     label: 'PTO granted',
     description: 'A deal you\'re on got Permission to Operate.',

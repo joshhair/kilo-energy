@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dbAdmin } from '@/lib/db';
 import { logger, errorContext } from '@/lib/logger';
 import { verifySvixSignature } from '@/lib/svix-verify';
+import { notify } from '@/lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '@/lib/email-templates/notification';
 
 // POST /api/webhooks/resend — Resend delivery-status webhook receiver.
 //
@@ -165,6 +167,81 @@ export async function POST(req: NextRequest) {
     emailOk: emailResult.status === 'fulfilled',
     notificationOk: notificationResult.status === 'fulfilled',
   });
+
+  // Handoff bounce alert — fire ONLY on bounced/complained/failed for an
+  // EmailDelivery row that's tied to a project (i.e. an installer handoff
+  // or test send). Skip delivered. Notify admin + internal PM audience
+  // (event registry already restricts handoff_bounced to those roles).
+  if (
+    emailRowsUpdated > 0 &&
+    (event.type === 'email.bounced' || event.type === 'email.complained' || event.type === 'email.failed')
+  ) {
+    try {
+      const delivery = await dbAdmin.emailDelivery.findFirst({
+        where: { providerMessageId: messageId },
+        select: {
+          id: true,
+          subject: true,
+          toEmails: true,
+          errorReason: true,
+          isTest: true,
+          project: { select: { id: true, customerName: true } },
+          installer: { select: { name: true } },
+        },
+      });
+      // Skip test sends — those are admin self-tests, not real ops failures.
+      if (delivery && !delivery.isTest && delivery.project) {
+        const admins = await dbAdmin.user.findMany({
+          where: {
+            active: true,
+            OR: [
+              { role: 'admin' },
+              { role: 'project_manager', scopedInstallerId: null },
+            ],
+          },
+          select: { id: true },
+        });
+        const projectUrl = `${process.env.APP_URL || 'https://app.kiloenergies.com'}/dashboard/projects/${delivery.project.id}`;
+        const installerName = delivery.installer?.name ?? 'an installer';
+        const reason = delivery.errorReason ?? 'Bounced';
+        const headlineVerb =
+          event.type === 'email.complained' ? 'flagged as spam' :
+          event.type === 'email.failed'     ? 'failed to send' :
+          'bounced';
+        const heading = `Handoff ${headlineVerb} — ${delivery.project.customerName}`;
+
+        await Promise.all(
+          admins.map((a) =>
+            notify({
+              type: 'handoff_bounced',
+              userId: a.id,
+              projectId: delivery.project!.id,
+              subject: heading,
+              emailHtml: renderNotificationEmail({
+                heading,
+                bodyHtml: `
+                  <p style="margin:0 0 12px 0;">The handoff email to <strong>${escapeHtml(installerName)}</strong> for <strong>${escapeHtml(delivery.project!.customerName)}</strong> ${headlineVerb}.</p>
+                  <p style="margin:0 0 12px 0;color:#5b6477;font-size:13px;">Reason: ${escapeHtml(reason)}</p>
+                  <p style="margin:0;color:#5b6477;font-size:12px;">Recipients: ${escapeHtml(delivery.toEmails)}</p>
+                `,
+                cta: { label: 'Open deal in Kilo', url: projectUrl },
+                footerNote: 'Sent because you have handoff-bounce alerts on. Manage at /dashboard/preferences.',
+              }),
+              smsBody: `Kilo: handoff ${headlineVerb} for ${delivery.project!.customerName}.`,
+              pushBody: `Handoff ${headlineVerb}: ${delivery.project!.customerName}`,
+            }),
+          ),
+        );
+      }
+    } catch (err) {
+      // Don't take down the webhook over a notification failure.
+      logger.error('handoff_bounce_notification_failed', {
+        messageId,
+        ...errorContext(err),
+      });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     rowsUpdated: emailRowsUpdated + notificationRowsUpdated,

@@ -38,20 +38,48 @@ function* walk(dir) {
   }
 }
 
-function findNotifyCalls(file) {
+function findNotifyCalls(file, registered) {
   const src = fs.readFileSync(file, 'utf8');
   const calls = [];
-  // Match: notify( ... type: 'foo' ... ) within a small window. Cheap regex
-  // beats a full parser for our needs — only false positives are explicit
-  // `notify` test mocks, which we filter by ignoring lines containing `vi.mock`.
-  const re = /\bnotify\s*\(\s*\{[\s\S]*?\btype:\s*'([a-z][a-z0-9_]*)'/g;
+  // Two-pass detection:
+  //
+  // Pass A — direct literal: `notify({ ... type: 'foo' ... })`. Catches
+  // the common case where the type is hard-coded in the call.
+  const directRe = /\bnotify\s*\(\s*\{[\s\S]*?\btype:\s*'([a-z][a-z0-9_]*)'/g;
   let m;
-  while ((m = re.exec(src)) !== null) {
-    const typeStr = m[1];
-    // Compute line number from char offset.
+  while ((m = directRe.exec(src)) !== null) {
     const before = src.slice(0, m.index);
-    const line = before.split('\n').length;
-    calls.push({ file: path.relative(ROOT, file), line, type: typeStr });
+    calls.push({
+      file: path.relative(ROOT, file),
+      line: before.split('\n').length,
+      type: m[1],
+    });
+  }
+  // Pass B — indirect literal: any registered event-type string literal
+  // appearing in a file that imports `notify`. Catches the dispatcher
+  // pattern where eventType is computed from a switch / ternary and
+  // passed in via variable. Skip the registry itself (handled in main()).
+  // The TS type system already guards against typos in the variable
+  // assignment, but we still want the gate to confirm the literal lives
+  // in this file so a refactor that drops the call site is caught.
+  const importsNotify = /\bimport\b[^;]*\bnotify\b[^;]*from\s+['"][^'"]*notifications\/service['"]/.test(src);
+  if (importsNotify) {
+    for (const t of registered) {
+      // Word-boundary-ish: surround with quotes so we only match string literals.
+      const lit = new RegExp(`['"]${t}['"]`, 'g');
+      let m2;
+      while ((m2 = lit.exec(src)) !== null) {
+        const before = src.slice(0, m2.index);
+        const line = before.split('\n').length;
+        // Don't double-count if Pass A already saw this exact (file, line, type).
+        if (calls.some((c) => c.file === path.relative(ROOT, file) && c.line === line && c.type === t)) continue;
+        calls.push({
+          file: path.relative(ROOT, file),
+          line,
+          type: t,
+        });
+      }
+    }
   }
   return calls;
 }
@@ -65,7 +93,7 @@ function main() {
     for (const file of walk(abs)) {
       // Skip the registry itself + anything under lib/notifications.
       if (file.includes(path.sep + 'notifications' + path.sep)) continue;
-      allCalls.push(...findNotifyCalls(file));
+      allCalls.push(...findNotifyCalls(file, registered));
     }
   }
 

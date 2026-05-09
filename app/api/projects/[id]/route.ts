@@ -9,7 +9,9 @@ import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNulla
 import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib/commission-server';
 import { fromDollars } from '../../../../lib/money';
 import type { InstallerBaseline } from '../../../../lib/data';
-import { logger } from '../../../../lib/logger';
+import { logger, errorContext } from '../../../../lib/logger';
+import { notify } from '../../../../lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '../../../../lib/email-templates/notification';
 
 // Financial fields project managers must NOT be able to modify
 const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
@@ -601,6 +603,67 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     phase: project.phase,
     fieldsChanged: Object.keys(data).length,
   });
+
+  // Phase-change notifications — fan out to closer, setter, trainer, and
+  // sub-dealer (if any), skipping the actor making the change. Choose the
+  // event type by destination phase: cancellation and PTO get their own
+  // events (so users can opt out of just those without losing all phase
+  // updates); everything else uses the generic project_phase_change.
+  if (phaseChanged) {
+    const beforePhase = (before as Record<string, unknown> | undefined)?.phase as string | undefined;
+    const newPhase = project.phase;
+    const eventType =
+      newPhase === 'Cancelled'  ? 'project_cancelled' :
+      newPhase === 'PTO'        ? 'milestone_pto_granted' :
+      'project_phase_change';
+    const subjectByEvent: Record<string, string> = {
+      project_cancelled:     `Deal cancelled — ${project.customerName}`,
+      milestone_pto_granted: `PTO granted — ${project.customerName}`,
+      project_phase_change:  `${project.customerName}: ${beforePhase ?? '?'} → ${newPhase}`,
+    };
+    const headingByEvent: Record<string, string> = {
+      project_cancelled:     `Deal cancelled`,
+      milestone_pto_granted: `Permission to operate granted`,
+      project_phase_change:  `Phase updated`,
+    };
+    const projectUrl = `${process.env.APP_URL || 'https://app.kiloenergies.com'}/dashboard/projects/${id}`;
+    const actorName = `${user.firstName} ${user.lastName}`;
+    const recipients = Array.from(new Set([
+      project.closerId,
+      project.setterId,
+      project.trainerId,
+      project.subDealerId,
+    ].filter((uid): uid is string => !!uid && uid !== user.id)));
+
+    Promise.all(
+      recipients.map((uid) =>
+        notify({
+          type: eventType,
+          userId: uid,
+          projectId: id,
+          subject: subjectByEvent[eventType],
+          emailHtml: renderNotificationEmail({
+            heading: headingByEvent[eventType],
+            bodyHtml: `
+              <p style="margin:0 0 12px 0;">The <strong>${escapeHtml(project.customerName)}</strong> deal moved from <strong>${escapeHtml(beforePhase ?? '—')}</strong> to <strong>${escapeHtml(newPhase)}</strong>.</p>
+              <p style="margin:0;color:#5b6477;font-size:13px;">Updated by ${escapeHtml(actorName)}.</p>
+            `,
+            cta: { label: 'Open deal in Kilo', url: projectUrl },
+            footerNote: 'Manage which phase changes you hear about at /dashboard/preferences.',
+          }),
+          smsBody: `Kilo: ${project.customerName} → ${newPhase} (was ${beforePhase ?? '—'}).`,
+          pushBody: `${project.customerName}: ${beforePhase ?? '—'} → ${newPhase}`,
+        }),
+      ),
+    ).catch((err) => {
+      logger.error('phase_change_notification_fanout_failed', {
+        projectId: id,
+        recipientCount: recipients.length,
+        eventType,
+        ...errorContext(err),
+      });
+    });
+  }
 
   const dto = {
     ...serializeProject(project),
