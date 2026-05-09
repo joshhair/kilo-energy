@@ -149,14 +149,11 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
     mandatory: true,
   },
-  {
-    type: 'security_login_new_device',
-    label: 'New device sign-in',
-    description: 'Your account was accessed from a device we haven\'t seen before.',
-    category: 'security',
-    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
-    mandatory: true,
-  },
+  // Note: "new device sign-in" used to live here. Removed because Clerk
+  // already sends that email by default (Clerk Dashboard → Customization
+  // → Emails). Adding our own version would produce duplicate emails on
+  // every new-device login. Clerk's signal (session-created webhook) is
+  // also the canonical source — they own the auth state, we don't.
 ];
 
 /** Map for O(1) lookup. Built once at module load. */

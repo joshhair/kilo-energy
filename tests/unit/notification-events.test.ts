@@ -61,7 +61,12 @@ describe('Notification event registry', () => {
   it('chargeback + security events are mandatory', () => {
     expect(getEventDefinition('pay_chargeback')?.mandatory).toBe(true);
     expect(getEventDefinition('security_role_changed')?.mandatory).toBe(true);
-    expect(getEventDefinition('security_login_new_device')?.mandatory).toBe(true);
+  });
+
+  it('does not duplicate Clerk-provided security emails', () => {
+    // New-device sign-in is handled by Clerk's built-in security email.
+    // Re-implementing it here would double-send on every new login.
+    expect(getEventDefinition('security_login_new_device')).toBeUndefined();
   });
 
   it('admin-audience events do NOT show up for reps', () => {
