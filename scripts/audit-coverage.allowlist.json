@@ -1,8 +1,7 @@
 {
   "$schema": "Inventory of mutating /api routes that do NOT call logChange. Each entry is either (a) a permanent volume exemption (chat/note/activity self-log) or (b) a TODO scheduled for a follow-up audit-coverage PR. Removing an entry is fine once the route either calls logChange or is deleted. Adding an entry requires a one-sentence reason that would survive code review.",
 
-  "app/api/projects/[id]/messages/route.ts": "Chat-volume exempt — every project conversation message would drown the audit signal. Messages are immutable + visible in the project timeline anyway.",
-  "app/api/projects/[id]/messages/[messageId]/route.ts": "Chat-volume exempt — paired with messages POST.",
+  "app/api/projects/[id]/messages/route.ts": "Chat-volume exempt on POST — every project conversation message would drown the audit signal. Messages are immutable + visible in the project timeline anyway. The DELETE handler in [messageId]/route.ts DOES call logChange (deletions are forensically interesting; sends are not).",
   "app/api/projects/[id]/notes/route.ts": "Rep-note volume exempt — high-frequency UX, not commission-affecting.",
   "app/api/projects/[id]/notes/[noteId]/route.ts": "Rep-note volume exempt — paired with notes POST.",
   "app/api/projects/[id]/activity/route.ts": "Activity log IS the audit surface for project lifecycle events — auditing the audit-writer would be circular.",

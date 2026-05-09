@@ -92,19 +92,19 @@ export function EquipmentSnapshot({ projectId }: Props) {
           {data.family && (
             <div className="min-w-0">
               <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Product family</dt>
-              <dd className="text-[var(--text-primary)] font-medium truncate">{data.family}</dd>
+              <dd className="text-[var(--text-primary)] font-medium break-words">{data.family}</dd>
             </div>
           )}
           {data.productName && (
             <div className="min-w-0">
               <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Product</dt>
-              <dd className="text-[var(--text-primary)] font-medium truncate">{data.productName}</dd>
+              <dd className="text-[var(--text-primary)] font-medium break-words">{data.productName}</dd>
             </div>
           )}
           {data.exportType && (
             <div className="min-w-0">
               <dt className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Export type</dt>
-              <dd className="text-[var(--text-primary)] font-medium truncate">{data.exportType}</dd>
+              <dd className="text-[var(--text-primary)] font-medium break-words">{data.exportType}</dd>
             </div>
           )}
         </dl>

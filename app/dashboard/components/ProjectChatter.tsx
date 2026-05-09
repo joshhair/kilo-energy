@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar } from 'lucide-react';
+import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -424,6 +424,39 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     [projectId, currentRepId, currentRepName]
   );
 
+  // ── Delete a message ───────────────────────────────────────────────────────
+  // Allowed for the message's author + admin/PM. Optimistic remove with
+  // confirm dialog (window.confirm — matches the inline-delete pattern
+  // ProjectNotes uses; not worth a full modal for a chat row). On failure
+  // we re-fetch from /messages so local state recovers without trying to
+  // re-insert the row at the same index.
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      const ok = typeof window !== 'undefined' && window.confirm('Delete this message? This can\'t be undone.');
+      if (!ok) return;
+      const removed = messages.find((m) => m.id === messageId);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      try {
+        const res = await fetch(`/api/projects/${projectId}/messages/${messageId}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || `HTTP ${res.status}`);
+        }
+        toast('Message deleted', 'info');
+      } catch (err) {
+        // Revert: re-insert the removed row in its original slot.
+        if (removed) {
+          setMessages((prev) => {
+            const arr = [...prev, removed];
+            return arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+          });
+        }
+        toast(`Failed to delete: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+      }
+    },
+    [messages, projectId, toast]
+  );
+
   // ── Set due date on check item ──────────────────────────────────────────────
   const setCheckItemDueDate = useCallback(
     (messageId: string, checkItemId: string, dueDate: string | null) => {
@@ -607,10 +640,18 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           messages.map((msg, idx) => {
             const isOwn = msg.authorId === currentRepId;
             const badge = ROLE_BADGE[msg.authorRole] ?? ROLE_BADGE.rep;
+            // Delete is allowed for: the author of the message, admins, and
+            // project managers. Optimistic UI is implemented via deleteMessage().
+            const canDelete = isOwn || currentRole === 'admin' || currentRole === 'project_manager';
+            // Optimistic-row guard: a message with id starting with 'temp-'
+            // is the optimistic placeholder we add before the server returns
+            // the real id. Don't expose delete on it (the row swaps to the
+            // real row a moment later anyway).
+            const isOptimistic = msg.id.startsWith('temp-');
             return (
               <div
                 key={msg.id}
-                className={`rounded-xl p-4 transition-all animate-fade-in-up ${
+                className={`group rounded-xl p-4 transition-all animate-fade-in-up ${
                   isOwn ? 'bg-[var(--accent-emerald-solid)]/[0.05] border border-[var(--accent-emerald-solid)]/10' : 'bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/60'
                 }`}
                 style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
@@ -627,6 +668,23 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                     </span>
                   </div>
                   <span className="text-[var(--text-dim)] text-xs flex-shrink-0">{relativeTime(msg.createdAt)}</span>
+                  {canDelete && !isOptimistic && (
+                    // Visibility: always-on at low opacity (mobile has no
+                    // hover), brightens on hover for desktop. Tap target is
+                    // 28×28 minimum so phones can hit it cleanly.
+                    <button
+                      type="button"
+                      onClick={() => deleteMessage(msg.id)}
+                      aria-label="Delete message"
+                      title="Delete message"
+                      className="flex-shrink-0 p-1.5 rounded-md transition-all opacity-50 hover:opacity-100 focus-visible:opacity-100 active:scale-[0.92] hover:bg-[var(--accent-red-solid)]/10"
+                      style={{ color: 'var(--text-muted)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-red-text)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Message text */}
