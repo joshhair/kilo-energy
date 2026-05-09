@@ -27,7 +27,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2 } from 'lucide-react';
 import { Switch } from '../../../../components/ui/Switch';
+import { SelectMenu } from '../../../../components/ui/SelectMenu';
 import { useToast } from '../../../../lib/toast';
+
+const CADENCE_OPTIONS: { value: DigestMode; label: string }[] = [
+  { value: 'instant', label: 'Instant' },
+  { value: 'daily_digest', label: 'Daily digest' },
+  { value: 'weekly_digest', label: 'Weekly digest' },
+  { value: 'off', label: 'Off' },
+];
 
 type DigestMode = 'instant' | 'daily_digest' | 'weekly_digest' | 'off';
 
@@ -274,24 +282,14 @@ export default function NotificationsSection() {
                     <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       Cadence
                     </span>
-                    <select
-                      aria-label={`Cadence for ${e.label}`}
+                    <SelectMenu<DigestMode>
                       value={e.digestMode}
-                      onChange={(ev) => updateRow(e.type, { digestMode: ev.target.value as DigestMode })}
+                      onChange={(v) => updateRow(e.type, { digestMode: v })}
+                      options={CADENCE_OPTIONS}
+                      ariaLabel={`Cadence for ${e.label}`}
                       disabled={e.mandatory}
-                      className="text-sm rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] disabled:opacity-50"
-                      style={{
-                        background: 'var(--surface-pressed)',
-                        color: 'var(--text-primary)',
-                        border: '1px solid var(--border-default)',
-                        minWidth: 132,
-                      }}
-                    >
-                      <option value="instant">Instant</option>
-                      <option value="daily_digest">Daily digest</option>
-                      <option value="weekly_digest">Weekly digest</option>
-                      <option value="off">Off</option>
-                    </select>
+                      alignRight
+                    />
                   </div>
                 </div>
 
@@ -311,24 +309,15 @@ export default function NotificationsSection() {
                   onToggle={(v) => updateRow(e.type, { pushEnabled: v })}
                   ariaLabel="Toggle Push"
                 />
-                <div className="hidden md:block md:text-right">
-                  <select
-                    aria-label={`Cadence for ${e.label}`}
+                <div className="hidden md:flex md:justify-end">
+                  <SelectMenu<DigestMode>
                     value={e.digestMode}
-                    onChange={(ev) => updateRow(e.type, { digestMode: ev.target.value as DigestMode })}
+                    onChange={(v) => updateRow(e.type, { digestMode: v })}
+                    options={CADENCE_OPTIONS}
+                    ariaLabel={`Cadence for ${e.label}`}
                     disabled={e.mandatory}
-                    className="text-xs rounded-md px-2 py-1.5 outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] disabled:opacity-50"
-                    style={{
-                      background: 'var(--surface-pressed)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-default)',
-                    }}
-                  >
-                    <option value="instant">Instant</option>
-                    <option value="daily_digest">Daily digest</option>
-                    <option value="weekly_digest">Weekly digest</option>
-                    <option value="off">Off</option>
-                  </select>
+                    alignRight
+                  />
                 </div>
               </li>
             ))}
