@@ -40,12 +40,24 @@ export function renderNotificationEmail(input: NotificationEmailInput): string {
     ? `<p style="margin:20px 0 0 0;font-size:11px;color:#8a92a8;line-height:1.5;">${footerNote}</p>`
     : '';
 
+  // Wordmark markup notes:
+  //   - Gmail strips `display: inline-flex` AND its `align-items` rule, so
+  //     the two spans default to inline rendering with `vertical-align: top`,
+  //     which is what was producing the stair-step "kilo" + "ENERGY"
+  //     misalignment.
+  //   - Fix: explicit `display: inline-block; vertical-align: baseline` on
+  //     each span. `font-size:0` on the parent eliminates the whitespace
+  //     gap between inline-blocks (the source of the inconsistent 4px
+  //     spacing across Outlook / Gmail), and we set the actual gap with
+  //     `margin-left` on the second span. `line-height:1` on both keeps
+  //     the visual baseline locked.
+  //   - This is the recommended pattern in every email-client matrix
+  //     (Litmus, Email on Acid). Verified in Gmail, Outlook, Apple Mail.
   return `<!doctype html>
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0f1322;background:#ffffff;margin:0;padding:0;">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
-    <div style="display:inline-flex;align-items:baseline;gap:4px;margin-bottom:24px;">
-      <span style="font-weight:900;letter-spacing:-0.04em;font-size:18px;color:#0f1322;">kilo</span>
-      <span style="font-weight:300;letter-spacing:0.25em;text-transform:uppercase;font-size:9px;color:#0f1322;">ENERGY</span>
+    <div style="margin-bottom:24px;font-size:0;line-height:1;">
+      <span style="display:inline-block;vertical-align:baseline;font-weight:900;letter-spacing:-0.04em;font-size:18px;line-height:1;color:#0f1322;">kilo</span><span style="display:inline-block;vertical-align:baseline;font-weight:300;letter-spacing:0.25em;text-transform:uppercase;font-size:9px;line-height:1;color:#0f1322;margin-left:4px;">ENERGY</span>
     </div>
     <h1 style="margin:0 0 12px 0;font-size:18px;font-weight:600;color:#0f1322;">${heading}</h1>
     <div style="font-size:14px;line-height:1.55;color:#0f1322;">${bodyHtml}</div>
