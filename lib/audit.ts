@@ -159,6 +159,13 @@ export const AUDITED_FIELDS = {
     "installerId",
     "financerId",
     "cancellationReason",
+    // Lead-source attribution. Added 2026-05-10 when retroactive blitz
+    // claims surfaced (deal sold on a blitz day where the closer didn't
+    // tag it correctly at submit time). Both fields move together —
+    // leadSource='blitz' implies blitzId is set; flipping leadSource off
+    // 'blitz' clears blitzId in the same PATCH.
+    "leadSource",
+    "blitzId",
   ] as const,
   User: ["role", "repType", "active", "email", "firstName", "lastName", "scopedInstallerId"] as const,
   PayrollEntry: ["status", "amountCents", "paymentStage"] as const,

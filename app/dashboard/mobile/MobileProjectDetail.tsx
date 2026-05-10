@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
@@ -73,6 +73,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
+  // Admin OR full-scope (internal) PM — vendor PMs (scopedInstallerId set)
+  // and admins-viewing-as-scoped-PM are excluded from internal-only edits
+  // like Lead Source / Blitz attribution.
+  const canSeeInternalOnlyUi = isAdmin || (isPM && !viewAsUser?.scopedInstallerId);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -119,13 +123,40 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     additionalSetters: CoPartyDraft[];
     trainerId: string;
     trainerRate: string;
+    leadSource: string;
+    blitzId: string;
   }>({
     installer: '', financer: '', productType: '', kWSize: '', netPPW: '', soldDate: '',
     setterId: '', notes: '', useBaselineOverride: false,
     overrideCloserPerW: '', overrideSetterPerW: '', overrideKiloPerW: '',
     solarTechProductId: '', additionalClosers: [], additionalSetters: [],
     trainerId: '', trainerRate: '',
+    leadSource: '', blitzId: '',
   });
+
+  // Blitz list — used by the mobile edit sheet's Lead Source / Blitz
+  // controls. Filtered to those the project's closer is approved on
+  // (mirrors the API's blitzParticipant.findFirst gate so the admin
+  // can't pick a blitz that would 403).
+  const [rawBlitzes, setRawBlitzes] = useState<Array<{
+    id: string; name: string; status: string;
+    participants?: Array<{ userId: string; joinStatus: string }>;
+  }>>([]);
+  useEffect(() => {
+    fetch('/api/blitzes')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setRawBlitzes(Array.isArray(data) ? data : []))
+      .catch(() => { /* silent — falls back to "no blitzes available" */ });
+  }, []);
+  const editAvailableBlitzes = useMemo(() => {
+    const closerId = project?.repId;
+    if (!closerId) return [];
+    return rawBlitzes.filter((b) => {
+      const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+      if (!statusOk) return false;
+      return !!b.participants?.some((p) => p.userId === closerId && p.joinStatus === 'approved');
+    });
+  }, [rawBlitzes, project?.repId]);
 
   useEffect(() => {
     document.title = project ? `${project.customerName} | Kilo Energy` : 'Project | Kilo Energy';
@@ -255,6 +286,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       })),
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
+      leadSource: project.leadSource ?? '',
+      blitzId: project.blitzId ?? '',
     });
     setEditErrors({});
     setMoreSheetOpen(false);
@@ -323,6 +356,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const newSetterM2Amount = hasSetter ? Math.round(setterM2Full * (installPayPct / 100) * 100) / 100 : 0;
     const newSetterM3Amount = hasSetter && hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
 
+    // Lead source / blitz pairing rule — leadSource='blitz' implies a
+    // blitzId; any other source clears blitzId. Mirrors the desktop
+    // modal + new-deal contract so we can't ship orphan attribution.
+    const nextLeadSource = editDraft.leadSource || null;
+    const nextBlitzId = editDraft.leadSource === 'blitz' ? (editDraft.blitzId || null) : null;
+
     updateProject({
       setterId: editDraft.setterId || undefined,
       setterName: setterRep?.name ?? (editDraft.setterId ? project.setterName : undefined),
@@ -338,6 +377,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       setterM1Amount: newSetterM1Amount,
       setterM2Amount: newSetterM2Amount,
       setterM3Amount: newSetterM3Amount,
+      leadSource: nextLeadSource ?? undefined,
+      blitzId: nextBlitzId ?? undefined,
     });
     setEditSheetOpen(false);
     toast('Project updated', 'success');
@@ -1349,6 +1390,79 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               ))}
             </select>
           </div>
+
+          {/* Lead Source + Blitz attribution — admin / internal-PM only.
+              Mirrors the desktop edit modal: 6-pill picker + conditional
+              blitz dropdown filtered to blitzes the closer is approved on. */}
+          {canSeeInternalOnlyUi && (
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                Lead Source (optional)
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'organic', label: 'Organic' },
+                  { value: 'referral', label: 'Referral' },
+                  { value: 'blitz', label: 'Blitz' },
+                  { value: 'door_knock', label: 'Door Knock' },
+                  { value: 'web', label: 'Web Lead' },
+                  { value: 'other', label: 'Other' },
+                ] as const).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setEditDraft((d) => {
+                        const next = d.leadSource === value ? '' : value;
+                        // Clear blitzId when leadSource is no longer 'blitz' —
+                        // prevents orphan attribution.
+                        return {
+                          ...d,
+                          leadSource: next,
+                          blitzId: next === 'blitz' ? d.blitzId : '',
+                        };
+                      });
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={
+                      editDraft.leadSource === value
+                        ? {
+                            background: 'var(--accent-emerald-solid)',
+                            border: '1px solid var(--accent-emerald-solid)',
+                            color: 'var(--surface-page)',
+                            boxShadow: '0 0 10px var(--accent-emerald-glow)',
+                          }
+                        : {
+                            background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
+                            border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
+                            color: 'var(--text-secondary)',
+                          }
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {editDraft.leadSource === 'blitz' && (
+                <select
+                  value={editDraft.blitzId}
+                  onChange={(e) => setEditDraft((d) => ({ ...d, blitzId: e.target.value }))}
+                  className="mt-2 w-full min-h-[48px] outline-none"
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+                >
+                  <option value="">— Select Blitz —</option>
+                  {editAvailableBlitzes.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              )}
+              {editDraft.leadSource === 'blitz' && editAvailableBlitzes.length === 0 && (
+                <p className="mt-1.5" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  No blitzes available for this closer. Add the closer as an approved participant first.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Notes */}
           <div>

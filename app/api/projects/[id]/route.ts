@@ -29,6 +29,11 @@ const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
 const REP_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
   ...PM_BLOCKED_FIELDS,
   'phase', 'closerId', 'setterId',
+  // Lead-source attribution. Reps shouldn't retroactively claim a blitz
+  // they weren't tagged into at submit time — that opens the "rep
+  // reattributes a teammate's deal to a blitz they were on" scenario.
+  // Admin/PM-only edit.
+  'leadSource', 'blitzId',
 ];
 
 // Vendor PMs (installer-side staff) can touch only operational fields:

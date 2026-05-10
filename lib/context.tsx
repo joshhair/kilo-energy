@@ -502,6 +502,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         installer: 'Installer', financer: 'Financer', productType: 'Product Type',
         kWSize: 'System Size (kW)', netPPW: 'Net PPW', soldDate: 'Sold Date',
         m1Amount: 'M1 Amount', m2Amount: 'M2 Amount',
+        // Lead source + blitz attribution. Editable from the project edit
+        // modal (admin/PM only). Activity entries help when reps look back
+        // at why a deal moved into / out of a blitz report.
+        leadSource: 'Lead Source', blitzId: 'Blitz',
       };
       // Trim + cap admin-supplied reason so we don't write unbounded
       // text into the activity feed. 200 chars is generous for a sentence

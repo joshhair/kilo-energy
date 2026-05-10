@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -98,7 +98,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // and they no longer earn override). Only set true via the Clear button.
     noChainTrainer: false,
     solarTechProductId: '',
+    // Lead-source attribution. Editable from the modal by admin/internal-PM
+    // only — see canSeeInternalOnlyUi gate where this section renders.
+    // Reps' updates would be stripped by the API anyway (REP_BLOCKED_FIELDS).
+    leadSource: '',
+    blitzId: '',
   });
+
+  // Blitz list — used by the edit modal's Lead Source / Blitz controls
+  // to surface only the blitzes this project's closer is approved on.
+  // Loaded once on mount; light-weight (a handful of rows).
+  const [rawBlitzes, setRawBlitzes] = useState<Array<{
+    id: string; name: string; status: string; startDate?: string; endDate?: string;
+    participants?: Array<{ userId: string; joinStatus: string }>;
+  }>>([]);
+  useEffect(() => {
+    fetch('/api/blitzes')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setRawBlitzes(Array.isArray(data) ? data : []))
+      .catch(() => { /* silent — control falls back to "no blitzes available" */ });
+  }, []);
+  const editAvailableBlitzes = useMemo(() => {
+    const closerId = project?.repId;
+    if (!closerId) return [];
+    return rawBlitzes.filter((b) => {
+      const statusOk = b.status === 'upcoming' || b.status === 'active' || b.status === 'completed';
+      if (!statusOk) return false;
+      // Only blitzes the project's closer is an approved participant on —
+      // matches the API's blitzParticipant.findFirst gate so the admin
+      // can't pick a blitz the closer isn't actually on (would 403).
+      return !!b.participants?.some((p) => p.userId === closerId && p.joinStatus === 'approved');
+    });
+  }, [rawBlitzes, project?.repId]);
 
   // ── Prev/Next project navigation ─────────────────────────────────────────
   const [navIds, setNavIds] = useState<string[]>([]);
@@ -392,6 +423,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
       noChainTrainer: project.noChainTrainer ?? false,
       solarTechProductId: project.solarTechProductId ?? '',
+      leadSource: project.leadSource ?? '',
+      blitzId: project.blitzId ?? '',
     });
     setEditErrors({});
     setShowEditModal(true);
@@ -488,6 +521,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
     const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
 
+    // Lead source / blitz pairing rule: leadSource='blitz' implies a
+    // blitzId is set; any other source clears blitzId. Mirror the
+    // new-deal form's contract so we can't ship orphan blitzIds.
+    const nextLeadSource = editVals.leadSource || null;
+    const nextBlitzId = editVals.leadSource === 'blitz' ? (editVals.blitzId || null) : null;
+
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
@@ -513,6 +552,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       noChainTrainer: editVals.noChainTrainer,
       solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
       ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
+      leadSource: nextLeadSource ?? undefined,
+      blitzId: nextBlitzId ?? undefined,
     });
     setShowEditModal(false);
     setEditErrors({});
@@ -1603,6 +1644,70 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   className={`w-full bg-[var(--surface-card)] border ${editErrors.soldDate ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`} />
                 {editErrors.soldDate && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.soldDate}</p>}
               </div>
+
+              {/* Lead Source + Blitz attribution — admin / internal-PM only.
+                  Reuses the new-deal form's pill picker UX so the experience
+                  is consistent. The Blitz dropdown only appears when source
+                  is 'blitz' and is filtered to blitzes the project's closer
+                  is approved on (matches the API's blitz-participant gate). */}
+              {canSeeInternalOnlyUi && (
+                <div>
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">
+                    Lead Source <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'organic', label: 'Organic' },
+                      { value: 'referral', label: 'Referral' },
+                      { value: 'blitz', label: 'Blitz' },
+                      { value: 'door_knock', label: 'Door Knock' },
+                      { value: 'web', label: 'Web Lead' },
+                      { value: 'other', label: 'Other' },
+                    ] as const).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setEditVals((v) => {
+                            const next = v.leadSource === value ? '' : value;
+                            // Clear blitzId whenever leadSource is no longer
+                            // 'blitz' — prevents orphan attribution.
+                            return {
+                              ...v,
+                              leadSource: next,
+                              blitzId: next === 'blitz' ? v.blitzId : '',
+                            };
+                          });
+                        }}
+                        className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                          editVals.leadSource === value
+                            ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_var(--accent-emerald-glow)]'
+                            : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {editVals.leadSource === 'blitz' && (
+                    <select
+                      value={editVals.blitzId}
+                      onChange={(e) => setEditVals((v) => ({ ...v, blitzId: e.target.value }))}
+                      className="mt-2 w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
+                    >
+                      <option value="">— Select Blitz —</option>
+                      {editAvailableBlitzes.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  {editVals.leadSource === 'blitz' && editAvailableBlitzes.length === 0 && (
+                    <p className="text-[var(--text-muted)] text-xs mt-1.5">
+                      No blitzes available for this closer. Add the closer as an approved participant first.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Notes */}
               <div>

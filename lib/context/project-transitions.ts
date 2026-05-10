@@ -80,6 +80,12 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   // Admin's "remove all trainers" flag — suppresses chain trainer
   // visibility + commission. Set true by the project sheet's Clear button.
   if ('noChainTrainer' in updates) dbUpdates.noChainTrainer = updates.noChainTrainer ?? false;
+  // Lead-source attribution. Both fields move together — flipping
+  // leadSource off 'blitz' should clear blitzId; the Edit Project modal
+  // enforces that pairing in the UI before calling updateProject. Empty
+  // strings normalize to undefined ('not set' → leave field unchanged).
+  if ('leadSource' in updates) dbUpdates.leadSource = updates.leadSource || null;
+  if ('blitzId' in updates) dbUpdates.blitzId = updates.blitzId || null;
   return dbUpdates;
 }
 
