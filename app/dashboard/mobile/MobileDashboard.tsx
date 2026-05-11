@@ -627,7 +627,7 @@ export default function MobileDashboard() {
                     <div className="flex-1 min-w-0 px-4 py-3">
                       <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <MobileBadge value={p.phase} />
+                        <MobileBadge value={p.phase} size="sm" />
                         <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                       </div>
                     </div>
@@ -700,7 +700,7 @@ export default function MobileDashboard() {
                     <p className="font-semibold text-[var(--text-primary)] truncate flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-1 pl-6">
-                    <MobileBadge value={p.phase} />
+                    <MobileBadge value={p.phase} size="sm" />
                     <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{stalledDays(p.phaseChangedAt ?? p.soldDate) !== null ? `Stalled ${stalledDays(p.phaseChangedAt ?? p.soldDate)}d` : '—'}</span>
                   </div>
                 </button>
@@ -727,7 +727,7 @@ export default function MobileDashboard() {
                   >
                     <p className="text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <MobileBadge value={p.phase} />
+                      <MobileBadge value={p.phase} size="sm" />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{relativeTime(p.soldDate)}</span>
                     </div>
                   </button>
@@ -862,7 +862,7 @@ export default function MobileDashboard() {
                   sitting under the grey "Xd in Phase" text). 2026-04-23. */}
               <p className="font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
               <div className="flex items-center gap-2 mt-1">
-                <MobileBadge value={item.phase} />
+                <MobileBadge value={item.phase} size="sm" />
                 <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{item.suffix}</span>
               </div>
             </button>
@@ -916,7 +916,7 @@ export default function MobileDashboard() {
                   <div className="flex-1 min-w-0 px-4 py-3">
                     <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <MobileBadge value={p.phase} />
+                      <MobileBadge value={p.phase} size="sm" />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
                     </div>
                   </div>

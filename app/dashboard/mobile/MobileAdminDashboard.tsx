@@ -684,7 +684,7 @@ export default function MobileAdminDashboard() {
                         </div>
                         <div className="flex items-center justify-between gap-2 mb-1.5">
                           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8125rem' }}>{p.repName ?? 'Unknown'} &middot; {p.kWSize} kW &middot; ${(p.netPPW ?? 0).toFixed(2)}/W</p>
-                          <MobileBadge value={p.phase} />
+                          <MobileBadge value={p.phase} size="sm" />
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {milestones.map(({ label, amount, paid }) =>

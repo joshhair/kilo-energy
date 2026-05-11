@@ -119,7 +119,7 @@ export default function BlitzDeals({ projects, approvedParticipantIds, showPayou
                   {closerName} · {p.kWSize?.toFixed(1)} kW · ${p.netPPW?.toFixed(2)}/W{role ? ` · ${role}` : ''}
                 </p>
                 <div className="mt-1">
-                  <MobileBadge value={p.phase} variant="phase" />
+                  <MobileBadge value={p.phase} variant="phase" size="sm" />
                 </div>
               </div>
               {showPayout && payout > 0 && (

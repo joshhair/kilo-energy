@@ -502,7 +502,7 @@ export default function MobileProjects() {
                     <span className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{project.customerName}</span>
                     {project.flagged && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
                   </div>
-                  <MobileBadge value={project.phase} />
+                  <MobileBadge value={project.phase} size="sm" />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-base min-w-0 truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
