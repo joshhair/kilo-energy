@@ -205,9 +205,16 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const statusLabel = blitz.status.charAt(0).toUpperCase() + blitz.status.slice(1);
 
+  // Surface pending join requests on the Reps tab so the leader doesn't
+  // have to open it to discover them. canManage gates this since reps
+  // can't act on pending rows anyway.
+  const pendingParticipantCount = canManage
+    ? (blitz?.participants?.filter((p: any) => p.joinStatus === 'pending').length ?? 0)
+    : 0;
+
   const tabs: BlitzTab[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: 'Reps' },
+    { key: 'participants', label: 'Reps', pendingBadge: pendingParticipantCount },
     { key: 'deals', label: 'Deals' },
     ...(isAdmin ? [{ key: 'costs' as BlitzTabKey, label: 'Costs' }] : []),
     ...(isAdmin ? [{ key: 'profitability' as BlitzTabKey, label: 'Profit' }] : []),

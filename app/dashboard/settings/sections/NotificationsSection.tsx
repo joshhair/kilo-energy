@@ -43,7 +43,7 @@ interface EventRow {
   type: string;
   label: string;
   description: string;
-  category: 'projects' | 'pay' | 'mentions' | 'admin' | 'security';
+  category: 'projects' | 'pay' | 'mentions' | 'blitz' | 'admin' | 'security';
   mandatory: boolean;
   emailEnabled: boolean;
   smsEnabled: boolean;
@@ -61,11 +61,12 @@ interface ApiResponse {
   events: EventRow[];
 }
 
-const CATEGORY_ORDER: EventRow['category'][] = ['mentions', 'projects', 'pay', 'admin', 'security'];
+const CATEGORY_ORDER: EventRow['category'][] = ['mentions', 'projects', 'blitz', 'pay', 'admin', 'security'];
 
 const CATEGORY_LABEL: Record<EventRow['category'], string> = {
   mentions: 'Mentions',
   projects: 'Projects',
+  blitz: 'Blitzes',
   pay: 'Pay',
   admin: 'Admin',
   security: 'Security',
@@ -74,6 +75,7 @@ const CATEGORY_LABEL: Record<EventRow['category'], string> = {
 const CATEGORY_HINT: Record<EventRow['category'], string> = {
   mentions: 'When someone tags you in a chat or task.',
   projects: 'Phase changes, install scheduling, PTO, cancellations.',
+  blitz: 'Join requests, blitz requests, and approvals.',
   pay: 'When commissions move toward your bank.',
   admin: 'Operational alerts for admins and project managers.',
   security: 'Account changes you can\'t opt out of.',

@@ -10,6 +10,9 @@ import {
 } from '../../../../../lib/schemas/business';
 import { logChange } from '../../../../../lib/audit';
 import { enforceRateLimit } from '../../../../../lib/rate-limit';
+import { notify } from '../../../../../lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '../../../../../lib/email-templates/notification';
+import { logger } from '../../../../../lib/logger';
 
 // POST /api/blitzes/[id]/participants — Add a participant
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, status: true, startDate: true, endDate: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, status: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   const effectiveStatus = deriveBlitzStatus(blitz);
   if (effectiveStatus === 'cancelled' || effectiveStatus === 'completed') {
@@ -162,6 +165,44 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     entityId: blitzId,
     detail: { addedUserId: body.userId, joinStatus },
   });
+
+  // Notify the blitz owner when a rep self-requests to join (joinStatus
+  // ends up 'pending'). Skip when an admin or the owner themselves added
+  // a participant — the owner already knows about those. Fire-and-forget;
+  // never block the response.
+  const isSelfRequest =
+    caller.role !== 'admin' &&
+    caller.id !== blitz.ownerId &&
+    joinStatus === 'pending' &&
+    body.userId === caller.id;
+  if (isSelfRequest) {
+    const newParticipant = participant;
+    void (async () => {
+      try {
+        const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
+        const reviewUrl = `${appUrl}/dashboard/blitz/${blitzId}`;
+        const repName =
+          `${newParticipant.user.firstName ?? ''} ${newParticipant.user.lastName ?? ''}`.trim()
+          || newParticipant.user.email;
+        await notify({
+          type: 'blitz_join_pending',
+          userId: blitz.ownerId,
+          subject: `${repName} requested to join ${blitz.name}`,
+          emailHtml: renderNotificationEmail({
+            heading: `${escapeHtml(repName)} wants to join your blitz`,
+            bodyHtml: `
+              <p style="margin:0 0 12px 0;">A rep has requested to join <strong>${escapeHtml(blitz.name)}</strong>. Open the blitz to approve or decline.</p>
+            `,
+            cta: { label: 'Review request', url: reviewUrl },
+            footerNote: 'Sent because you lead this blitz. Manage at /dashboard/preferences.',
+          }),
+        });
+      } catch (err) {
+        logger.warn('blitz_join_pending_notify_failed', { blitzId, ownerId: blitz.ownerId, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+  }
+
   return NextResponse.json(participant, { status: 201 });
 }
 
@@ -185,7 +226,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (limited) return limited;
 
   // Only the blitz owner or an admin may approve/decline participants
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, startDate: true, endDate: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -313,6 +354,47 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       attendanceStatusAfter: updated.attendanceStatus,
     },
   });
+
+  // Notify the affected rep when their join status actually transitioned
+  // to approved or declined. Skip attendance-only edits and no-op
+  // re-saves of the same status. Don't notify when the actor is the rep
+  // themselves (rare but possible if owner === rep on a status flip).
+  const joinStatusChanged =
+    body.joinStatus !== undefined &&
+    body.joinStatus !== existing.joinStatus &&
+    (body.joinStatus === 'approved' || body.joinStatus === 'declined');
+  if (joinStatusChanged && body.userId !== caller.id) {
+    const decidedJoinStatus = body.joinStatus;
+    void (async () => {
+      try {
+        const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
+        const blitzUrl = `${appUrl}/dashboard/blitz/${blitzId}`;
+        const isApproved = decidedJoinStatus === 'approved';
+        const heading = isApproved
+          ? `You're in — ${blitz.name}`
+          : `Your join request for ${blitz.name} was declined`;
+        const bodyParagraph = isApproved
+          ? `<p style="margin:0 0 12px 0;">A blitz leader approved your request to join <strong>${escapeHtml(blitz.name)}</strong>. Your deals in the blitz window will start linking automatically.</p>`
+          : `<p style="margin:0 0 12px 0;">A blitz leader declined your request to join <strong>${escapeHtml(blitz.name)}</strong>.</p>`;
+        await notify({
+          type: 'blitz_join_decided',
+          userId: body.userId,
+          subject: isApproved
+            ? `You're approved for ${blitz.name}`
+            : `Join request declined: ${blitz.name}`,
+          emailHtml: renderNotificationEmail({
+            heading,
+            bodyHtml: bodyParagraph,
+            cta: { label: 'Open blitz', url: blitzUrl },
+            footerNote: 'Sent because you have blitz notifications turned on. Manage at /dashboard/preferences.',
+          }),
+        });
+      } catch (err) {
+        logger.warn('blitz_join_decided_notify_failed', { blitzId, affectedUserId: body.userId, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+  }
+
   return NextResponse.json(updated);
 }
 

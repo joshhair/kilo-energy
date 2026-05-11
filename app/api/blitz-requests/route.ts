@@ -4,6 +4,9 @@ import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzRequestSchema } from '../../../lib/schemas/business';
 import { logChange } from '../../../lib/audit';
+import { notify } from '../../../lib/notifications/service';
+import { renderNotificationEmail, escapeHtml } from '../../../lib/email-templates/notification';
+import { logger } from '../../../lib/logger';
 
 // GET /api/blitz-requests — List blitz requests scoped to role.
 // Admin: all requests. Everyone else: only their own requests.
@@ -82,5 +85,55 @@ export async function POST(req: NextRequest) {
       expectedHeadcount: request.expectedHeadcount,
     },
   });
+
+  // Notify every active admin that a blitz request is awaiting review.
+  // Without this, requests sit in the queue until an admin happens to
+  // open /dashboard/blitz and notice the "Requests" tab. Fire-and-forget
+  // — never block the response on the email fanout.
+  void (async () => {
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: 'admin', active: true },
+        select: { id: true },
+      });
+      if (admins.length === 0) return;
+      const requesterName =
+        `${request.requestedBy.firstName ?? ''} ${request.requestedBy.lastName ?? ''}`.trim()
+        || request.requestedBy.email;
+      const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
+      const reviewUrl = `${appUrl}/dashboard/blitz`;
+      const isCancel = request.type === 'cancel';
+      const verb = isCancel ? 'cancellation' : 'creation';
+      const detailLines = [
+        request.name ? `<strong>Name:</strong> ${escapeHtml(request.name)}` : null,
+        request.location ? `<strong>Location:</strong> ${escapeHtml(request.location)}` : null,
+        request.startDate ? `<strong>Dates:</strong> ${escapeHtml(request.startDate)} – ${escapeHtml(request.endDate || request.startDate)}` : null,
+        request.expectedHeadcount ? `<strong>Expected headcount:</strong> ${request.expectedHeadcount}` : null,
+        request.housing ? `<strong>Housing:</strong> ${escapeHtml(request.housing)}` : null,
+      ].filter(Boolean).join('<br/>');
+      await Promise.all(
+        admins.map((a) =>
+          notify({
+            type: 'blitz_request_pending',
+            userId: a.id,
+            subject: `Blitz ${verb} request from ${requesterName}`,
+            emailHtml: renderNotificationEmail({
+              heading: `New blitz ${verb} request`,
+              bodyHtml: `
+                <p style="margin:0 0 12px 0;"><strong>${escapeHtml(requesterName)}</strong> submitted a blitz ${verb} request.</p>
+                ${detailLines ? `<p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;">${detailLines}</p>` : ''}
+                ${request.notes ? `<p style="margin:0 0 12px 0;font-size:13px;color:#3f4757;"><em>${escapeHtml(request.notes)}</em></p>` : ''}
+              `,
+              cta: { label: 'Review request', url: reviewUrl },
+              footerNote: 'Sent because you have blitz request notifications turned on. Manage at /dashboard/preferences.',
+            }),
+          })
+        )
+      );
+    } catch (err) {
+      logger.warn('blitz_request_pending_notify_failed', { requestId: request.id, error: err instanceof Error ? err.message : String(err) });
+    }
+  })();
+
   return NextResponse.json(request, { status: 201 });
 }

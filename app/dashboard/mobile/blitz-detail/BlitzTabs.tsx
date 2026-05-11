@@ -7,6 +7,10 @@ export type BlitzTabKey = 'overview' | 'participants' | 'deals' | 'costs' | 'pro
 export interface BlitzTab {
   key: BlitzTabKey;
   label: string;
+  /** Optional pending count rendered as an amber chip next to the label.
+   *  Used to surface "join requests waiting" without forcing the leader
+   *  to open the Reps tab. Only shown when > 0. */
+  pendingBadge?: number;
 }
 
 interface Props {
@@ -73,7 +77,7 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             key={t.key}
             ref={(el) => { tabRefs.current[index] = el; }}
             onClick={() => onChange(t.key)}
-            className="relative min-h-[40px] px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap shrink-0 z-10"
+            className="relative min-h-[40px] px-4 py-1.5 text-sm font-semibold rounded-full whitespace-nowrap shrink-0 z-10 inline-flex items-center gap-1.5"
             style={{
               background: 'transparent',
               border: 'none',
@@ -83,6 +87,23 @@ export default function BlitzTabs({ tabs, active, onChange }: Props) {
             }}
           >
             {t.label}
+            {t.pendingBadge !== undefined && t.pendingBadge > 0 && (
+              <span
+                aria-label={`${t.pendingBadge} pending`}
+                className="inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 tabular-nums"
+                style={{
+                  background: isActive
+                    ? 'color-mix(in srgb, var(--text-on-accent) 22%, transparent)'
+                    : 'color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)',
+                  color: isActive ? 'var(--text-on-accent)' : 'var(--accent-amber-text)',
+                  border: isActive
+                    ? '1px solid color-mix(in srgb, var(--text-on-accent) 35%, transparent)'
+                    : '1px solid color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)',
+                }}
+              >
+                {t.pendingBadge}
+              </span>
+            )}
           </button>
         );
       })}

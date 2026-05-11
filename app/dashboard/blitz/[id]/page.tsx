@@ -532,9 +532,16 @@ export default function BlitzDetailPage() {
     </div>
   );
 
-  const tabs: { key: TabKey; label: string }[] = [
+  // Surface pending join requests so the leader doesn't have to discover
+  // them by opening the tab. canManage gates this since reps can't act on
+  // pending rows anyway. Renders inline next to the tab label.
+  const pendingParticipantCount = canManage
+    ? (blitz?.participants?.filter((p: any) => p.joinStatus === 'pending').length ?? 0)
+    : 0;
+
+  const tabs: { key: TabKey; label: string; pendingBadge?: number }[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'participants', label: `Participants (${approvedParticipants.length})` },
+    { key: 'participants', label: `Participants (${approvedParticipants.length})`, pendingBadge: pendingParticipantCount },
     { key: 'deals', label: `Deals (${totalDeals})` },
     ...(isAdmin ? [
       { key: 'costs' as TabKey, label: `Costs (${blitz.costs?.length ?? 0})` },
@@ -669,8 +676,21 @@ export default function BlitzDetailPage() {
       <div className="flex gap-0.5 border-b border-[var(--border-subtle)]/50 overflow-x-auto tab-bar-container">
         {tabIndicator && <div className="tab-indicator" style={tabIndicator} />}
         {tabs.map((t, i) => (
-          <button key={t.key} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => { setTab(t.key); if (t.key === 'profitability') setProfAnimKey(k => k + 1); }} className={`relative z-10 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
+          <button key={t.key} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => { setTab(t.key); if (t.key === 'profitability') setProfAnimKey(k => k + 1); }} className={`relative z-10 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${tab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
             {t.label}
+            {t.pendingBadge !== undefined && t.pendingBadge > 0 && (
+              <span
+                aria-label={`${t.pendingBadge} pending`}
+                className="inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 tabular-nums"
+                style={{
+                  background: 'color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)',
+                  color: 'var(--accent-amber-text)',
+                  border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)',
+                }}
+              >
+                {t.pendingBadge}
+              </span>
+            )}
           </button>
         ))}
       </div>

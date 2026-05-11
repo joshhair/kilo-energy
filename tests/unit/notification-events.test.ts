@@ -11,7 +11,7 @@ import { NOTIFICATION_EVENTS, getEventDefinition, eventsForRole } from '@/lib/no
 describe('Notification event registry', () => {
   it('has at least one event in each category', () => {
     const categories = new Set(NOTIFICATION_EVENTS.map((e) => e.category));
-    for (const c of ['projects', 'pay', 'mentions', 'admin', 'security'] as const) {
+    for (const c of ['projects', 'pay', 'mentions', 'blitz', 'admin', 'security'] as const) {
       expect(categories.has(c)).toBe(true);
     }
   });
@@ -89,5 +89,37 @@ describe('Notification event registry', () => {
   it('admins see every event including admin-only ones', () => {
     const adminEvents = eventsForRole('admin');
     expect(adminEvents.length).toBe(NOTIFICATION_EVENTS.length);
+  });
+
+  it('blitz events are registered with sensible audiences', () => {
+    // blitz_request_pending is admin-only — only admins approve/deny.
+    const reqPending = getEventDefinition('blitz_request_pending');
+    expect(reqPending?.category).toBe('blitz');
+    expect(reqPending?.audience).toEqual(['admin']);
+
+    // The other three blitz events have no audience restriction — any
+    // role can be the requester / blitz owner / affected rep.
+    for (const t of ['blitz_request_decided', 'blitz_join_pending', 'blitz_join_decided']) {
+      const def = getEventDefinition(t);
+      expect(def?.category, `${t} category`).toBe('blitz');
+      expect(def?.audience, `${t} audience should be unrestricted`).toBeUndefined();
+    }
+  });
+
+  it('blitz_request_pending is hidden from reps and visible to admins', () => {
+    const repEvents = eventsForRole('rep');
+    expect(repEvents.map((e) => e.type)).not.toContain('blitz_request_pending');
+    const adminEvents = eventsForRole('admin');
+    expect(adminEvents.map((e) => e.type)).toContain('blitz_request_pending');
+  });
+
+  it('rep-facing blitz events show up for reps', () => {
+    const repEvents = eventsForRole('rep');
+    const types = repEvents.map((e) => e.type);
+    // A rep submits requests (gets decided notifications) and can lead
+    // a blitz (gets join_pending notifications when teammates request).
+    expect(types).toContain('blitz_request_decided');
+    expect(types).toContain('blitz_join_pending');
+    expect(types).toContain('blitz_join_decided');
   });
 });

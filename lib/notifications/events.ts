@@ -32,7 +32,7 @@ export interface EventDefinition {
   /** One-line settings UI description. */
   description: string;
   /** Settings UI grouping. */
-  category: 'projects' | 'pay' | 'mentions' | 'admin' | 'security';
+  category: 'projects' | 'pay' | 'mentions' | 'blitz' | 'admin' | 'security';
   /** Default channel toggles when no explicit preference row exists. */
   defaults: {
     email: boolean;
@@ -108,6 +108,46 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
     // Mandatory: a chargeback is a financial event the rep MUST see.
     mandatory: true,
+  },
+
+  // ─── Blitz ─────────────────────────────────────────────────────────
+  // Visibility rules in this category are nuanced:
+  //   - `blitz_request_pending` is admin-only (only admins approve blitz
+  //     create/cancel requests, so only admins should see the prefs row).
+  //   - `blitz_join_pending` has no audience restriction: any internal
+  //     user can lead a blitz (canCreateBlitz is a per-user flag, not a
+  //     role), so any role might receive this notification. The runtime
+  //     only fires it to the actual blitz owner.
+  //   - `*_decided` events go to the requester / affected rep; no audience
+  //     gate.
+  {
+    type: 'blitz_request_pending',
+    label: 'Blitz request submitted',
+    description: 'A rep has requested a new blitz or a cancellation that needs admin review.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+    audience: ['admin'],
+  },
+  {
+    type: 'blitz_request_decided',
+    label: 'Your blitz request was decided',
+    description: 'Admin approved or denied a blitz request you submitted.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
+  {
+    type: 'blitz_join_pending',
+    label: 'A rep requested to join your blitz',
+    description: 'Someone is waiting on you (the blitz leader) to approve their join request.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
+  {
+    type: 'blitz_join_decided',
+    label: 'Your join request was decided',
+    description: 'A blitz leader approved or declined your request to join.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
   },
 
   // ─── Admin (admin-only audience) ───────────────────────────────────
