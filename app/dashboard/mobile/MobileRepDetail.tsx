@@ -848,7 +848,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               <MobileListItem
                 key={proj.id}
                 title={proj.customerName}
-                right={<MobileBadge value={proj.phase} variant="phase" />}
+                right={<MobileBadge value={proj.phase} variant="phase" size="sm" />}
                 onTap={() => router.push(`/dashboard/projects/${proj.id}`)}
               />
             ))}

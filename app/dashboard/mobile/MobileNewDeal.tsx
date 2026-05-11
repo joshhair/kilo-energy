@@ -926,7 +926,11 @@ export default function MobileNewDeal() {
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
-      requestHandoff: isBviInstaller ? bviSendOnSubmit : undefined,
+      // Defer the auto-send when a utility bill is attached. Bill uploads
+      // AFTER POST /api/projects returns; in-route auto-send fires BEFORE
+      // upload. We fire the handoff via /api/projects/[id]/handoff/auto
+      // AFTER the upload completes so the bill makes it into the email.
+      requestHandoff: isBviInstaller && bviSendOnSubmit && !utilityBill ? true : undefined,
     };
 
     let dealResult: { id: string } | null;
@@ -963,6 +967,26 @@ export default function MobileNewDeal() {
       } catch (err) {
         console.error('[MobileNewDeal] utility bill upload threw:', err);
         toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+      }
+    }
+
+    // Deferred auto-handoff fire — only when we held off the auto-send
+    // in the create payload because a utility bill was attached. Fires
+    // even if the bill upload failed (better to send without than not
+    // at all; rep gets the upload-failure toast separately).
+    if (isBviInstaller && bviSendOnSubmit && utilityBill && dealResult?.id) {
+      try {
+        const res = await fetch(`/api/projects/${dealResult.id}/handoff/auto`, { method: 'POST' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error('[MobileNewDeal] deferred auto-handoff failed:', body);
+          if (body.code !== 'ALREADY_SENT') {
+            toast(`Deal saved, but handoff email didn't send: ${body.error ?? `HTTP ${res.status}`}. Admin can send from the project page.`, 'error');
+          }
+        }
+      } catch (err) {
+        console.error('[MobileNewDeal] deferred auto-handoff threw:', err);
+        toast('Deal saved, but handoff email send failed. Admin can send from the project page.', 'error');
       }
     }
 

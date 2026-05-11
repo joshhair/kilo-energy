@@ -34,16 +34,30 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   'Cancelled': { bg: 'var(--accent-red-display)',     text: 'var(--accent-red-text)' },
 };
 
-export default function MobileBadge({ value, variant = 'phase' }: { value: string; variant?: 'phase' | 'status' }) {
+export default function MobileBadge({
+  value,
+  variant = 'phase',
+  size = 'md',
+}: {
+  value: string;
+  variant?: 'phase' | 'status';
+  /** `md` is the default (project detail header, etc.). `sm` is for
+   *  list rows where long phase labels like "Pending Install" otherwise
+   *  crowd out the customer name. */
+  size?: 'md' | 'sm';
+}) {
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
   // `bg` field is reused as the border color in the new outlined treatment.
   const c = colors[value] ?? { bg: 'var(--text-muted)', text: 'var(--text-muted)' };
+  const sizing = size === 'sm'
+    ? 'px-2 py-0.5 text-xs font-semibold'
+    : 'px-3 py-1 text-sm font-semibold';
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
+      className={`inline-flex items-center ${sizing} rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
       style={{
         background: 'transparent',
-        border: `1.5px solid ${c.bg}`,
+        border: '1.5px solid ' + c.bg,
         color: c.text,
         fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
       }}

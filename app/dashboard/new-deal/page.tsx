@@ -805,7 +805,13 @@ function NewDealPage() {
       subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
       subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
-      requestHandoff: isBviInstaller ? bviSendOnSubmit : undefined,
+      // Defer the auto-send when a utility bill is attached. The bill
+      // uploads AFTER POST /api/projects returns, and the in-route
+      // auto-send fires BEFORE the upload — so without this defer the
+      // handoff email goes out without the attachment (Tristan Parry's
+      // 2026-05-10 bug). When deferred, we fire the handoff via
+      // /api/projects/[id]/handoff/auto AFTER the upload completes.
+      requestHandoff: isBviInstaller && bviSendOnSubmit && !utilityBill ? true : undefined,
     };
 
     isDirty.current = false;
@@ -829,6 +835,7 @@ function NewDealPage() {
     // real DB id returned by the server. We deliberately don't fail the
     // whole deal submission if the upload fails — the project is already
     // saved; the rep can re-upload from the project page later.
+    let utilityBillUploaded = false;
     if (isBviInstaller && utilityBill && dealResult?.id) {
       try {
         const fd = new FormData();
@@ -843,11 +850,41 @@ function NewDealPage() {
           const detail = await res.text().catch(() => `HTTP ${res.status}`);
           console.error('[handleSubmit] utility bill upload failed:', detail);
           toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
+        } else {
+          utilityBillUploaded = true;
         }
       } catch (err) {
         console.error('[handleSubmit] utility bill upload threw:', err);
         toast('Deal saved, but utility bill upload failed — please re-upload from the project page.', 'error');
       }
+    }
+
+    // Deferred auto-handoff fire. We only defer when a utility bill was
+    // attached (otherwise the in-route auto-send in POST /api/projects
+    // already ran). Fire the handoff explicitly via the rep-allowed auto
+    // endpoint so the utility bill attachment makes it into the email.
+    //
+    // If the upload failed, fire anyway — better to send the email without
+    // the bill than to never send. The rep gets an error toast about the
+    // upload, and admin can re-send manually with the bill once it's
+    // re-uploaded.
+    if (isBviInstaller && bviSendOnSubmit && utilityBill && dealResult?.id) {
+      try {
+        const res = await fetch(`/api/projects/${dealResult.id}/handoff/auto`, { method: 'POST' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error('[handleSubmit] deferred auto-handoff failed:', body);
+          // Don't toast on ALREADY_SENT — happens if the server-side
+          // path raced ahead for some edge case; not actionable for the rep.
+          if (body.code !== 'ALREADY_SENT') {
+            toast(`Deal saved, but handoff email didn't send: ${body.error ?? `HTTP ${res.status}`}. Admin can send from the project page.`, 'error');
+          }
+        }
+      } catch (err) {
+        console.error('[handleSubmit] deferred auto-handoff threw:', err);
+        toast('Deal saved, but handoff email send failed. Admin can send from the project page.', 'error');
+      }
+      void utilityBillUploaded; // intentionally informational; logged via console.
     }
 
     // Remember installer for next deal
