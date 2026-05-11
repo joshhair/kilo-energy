@@ -364,22 +364,33 @@ function NewDealPage() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Clear setterId only when a BLITZ change makes the selected setter
-  // no longer an approved participant. Has regressed twice (Tyson on
-  // Trevor 2026-04-22, Melissa Lance 2026-04-26) — both times because
-  // the picker computed empty against half-loaded data and the effect
-  // happily wiped the setter. Rule: NEVER clear without positive
-  // evidence the setter is invalid. Absent data ≠ invalid setter.
-  useEffect(() => {
-    if (!form.setterId) return;
-    if (!form.blitzId) return;            // no blitz → no membership rule applies
-    if (reps.length === 0) return;        // reps still loading
-    if (rawBlitzes.length === 0) return;  // blitzes still loading — can't judge membership
+  // Setter / blitz mismatch — surfaced as a visible error, NOT silent mutation.
+  //
+  // Previous design auto-cleared form.setterId via useEffect whenever the
+  // setter wasn't in setterPickerReps. That regressed three times
+  // (Tyson on Trevor 2026-04-22, Melissa Lance 2026-04-26, Hunter Helton
+  // 2026-05-11) because silent mutation of user input is the root
+  // anti-pattern — even guarded against half-loaded data, a transient
+  // blitz selection could clear the setter without the user noticing.
+  //
+  // New approach: derived validation. If the picked setter isn't an
+  // approved participant of the picked blitz, render an inline error
+  // and block submit. The user's setterId is sacred — never auto-cleared.
+  // When they resolve the conflict (different setter, different blitz,
+  // or remove the blitz), the error disappears and the picked setter
+  // is preserved.
+  const setterValidationError = useMemo<string>(() => {
+    if (!form.setterId) return '';
+    if (!form.blitzId) return '';
+    if (reps.length === 0) return '';
+    if (rawBlitzes.length === 0) return '';
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    if (!selectedBlitz) return;           // blitz not in our list (stale/deleted) — don't presume invalid
-    if (setterPickerReps.some((r) => r.id === form.setterId)) return;
-    setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, form.blitzId, setterPickerReps, reps.length, rawBlitzes]);
+    if (!selectedBlitz) return '';
+    if (setterPickerReps.some((r) => r.id === form.setterId)) return '';
+    const setterName = reps.find((r) => r.id === form.setterId)?.name ?? 'The selected setter';
+    const blitzName = (selectedBlitz as { name?: string }).name ?? 'this blitz';
+    return `${setterName} isn't an approved participant of ${blitzName}. Pick a different setter, change the blitz, or have the blitz leader approve them.`;
+  }, [form.setterId, form.blitzId, setterPickerReps, reps, rawBlitzes]);
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {
@@ -647,6 +658,14 @@ function NewDealPage() {
     // Guard: setter-type reps cannot be the closer on a deal.
     if (!closerId) {
       toast('Setter accounts cannot submit deals directly. Please contact an admin.', 'error');
+      submittingRef.current = false;
+      return;
+    }
+
+    // Guard: setter must be approved on the picked blitz (philosophy fix —
+    // we surface this as an error rather than silently dropping setterId).
+    if (setterValidationError) {
+      toast(setterValidationError, 'error');
       submittingRef.current = false;
       return;
     }
@@ -1102,6 +1121,9 @@ function NewDealPage() {
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />
+                {setterValidationError && (
+                  <p className="text-red-500 text-sm mt-1" role="alert">{setterValidationError}</p>
+                )}
                 {setterAssignment && trainerRep && (
                   <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
                     ★ Trainer: {trainerRep.name} — override{' '}

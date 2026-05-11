@@ -467,20 +467,24 @@ export default function MobileNewDeal() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Clear setterId only when a BLITZ change makes the selected setter
-  // no longer an approved participant. Mirrors desktop hardening —
-  // see app/dashboard/new-deal/page.tsx for the regression history.
-  // Never clear without positive evidence the setter is invalid.
-  useEffect(() => {
-    if (!form.setterId) return;
-    if (!form.blitzId) return;
-    if (reps.length === 0) return;
-    if (rawBlitzes.length === 0) return;
+  // Setter / blitz mismatch — surfaced as a visible error, NOT silent
+  // mutation. Mirrors desktop philosophy fix — see new-deal/page.tsx
+  // for the full regression history (Tyson 2026-04-22, Melissa Lance
+  // 2026-04-26, Hunter Helton 2026-05-11). The user's setterId is
+  // sacred; we render an inline error and block submit instead of
+  // silently clearing.
+  const setterValidationError = useMemo<string>(() => {
+    if (!form.setterId) return '';
+    if (!form.blitzId) return '';
+    if (reps.length === 0) return '';
+    if (rawBlitzes.length === 0) return '';
     const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    if (!selectedBlitz) return;
-    if (setterPickerReps.some((r) => r.id === form.setterId)) return;
-    setForm((prev) => ({ ...prev, setterId: '' }));
-  }, [form.setterId, form.blitzId, setterPickerReps, reps.length, rawBlitzes]);
+    if (!selectedBlitz) return '';
+    if (setterPickerReps.some((r) => r.id === form.setterId)) return '';
+    const setterName = reps.find((r) => r.id === form.setterId)?.name ?? 'The selected setter';
+    const blitzName = (selectedBlitz as { name?: string }).name ?? 'this blitz';
+    return `${setterName} isn't an approved participant of ${blitzName}. Pick a different setter, change the blitz, or have the blitz leader approve them.`;
+  }, [form.setterId, form.blitzId, setterPickerReps, reps, rawBlitzes]);
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {
@@ -1170,6 +1174,9 @@ export default function MobileNewDeal() {
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />
+                {setterValidationError && (
+                  <p className="text-red-500 text-sm mt-1" role="alert">{setterValidationError}</p>
+                )}
                 {setterAssignment && trainerRep && (
                   <p className="text-base text-[var(--accent-amber-text)] mt-1">
                     Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
