@@ -899,7 +899,7 @@ function PayrollPageInner() {
                         {entry.paymentStage}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
+                    <td className="px-5 py-3 font-semibold" style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>{fmt$(entry.amount)}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded`} style={
                         entry.status === 'Paid'
@@ -1426,7 +1426,7 @@ function PayrollPageInner() {
                   <tr
                     key={`rep-${group.repId}`}
                     style={{
-                      background: groupIdx % 2 === 0 ? 'var(--surface)' : '#191c24',
+                      background: groupIdx % 2 === 0 ? 'var(--surface)' : 'var(--surface-pressed)',
                       borderBottom: '1px solid var(--border)',
                       cursor: 'pointer',
                     }}
@@ -1462,7 +1462,7 @@ function PayrollPageInner() {
                     </td>
                     <td style={{ padding: '12px 14px' }}></td>
                     <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}>
-                      <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
+                      <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
                         {fmt$(group.total)}
                       </span>
                     </td>
@@ -1489,9 +1489,9 @@ function PayrollPageInner() {
                     </td>
                   )}
                   <td style={{ padding: '12px 14px 12px 40px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>↳</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && typeTab === 'Deal' && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && (typeTab === 'Deal' || typeTab === 'Trainer') && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
-                    {typeTab === 'Deal' && entry.customerName && entry.projectId ? (
+                    {(typeTab === 'Deal' || typeTab === 'Trainer') && entry.customerName && entry.projectId ? (
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
                         className="hover:underline"
@@ -1501,10 +1501,10 @@ function PayrollPageInner() {
                         {entry.customerName}
                       </Link>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>{typeTab === 'Deal' ? entry.customerName : (entry.notes || '\u2014')}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{(typeTab === 'Deal' || typeTab === 'Trainer') ? (entry.customerName || '\u2014') : (entry.notes || '\u2014')}</span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-solid)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
                     <span style={

@@ -414,13 +414,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     );
 
-    // Override any client-sent amounts with the server-computed values.
-    data.m1AmountCents = fromDollars(result.m1Amount).cents;
-    data.m2AmountCents = fromDollars(result.m2Amount).cents;
-    data.m3AmountCents = result.m3Amount == null ? null : fromDollars(result.m3Amount).cents;
-    data.setterM1AmountCents = fromDollars(result.setterM1Amount).cents;
-    data.setterM2AmountCents = fromDollars(result.setterM2Amount).cents;
-    data.setterM3AmountCents = result.setterM3Amount == null ? null : fromDollars(result.setterM3Amount).cents;
+    // Preserve sold-at commission for projects whose original product is no
+    // longer in the active catalog. Without this guard, a non-baseline edit
+    // (trainer override, setter change, notes) on a legacy-product project
+    // would route through resolveBaselines's fallback branch and silently
+    // overwrite real historical commission with $0. Trainer/setter/other
+    // field writes proceed normally — only the commission amount cents are
+    // preserved. Client-side validation also avoids this path on no-op
+    // edits; this server-side defense is the backstop. (Corrine Brooks
+    // shape, 2026-05-07.)
+    const isFallbackResolution = result.diagnostics.pricingSource === 'fallback';
+    const hasStoredAmounts =
+      current.m1AmountCents > 0 ||
+      current.m2AmountCents > 0 ||
+      (current.m3AmountCents ?? 0) > 0 ||
+      current.setterM1AmountCents > 0 ||
+      current.setterM2AmountCents > 0 ||
+      (current.setterM3AmountCents ?? 0) > 0;
+
+    if (isFallbackResolution && hasStoredAmounts) {
+      console.warn(`[commission] preserving stored amounts for project ${id} — pricingSource=fallback (legacy product?) and project has non-zero amounts; skipping commission overwrite.`);
+      // Discard any client-sent amounts so we don't pass them through.
+      delete data.m1AmountCents;
+      delete data.m2AmountCents;
+      delete data.m3AmountCents;
+      delete data.setterM1AmountCents;
+      delete data.setterM2AmountCents;
+      delete data.setterM3AmountCents;
+    } else {
+      // Override any client-sent amounts with the server-computed values.
+      data.m1AmountCents = fromDollars(result.m1Amount).cents;
+      data.m2AmountCents = fromDollars(result.m2Amount).cents;
+      data.m3AmountCents = result.m3Amount == null ? null : fromDollars(result.m3Amount).cents;
+      data.setterM1AmountCents = fromDollars(result.setterM1Amount).cents;
+      data.setterM2AmountCents = fromDollars(result.setterM2Amount).cents;
+      data.setterM3AmountCents = result.setterM3Amount == null ? null : fromDollars(result.setterM3Amount).cents;
+    }
     } // end else (not sub-dealer)
   }
 

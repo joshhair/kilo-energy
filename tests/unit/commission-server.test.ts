@@ -184,6 +184,33 @@ describe('computeProjectCommission', () => {
     expect(out.setterM3Amount).toBeNull();
   });
 
+  it('reports pricingSource=fallback when SolarTech product is missing from catalog (Corrine Brooks shape)', () => {
+    // A SolarTech project whose original product is no longer in the
+    // active catalog (e.g. Hyundai 435 removed when the line moved to
+    // 440 panels). resolveBaselines's try/catch around
+    // getSolarTechBaseline returns zeros and source='fallback'; the
+    // PATCH handler keys off this to preserve stored commission
+    // amounts instead of overwriting them with $0.
+    const out = computeProjectCommission(
+      baseInputs({
+        installer: 'SolarTech',
+        solarTechProductId: 'legacy-hyundai-435-id', // not present in solarTechProducts
+        installerProductId: null,
+      }),
+      emptyDeps({
+        solarTechProducts: [], // legacy product absent
+        installerPayConfigs: { SolarTech: { installPayPct: 100 } },
+      }),
+    );
+    expect(out.diagnostics.pricingSource).toBe('fallback');
+    expect(out.diagnostics.closerPerW).toBe(0);
+    expect(out.diagnostics.kiloPerW).toBe(0);
+    // The compute layer's job is to signal pricingSource=fallback when
+    // the baseline can't be resolved. The route handler (PATCH
+    // /api/projects/[id]) keys off that signal + the project's stored
+    // amount cents to decide whether to skip the overwrite.
+  });
+
   it('per-project trainer override applies to setter split (reduces setter total)', () => {
     // Without a trainer: setterTotal = $2,376 (per the Timothy case).
     // With a trainer override of $0.10/W: aboveSplit shifts — setter

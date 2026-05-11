@@ -434,10 +434,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const kw = parseFloat(editVals.kWSize);
     const ppw = parseFloat(editVals.netPPW);
 
-    // Validate required fields before saving
+    // Validate required fields before saving.
+    //
+    // Track whether ANY baseline-affecting field changed since the modal
+    // opened. When none changed, the saved sold-at pricing remains
+    // authoritative — the SolarTech product selection isn't required even
+    // if the legacy product is no longer in the active catalog. Server
+    // also preserves stored amounts via pricingSource=fallback defense.
+    // (Corrine Brooks: sold with Hyundai 435 which is no longer listed —
+    // admin needs to add a trainer override without re-pricing the deal.)
+    const baselineAffectingChanged =
+      parseFloat(editVals.kWSize) !== project.kWSize ||
+      parseFloat(editVals.netPPW) !== project.netPPW ||
+      editVals.installer !== project.installer ||
+      editVals.productType !== project.productType ||
+      editVals.soldDate !== project.soldDate ||
+      editVals.solarTechProductId !== (project.solarTechProductId ?? '') ||
+      editVals.useBaselineOverride !== !!project.baselineOverride;
+
     const errs: Record<string, string> = {};
     if (!editVals.installer) errs.installer = 'Installer is required';
-    if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) errs.installer = 'SolarTech requires a product — select a SolarTech product';
+    if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId && baselineAffectingChanged) errs.installer = 'SolarTech requires a product — select a SolarTech product';
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
     if (!editVals.kWSize || isNaN(kw) || kw <= 0) errs.kWSize = 'Must be a number greater than 0';
     if (!editVals.netPPW || isNaN(ppw) || ppw <= 0) errs.netPPW = 'Must be a number greater than 0';
@@ -460,11 +477,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}),
         }
       : undefined;
+    // Resolve baseline for optimistic client-side recompute. Legacy
+    // SolarTech projects (product no longer in active catalog) throw
+    // from getSolarTechBaseline — catch and preserve stored amounts.
+    // Server-side defense (pricingSource=fallback) ensures the DB
+    // amounts aren't wiped; this just keeps the optimistic UI honest.
     let editBaseline: InstallerBaseline;
+    let baselineResolutionFailed = false;
     if (editVals.useBaselineOverride) {
       editBaseline = { closerPerW: parseFloat(editVals.overrideCloserPerW) || 0, kiloPerW: parseFloat(editVals.overrideKiloPerW) || 0, ...(editVals.overrideSetterPerW !== '' && !isNaN(parsedSetterPerW) ? { setterPerW: parsedSetterPerW } : {}) };
     } else if (editVals.installer === 'SolarTech' && editVals.solarTechProductId) {
-      editBaseline = getSolarTechBaseline(editVals.solarTechProductId, kw, solarTechProducts);
+      try {
+        editBaseline = getSolarTechBaseline(editVals.solarTechProductId, kw, solarTechProducts);
+      } catch {
+        editBaseline = { closerPerW: 0, kiloPerW: 0 };
+        baselineResolutionFailed = true;
+      }
+    } else if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) {
+      editBaseline = { closerPerW: 0, kiloPerW: 0 };
+      baselineResolutionFailed = true;
     } else if (project.installerProductId && editVals.installer === project.installer) {
       editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
     } else {
@@ -527,23 +558,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     const nextLeadSource = editVals.leadSource || null;
     const nextBlitzId = editVals.leadSource === 'blitz' ? (editVals.blitzId || null) : null;
 
+    // When baseline couldn't be resolved (legacy SolarTech product),
+    // omit amount fields so the optimistic update preserves stored
+    // values. The server-side defense will likewise skip the
+    // amount overwrite. The PATCH still re-syncs the project from
+    // the server response so the final state matches the DB.
     ctxUpdateProject(project.id, {
       installer: editVals.installer,
       financer: editVals.financer,
       productType: editVals.productType,
       kWSize: kw,
       netPPW: ppw,
-      m1Amount: editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal)),
-      m2Amount: editM2Amount,
-      m3Amount: editM3Amount,
+      ...(baselineResolutionFailed ? {} : {
+        m1Amount: editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal)),
+        m2Amount: editM2Amount,
+        m3Amount: editM3Amount,
+        setterM1Amount: editSetterM1Amount,
+        setterM2Amount: editSetterM2Amount,
+        setterM3Amount: editSetterM3Amount,
+      }),
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,
       notes: editVals.notes,
       baselineOverride,
-      setterM1Amount: editSetterM1Amount,
-      setterM2Amount: editSetterM2Amount,
-      setterM3Amount: editSetterM3Amount,
       additionalClosers: additionalClosersOut,
       additionalSetters: additionalSettersOut,
       trainerId: nextTrainerId,
@@ -1792,7 +1830,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 );
               } else if (editVals.installer === 'SolarTech' && editVals.solarTechProductId) {
-                previewBaseline = getSolarTechBaseline(editVals.solarTechProductId, previewKW, solarTechProducts);
+                try {
+                  previewBaseline = getSolarTechBaseline(editVals.solarTechProductId, previewKW, solarTechProducts);
+                } catch {
+                  return (
+                    <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
+                      <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
+                      <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Sold with a product that&apos;s no longer in the active catalog. Stored commission amounts will be preserved on save.
+                      </p>
+                    </div>
+                  );
+                }
               } else if (project.installerProductId && editVals.installer === project.installer) {
                 previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {

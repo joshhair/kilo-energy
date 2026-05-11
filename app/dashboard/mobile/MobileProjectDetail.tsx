@@ -325,14 +325,27 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
     const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
 
-    // Recalculate milestone amounts — setter presence changes closer M1 ($0 with setter, flat without)
+    // Recalculate milestone amounts — setter presence changes closer M1
+    // ($0 with setter, flat without). Legacy SolarTech projects (product
+    // no longer in active catalog) throw — catch and preserve stored
+    // amounts. Server-side defense skips overwrite when pricingSource=
+    // 'fallback' so DB amounts stay intact (Corrine Brooks shape).
     const kw = project.kWSize;
     const ppw = project.netPPW;
     let baseline: InstallerBaseline;
+    let baselineResolutionFailed = false;
     if (project.baselineOverride) {
       baseline = project.baselineOverride;
     } else if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      baseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
+      try {
+        baseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
+      } catch {
+        baseline = { closerPerW: 0, kiloPerW: 0 };
+        baselineResolutionFailed = true;
+      }
+    } else if (project.installer === 'SolarTech' && !project.solarTechProductId) {
+      baseline = { closerPerW: 0, kiloPerW: 0 };
+      baselineResolutionFailed = true;
     } else if (project.installerProductId) {
       baseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, project.soldDate, productCatalogPricingVersions);
     } else {
@@ -371,12 +384,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
-      m1Amount: newM1Amount,
-      m2Amount: newM2Amount,
-      m3Amount: newM3Amount,
-      setterM1Amount: newSetterM1Amount,
-      setterM2Amount: newSetterM2Amount,
-      setterM3Amount: newSetterM3Amount,
+      ...(baselineResolutionFailed ? {} : {
+        m1Amount: newM1Amount,
+        m2Amount: newM2Amount,
+        m3Amount: newM3Amount,
+        setterM1Amount: newSetterM1Amount,
+        setterM2Amount: newSetterM2Amount,
+        setterM3Amount: newSetterM3Amount,
+      }),
       leadSource: nextLeadSource ?? undefined,
       blitzId: nextBlitzId ?? undefined,
     });
