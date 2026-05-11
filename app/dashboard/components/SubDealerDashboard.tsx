@@ -237,7 +237,7 @@ export function SubDealerDashboard({
                   <div className="px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-[var(--text-primary)] font-medium text-sm truncate group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>
+                        <span className="text-[var(--text-primary)] font-medium text-sm line-clamp-2 break-words group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>
                         <PhaseBadge phase={proj.phase} />
                       </div>
                       <span className="text-[var(--text-muted)] text-xs whitespace-nowrap flex-shrink-0">{soldLabel}</span>

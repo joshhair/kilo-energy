@@ -137,7 +137,7 @@ export default function BlitzProfitability({
                   style={{ background: 'var(--surface-pressed)' }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{p.customerName}</p>
                     <p className="text-[11px] truncate" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{closerName} · {p.kWSize?.toFixed(1)} kW</p>
                   </div>
                   <div className="text-right shrink-0">

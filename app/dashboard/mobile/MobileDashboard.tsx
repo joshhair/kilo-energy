@@ -625,7 +625,7 @@ export default function MobileDashboard() {
                   >
                     <div className="shrink-0" style={{ width: 4, background: accent }} />
                     <div className="flex-1 min-w-0 px-4 py-3">
-                      <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                      <p className="text-[var(--text-primary)] font-semibold line-clamp-2 break-words" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                       <div className="flex items-center gap-2 mt-1.5">
                         <MobileBadge value={p.phase} size="sm" />
                         <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>
@@ -697,7 +697,7 @@ export default function MobileDashboard() {
                 >
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
-                    <p className="font-semibold text-[var(--text-primary)] truncate flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <p className="font-semibold text-[var(--text-primary)] line-clamp-2 break-words flex-1 min-w-0" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-1 pl-6">
                     <MobileBadge value={p.phase} size="sm" />
@@ -725,7 +725,7 @@ export default function MobileDashboard() {
                     className={`w-full min-h-[48px] py-3 text-left active:scale-[0.97] active:opacity-80 transition-[transform,opacity] duration-150 ${i < arr.length - 1 ? 'border-b' : ''}`}
                     style={{ borderColor: 'var(--border-subtle)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
-                    <p className="text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
+                    <p className="text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <MobileBadge value={p.phase} size="sm" />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{relativeTime(p.soldDate)}</span>
@@ -860,7 +860,7 @@ export default function MobileDashboard() {
                   same horizontal band as the customer name before, which
                   caused visual collisions on narrow screens (badge pill
                   sitting under the grey "Xd in Phase" text). 2026-04-23. */}
-              <p className="font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
+              <p className="font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>{item.customerName}</p>
               <div className="flex items-center gap-2 mt-1">
                 <MobileBadge value={item.phase} size="sm" />
                 <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{item.suffix}</span>
@@ -914,7 +914,7 @@ export default function MobileDashboard() {
                       Schauwecker" to clip to 4 chars whenever the badge
                       was wide ("Pending Install"). 2026-04-23. */}
                   <div className="flex-1 min-w-0 px-4 py-3">
-                    <p className="text-[var(--text-primary)] font-semibold truncate" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
+                    <p className="text-[var(--text-primary)] font-semibold line-clamp-2 break-words" style={{ fontFamily: FONT_BODY, fontSize: '1.05rem' }}>{p.customerName}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <MobileBadge value={p.phase} size="sm" />
                       <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.85rem' }}>{relativeTime(p.soldDate)}</span>

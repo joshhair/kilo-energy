@@ -676,7 +676,7 @@ export default function MobileAdminDashboard() {
                         style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-[var(--text-primary)] truncate flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}{p.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/20">Sub-Dealer</span>}</p>
+                          <p className="text-[var(--text-primary)] line-clamp-2 break-words flex-1" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>{p.customerName}{p.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/20">Sub-Dealer</span>}</p>
                           <span className="font-semibold tabular-nums shrink-0" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>
                             {fmt$(closerPay)}
                             {setterPay > 0 && <span style={{ color: MUTED, fontSize: '0.75rem' }}> +{fmt$(setterPay)}</span>}
