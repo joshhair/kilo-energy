@@ -516,7 +516,7 @@ export default function MobilePayroll() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
                       <p className="text-sm truncate mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.description}</p>
                       {r.archivedAt && (
                         <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>archived</p>

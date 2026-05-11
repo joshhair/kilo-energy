@@ -522,7 +522,7 @@ export default function MobileReps() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
+                      <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.firstName} {u.lastName}</p>
                       {u.email && (
                         <p className="text-sm truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>
                       )}
@@ -659,7 +659,7 @@ export default function MobileReps() {
                       style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}>
                       {getInitials(rep.name)}
                     </div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     <p className="text-[10px] mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{ranges.current.label}</p>
                     <div className="space-y-1.5 text-xs text-left">
                       <div className="flex justify-between gap-2">
@@ -727,7 +727,7 @@ export default function MobileReps() {
                     {getInitials(rep.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
                     {rep.email && (
                       <p className="text-base truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>
                     )}

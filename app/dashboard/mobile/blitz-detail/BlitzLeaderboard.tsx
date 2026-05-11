@@ -61,7 +61,7 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
               >
                 {rank}
               </span>
-              <span className="flex-1 text-sm font-semibold truncate text-left" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <span className="flex-1 text-sm font-semibold line-clamp-2 break-words text-left" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                 {rep.name}
               </span>
               <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>

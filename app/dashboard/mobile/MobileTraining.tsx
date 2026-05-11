@@ -544,7 +544,7 @@ export default function MobileTraining({
                         {getInitials(group.trainerName)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                        <p className="font-semibold text-sm line-clamp-2 break-words" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                           {group.trainerName}
                         </p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -586,7 +586,7 @@ export default function MobileTraining({
                                 {getInitials(traineeName)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                                <p className="text-sm font-semibold line-clamp-2 break-words" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                                   {traineeName}
                                 </p>
                                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -748,7 +748,7 @@ export default function MobileTraining({
                              active:bg-[color-mix(in_srgb,var(--text-primary)_3%,transparent)]"
                 >
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{td.traineeName}</p>
                     <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span> &middot; {td.traineeRole === 'both' ? 'Closer/Setter' : td.traineeRole.charAt(0).toUpperCase() + td.traineeRole.slice(1)}
                     </p>
@@ -848,7 +848,7 @@ export default function MobileTraining({
                 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {entry.customerName || entry.notes || 'Override'}
                   </p>
                   <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>

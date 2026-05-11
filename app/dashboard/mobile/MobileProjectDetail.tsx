@@ -842,7 +842,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                         <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                           {name}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                           {roleLabel} · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
                         </p>
                       </div>
@@ -1039,7 +1039,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                             <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                               {trainerName}
                             </p>
-                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
                               trainer · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
                             </p>
                           </div>

@@ -331,7 +331,7 @@ export default function MobileEarnings() {
                   style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <StatusDot status={entry.status} />
                       <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimb.</span>
@@ -356,7 +356,7 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedDeals.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.customerName || entry.notes || 'Deal'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     {entry.paymentStage && (
@@ -422,7 +422,7 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedBonuses.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.notes || 'Bonus'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
@@ -465,7 +465,7 @@ export default function MobileEarnings() {
                 style={{ borderBottom: idx < sortedReimbs.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <StatusDot status={entry.status} />
                     <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</span>
@@ -590,7 +590,7 @@ export function MobileAdminEarnings() {
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
                     <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <StatusDot status={r.status} />

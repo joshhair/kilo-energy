@@ -421,7 +421,7 @@ export default function MobileIncentives() {
                       <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber-text)' }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{incentive.title}</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words">{incentive.title}</p>
                       <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                         At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
                         <span style={{ color: 'var(--accent-amber-text)' }}> · {milestone.reward}</span>

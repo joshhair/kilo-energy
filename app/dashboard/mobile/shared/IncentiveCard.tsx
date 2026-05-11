@@ -116,7 +116,7 @@ export default function IncentiveCard({
           >
             {selected && <CheckSquare className="w-3.5 h-3.5" style={{ color: 'var(--text-on-accent)' }} />}
           </div>
-          <p className="text-base font-semibold leading-snug truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
+          <p className="text-base font-semibold leading-snug line-clamp-2 break-words" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
         </div>
         <span
           className="inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg shrink-0"
