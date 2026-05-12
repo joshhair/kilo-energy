@@ -11,7 +11,7 @@ import MobileProjectDetail from '../../mobile/MobileProjectDetail';
 import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
-  calculateCommission, resolveTrainerRate,
+  splitCloserSetterPay, resolveTrainerRate,
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../../lib/data';
 import { formatDate } from '../../../../lib/utils';
@@ -501,22 +501,36 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     } else {
       editBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, kw, installerPricingVersions);
     }
-    const editCloserTotal = calculateCommission(ppw, editBaseline.closerPerW, kw);
-    const editM1Flat = kw >= 5 ? 1000 : 500;
+    // Use the canonical splitCloserSetterPay to compute optimistic amounts —
+    // independent calculateCommission calls overstate both rep totals when
+    // a setter is on the deal (they each get their full above-baseline spread
+    // instead of the proper closer-differential + half-split). Server defense
+    // already overrides on PATCH, but the optimistic UI was showing inflated
+    // values until reconciliation. Mirrors the new-deal forms which already
+    // use splitCloserSetterPay (2026-05-11).
     const editSetterPerW = 'setterPerW' in editBaseline && editBaseline.setterPerW != null
       ? editBaseline.setterPerW
       : Math.round((editBaseline.closerPerW + 0.10) * 100) / 100;
-    const editSetterTotal = calculateCommission(ppw, editSetterPerW, kw);
-    const editSetterM1Amount = editVals.setterId ? Math.min(editM1Flat, Math.max(0, editSetterTotal)) : 0;
     const editInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const editTrainerRateNum = (() => {
+      const r = parseFloat(editVals.trainerRate);
+      return editVals.trainerId && Number.isFinite(r) ? r : 0;
+    })();
+    const editSplit = splitCloserSetterPay(
+      ppw,
+      editBaseline.closerPerW,
+      editVals.setterId ? editSetterPerW : 0,
+      editTrainerRateNum,
+      kw,
+      editInstallPayPct,
+    );
     const editHasM3 = editInstallPayPct < 100 && !project.subDealerId;
-    const editCloserM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal));
-    const editCloserM2Full = Math.max(0, editCloserTotal - editCloserM1);
-    const editSetterM2Full = Math.max(0, editSetterTotal - editSetterM1Amount);
-    const editM2Amount = Math.round(editCloserM2Full * (editInstallPayPct / 100) * 100) / 100;
-    const editM3Amount = editHasM3 ? Math.round(editCloserM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
-    const editSetterM2Amount = editVals.setterId ? Math.round(editSetterM2Full * (editInstallPayPct / 100) * 100) / 100 : 0;
-    const editSetterM3Amount = editVals.setterId && editHasM3 ? Math.round(editSetterM2Full * ((100 - editInstallPayPct) / 100) * 100) / 100 : 0;
+    const editCloserM1 = editSplit.closerM1;
+    const editM2Amount = editSplit.closerM2;
+    const editM3Amount = editHasM3 ? editSplit.closerM3 : 0;
+    const editSetterM1Amount = editSplit.setterM1;
+    const editSetterM2Amount = editSplit.setterM2;
+    const editSetterM3Amount = editVals.setterId && editHasM3 ? editSplit.setterM3 : 0;
     // Serialize co-party drafts — skip rows missing a user picker (abandoned
     // adds). Empty amount strings parse to 0 (intentional — admin may want
     // to pre-add a co-closer with zero cut now and backfill later).
@@ -570,7 +584,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       kWSize: kw,
       netPPW: ppw,
       ...(baselineResolutionFailed ? {} : {
-        m1Amount: editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, editCloserTotal)),
+        m1Amount: editCloserM1,
         m2Amount: editM2Amount,
         m3Amount: editM3Amount,
         setterM1Amount: editSetterM1Amount,
@@ -1849,84 +1863,147 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               }
 
               const previewInstallPayPct = installerPayConfigs[editVals.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-              const closerTotal = calculateCommission(previewPPW, previewBaseline.closerPerW, previewKW);
-              const editM1Flat = previewKW >= 5 ? 1000 : 500;
-              const closerM1 = editVals.setterId ? 0 : Math.min(editM1Flat, Math.max(0, closerTotal));
-              const closerM2 = Math.round(Math.max(0, closerTotal - closerM1) * (previewInstallPayPct / 100) * 100) / 100;
-              const belowBaseline = previewPPW < previewBaseline.closerPerW;
               const previewSetterPerW = 'setterPerW' in previewBaseline && (previewBaseline as { setterPerW?: number | null }).setterPerW != null
                 ? (previewBaseline as { setterPerW: number }).setterPerW
                 : Math.round((previewBaseline.closerPerW + 0.10) * 100) / 100;
-              const setterTotal = editVals.setterId ? calculateCommission(previewPPW, previewSetterPerW, previewKW) : 0;
-              // Actual Kilo take on this deal: gross above wholesale, minus all
-              // commission paid out. (Trainer override isn't edited from this
-              // modal; if a trainer is attached, the server-computed margin on
-              // the stored project covers it — this preview is for editing.)
-              const kiloMargin = Math.max(0, Math.round(
-                ((previewPPW - previewBaseline.kiloPerW) * previewKW * 1000 - closerTotal - setterTotal) * 100,
-              ) / 100);
-              const setterM1 = editVals.setterId ? Math.min(editM1Flat, Math.max(0, setterTotal)) : 0;
-              const setterM2 = editVals.setterId ? Math.round(Math.max(0, setterTotal - setterM1) * (previewInstallPayPct / 100) * 100) / 100 : 0;
+              const belowBaseline = previewPPW < previewBaseline.closerPerW;
+
+              // Sub-dealer deals use a separate commission formula handled
+              // server-side — skip the standard preview to avoid showing
+              // misleading numbers.
+              if (project.subDealerId) {
+                return (
+                  <div className="mt-4 rounded-xl p-4 bg-[var(--surface-card)]/60 border border-[var(--border)]/40">
+                    <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
+                    <p className="text-[var(--text-muted)] text-xs">Sub-dealer commission preview is computed on save (separate from the standard rep formula).</p>
+                  </div>
+                );
+              }
+
+              // Use the canonical splitCloserSetterPay so the preview matches
+              // the server compute exactly (closer-differential + half-split,
+              // not independent above-baseline totals). Previously the preview
+              // overstated both rep totals when a setter was present, and the
+              // Kilo Margin downstream-clamped to $0 — see commission preview
+              // bug fix 2026-05-11.
+              const previewTrainerRate = (() => {
+                const r = parseFloat(editVals.trainerRate);
+                return editVals.trainerId && Number.isFinite(r) ? r : 0;
+              })();
+              const previewSplit = splitCloserSetterPay(
+                previewPPW,
+                previewBaseline.closerPerW,
+                editVals.setterId ? previewSetterPerW : 0,
+                previewTrainerRate,
+                previewKW,
+                previewInstallPayPct,
+              );
+              const closerTotal = previewSplit.closerTotal;
+              const setterTotal = previewSplit.setterTotal;
+              const closerM1 = previewSplit.closerM1;
+              const closerM2 = previewSplit.closerM2;
+              const closerM3 = previewSplit.closerM3;
+              const setterM1 = previewSplit.setterM1;
+              const setterM2 = previewSplit.setterM2;
+              const setterM3 = previewSplit.setterM3;
               const previewHasM3 = previewInstallPayPct < 100 && !project.subDealerId;
-              const closerM3 = previewHasM3 ? Math.round(Math.max(0, closerTotal - closerM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
-              const setterM3 = editVals.setterId && previewHasM3 ? Math.round(Math.max(0, setterTotal - setterM1) * ((100 - previewInstallPayPct) / 100) * 100) / 100 : 0;
+              // Trainer payout (M2/M3 milestone) — separate slice paid above
+              // the standard rep split. Per-watt rate × kW × 1000.
+              const trainerPayout = previewTrainerRate > 0 ? previewTrainerRate * previewKW * 1000 : 0;
+              // Actual Kilo take on this deal: gross above wholesale, minus
+              // all commission paid out (closer + setter + trainer override).
+              const kiloMargin = Math.max(0, Math.round(
+                ((previewPPW - previewBaseline.kiloPerW) * previewKW * 1000 - closerTotal - setterTotal - trainerPayout) * 100,
+              ) / 100);
+              // Kilo Margin is admin-internal (sensitive). Render the cell
+              // only for admin viewers and adjust grid-cols accordingly so
+              // non-admin layout doesn't have an empty column.
+              const showKiloMargin = effectiveRole === 'admin';
 
               return (
                 <div className={`mt-4 rounded-xl p-4 ${belowBaseline ? 'bg-[var(--accent-amber-soft)] border border-amber-500/30' : 'bg-[var(--surface-card)]/60 border border-[var(--border)]/40'}`}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
-                  {editVals.setterId ? (
-                    <div className={`grid ${previewHasM3 ? 'grid-cols-6' : 'grid-cols-4'} gap-3 text-center`}>
-                      <div>
-                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM1.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM2.toLocaleString()}</p>
-                      </div>
-                      {previewHasM3 && (
+                  {editVals.setterId ? (() => {
+                    // Setter case columns vary: setter M1/M2 (+M3) + closer M2
+                    // (+M3) + optional Kilo Margin (admin only). Use literal
+                    // grid-cols-N strings so Tailwind JIT can detect them.
+                    const setterColumns = previewHasM3 ? 3 : 2;
+                    const closerColumns = previewHasM3 ? 2 : 1;
+                    const marginColumns = showKiloMargin ? 1 : 0;
+                    const totalCols = setterColumns + closerColumns + marginColumns;
+                    const gridClass =
+                      totalCols === 6 ? 'grid grid-cols-6 gap-3 text-center' :
+                      totalCols === 5 ? 'grid grid-cols-5 gap-3 text-center' :
+                      totalCols === 4 ? 'grid grid-cols-4 gap-3 text-center' :
+                      'grid grid-cols-3 gap-3 text-center';
+                    return (
+                      <div className={gridClass}>
                         <div>
-                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM3.toLocaleString()}</p>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M1</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM1.toLocaleString()}</p>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
-                      </div>
-                      {previewHasM3 && (
                         <div>
-                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M2</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM2.toLocaleString()}</p>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                        <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
+                        {previewHasM3 && (
+                          <div>
+                            <p className="text-[var(--text-muted)] text-[10px] uppercase">Setter M3</p>
+                            <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${setterM3.toLocaleString()}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
+                        </div>
+                        {previewHasM3 && (
+                          <div>
+                            <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
+                            <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                          </div>
+                        )}
+                        {showKiloMargin && (
+                          <div>
+                            <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
+                            <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                  <div className={`grid ${previewHasM3 ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-center`}>
-                    <div>
-                      <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M1</p>
-                      <p className="text-[var(--text-primary)] font-bold text-sm">${closerM1.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
-                      <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
-                    </div>
-                    {previewHasM3 && (
-                      <div>
-                        <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
-                        <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                    );
+                  })() : (() => {
+                    // Self-gen case: closer M1/M2 (+M3) + optional Kilo Margin.
+                    const closerColumns = previewHasM3 ? 3 : 2;
+                    const marginColumns = showKiloMargin ? 1 : 0;
+                    const totalCols = closerColumns + marginColumns;
+                    const gridClass =
+                      totalCols === 4 ? 'grid grid-cols-4 gap-3 text-center' :
+                      totalCols === 3 ? 'grid grid-cols-3 gap-3 text-center' :
+                      'grid grid-cols-2 gap-3 text-center';
+                    return (
+                      <div className={gridClass}>
+                        <div>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M1</p>
+                          <p className="text-[var(--text-primary)] font-bold text-sm">${closerM1.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M2</p>
+                          <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM2.toLocaleString()}</p>
+                        </div>
+                        {previewHasM3 && (
+                          <div>
+                            <p className="text-[var(--text-muted)] text-[10px] uppercase">Closer M3</p>
+                            <p className={`font-bold text-sm ${belowBaseline ? 'text-[var(--accent-amber-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${closerM3.toLocaleString()}</p>
+                          </div>
+                        )}
+                        {showKiloMargin && (
+                          <div>
+                            <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
+                            <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div>
-                      <p className="text-[var(--text-muted)] text-[10px] uppercase">Kilo Margin</p>
-                      <p className={`font-bold text-sm ${kiloMargin < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>${kiloMargin.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  )}
+                    );
+                  })()}
                   {belowBaseline && (
                     <p className="text-[var(--accent-amber-text)] text-xs mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> PPW is below the installer baseline (${previewBaseline.closerPerW}/W)

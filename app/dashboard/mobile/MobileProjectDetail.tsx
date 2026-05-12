@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
-  getInstallerRatesForDeal, calculateCommission, resolveTrainerRate,
+  getInstallerRatesForDeal, splitCloserSetterPay, resolveTrainerRate,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
@@ -351,23 +351,31 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     } else {
       baseline = getInstallerRatesForDeal(project.installer, project.soldDate, kw, installerPricingVersions);
     }
-    const closerTotal = calculateCommission(ppw, baseline.closerPerW, kw);
-    const m1Flat = kw >= 5 ? 1000 : 500;
+    // Use the canonical splitCloserSetterPay so optimistic amounts match
+    // the server's compute. Independent calculateCommission calls overstate
+    // both rep totals when a setter is on the deal — see desktop edit modal
+    // for the bug-shape (commit 2026-05-11).
     const setterPerW = 'setterPerW' in baseline && baseline.setterPerW != null
       ? baseline.setterPerW
       : Math.round((baseline.closerPerW + 0.10) * 100) / 100;
-    const setterTotal = calculateCommission(ppw, setterPerW, kw);
-    const hasSetter = !!editDraft.setterId;
-    const newSetterM1Amount = hasSetter ? Math.min(m1Flat, Math.max(0, setterTotal)) : 0;
     const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const hasSetter = !!editDraft.setterId;
     const hasM3 = installPayPct < 100 && !project.subDealerId;
-    const newM1Amount = hasSetter ? 0 : Math.min(m1Flat, Math.max(0, closerTotal));
-    const closerM2Full = Math.max(0, closerTotal - newM1Amount);
-    const setterM2Full = Math.max(0, setterTotal - newSetterM1Amount);
-    const newM2Amount = Math.round(closerM2Full * (installPayPct / 100) * 100) / 100;
-    const newM3Amount = hasM3 ? Math.round(closerM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
-    const newSetterM2Amount = hasSetter ? Math.round(setterM2Full * (installPayPct / 100) * 100) / 100 : 0;
-    const newSetterM3Amount = hasSetter && hasM3 ? Math.round(setterM2Full * ((100 - installPayPct) / 100) * 100) / 100 : 0;
+    const effectiveTrainerRate = editDraft.trainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : 0;
+    const split = splitCloserSetterPay(
+      ppw,
+      baseline.closerPerW,
+      hasSetter ? setterPerW : 0,
+      effectiveTrainerRate,
+      kw,
+      installPayPct,
+    );
+    const newM1Amount = split.closerM1;
+    const newM2Amount = split.closerM2;
+    const newM3Amount = hasM3 ? split.closerM3 : 0;
+    const newSetterM1Amount = split.setterM1;
+    const newSetterM2Amount = split.setterM2;
+    const newSetterM3Amount = hasSetter && hasM3 ? split.setterM3 : 0;
 
     // Lead source / blitz pairing rule — leadSource='blitz' implies a
     // blitzId; any other source clears blitzId. Mirrors the desktop
