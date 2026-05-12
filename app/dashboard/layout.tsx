@@ -24,6 +24,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
 import InstallPrompt from './components/InstallPrompt';
 import BottomNav from './components/BottomNav';
+import { FeedbackButton } from './components/FeedbackButton';
 
 // ─── Nav definitions (shared with CommandPalette) ──────────────────────────
 // Types and arrays live in lib/nav-items to avoid a circular dependency.
@@ -917,6 +918,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── PWA install prompt (mobile only) ───────────────────────────── */}
       <InstallPrompt />
+
+      {/* ── Floating feedback button (all authenticated /dashboard views) ──
+          Sits above scroll-to-top (z-30) and BottomNav (z-40 on mobile);
+          on mobile the button is offset to bottom-20 so it doesn't cover
+          the nav. Its modal is z-[60] so it stacks above existing modals. */}
+      <FeedbackButton />
 
       {/* ── Bottom navigation bar (mobile only, hidden on md+) ────────── */}
       <BottomNav role={roleForNav ?? 'rep'} />

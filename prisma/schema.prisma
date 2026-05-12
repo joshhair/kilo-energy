@@ -94,6 +94,9 @@ model User {
   notificationDeliveries  NotificationDelivery[]
   pushSubscriptions       PushSubscription[]
 
+  // In-app feedback widget back-relation
+  feedbackSubmitted       Feedback[]
+
   /// Optional E.164 phone number used for SMS notifications.
   /// Verified out-of-band (one-time code via Twilio); only populated
   /// after the user has confirmed ownership.
@@ -855,6 +858,44 @@ model ProjectNote {
 
   @@index([projectId])
   @@index([authorId])
+}
+
+/// User-submitted feedback from the in-app "Send feedback" widget.
+/// Operational queue, admin-only access. Lands in DB AND emails Josh
+/// at jarvisbyjosh@gmail.com so he can triage from his inbox. Privacy:
+/// the message text is user-typed content — by submitting, the user
+/// consents to sharing with Kilo admin. We do NOT auto-append other
+/// project/commission context; only what the user typed plus URL/role
+/// metadata they're aware travels. Table is allowlisted for the
+/// privacy gate (operational data, no per-rep scoping).
+model Feedback {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+
+  /// Role at submission time (rep can change roles later — preserve original).
+  userRoleSnapshot String
+
+  /// Free-form user-typed text. Length-capped at the API layer (Zod max 2000).
+  message          String
+
+  /// Page URL at submission (relative path; no domain). Used for triage context.
+  url              String?
+
+  /// Browser/OS string. Optional debug context.
+  userAgent        String?
+
+  /// Admin workflow fields (v1 leaves these null; v2 admin UI uses them).
+  resolved         Boolean   @default(false)
+  resolvedAt       DateTime?
+  resolvedBy       String?
+  resolverNote     String?
+
+  createdAt        DateTime  @default(now())
+
+  @@index([userId])
+  @@index([resolved, createdAt])
+  @@index([createdAt])
 }
 
 /// Admin-only counterpart of ProjectNote. Never visible to reps,

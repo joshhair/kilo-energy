@@ -95,6 +95,20 @@ CREATE TABLE "EmailDelivery" (
         CONSTRAINT "EmailDelivery_installerId_fkey" FOREIGN KEY ("installerId") REFERENCES "Installer"("id") ON DELETE SET NULL ON UPDATE CASCADE,
         CONSTRAINT "EmailDelivery_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE CASCADE
       );
+CREATE TABLE "Feedback" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "userId" TEXT NOT NULL,
+        "userRoleSnapshot" TEXT NOT NULL,
+        "message" TEXT NOT NULL,
+        "url" TEXT,
+        "userAgent" TEXT,
+        "resolved" INTEGER NOT NULL DEFAULT 0,
+        "resolvedAt" DATETIME,
+        "resolvedBy" TEXT,
+        "resolverNote" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Feedback_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      );
 CREATE TABLE "Financer" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
@@ -486,6 +500,9 @@ CREATE INDEX "EmailDelivery_createdById_idx" ON "EmailDelivery"("createdById");
 CREATE INDEX "EmailDelivery_installerId_idx" ON "EmailDelivery"("installerId");
 CREATE INDEX "EmailDelivery_projectId_idx" ON "EmailDelivery"("projectId");
 CREATE UNIQUE INDEX "EmailDelivery_providerMessageId_key" ON "EmailDelivery"("providerMessageId");
+CREATE INDEX "Feedback_createdAt_idx" ON "Feedback"("createdAt");
+CREATE INDEX "Feedback_resolved_createdAt_idx" ON "Feedback"("resolved", "createdAt");
+CREATE INDEX "Feedback_userId_idx" ON "Feedback"("userId");
 CREATE UNIQUE INDEX "Financer_name_key" ON "Financer"("name");
 CREATE INDEX "IncentiveMilestone_incentiveId_idx" ON "IncentiveMilestone"("incentiveId");
 CREATE INDEX "Incentive_active_idx" ON "Incentive"("active");

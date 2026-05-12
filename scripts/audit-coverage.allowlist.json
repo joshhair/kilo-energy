@@ -8,5 +8,6 @@
   "app/api/webhooks/resend/route.ts": "Webhook receiver — no human actor to attribute. The audit signal is the EmailDelivery row itself (status / deliveredAt / bouncedAt / errorReason all written by this handler). HMAC verification gates the call.",
   "app/api/projects/[id]/handoff/route.ts": "Delegates the send to lib/handoff-service.sendInstallerHandoff, which writes logChange entries (project_handoff_send / _resend / _test_send / _auto_send). The route is auth + replay-guard only.",
   "app/api/projects/[id]/handoff/auto/route.ts": "Rep-allowed companion to the manual /handoff route. Same delegation pattern — sendInstallerHandoff writes the audit entries (mode='auto'). Auth + one-shot guard + rate-limit only.",
-  "app/api/cron/stalled-digest/route.ts": "Cron handler — no user actor. Persists nothing on success (just sends an email); structured logger.info('stalled_digest_sent') captures the run signal."
+  "app/api/cron/stalled-digest/route.ts": "Cron handler — no user actor. Persists nothing on success (just sends an email); structured logger.info('stalled_digest_sent') captures the run signal.",
+  "app/api/feedback/route.ts": "User-submitted feedback widget. The Feedback row IS the audit record — it captures user, role snapshot, message, URL, userAgent, timestamp. logChange would be circular here. Rate-limited at the route layer."
 }

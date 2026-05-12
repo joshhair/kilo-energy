@@ -34,5 +34,7 @@
 
   "NotificationPreference": "User-self-only by construction. /api/notifications/preferences endpoint scopes every read/write by user.id from requireInternalUser(); no cross-user listing endpoint exists. The admin override path (audit + impersonation) goes through dbAdmin which is route-guarded admin-only.",
   "NotificationDelivery": "User-scoped delivery log. Reads via /api/notifications/deliveries are filtered by user.id at the route handler. Writes happen only inside lib/notifications/service.ts which uses the un-gated prisma intentionally — service fans out across users (a phase change notifies multiple parties on the deal) and the service is the boundary, not the gate.",
-  "PushSubscription": "User-self-only. Subscribe/unsubscribe via /api/notifications/push-subscribe scopes by requireInternalUser(); no cross-user listing endpoint."
+  "PushSubscription": "User-self-only. Subscribe/unsubscribe via /api/notifications/push-subscribe scopes by requireInternalUser(); no cross-user listing endpoint.",
+
+  "Feedback": "Operational queue for in-app feedback widget. Admin-only read by construction — v1 has no read endpoint at all; admin reads via emails to jarvisbyjosh@gmail.com. Writes scoped by requireInternalUser() in POST /api/feedback. Same rationale as AuditLog — operational data, not per-rep scoped, admin/route-guard protected."
 }
