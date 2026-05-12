@@ -74,9 +74,50 @@ A working alert email contains:
 If the subject says "test" or the environment is `development`, the
 wrong DSN is in play — verify prod env vars.
 
+## Source map upload (2026-05-12)
+
+Errors land in Sentry with **real file:line stack traces** when source
+maps are uploaded at build time. Without it, every error is a minified
+`chunk-abc123.js:1:4567` and triage is nearly impossible.
+
+### Required Vercel env vars
+
+Set in **Vercel → Settings → Environment Variables (Production + Preview)**:
+
+- `SENTRY_AUTH_TOKEN` — generate at Sentry → Settings → Account →
+  Auth Tokens. Scopes: `project:releases` + `project:read` + `org:read`.
+  Marked encrypted; never logged. The plugin uses this to push source
+  maps to Sentry during the Vercel build step.
+- `SENTRY_ORG` — your Sentry org slug (visible in any Sentry URL after
+  `/organizations/`).
+- `SENTRY_PROJECT` — your Sentry project slug (`kilo-energy` per the
+  init config).
+
+When these are missing (local dev, preview without secrets), the
+build still succeeds — source-map upload silently skips and errors
+still capture at runtime, they just appear minified in Sentry.
+
+### Why this is safe (no source map leak)
+
+`next.config.ts` passes `sourcemaps.deleteSourcemapsAfterUpload: true`
+to `withSentryConfig`. The plugin uploads `.map` files to Sentry,
+then deletes them from the Vercel build output before deploy. They
+are **never** served from the public CDN.
+
+Verify after deploy:
+```
+curl -I https://app.kiloenergies.com/_next/static/chunks/main-*.js.map
+# Expect 404
+```
+
+If a `.map` file IS publicly accessible, the upload-delete step
+failed. Stop deploys; check Vercel build logs for plugin errors.
+
 ## Runbook cross-links
 
 - Sentry scaffolded in `instrumentation-client.ts` and
   `sentry.server.config.ts` / `sentry.edge.config.ts`.
+- Build-time source map upload wired in `next.config.ts` via
+  `withSentryConfig`.
 - If Sentry itself is down, see `docs/runbooks/` — not a blocker for
   app uptime, we just temporarily lose error visibility.

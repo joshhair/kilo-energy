@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   async redirects() {
@@ -70,4 +71,34 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry's withSentryConfig so the build pipeline uploads
+// source maps to Sentry. Without this, every error in prod lands in
+// Sentry with a minified stack trace (chunk-abc123.js:1:4567) instead
+// of the original file:line — making triage nearly impossible.
+//
+// Critical safety options:
+//   - `widenClientFileUpload: true` — captures more chunks for better coverage
+//   - `sourcemaps.deleteSourcemapsAfterUpload: true` — uploads source maps
+//     to Sentry and then DELETES them from the public build output, so
+//     they can NEVER be fetched from the production CDN. Sentry-internal
+//     use only. (Default in v10 but pinned explicitly for review clarity.)
+//   - `disableLogger: true` — removes Sentry's own logger calls in client
+//     bundles to keep the wire payload lean.
+//   - `telemetry: false` — opt out of Sentry's plugin telemetry.
+//
+// When SENTRY_AUTH_TOKEN / SENTRY_ORG / SENTRY_PROJECT are not set (local
+// dev, preview without secrets), withSentryConfig gracefully no-ops the
+// upload — the build still completes, errors still capture at runtime,
+// only source-map upload is skipped.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  disableLogger: true,
+  telemetry: false,
+});
