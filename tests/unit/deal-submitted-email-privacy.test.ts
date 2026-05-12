@@ -110,16 +110,30 @@ describe('Admin deal-submitted email — content', () => {
     expect(html).toContain('$3,564'); // setter total
   });
 
-  it('includes kilo margin row when provided', () => {
-    const withMargin: AdminDealEmailData = { ...baseAdminData, kiloMargin: 2640 };
-    const { html } = renderDealSubmittedAdminEmail(withMargin);
-    expect(html.toLowerCase()).toContain('kilo margin');
-    expect(html).toContain('$2,640');
+  it('NEVER renders kilo margin — even for admin recipients (policy)', () => {
+    // Kilo margin is admin-internal data. Email is an external channel
+    // (forwarded, screenshotted, synced to personal devices) so the
+    // policy is: margin lives in-app only, never in email. The type
+    // itself no longer has a kiloMargin field — if a future edit
+    // attempts to add one back, this test will fail.
+    //
+    // We strip inline-style `margin:N` CSS properties before searching
+    // so the CSS `margin: 0 auto` in the template shell doesn't false-
+    // positive — we're hunting for the financial term, not the box-model
+    // property.
+    const { html } = renderDealSubmittedAdminEmail(baseAdminData);
+    const stripStyle = html.replace(/style="[^"]*"/g, '');
+    expect(stripStyle.toLowerCase()).not.toContain('kilo margin');
+    expect(stripStyle.toLowerCase()).not.toContain('kilo per');
+    expect(stripStyle.toLowerCase()).not.toContain('baseline');
+    // Generic "margin" outside of CSS is also a leak signal — any
+    // human-readable copy mentioning "margin" should be removed.
+    expect(stripStyle.toLowerCase()).not.toContain('margin');
   });
 
-  it('omits kilo margin row when undefined', () => {
-    const { html } = renderDealSubmittedAdminEmail(baseAdminData);
-    expect(html.toLowerCase()).not.toContain('kilo margin');
+  it('admin subject line does not mention margin', () => {
+    const { subject } = renderDealSubmittedAdminEmail(baseAdminData);
+    expect(subject.toLowerCase()).not.toContain('margin');
   });
 
   it('sub-dealer mode replaces split with single payout line', () => {

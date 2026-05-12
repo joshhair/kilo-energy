@@ -17,7 +17,7 @@
  * consistency with the other Phase 3 notification templates.
  */
 
-import { renderNotificationEmail, escapeHtml } from './notification.js';
+import { renderNotificationEmail, escapeHtml } from './notification';
 
 /** What a rep sees in their deal_submitted_rep email. The shape itself
  *  is the privacy gate — no kilo / margin / other-party amount fields
@@ -69,10 +69,11 @@ export interface AdminDealEmailData {
   closerTotal: number;
   setterTotal: number;
   trainerPayout: number;
-  /** Admin-internal: kilo margin (sensitive). Optional — v1 omits this
-   *  to avoid the baseline-lookup complexity at the create-time hot
-   *  path; admin can click into the deal for the full margin view. */
-  kiloMargin?: number;
+  // NOTE: Kilo margin is INTENTIONALLY OMITTED from this type and never
+  // rendered in any email. Email is an external channel (forwarded, screenshotted,
+  // synced to personal devices, archived outside our control). Admin reads
+  // margin in-app where the privacy gate enforces access. Do NOT add a
+  // kiloMargin field to this interface — by Josh's direct policy 2026-05-11.
   coCloserNames?: string[];
   coSetterNames?: string[];
   isSubDealer?: boolean;
@@ -172,16 +173,15 @@ export function renderDealSubmittedAdminEmail(data: AdminDealEmailData): {
     partyLines.push(`<strong>Co-setters:</strong> ${data.coSetterNames.map(escapeHtml).join(', ')}`);
   }
 
-  const marginRow = data.kiloMargin != null
-    ? `<tr><td style="padding:4px 0;color:#5a6378;border-top:1px solid #e5e7ee;font-weight:700;">Kilo margin</td><td style="padding:4px 0;text-align:right;font-weight:700;border-top:1px solid #e5e7ee;color:#0f1322;">${formatMoney(data.kiloMargin)}</td></tr>`
-    : '';
+  // Kilo margin is NEVER rendered here — it's admin-internal data that
+  // shouldn't travel through email. Admin views margin in-app where the
+  // privacy gate enforces access. (Policy decision 2026-05-11.)
   const commissionRows = data.isSubDealer
     ? `<tr><td style="padding:4px 0;color:#5a6378;">Sub-dealer payout</td><td style="padding:4px 0;text-align:right;font-weight:600;">${formatMoney(data.closerTotal)}</td></tr>`
     : `
         <tr><td style="padding:4px 0;color:#5a6378;">Closer total</td><td style="padding:4px 0;text-align:right;font-weight:600;">${formatMoney(data.closerTotal)}</td></tr>
         <tr><td style="padding:4px 0;color:#5a6378;">Setter total</td><td style="padding:4px 0;text-align:right;font-weight:600;">${formatMoney(data.setterTotal)}</td></tr>
         ${data.trainerPayout > 0 ? `<tr><td style="padding:4px 0;color:#5a6378;">Trainer override</td><td style="padding:4px 0;text-align:right;font-weight:600;">${formatMoney(data.trainerPayout)}</td></tr>` : ''}
-        ${marginRow}
       `;
 
   const subject = `New deal: ${data.customerName} (${data.kWSize.toFixed(1)} kW)`;
