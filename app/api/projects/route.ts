@@ -225,6 +225,40 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Materialize submitted notes into a ProjectNote row so they appear on
+  // the project detail page. The legacy Project.notes column still gets
+  // the same value (write-both during transition) but the display layer
+  // reads from ProjectNote rows since the 2026-04-23 notes UI refactor.
+  // Without this step the rep's submission note silently vanishes from
+  // every view (Hunter Helton, 2026-05-11).
+  const noteText = (body.notes ?? '').trim();
+  if (noteText.length > 0) {
+    try {
+      const author = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+      const authorName = author
+        ? `${author.firstName ?? ''} ${author.lastName ?? ''}`.trim() || user.email
+        : user.email;
+      await prisma.projectNote.create({
+        data: {
+          projectId: project.id,
+          authorId: user.id,
+          authorName,
+          text: noteText,
+        },
+      });
+    } catch (err) {
+      // Non-fatal — project is created, but the note didn't materialize.
+      // Log loudly so we can debug; UX shows the deal but not the note.
+      logger.warn('project_create_note_materialization_failed', {
+        projectId: project.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   const dto = {
     ...serializeProject(project),
     additionalClosers: project.additionalClosers.map(serializeProjectParty),
