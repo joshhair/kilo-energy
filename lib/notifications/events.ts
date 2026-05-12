@@ -110,6 +110,31 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     mandatory: true,
   },
 
+  // ─── Deal lifecycle ────────────────────────────────────────────────
+  //
+  // Two events for proper privacy slicing. The rep event renders each
+  // recipient's OWN commission slice only (their M1/M2/M3 + customer +
+  // sold date + their role + party names without other-party amounts).
+  // The admin event renders the full deal with kilo margin and full
+  // attribution. Sub-dealer deals skip the rep event entirely (their
+  // commission structure doesn't match the standard rep formula) but
+  // still fire the admin event.
+  {
+    type: 'deal_submitted_rep',
+    label: 'Deal submitted (you\'re on it)',
+    description: 'A new deal you\'re attributed on (closer / setter / co-party / trainer) was submitted. Shows only your slice.',
+    category: 'projects',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
+  {
+    type: 'deal_submitted_admin',
+    label: 'New deal submitted',
+    description: 'A rep submitted a new deal. Includes full attribution and margin for admin oversight.',
+    category: 'admin',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+    audience: ['admin'],
+  },
+
   // ─── Blitz ─────────────────────────────────────────────────────────
   // Visibility rules in this category are nuanced:
   //   - `blitz_request_pending` is admin-only (only admins approve blitz

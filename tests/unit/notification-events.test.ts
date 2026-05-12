@@ -106,6 +106,28 @@ describe('Notification event registry', () => {
     }
   });
 
+  it('deal_submitted events are registered with correct audiences', () => {
+    const repEvent = getEventDefinition('deal_submitted_rep');
+    expect(repEvent).toBeDefined();
+    expect(repEvent?.category).toBe('projects');
+    expect(repEvent?.audience).toBeUndefined(); // any role can be a rep
+
+    const adminEvent = getEventDefinition('deal_submitted_admin');
+    expect(adminEvent).toBeDefined();
+    expect(adminEvent?.category).toBe('admin');
+    expect(adminEvent?.audience).toEqual(['admin']);
+  });
+
+  it('deal_submitted_admin is hidden from reps', () => {
+    const repEvents = eventsForRole('rep');
+    expect(repEvents.map((e) => e.type)).not.toContain('deal_submitted_admin');
+  });
+
+  it('deal_submitted_rep is visible to reps', () => {
+    const repEvents = eventsForRole('rep');
+    expect(repEvents.map((e) => e.type)).toContain('deal_submitted_rep');
+  });
+
   it('blitz_request_pending is hidden from reps and visible to admins', () => {
     const repEvents = eventsForRole('rep');
     expect(repEvents.map((e) => e.type)).not.toContain('blitz_request_pending');
