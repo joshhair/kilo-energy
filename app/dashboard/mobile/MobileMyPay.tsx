@@ -10,6 +10,7 @@ import { PayrollEntry } from '../../../lib/data';
 import { resolveTrainerRate } from '../../../lib/commission';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp, Calendar } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
+import BaselinePanel from '../my-pay/BaselinePanel';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
@@ -631,6 +632,9 @@ export default function MobileMyPay() {
           </MobileCard>
         </MobileSection>
       )}
+
+      {/* ── Baseline panel ── */}
+      <BaselinePanel />
 
       {/* ── Pending Chargebacks ── */}
       {pendingChargebackCount > 0 && (() => {

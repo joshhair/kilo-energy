@@ -133,10 +133,19 @@ export function serializeProject<T extends {
   };
 }
 
-export function serializePayrollEntry<T extends { amountCents: number }>(
+export function serializePayrollEntry<T extends { amountCents: number; editReason?: string | null }>(
   row: T,
-): Omit<T, 'amountCents'> & { amount: number } {
-  const { amountCents, ...rest } = row;
+): Omit<T, 'amountCents' | 'editReason'> & { amount: number } {
+  // `editReason` is free-form admin context entered during a paid-amount
+  // correction (Glide-cleanup notes, internal triage commentary). It is
+  // intentionally stripped from the serialized DTO so it never reaches
+  // rep-facing surfaces that pass through PayrollEntry data (most
+  // notably the `/api/data` bulk endpoint). Admin views that legitimately
+  // need it should read the audit log instead — the trail is the
+  // canonical record. `editedBy` (actor userId) and `editedAfterPaidAt`
+  // (timestamp) are factual + non-sensitive and stay on the DTO so the
+  // UI can render a "corrected on <date>" footnote later if needed.
+  const { amountCents, editReason: _editReason, ...rest } = row;
   return { ...rest, amount: toDollars(fromCents(amountCents)) };
 }
 

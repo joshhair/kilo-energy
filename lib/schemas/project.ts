@@ -84,6 +84,15 @@ export const createProjectSchema = z.object({
   /// Failure to send does NOT roll back the deal — the project is created
   /// regardless; the failure surfaces as a failed-status EmailDelivery row.
   requestHandoff: z.boolean().optional(),
+
+  /// Per-project trainer override applied at create time. Optional —
+  /// today's new-deal form doesn't surface it, but admins importing or
+  /// PM batch-creating may include both fields together. Without these
+  /// on the create schema, downstream notification + payroll logic that
+  /// reads project.trainerId/trainerRate would always see null on
+  /// freshly-created rows even if the client tried to set them.
+  trainerId:   optionalId,
+  trainerRate: finiteNumber.min(0).max(5).nullable().optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 

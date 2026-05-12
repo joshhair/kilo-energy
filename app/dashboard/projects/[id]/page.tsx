@@ -13,7 +13,9 @@ import {
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   splitCloserSetterPay, resolveTrainerRate,
   DEFAULT_INSTALL_PAY_PCT,
+  SOLARTECH_FAMILIES,
 } from '../../../../lib/data';
+import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-deduction';
 import { formatDate } from '../../../../lib/utils';
 import { Flag, FlagOff, AlertTriangle, X, Pencil, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -1508,9 +1510,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.solarTechProductId ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}
                   >
                     <option value="">— Select product —</option>
-                    {solarTechProducts.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
+                    {/* Group by family so the same product name across
+                        Goodleap / Enfin / Lightreach / Cash flows reads as
+                        financer-scoped pricing rather than visual duplicates. */}
+                    {SOLARTECH_FAMILIES.map((family) => {
+                      const familyProducts = solarTechProducts.filter((p) => p.family === family);
+                      if (familyProducts.length === 0) return null;
+                      return (
+                        <optgroup key={family} label={family}>
+                          {familyProducts.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
                   </select>
                 </div>
               )}
@@ -1886,30 +1899,71 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               // overstated both rep totals when a setter was present, and the
               // Kilo Margin downstream-clamped to $0 — see commission preview
               // bug fix 2026-05-11.
-              const previewTrainerRate = (() => {
+              //
+              // Trainer resolution mirrors the server (lib/context/project-
+              // transitions.ts). Two independent paths:
+              //   - Closer side: project-level override (editVals.trainerId)
+              //     wins if set; otherwise the closer's chain via
+              //     resolveTrainerRate + trainerAssignments. Applied post-
+              //     split via applyCloserTrainerDeduction.
+              //   - Setter side: always chain-only (project-level trainer
+              //     is closer-scoped per project-transitions.ts comment).
+              //     Folded into splitCloserSetterPay's trainerRate param
+              //     which shifts the setter's split point.
+              //
+              // Prior to 2026-05-12 this preview missed the closer-chain
+              // deduction entirely, surfacing as a "breakdown vs overall
+              // mismatch" on Charles Edward Lotts II (Hunter+Chris both
+              // had 10¢ chain trainers — $1,066 unaccounted for).
+              const projectOverrideRate = (() => {
                 const r = parseFloat(editVals.trainerRate);
                 return editVals.trainerId && Number.isFinite(r) ? r : 0;
               })();
+              const closerChainResolved = resolveTrainerRate(
+                { id: project.id, trainerId: editVals.trainerId || null, trainerRate: projectOverrideRate || null },
+                project.repId,
+                trainerAssignments,
+                payrollEntries,
+              );
+              const closerTrainerRate = closerChainResolved.rate;
+              const setterChainResolved = editVals.setterId
+                ? resolveTrainerRate(
+                    { id: project.id, trainerId: null, trainerRate: null },
+                    editVals.setterId,
+                    trainerAssignments,
+                    payrollEntries,
+                  )
+                : { rate: 0, trainerId: null };
+              const setterTrainerRate = setterChainResolved.rate;
               const previewSplit = splitCloserSetterPay(
                 previewPPW,
                 previewBaseline.closerPerW,
                 editVals.setterId ? previewSetterPerW : 0,
-                previewTrainerRate,
+                setterTrainerRate,
                 previewKW,
                 previewInstallPayPct,
               );
-              const closerTotal = previewSplit.closerTotal;
-              const setterTotal = previewSplit.setterTotal;
-              const closerM1 = previewSplit.closerM1;
-              const closerM2 = previewSplit.closerM2;
-              const closerM3 = previewSplit.closerM3;
-              const setterM1 = previewSplit.setterM1;
-              const setterM2 = previewSplit.setterM2;
-              const setterM3 = previewSplit.setterM3;
+              const deductedSplit = applyCloserTrainerDeduction(
+                previewSplit,
+                closerTrainerRate,
+                previewKW,
+                previewInstallPayPct,
+              );
+              const closerTotal = deductedSplit.closerTotal;
+              const setterTotal = deductedSplit.setterTotal;
+              const closerM1 = deductedSplit.closerM1;
+              const closerM2 = deductedSplit.closerM2;
+              const closerM3 = deductedSplit.closerM3;
+              const setterM1 = deductedSplit.setterM1;
+              const setterM2 = deductedSplit.setterM2;
+              const setterM3 = deductedSplit.setterM3;
               const previewHasM3 = previewInstallPayPct < 100 && !project.subDealerId;
-              // Trainer payout (M2/M3 milestone) — separate slice paid above
-              // the standard rep split. Per-watt rate × kW × 1000.
-              const trainerPayout = previewTrainerRate > 0 ? previewTrainerRate * previewKW * 1000 : 0;
+              // Trainer payout = closer-side + setter-side per-watt rates.
+              // Both come out of the gross-above-kiloPerW pool, so Kilo
+              // Margin must subtract them to match the server compute.
+              const closerTrainerPayout = closerTrainerRate * previewKW * 1000;
+              const setterTrainerPayout = setterTrainerRate * previewKW * 1000;
+              const trainerPayout = closerTrainerPayout + setterTrainerPayout;
               // Actual Kilo take on this deal: gross above wholesale, minus
               // all commission paid out (closer + setter + trainer override).
               const kiloMargin = Math.max(0, Math.round(

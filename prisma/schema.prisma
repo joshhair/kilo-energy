@@ -585,6 +585,19 @@ model PayrollEntry {
   chargebackOf   PayrollEntry?  @relation("ChargebackLink", fields: [chargebackOfId], references: [id])
   chargebacks    PayrollEntry[] @relation("ChargebackLink")
 
+  /// Paid-amount correction trail. When admin corrects a Paid entry's
+  /// `amountCents` (no money moves — fixes a recorded value that diverged
+  /// from what was actually paid), the original is preserved here on the
+  /// first correction. Subsequent corrections overwrite `amountCents` but
+  /// `originalAmountCents` stays as the pre-correction value forever.
+  /// Use case: Glide-import cleanup, kW changes after pay, manual entry
+  /// errors. Distinct from chargebacks (real money flow) and the 24h
+  /// Paid→Pending grace window (uncommitted corrections).
+  originalAmountCents Int?
+  editedAfterPaidAt   DateTime?
+  editedBy            String?
+  editReason          String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

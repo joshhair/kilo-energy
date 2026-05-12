@@ -15,6 +15,7 @@ import { RepSelector } from '../components/RepSelector';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PaidCorrectionModal from '../components/PaidCorrectionModal';
 import Link from 'next/link';
 import MobilePayroll from '../mobile/MobilePayroll';
 import { PayrollSkeleton } from './components/PayrollSkeleton';
@@ -154,6 +155,12 @@ function PayrollPageInner() {
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
   const [processingEntryIds, setProcessingEntryIds] = useState<Set<string>>(new Set());
+
+  // Paid-correction modal (admin-only retroactive edit of Paid entries).
+  // Distinct from the 24h grace-window Paid→Pending reversal — this
+  // handles the case where the recorded amount diverged from what was
+  // actually paid (Glide-import typos, kW changes, manual entry errors).
+  const [paidCorrectionEntry, setPaidCorrectionEntry] = useState<PayrollEntry | null>(null);
   const editEntryPanelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(editEntryPanelRef, editingEntry !== null);
 
@@ -659,13 +666,45 @@ function PayrollPageInner() {
   };
 
   const openEditEntry = (entry: PayrollEntry) => {
-    if (entry.status === 'Paid') { toast('Paid entries cannot be edited — add a negative adjustment entry instead', 'error'); return; }
+    if (entry.status === 'Paid') {
+      // Admin path: open the dedicated paid-correction modal which
+      // surfaces both intents (data correction vs. real-money chargeback)
+      // and routes each to the right server endpoint.
+      // Non-admin path: the original toast — the surface is admin-only
+      // at the API layer regardless, but a clearer no-op message here
+      // saves a confused round-trip.
+      if (effectiveRole === 'admin') {
+        setPaidCorrectionEntry(entry);
+      } else {
+        toast('Paid entries cannot be edited — ask an admin to correct or add a chargeback.', 'error');
+      }
+      return;
+    }
     setEditEntryForm({
       amount: String(entry.amount),
       date: entry.date,
       notes: entry.notes ?? '',
     });
     setEditingEntry(entry);
+  };
+
+  const handlePaidCorrected = (updated: PayrollEntry) => {
+    setPayrollEntries((prev) => prev.map((e) => e.id === updated.id ? updated : e));
+  };
+
+  const openChargebackForEntry = (entry: PayrollEntry) => {
+    // Pre-fill the existing unified add-payment form in Chargeback mode
+    // with the entry's rep + project so the admin doesn't have to re-pick.
+    setPaymentForm({
+      type: 'Chargeback',
+      repId: entry.repId,
+      projectId: entry.projectId ?? '',
+      amount: '',
+      stage: 'M1',
+      date: todayLocalDateStr(),
+      notes: `Correction for ${entry.paymentStage} paid ${entry.date}`,
+    });
+    setShowPaymentModal(true);
   };
 
   const handleSaveEditEntry = async (e: React.FormEvent) => {
@@ -1934,6 +1973,12 @@ function PayrollPageInner() {
         message={pendingDeleteReim ? `$${pendingDeleteReim.amount.toFixed(2)} for ${pendingDeleteReim.repName}\n\nThis cannot be undone. Prefer Archive unless this is a typo.` : ''}
         confirmLabel="Delete"
         danger
+      />
+      <PaidCorrectionModal
+        entry={paidCorrectionEntry}
+        onClose={() => setPaidCorrectionEntry(null)}
+        onCorrected={handlePaidCorrected}
+        onOpenChargeback={openChargebackForEntry}
       />
     </div>
   );

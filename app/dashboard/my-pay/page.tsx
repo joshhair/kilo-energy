@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
 import MobileMyPay from '../mobile/MobileMyPay';
+import BaselinePanel from './BaselinePanel';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
@@ -559,6 +560,9 @@ function MyPayPageInner() {
 
       {/* ── Gradient divider ── */}
       <div className="h-px bg-gradient-to-r from-transparent via-slate-700/40 to-transparent mb-4" />
+
+      {/* ── Baseline panel: rep's role + trainer chain context ── */}
+      <BaselinePanel />
 
       {/* ── Pending Chargebacks — deals still to be clawed back ── */}
       {pendingChargebackCount > 0 && (() => {

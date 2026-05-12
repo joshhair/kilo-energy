@@ -50,6 +50,26 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
+  // Admin-only fields: per-project trainer override. The schema accepts
+  // them for forward-compat with admin tooling, but non-admin callers
+  // (reps, sub-dealers, internal PMs) MUST NOT be able to set them via
+  // a hand-crafted POST. Mirror the PM_BLOCKED_FIELDS doctrine from
+  // PATCH /api/projects/[id]. Silent-strip rather than 403 so legitimate
+  // admin-cloned forms don't break if a stale trainerId snuck into the
+  // payload during a copy-paste flow.
+  if (user.role !== 'admin') {
+    if (body.trainerId !== undefined || body.trainerRate !== undefined) {
+      logger.info('project_create_trainer_fields_stripped', {
+        actorId: user.id,
+        actorRole: user.role,
+        attemptedTrainerId: body.trainerId ?? null,
+        attemptedTrainerRate: body.trainerRate ?? null,
+      });
+    }
+    body.trainerId = undefined;
+    body.trainerRate = undefined;
+  }
+
   // ─── Ownership check: reps + SDs can only create deals they're on ───
   if (user.role === 'rep') {
     const isCloser = body.closerId === user.id;
@@ -221,6 +241,14 @@ export async function POST(req: NextRequest) {
       blitzId: body.blitzId ?? null,
       subDealerId: body.subDealerId ?? null,
       installerIntakeJson: body.installerIntakeJson ?? null,
+      // Project-level trainer override: when admin assigns a specific
+      // trainer + rate to a single deal (one-off, overrides TrainerAssignment
+      // chain). Schema accepts both fields but the create payload was
+      // dropping them on insert — the deal_submitted_rep trainer email
+      // and downstream phase-transition trainer payout logic depend on
+      // these landing in the row at create time.
+      trainerId: body.trainerId ?? null,
+      trainerRate: body.trainerRate ?? null,
       ...(additionalClosersCreate.length ? { additionalClosers: { create: additionalClosersCreate } } : {}),
       ...(additionalSettersCreate.length ? { additionalSetters: { create: additionalSettersCreate } } : {}),
     },
@@ -297,6 +325,8 @@ export async function POST(req: NextRequest) {
     entityId: project.id,
     detail: {
       actorRole: user.role,
+      trainerId: body.trainerId ?? null,
+      trainerRate: body.trainerRate ?? null,
       customerName: project.customerName,
       closerId: project.closerId,
       setterId: project.setterId,

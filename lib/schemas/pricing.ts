@@ -187,3 +187,15 @@ export const patchPayrollEntrySchema = z.object({
 }).strict();
 export type PatchPayrollEntryInput = z.infer<typeof patchPayrollEntrySchema>;
 
+// Paid-amount correction: admin-only retroactive edit of a Paid entry's
+// recorded amount. The actual payment already happened correctly — this
+// fixes a recorded value that diverged from reality (Glide imports, kW
+// changes after pay, manual typos). Distinct from chargebacks and the
+// 24h Paid→Pending grace window. Reason is mandatory; original value
+// is preserved server-side on first correction.
+export const paidCorrectionSchema = z.object({
+  amount: finiteNumber,
+  reason: z.string().min(10).max(500),
+}).strict();
+export type PaidCorrectionInput = z.infer<typeof paidCorrectionSchema>;
+

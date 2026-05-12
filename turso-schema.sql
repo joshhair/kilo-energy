@@ -218,7 +218,7 @@ CREATE TABLE "PayrollEntry" (
     "date" TEXT NOT NULL,
     "notes" TEXT NOT NULL DEFAULT '',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL, "idempotencyKey" TEXT, "amountCents" INTEGER NOT NULL DEFAULT 0, "paidAt" DATETIME, "isChargeback" BOOLEAN NOT NULL DEFAULT 0, "chargebackOfId" TEXT,
+    "updatedAt" DATETIME NOT NULL, "idempotencyKey" TEXT, "amountCents" INTEGER NOT NULL DEFAULT 0, "paidAt" DATETIME, "isChargeback" BOOLEAN NOT NULL DEFAULT 0, "chargebackOfId" TEXT, "originalAmountCents" INTEGER, "editedAfterPaidAt" DATETIME, "editedBy" TEXT, "editReason" TEXT,
     CONSTRAINT "PayrollEntry_repId_fkey" FOREIGN KEY ("repId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "PayrollEntry_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
