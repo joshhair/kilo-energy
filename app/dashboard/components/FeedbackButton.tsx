@@ -155,7 +155,7 @@ export function FeedbackButton() {
 
             <div className="px-5 py-4 space-y-3">
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Bugs, confusing flows, ideas — anything you want me to see. Sent to Kilo support; we read every one.
+                Share bugs, ideas, or feedback. We read every one.
               </p>
 
               <div>
