@@ -205,7 +205,11 @@ export default function NotificationsSection() {
             )}
           </div>
 
-          {/* Channel header (desktop only — mobile uses per-channel rows) */}
+          {/* Channel header (desktop only — mobile uses per-channel rows).
+              Each header cell stretches to the full grid-column width so
+              its centered content aligns with the toggle/dropdown below
+              (using plain inline `<span>` would leave the labels at the
+              column start, misaligned with the centered toggles). */}
           <div
             className="hidden md:grid px-6 py-2 text-[11px] uppercase tracking-wider items-center"
             style={{
@@ -215,10 +219,10 @@ export default function NotificationsSection() {
             }}
           >
             <span>Event</span>
-            <span className="flex items-center gap-1 justify-center"><Mail className="w-3 h-3" /> Email</span>
-            <span className="flex items-center gap-1 justify-center"><MessageSquare className="w-3 h-3" /> SMS</span>
-            <span className="flex items-center gap-1 justify-center"><Smartphone className="w-3 h-3" /> Push</span>
-            <span className="text-right">Cadence</span>
+            <span className="flex items-center gap-1 justify-center w-full"><Mail className="w-3 h-3" /> Email</span>
+            <span className="flex items-center gap-1 justify-center w-full"><MessageSquare className="w-3 h-3" /> SMS</span>
+            <span className="flex items-center gap-1 justify-center w-full"><Smartphone className="w-3 h-3" /> Push</span>
+            <span className="block w-full text-right">Cadence</span>
           </div>
 
           <ul>
