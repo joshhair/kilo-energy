@@ -155,7 +155,7 @@ export function FeedbackButton() {
 
             <div className="px-5 py-4 space-y-3">
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Share bugs, ideas, or feedback. We read every one.
+                Share bugs, ideas, or feedback.
               </p>
 
               <div>
