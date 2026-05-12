@@ -12,10 +12,23 @@ import { logDataAccess } from '@/lib/audit-log';
 
 export const GET = withApiHandler<{ id: string }>(async (_req, { params }) => {
   const { id } = await params!;
-  const rows = await db.emailDelivery.findMany({
-    where: { projectId: id },
-    orderBy: { sentAt: 'desc' },
-  });
+  const [rows, project] = await Promise.all([
+    db.emailDelivery.findMany({
+      where: { projectId: id },
+      orderBy: { sentAt: 'desc' },
+    }),
+    // Co-fetch handoff context so the HandoffStatusCard can decide whether
+    // to render itself (hide for installers without handoff configured
+    // when there's no delivery history; keep visible when history exists
+    // even if currently disabled).
+    db.project.findUnique({
+      where: { id },
+      select: {
+        handoffSentAt: true,
+        installer: { select: { name: true, handoffEnabled: true } },
+      },
+    }),
+  ]);
 
   if (rows.length > 0) {
     void logDataAccess({
@@ -26,7 +39,7 @@ export const GET = withApiHandler<{ id: string }>(async (_req, { params }) => {
   }
 
   // Parse JSON columns to arrays for client convenience.
-  const safe = rows.map((r) => {
+  const deliveries = rows.map((r) => {
     let toEmails: string[] = [];
     let ccEmails: string[] = [];
     try { const v = JSON.parse(r.toEmails) as unknown; if (Array.isArray(v)) toEmails = v.filter((x): x is string => typeof x === 'string'); } catch { /* ignore */ }
@@ -49,5 +62,12 @@ export const GET = withApiHandler<{ id: string }>(async (_req, { params }) => {
     };
   });
 
-  return NextResponse.json(safe);
+  return NextResponse.json({
+    deliveries,
+    handoff: {
+      enabled: project?.installer.handoffEnabled ?? false,
+      installerName: project?.installer.name ?? '',
+      everSent: project?.handoffSentAt != null,
+    },
+  });
 });

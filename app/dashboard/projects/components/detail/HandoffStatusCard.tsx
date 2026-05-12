@@ -52,9 +52,16 @@ const STATUS_BADGE: Record<DeliveryRow['status'], { label: string; className: st
   failed:     { label: 'Failed',     className: 'text-[var(--accent-red-text)]',      icon: X },
 };
 
+interface HandoffMeta {
+  enabled: boolean;
+  installerName: string;
+  everSent: boolean;
+}
+
 export function HandoffStatusCard({ projectId, canResend }: Props) {
   const { toast } = useToast();
   const [rows, setRows] = useState<DeliveryRow[]>([]);
+  const [handoffMeta, setHandoffMeta] = useState<HandoffMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -64,7 +71,9 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
     try {
       const res = await fetch(`/api/projects/${projectId}/email-deliveries`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setRows((await res.json()) as DeliveryRow[]);
+      const body = (await res.json()) as { deliveries: DeliveryRow[]; handoff: HandoffMeta };
+      setRows(body.deliveries ?? []);
+      setHandoffMeta(body.handoff ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load delivery history');
     } finally {
@@ -101,6 +110,16 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
   const latest = realDeliveries[0] ?? null;
   const hasBeenSent = !!latest;
 
+  // The Send/Resend button only appears when handoff is currently enabled
+  // for this installer. Removes the misleading "Send Handoff" CTA from
+  // projects where the server would refuse to send anyway (SolarTech, OWE,
+  // and any non-BVI installer today). When delivery history exists but
+  // handoff is now disabled, the card stays in review-only mode so admin
+  // can still inspect past sends.
+  const handoffConfigured = handoffMeta?.enabled === true;
+  const showSendButton = canResend && handoffConfigured;
+  const showNotConfiguredState = !loading && !handoffConfigured && realDeliveries.length === 0;
+
   return (
     <div className="card-surface rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3">
@@ -108,7 +127,7 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
           <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan-text)]" />
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Installer Handoff</p>
         </div>
-        {canResend && (
+        {showSendButton && (
           <PrimaryButton
             size="sm"
             disabled={sending}
@@ -128,6 +147,10 @@ export function HandoffStatusCard({ projectId, canResend }: Props) {
         <div className="flex items-center gap-2 text-xs text-[var(--accent-red-text)] py-2">
           <AlertCircle className="w-3.5 h-3.5" /> {error}
         </div>
+      ) : showNotConfiguredState ? (
+        <p className="text-xs text-[var(--text-dim)] py-2">
+          Handoff not configured for {handoffMeta?.installerName || 'this installer'}. Configure recipients in Settings → Installers to enable sends.
+        </p>
       ) : !latest ? (
         <p className="text-xs text-[var(--text-dim)] py-2">
           No handoff has been sent for this project yet.
