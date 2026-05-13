@@ -29,6 +29,12 @@ export interface FeedbackEmailData {
   userAgent?: string | null;
   /** ISO timestamp of submission. */
   createdAt: string;
+  /**
+   * Optional screenshot of the page the user submitted from, as a
+   * `data:image/jpeg;base64,...` URI. Rendered inline in the email body
+   * when present. The user explicitly opted in via the widget checkbox.
+   */
+  screenshotDataUri?: string | null;
 }
 
 export function renderFeedbackEmail(data: FeedbackEmailData): {
@@ -47,6 +53,16 @@ export function renderFeedbackEmail(data: FeedbackEmailData): {
     ? `<p style="margin:12px 0 0 0;font-size:11px;color:#8a92a8;">User agent: ${escapeHtml(data.userAgent)}</p>`
     : '';
 
+  // Inline screenshot block. The src is a data URI controlled by the
+  // API layer (validates base64 shape upstream, then prepends the
+  // `data:image/jpeg;base64,` prefix), so we don't escape it as HTML —
+  // we already trust the shape. Display capped at 600px wide to fit
+  // typical email-client preview panes.
+  const screenshotBlock = data.screenshotDataUri
+    ? `<p style="margin:16px 0 6px 0;font-size:12px;color:#6b7280;">Screenshot at submission:</p>
+       <img src="${data.screenshotDataUri}" alt="Screenshot at submission" style="display:block;max-width:600px;width:100%;height:auto;border:1px solid #e5e7eb;border-radius:6px;" />`
+    : '';
+
   const html = renderNotificationEmail({
     heading: `New feedback from ${escapeHtml(data.userName)}`,
     bodyHtml: `
@@ -58,6 +74,7 @@ export function renderFeedbackEmail(data: FeedbackEmailData): {
       ${urlBlock}
       <p style="margin:16px 0 8px 0;font-weight:600;">Message:</p>
       <blockquote style="margin:0;padding:12px 16px;border-left:3px solid #1de9b6;background:#f5f7fb;color:#0f1322;border-radius:0 6px 6px 0;font-size:14px;line-height:1.55;white-space:pre-wrap;">${escapeHtml(data.message)}</blockquote>
+      ${screenshotBlock}
       ${agentBlock}
     `,
     footerNote: 'Sent via the Kilo in-app feedback widget. Reply to this email to respond directly to the user.',

@@ -15,6 +15,16 @@ export const createFeedbackSchema = z.object({
   url: z.string().max(500).optional(),
   /** Browser/OS string. The route can also pull from req headers as a fallback. */
   userAgent: z.string().max(500).optional(),
+  /**
+   * Optional viewport screenshot, base64-encoded JPEG (no data: prefix).
+   * Cap at 4MB of base64 (~3MB binary) to stay safely under Vercel's
+   * 4.5MB function payload limit. The client is opt-in via a checkbox.
+   */
+  screenshotBase64: z
+    .string()
+    .max(4_000_000, 'Screenshot too large')
+    .regex(/^[A-Za-z0-9+/=]+$/, 'Screenshot must be base64-encoded')
+    .optional(),
 }).strict();
 
 export type CreateFeedbackInput = z.infer<typeof createFeedbackSchema>;

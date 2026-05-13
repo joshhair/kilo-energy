@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { MessageCirclePlus, X, Loader2, Send, CheckCircle2 } from 'lucide-react';
+import { MessageCirclePlus, X, Loader2, Send, CheckCircle2, Camera } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useToast } from '@/lib/toast';
 
@@ -32,7 +32,16 @@ export function FeedbackButton() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Screenshot toggle defaults ON — most feedback is layout/UX where a
+  // picture is 10× easier to triage than a typed description. User can
+  // uncheck before sending if they're on a sensitive screen.
+  const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Refs so the screenshot capture can exclude the widget itself (the
+  // floating button + the open modal) from what it rasterizes. Without
+  // this the screenshot would show the modal sitting over the page.
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Only render on /dashboard/** routes. Defensive — layout mount path
   // should already guarantee this, but a stray render elsewhere would be
@@ -60,10 +69,43 @@ export function FeedbackButton() {
   const charsLeft = MAX_LENGTH - charCount;
   const canSubmit = message.trim().length > 0 && charCount <= MAX_LENGTH && !submitting;
 
+  // Capture the current page as a JPEG, base64-encoded (no data: prefix).
+  // Returns undefined if capture fails — the submission still proceeds
+  // without a screenshot rather than blocking the user's feedback.
+  //
+  // html-to-image is dynamically imported so it only loads when the user
+  // actually submits with the toggle on. Keeps the dashboard route's
+  // first-load bundle clean (~15KB saved on cold loads).
+  const captureScreenshot = async (): Promise<string | undefined> => {
+    try {
+      const htmlToImage = await import('html-to-image');
+      const dataUrl = await htmlToImage.toJpeg(document.body, {
+        quality: 0.7,
+        pixelRatio: 1,
+        cacheBust: true,
+        filter: (node) => {
+          // Exclude the widget itself (button + modal) from the capture.
+          // contains() returns false for the ref node itself only when the
+          // ref is null; both checks are intentionally inclusive.
+          if (buttonRef.current && buttonRef.current.contains(node)) return false;
+          if (modalRef.current && modalRef.current.contains(node)) return false;
+          return true;
+        },
+      });
+      // Strip "data:image/jpeg;base64," to send only the base64 chunk.
+      const comma = dataUrl.indexOf(',');
+      return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+    } catch (err) {
+      console.warn('Feedback screenshot capture failed:', err);
+      return undefined;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
+      const screenshotBase64 = includeScreenshot ? await captureScreenshot() : undefined;
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,6 +113,7 @@ export function FeedbackButton() {
           message: message.trim(),
           url: pathname ?? undefined,
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+          screenshotBase64,
         }),
       });
       if (!res.ok) {
@@ -100,6 +143,7 @@ export function FeedbackButton() {
           bottom nav (~80px from bottom) so it doesn't sit on top of nav
           icons. Desktop has no bottom nav, so a smaller offset works. */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Send feedback"
@@ -125,6 +169,7 @@ export function FeedbackButton() {
           }}
         >
           <div
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="feedback-modal-title"
@@ -192,6 +237,31 @@ export function FeedbackButton() {
                   </span>
                 </div>
               </div>
+
+              {/* Screenshot opt-in. Default on — most reports are layout
+                  or UX issues where a picture is dramatically easier to
+                  act on than typed words. The user can uncheck before
+                  sending if they're on a sensitive screen. */}
+              <label
+                className="flex items-start gap-2.5 cursor-pointer select-none rounded-lg px-2.5 py-2 -mx-2.5 transition-colors hover:bg-[var(--surface-card)]/60"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={includeScreenshot}
+                  onChange={(e) => setIncludeScreenshot(e.target.checked)}
+                  disabled={submitting}
+                  className="mt-0.5 w-4 h-4 rounded accent-[var(--accent-emerald-solid)] cursor-pointer"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-xs font-medium flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5" /> Include screenshot of this page
+                  </span>
+                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                    Helps admin see what you&apos;re seeing. Shared with admin only.
+                  </span>
+                </span>
+              </label>
             </div>
 
             <div className="flex items-center justify-end gap-2 px-5 py-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>

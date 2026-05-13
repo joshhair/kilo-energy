@@ -91,4 +91,25 @@ describe('renderFeedbackEmail', () => {
     // Style attribute on the blockquote ensures newlines render
     expect(multiline.html).toMatch(/white-space:\s*pre-wrap/);
   });
+
+  it('renders the screenshot inline when a data URI is supplied', () => {
+    const withShot = renderFeedbackEmail({
+      ...baseData,
+      screenshotDataUri: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAQABAAD/',
+    });
+    expect(withShot.html).toContain('Screenshot at submission');
+    expect(withShot.html).toContain('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAQABAAD/');
+    expect(withShot.html).toMatch(/<img[^>]+src="data:image\/jpeg;base64,/);
+  });
+
+  it('omits the screenshot block when no data URI is supplied', () => {
+    const { html } = renderFeedbackEmail(baseData);
+    expect(html).not.toContain('Screenshot at submission');
+    expect(html).not.toContain('data:image/jpeg;base64');
+  });
+
+  it('omits the screenshot block when data URI is null', () => {
+    const { html } = renderFeedbackEmail({ ...baseData, screenshotDataUri: null });
+    expect(html).not.toContain('Screenshot at submission');
+  });
 });

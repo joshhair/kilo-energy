@@ -53,4 +53,37 @@ describe('createFeedbackSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts a well-formed base64 screenshot', () => {
+    const result = createFeedbackSchema.safeParse({
+      message: 'hi',
+      // Tiny but valid base64 chunk
+      screenshotBase64: '/9j/4AAQSkZJRgABAQEAAQABAAD/',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects non-base64 characters in screenshot', () => {
+    const result = createFeedbackSchema.safeParse({
+      message: 'hi',
+      screenshotBase64: 'not!base64!@#',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects screenshot payloads larger than 4MB', () => {
+    const result = createFeedbackSchema.safeParse({
+      message: 'hi',
+      screenshotBase64: 'A'.repeat(4_000_001),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts payloads with no screenshot field at all', () => {
+    // The whole point of the field being optional — back-compat with
+    // any client that doesn't ship the opt-in toggle.
+    const result = createFeedbackSchema.safeParse({ message: 'hi' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.screenshotBase64).toBeUndefined();
+  });
 });

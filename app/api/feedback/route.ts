@@ -78,6 +78,15 @@ export async function POST(req: NextRequest) {
   // Best-effort email. If sending fails, the row persists; admin can
   // read pending feedback via DB query. Failure is logged with the
   // feedback id for traceability.
+  //
+  // Screenshot (optional): the schema validated it's well-formed base64
+  // before we got here. Prepend the data-URI prefix here — keeping the
+  // payload smaller on the wire and isolating the URI shape to one place.
+  // Screenshot bytes are NOT persisted to the DB; the email is the
+  // archive, the Feedback row is the searchable index.
+  const screenshotDataUri = body.screenshotBase64
+    ? `data:image/jpeg;base64,${body.screenshotBase64}`
+    : null;
   try {
     const { subject, html } = renderFeedbackEmail({
       userName,
@@ -87,6 +96,7 @@ export async function POST(req: NextRequest) {
       message: body.message,
       userAgent,
       createdAt: created.createdAt.toISOString(),
+      screenshotDataUri,
     });
     const result = await sendEmail({
       to: FEEDBACK_RECIPIENT,
