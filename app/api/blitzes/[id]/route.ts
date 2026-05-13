@@ -54,12 +54,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  // Non-admins (except blitz owner): hide costs. Per-project financial
-  // scrubbing happens below via scrubProjectForViewer on a per-relationship
-  // basis — that closes the additionalClosers/additionalSetters leak that
-  // the old top-level-only zeroing missed.
+  // BlitzCost rows are strictly admin-only. Earlier revisions exposed them
+  // to the blitz owner on the theory that "they're running the blitz, they
+  // should see their budget burn" — but BlitzCost is Kilo's operational
+  // spend (housing/travel/meals/swag), not the participant's. Combined
+  // with the per-project scrubbing below it would let an owner reconstruct
+  // Kilo's net margin (closer baseline + kW + sold PPW minus costs). Lock
+  // it down here; the desktop + mobile UI already hide the Costs tab from
+  // non-admins, so this change has no UI-visible impact for owners.
   const isBlitzOwner = blitz.ownerId === user.id;
-  const visibleCosts = (user.role === 'admin' || isBlitzOwner) ? blitz.costs : [];
+  const visibleCosts = user.role === 'admin' ? blitz.costs : [];
 
   return NextResponse.json({
     ...blitz,
@@ -71,8 +75,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         additionalClosers: p.additionalClosers.map(serializeProjectParty),
         additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
-      if (user.role !== 'admin' && !isBlitzOwner) {
-        const rel = relationshipToProject(user, {
+      // Admin: full passthrough (sees kiloMargin / baselineOverride.kiloPerW).
+      // Everyone else: scrub. Blitz owners get the 'blitz_owner' relationship
+      // override, which passes per-deal commission amounts + kW but still
+      // strips Kilo's internal P&L fields (matrix in lib/fieldVisibility.ts).
+      // Without the override they'd resolve to 'none' on deals they aren't
+      // on and see $0 payouts — the cycle 1127 bug. The override fixes the
+      // leaderboard without re-leaking margin.
+      if (user.role !== 'admin') {
+        const naturalRel = relationshipToProject(user, {
           closerId: p.closerId,
           setterId: p.setterId,
           subDealerId: p.subDealerId,
@@ -80,6 +91,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
           additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
         });
+        const rel = isBlitzOwner ? 'blitz_owner' : naturalRel;
         return scrubProjectForViewer(withParties, rel);
       }
       return withParties;
@@ -262,10 +274,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       unlinkedCount,
     },
   });
+  // Mirror the GET endpoint's gates: costs admin-only, projects scrubbed
+  // via 'blitz_owner' for owners (passes amounts, strips kiloMargin /
+  // kiloPerW / adminNotes / trainer*). PATCH is reachable by admin OR
+  // owner (the guard at the top of this handler), so `user.role !== admin`
+  // here means the caller is the owner.
+  const isPatchBlitzOwner = blitz.ownerId === user.id;
+  const visibleCostsPatch = user.role === 'admin' ? blitz.costs : [];
   return NextResponse.json({
     ...blitz,
     unlinkedCount,
-    costs: blitz.costs.map(serializeBlitzCost),
+    costs: visibleCostsPatch.map(serializeBlitzCost),
     projects: blitz.projects.map((p) => {
       const s = serializeProject(p);
       type WithParties = { additionalClosers?: Array<Parameters<typeof serializeProjectParty>[0]>; additionalSetters?: Array<Parameters<typeof serializeProjectParty>[0]> };
@@ -276,7 +295,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         additionalSetters: pWithParties.additionalSetters?.map(serializeProjectParty) ?? [],
       };
       if (user.role !== 'admin') {
-        const rel = relationshipToProject(user, {
+        const naturalRel = relationshipToProject(user, {
           closerId: p.closerId,
           setterId: p.setterId,
           subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
@@ -284,6 +303,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
           additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
         });
+        const rel = isPatchBlitzOwner ? 'blitz_owner' : naturalRel;
         return scrubProjectForViewer(withParties, rel);
       }
       return withParties;

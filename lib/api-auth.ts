@@ -192,6 +192,16 @@ export type ProjectRelationship =
   | 'setter'
   | 'trainer'
   | 'sub-dealer'
+  // A non-admin rep who owns the blitz a project is attributed to. They
+  // need to see every participant's commission amounts + kW so the blitz
+  // leaderboard is meaningful — but they should NOT see Kilo internals
+  // (kiloPerW, kiloMargin, adminNotes, BlitzCost rows). Sits between
+  // 'pm' (full passthrough) and 'closer' (own-amounts-only) in scope.
+  //
+  // This is not computed by relationshipToProject — it's set explicitly
+  // by the blitz route after detecting `blitz.ownerId === viewer.id` and
+  // overrides whatever the natural-relationship resolver returned.
+  | 'blitz_owner'
   | 'none';
 
 export interface ProjectRelationshipInputs {

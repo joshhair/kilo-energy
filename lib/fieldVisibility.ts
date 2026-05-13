@@ -68,32 +68,39 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
   // Trainer identity fields — admin/pm only. Scrubbed for everyone else
   // including the trainer themselves (trainer-on-deal gets their payout
   // derived from rate+kW in the UI rather than reading trainerId directly).
-  trainerId:   { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
-  trainerName: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
-  trainerRate: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', none: 'undefined' },
+  // Blitz owners: also scrubbed — trainer assignment is Kilo's internal
+  // mentorship structure, not a participant payout.
+  trainerId:   { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined' },
+  trainerName: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined' },
+  trainerRate: { vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined', trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined' },
 
   // Admin-only notes — strip the key entirely for everyone except
-  // admin + pm. Reps / trainers / sub-dealers / vendor_pm never see these.
-  // Vendor PM is explicitly excluded: admin notes may reference rep comp,
-  // cancellation reasons, or other internal-only context.
+  // admin + pm. Reps / trainers / sub-dealers / vendor_pm / blitz_owner
+  // never see these. Vendor PM is explicitly excluded: admin notes may
+  // reference rep comp, cancellation reasons, or other internal-only
+  // context. Blitz owners likewise — adminNotes can carry margin context.
   adminNotes: {
     vendor_pm: 'undefined',
     closer: 'undefined',
     setter: 'undefined',
     trainer: 'undefined',
     'sub-dealer': 'undefined',
+    blitz_owner: 'undefined',
     none: 'undefined',
   },
 
   // Kilo margin — internal P&L number. Even if a future schema change
   // promotes it to a top-level Project field (Phase 2 baseline-versioning
   // work), the matrix is pre-armed. Strip for everyone except admin + pm.
+  // Blitz owners explicitly included in the strip list — see the
+  // 'blitz_owner' comment in ProjectRelationship for the rationale.
   kiloMargin: {
     vendor_pm: 'undefined',
     closer: 'undefined',
     setter: 'undefined',
     trainer: 'undefined',
     'sub-dealer': 'undefined',
+    blitz_owner: 'undefined',
     none: 'undefined',
   },
 

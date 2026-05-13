@@ -18,6 +18,7 @@ const ALL_RELATIONSHIPS: ProjectRelationship[] = [
   'setter',
   'trainer',
   'sub-dealer',
+  'blitz_owner',
   'none',
 ];
 
@@ -234,7 +235,7 @@ describe('scrubProjectForViewer — field visibility contract', () => {
       const out = scrubProjectForViewer(p, 'pm');
       expect(out.kiloMargin).toBe(0.45);
     });
-    for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'vendor_pm', 'none'] as const) {
+    for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'vendor_pm', 'blitz_owner', 'none'] as const) {
       it(`is stripped for ${rel}`, () => {
         const p = { ...sampleProject(), kiloMargin: 0.45 };
         const out = scrubProjectForViewer(p as unknown as ReturnType<typeof sampleProject>, rel);
@@ -244,10 +245,50 @@ describe('scrubProjectForViewer — field visibility contract', () => {
     it('is stripped from baselineOverride for non-admin/pm', () => {
       const p = sampleProject();
       (p.baselineOverride as Record<string, unknown>).kiloMargin = 0.45;
-      for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'none'] as const) {
+      for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'blitz_owner', 'none'] as const) {
         const out = scrubProjectForViewer(p, rel);
         expect((out.baselineOverride as Record<string, unknown>).kiloMargin).toBeUndefined();
       }
+    });
+  });
+
+  // Blitz owner: a non-admin rep who owns the blitz this deal is attributed
+  // to. Needs full participant payout visibility (leaderboard) but must NOT
+  // see Kilo internals. Effectively a "rep on every deal" view minus the
+  // P&L metadata.
+  describe('blitz_owner', () => {
+    const p = sampleProject();
+    const out = scrubProjectForViewer(p, 'blitz_owner');
+
+    it('passes through closer amounts (so leaderboard shows real numbers)', () => {
+      expect(out.m1Amount).toBe(1000);
+      expect(out.m2Amount).toBe(2323.20);
+      expect(out.m3Amount).toBe(580.80);
+    });
+    it('passes through setter amounts', () => {
+      expect(out.setterM1Amount).toBe(1000);
+      expect(out.setterM2Amount).toBe(1100.80);
+      expect(out.setterM3Amount).toBe(275.20);
+    });
+    it('preserves co-closer + co-setter structure WITH amounts (not zeroed)', () => {
+      // Unlike `closer`/`setter` views, the blitz owner sees every party's
+      // real numbers — that's the whole point of the leaderboard.
+      expect(out.additionalClosers).toEqual(p.additionalClosers);
+      expect(out.additionalSetters).toEqual(p.additionalSetters);
+    });
+    it('preserves netPPW (sold price, customer-facing, not Kilo margin)', () => {
+      expect(out.netPPW).toBe(3.85);
+    });
+    it('hides trainer identity + rate (Kilo internal mentorship)', () => {
+      expect(out.trainerId).toBeUndefined();
+      expect(out.trainerName).toBeUndefined();
+      expect(out.trainerRate).toBeUndefined();
+    });
+    it('strips kiloPerW from baselineOverride', () => {
+      const bo = out.baselineOverride as Record<string, unknown>;
+      expect(bo.closerPerW).toBe(2.85);
+      expect(bo.setterPerW).toBe(2.95);
+      expect(bo.kiloPerW).toBeUndefined();
     });
   });
 
