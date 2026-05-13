@@ -56,7 +56,7 @@ export default function BlitzProfitability({
       const anyAddl = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
       if (!isSelfGen && !closerApproved && !anyAddl) return null;
       const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p, deps);
-      const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * p.kWSize * 1000 : 0;
+      const setterCost = ((p.setter?.id && p.setter?.id !== p.closer?.id) || (!p.setter?.id && (p.additionalSetters ?? []).length > 0)) ? 0.10 * p.kWSize * 1000 : 0;
       const margin = (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
       return { p, margin };
     })

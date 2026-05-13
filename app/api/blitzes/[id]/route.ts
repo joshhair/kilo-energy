@@ -71,7 +71,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         additionalClosers: p.additionalClosers.map(serializeProjectParty),
         additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
-      if (user.role !== 'admin') {
+      if (user.role !== 'admin' && !isBlitzOwner) {
         const rel = relationshipToProject(user, {
           closerId: p.closerId,
           setterId: p.setterId,

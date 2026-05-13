@@ -172,7 +172,7 @@ export function computeBlitzKiloMargin(
     if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
     const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p, deps);
     const kW = p.kWSize ?? 0;
-    const setterCost = (p.setter?.id && p.setter?.id !== p.closer?.id) ? 0.10 * kW * 1000 : 0;
+    const setterCost = ((p.setter?.id && p.setter?.id !== p.closer?.id) || (!p.setter?.id && (p.additionalSetters ?? []).length > 0)) ? 0.10 * kW * 1000 : 0;
     return s + (closerPerW - kiloPerW) * kW * 1000 - setterCost;
   }, 0);
 }

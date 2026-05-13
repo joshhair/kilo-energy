@@ -540,8 +540,7 @@ export default function IncentivesPage() {
   const statsFiltered: Incentive[] =
     incentiveFilter === 'ending_soon' ? visible.filter((i) => isEndingSoon(i.endDate)) :
     incentiveFilter === 'expired'     ? visible.filter((i) => isExpired(i.endDate)) :
-    incentiveFilter === 'active'      ? activeVisible.filter((i) => i.active) :
-                                        activeVisible;
+                                        activeVisible.filter((i) => i.active);
   const activeIncentives = statsFiltered;
   const totalMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.length, 0);
   const achievedMilestones = activeIncentives.reduce((sum, i) => sum + i.milestones.filter((m) => m.achieved).length, 0);

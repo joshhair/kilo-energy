@@ -625,6 +625,10 @@ function TrainingPageInner() {
     body: Partial<Pick<TrainerAssignment, 'isActiveTraining'>>,
     successMsg: string,
   ) => {
+    if (id.startsWith('direct-')) {
+      toast('This is a per-deal trainer override. Open the project to change it.', 'info');
+      return;
+    }
     const prev = trainerAssignments.find((a) => a.id === id);
     if (!prev) return;
     // Optimistic update
