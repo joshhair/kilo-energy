@@ -1,0 +1,116 @@
+name: Visual regression (nightly)
+
+# Catches layout drift on the highest-traffic dashboard surfaces that
+# unit/API tests can't see. Runs at 09:00 UTC daily (~02:00 PT) — well
+# after any same-day agent activity has deployed.
+#
+# Targets: the live Vercel production deploy (kilo-energy.vercel.app).
+# Rationale: drift in production is what actually matters. Running
+# against a CI-seeded local DB would catch the same diffs only if the
+# CI environment perfectly mirrors prod, which is more infra than it's
+# worth for the catch-rate. The trade-off: real-data noise (commission
+# numbers drift day-to-day) can cause noise. The CSS in
+# tests/e2e/visual-fixtures/hide-volatile.css masks the worst offenders
+# (sparklines, count-up animations, skeleton shimmers); the test
+# tolerance (maxDiffPixelRatio: 0.01) absorbs the rest. If runs start
+# flaking on data drift, tighten masks in visual.test.ts via Playwright's
+# `mask` option on specific locators.
+#
+# Auth: relies on a seeded `e2e-admin@kiloenergies.com` user existing in
+# the production Clerk instance with role=admin in Prisma. The
+# `seed-e2e-users.mts` script handles this — run it once against prod
+# Clerk before the first workflow run (or any time the e2e-admin user
+# gets deleted). See `npm run test:e2e:setup`.
+#
+# On failure: workflow goes red, GitHub notifies Josh by email (default
+# repo notification settings). Diff PNGs are uploaded as artifacts under
+# the `playwright-visual-diffs` name — download the artifact, eyeball
+# the diffs, then either:
+#   - Real regression: revert the offending commit (`git revert <sha>
+#     && git push`). Vercel rolls back in ~3 min.
+#   - Intentional UI change: run `npm run test:visual:update` locally,
+#     commit the updated baselines alongside the next push. The workflow
+#     NEVER auto-updates baselines — every change is human-reviewed.
+
+on:
+  schedule:
+    # 09:00 UTC = 02:00 PT (after agent overnight activity has settled).
+    - cron: "0 9 * * *"
+  # Manual trigger from the Actions tab — useful for ad-hoc verification
+  # after a known-intentional UI change has shipped and baselines need
+  # confirming.
+  workflow_dispatch:
+
+jobs:
+  visual:
+    name: Snapshot top surfaces, diff against baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Target the live production deploy. Set PLAYWRIGHT_BASE_URL to
+      # override (e.g. a preview deploy URL when validating a baseline
+      # change before merging).
+      PLAYWRIGHT_BASE_URL: ${{ vars.VISUAL_REGRESSION_BASE_URL || 'https://kilo-energy.vercel.app' }}
+      # Clerk auth — admin.setup.ts uses these to mint a SignInToken
+      # and write tests/e2e/.auth/admin.json. The CLERK_SECRET_KEY must
+      # match whichever Clerk instance backs the target deployment.
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run visual regression suite
+        # The `visual-desktop` + `visual-mobile` projects in
+        # playwright.config.ts target only tests/e2e/visual.test.ts.
+        # `setup` is in their dependencies, so admin.setup.ts runs first
+        # to create the auth storage state.
+        run: npm run test:visual
+
+      # Diff artifacts are written under test-results/ when toHaveScreenshot
+      # fails. Uploading the whole directory makes it easy to download from
+      # the workflow run page and inspect what changed.
+      - name: Upload diff PNGs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-visual-diffs
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+      # When a real regression slips through, this comment makes it
+      # actionable from the GitHub UI without digging into the workflow
+      # logs. Skipped on success (no noise).
+      - name: Annotate failure with next steps
+        if: failure()
+        run: |
+          echo "## Visual regression detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "One or more surfaces drifted from their baselines." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the \`playwright-visual-diffs\` artifact and eyeball the diff PNGs." >> $GITHUB_STEP_SUMMARY
+          echo "2. If the change is **intentional** (you shipped a UI tweak):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "   npm run test:visual:update" >> $GITHUB_STEP_SUMMARY
+          echo "   git add tests/e2e/visual.test.ts-snapshots/" >> $GITHUB_STEP_SUMMARY
+          echo "   git commit -m 'visual: refresh baselines'" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. If it's a **real regression**, revert the offending commit:" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "   git revert <sha> && git push" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY

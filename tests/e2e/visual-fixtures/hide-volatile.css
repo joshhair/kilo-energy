@@ -1,0 +1,48 @@
+/*
+ * Stylesheet injected into pages before each visual-regression screenshot.
+ *
+ * Goal: stop the rendering at a deterministic frame regardless of when
+ * during an animation the snapshot fires. Without this, two screenshots
+ * taken seconds apart can differ by hundreds of pixels because count-up
+ * animations, sparkline draws, and CSS transitions land at different
+ * progress values.
+ *
+ * Volatile *content* (dollar amounts, names, counts) is masked at the
+ * test level via Playwright's `mask` array — that's a per-test concern,
+ * not a global stylesheet one. This file only freezes time-based effects.
+ */
+
+/* Kill every animation/transition immediately. Anything that depends on
+   time to reach its final state instead jumps to the end. */
+*,
+*::before,
+*::after {
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+  transition-delay: 0s !important;
+}
+
+/* Sparkline + chart canvases render line geometry from data that changes
+   run-to-run (random fixture seeds, "last 7 days" sliding window).
+   Mask them entirely — layout slot is preserved, content is empty. */
+canvas,
+.sparkline,
+.stat-value-glow {
+  visibility: hidden !important;
+}
+
+/* Count-up animations on stat-card numbers — the JS hook reads
+   Date.now() to compute progress. Without freezing the clock the
+   snapshot lands at a random tween position. */
+.stat-value {
+  animation: none !important;
+}
+
+/* Skeleton shimmers — if a page is mid-load when we snapshot, the
+   skeleton bars cycle through a wave gradient. Land on the rest state. */
+.animate-skeleton,
+[class*="skeleton"] {
+  animation: none !important;
+}

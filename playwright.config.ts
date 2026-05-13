@@ -88,6 +88,35 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    // Visual regression: hits the same surfaces on desktop + mobile,
+    // takes full-page screenshots, compares to baselines in
+    // tests/e2e/visual.test.ts-snapshots/. Runs nightly via
+    // .github/workflows/visual-regression.yml. Excluded from the default
+    // `npm run test:e2e` to keep PR-time CI fast — invoke explicitly via
+    // `npm run test:visual` or `npm run test:visual:update`.
+    {
+      name: 'visual-desktop',
+      dependencies: ['setup'],
+      testMatch: [/visual\.test\.ts/],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1440, height: 900 },
+        storageState: 'tests/e2e/.auth/admin.json',
+      },
+    },
+    {
+      name: 'visual-mobile',
+      dependencies: ['setup'],
+      testMatch: [/visual\.test\.ts/],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 393, height: 852 },
+        isMobile: true,
+        hasTouch: true,
+        userAgent: devices['iPhone 14 Pro'].userAgent,
+        storageState: 'tests/e2e/.auth/admin.json',
+      },
+    },
   ],
   webServer: {
     command: 'npm run dev',

@@ -22,6 +22,8 @@
     "test:api": "vitest run tests/api",
     "test:e2e": "npx playwright test",
     "test:mobile": "npx playwright test --project=mobile",
+    "test:visual": "npx playwright test --project=visual-desktop --project=visual-mobile",
+    "test:visual:update": "npx playwright test --project=visual-desktop --project=visual-mobile --update-snapshots",
     "test:all": "vitest run && tsc --noEmit",
     "backup:now": "node scripts/backup-turso.mjs",
     "restore:from": "node scripts/restore-turso.mjs",
