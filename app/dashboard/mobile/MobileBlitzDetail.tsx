@@ -344,7 +344,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
             {/* Admins + the blitz owner see everyone's payouts (running a
                 contest, paying it out). Regular reps see ranks/kW/deals
                 only — never other reps' commission. */}
-            <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
+            {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
+              <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
+            )}
 
             {/* Progress bar */}
             {(blitz.status === 'active' || blitz.status === 'completed') && (

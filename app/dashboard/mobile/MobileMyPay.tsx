@@ -251,7 +251,7 @@ export default function MobileMyPay() {
     }, 0);
   }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
 
-  const pipelineTotal = projectedM1 + projectedM2 + projectedM3 + projectedTrainer;
+  const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
 
   // ── Annual Projection ──
   const annualProjection = useMemo(() => {

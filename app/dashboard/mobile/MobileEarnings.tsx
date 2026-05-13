@@ -5,8 +5,9 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
-import { CheckCircle2, XCircle, Archive, Download, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Archive, Download, Clock, Receipt } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
+import { ReimbursementModal } from '../components/ReimbursementModal';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -76,13 +77,17 @@ export default function MobileEarnings() {
   const {
     effectiveRole,
     effectiveRepId,
+    effectiveRepName,
     payrollEntries,
     reimbursements,
+    setReimbursements,
   } = useApp();
   const isHydrated = useIsHydrated();
+  const { toast } = useToast();
 
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
 
+  const [showReimbModal, setShowReimbModal] = useState(false);
   const [period, setPeriod] = useState<Period>('all');
   const [dealRoleFilter, setDealRoleFilter] = useState<string | null>(null);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
@@ -138,6 +143,11 @@ export default function MobileEarnings() {
   const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = myReimbs.length;
 
+  const currentYYYYMM   = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
+  const approvedReimbs  = reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+
   const filteredDeals = dealRoleFilter
     ? dealPayments.filter((p) => {
         if (dealRoleFilter === 'Setter') return isSetterNote(p.notes);
@@ -181,7 +191,60 @@ export default function MobileEarnings() {
 
   return (
     <div className="px-5 pt-4 pb-28 space-y-4">
-      <MobilePageHeader title="My Pay" />
+      <ReimbursementModal
+        open={showReimbModal}
+        onClose={() => setShowReimbModal(false)}
+        repId={effectiveRepId ?? ''}
+        repName={effectiveRepName ?? ''}
+        onSubmit={async (data) => {
+          const tempId = `reimb_${Date.now()}`;
+          const { receiptFile, ...displayData } = data;
+          const newReimb = { id: tempId, ...displayData, status: 'Pending' as const };
+          setReimbursements((prev) => [...prev, newReimb]);
+          setShowReimbModal(false);
+          try {
+            const res = await fetch('/api/reimbursements', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ repId: data.repId, amount: data.amount, description: data.description, date: data.date, receiptName: data.receiptName }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const created = await res.json();
+            setReimbursements((prev) => prev.map((r) => r.id === tempId ? created : r));
+            if (receiptFile) {
+              const form = new FormData();
+              form.append('file', receiptFile);
+              const upRes = await fetch(`/api/reimbursements/${created.id}/receipt`, { method: 'POST', body: form });
+              if (upRes.ok) {
+                const withReceipt = await upRes.json();
+                setReimbursements((prev) => prev.map((r) => r.id === created.id ? withReceipt : r));
+                toast('Reimbursement submitted with receipt', 'success');
+              } else {
+                toast('Submitted — receipt upload failed, try re-uploading', 'error');
+              }
+            } else {
+              toast('Reimbursement request submitted', 'success');
+            }
+          } catch (err) {
+            console.error(err);
+            setReimbursements((prev) => prev.filter((r) => r.id !== tempId));
+            toast('Failed to save reimbursement', 'error');
+          }
+        }}
+      />
+      <MobilePageHeader
+        title="My Pay"
+        right={
+          <button
+            onClick={() => setShowReimbModal(true)}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl"
+            style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+          >
+            <Receipt className="w-4 h-4" style={{ color: 'var(--accent-purple-text)' }} />
+            Request Reimbursement
+          </button>
+        }
+      />
 
       {/* ── Next Payout Hero ────────────────────────────────────────────── */}
       {nextPayoutTotal > 0 && (
@@ -214,6 +277,22 @@ export default function MobileEarnings() {
           {fmt$(totalEarned)}
         </p>
       </MobileCard>
+
+      {/* ── Summary stat cards ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending</p>
+          <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalPending)}</p>
+        </div>
+        <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This Month</p>
+          <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(thisMonthEarned)}</p>
+        </div>
+        <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reimbs</p>
+          <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-purple-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(approvedReimbs)}</p>
+        </div>
+      </div>
 
       {/* ── Period tabs ─────────────────────────────────────────────────── */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -257,7 +336,7 @@ export default function MobileEarnings() {
       )}
 
       {/* ── Deal Payments ───────────────────────────────────────────────── */}
-      <MobileSection title="Deal Payments" count={dealPayments.length + myReimbs.length} collapsible defaultOpen>
+      <MobileSection title="Deal Payments" count={dealPayments.length} collapsible defaultOpen>
         <div className="flex justify-end mb-2">
           <button
             onClick={() => {
@@ -438,7 +517,7 @@ export default function MobileEarnings() {
       </MobileSection>
 
       {/* ── Reimbursements ──────────────────────────────────────────────── */}
-      <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
+      {dealRoleFilter !== 'Reimb.' && <MobileSection title="Reimbursements" count={sortedReimbs.length} collapsible defaultOpen>
         <div className="flex justify-end mb-2">
           <button
             onClick={() => {
@@ -478,7 +557,7 @@ export default function MobileEarnings() {
             ))}
           </div>
         )}
-      </MobileSection>
+      </MobileSection>}
 
     </div>
   );

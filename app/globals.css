@@ -1724,3 +1724,15 @@ select {
   /* preserve selected-row blue tint — !important wins on hover too */
   background: color-mix(in srgb, var(--accent-blue-solid) 8%, transparent) !important;
 }
+
+/* ── Shimmer skeleton pulse ──────────────────────────────────────────────── */
+@keyframes shimmerPulse {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 1; }
+}
+.animate-shimmer-pulse {
+  animation: shimmerPulse 1400ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-pulse { animation: none; opacity: 0.6; }
+}

@@ -30,11 +30,14 @@ export interface FeedbackEmailData {
   /** ISO timestamp of submission. */
   createdAt: string;
   /**
-   * Optional screenshot of the page the user submitted from, as a
-   * `data:image/jpeg;base64,...` URI. Rendered inline in the email body
-   * when present. The user explicitly opted in via the widget checkbox.
+   * Optional Vercel Blob public URL for a screenshot of the page the
+   * user submitted from. Rendered inline (`<img src>`) and also printed
+   * verbatim in a plaintext-friendly line so downstream readers (Gmail's
+   * plaintext alternative, scripts, AI debuggers) can fetch the image
+   * directly. Gmail strips `data:` URI images for security; remote URLs
+   * are the only cross-client-portable way to inline a screenshot.
    */
-  screenshotDataUri?: string | null;
+  screenshotUrl?: string | null;
 }
 
 export function renderFeedbackEmail(data: FeedbackEmailData): {
@@ -53,14 +56,15 @@ export function renderFeedbackEmail(data: FeedbackEmailData): {
     ? `<p style="margin:12px 0 0 0;font-size:11px;color:#8a92a8;">User agent: ${escapeHtml(data.userAgent)}</p>`
     : '';
 
-  // Inline screenshot block. The src is a data URI controlled by the
-  // API layer (validates base64 shape upstream, then prepends the
-  // `data:image/jpeg;base64,` prefix), so we don't escape it as HTML —
-  // we already trust the shape. Display capped at 600px wide to fit
-  // typical email-client preview panes.
-  const screenshotBlock = data.screenshotDataUri
-    ? `<p style="margin:16px 0 6px 0;font-size:12px;color:#6b7280;">Screenshot at submission:</p>
-       <img src="${data.screenshotDataUri}" alt="Screenshot at submission" style="display:block;max-width:600px;width:100%;height:auto;border:1px solid #e5e7eb;border-radius:6px;" />`
+  // Inline screenshot block. The src is a Vercel Blob public URL owned
+  // by us (escape-as-HTML to be safe even though we control the source).
+  // We ALSO render the URL as plaintext-readable copy so Resend's auto-
+  // plaintext alternative carries the link — that's how non-HTML readers
+  // (Gmail MCP, oncall scripts) fetch the image. Display capped at 600px
+  // wide to fit typical email-client preview panes.
+  const screenshotBlock = data.screenshotUrl
+    ? `<p style="margin:16px 0 6px 0;font-size:12px;color:#6b7280;">Screenshot at submission: ${escapeHtml(data.screenshotUrl)}</p>
+       <img src="${escapeHtml(data.screenshotUrl)}" alt="Screenshot at submission" style="display:block;max-width:600px;width:100%;height:auto;border:1px solid #e5e7eb;border-radius:6px;" />`
     : '';
 
   const html = renderNotificationEmail({

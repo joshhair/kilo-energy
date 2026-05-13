@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { prisma } from '../../../lib/db';
 import { requireInternalUser } from '../../../lib/api-auth';
 import { parseJsonBody } from '../../../lib/api-validation';
@@ -6,7 +7,8 @@ import { createFeedbackSchema } from '../../../lib/schemas/feedback';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { sendEmail } from '../../../lib/email-helpers';
 import { renderFeedbackEmail } from '../../../lib/email-templates/feedback';
-import { logger } from '../../../lib/logger';
+import { buildBlobKey } from '../../../lib/file-uploads';
+import { logger, errorContext } from '../../../lib/logger';
 
 // Fixed recipient — operational queue lands in Josh's Gmail where filters
 // route to the `kilo/feedback` label for triage. Not configurable via env
@@ -75,18 +77,47 @@ export async function POST(req: NextRequest) {
     select: { id: true, createdAt: true },
   });
 
+  // Screenshot (optional): upload to Vercel Blob and reference by public
+  // URL in the email. Two reasons we don't inline as `data:` URI:
+  //   1. Gmail (web + mobile) strips `<img src="data:…">` for security,
+  //      so the screenshot wouldn't render in the destination inbox.
+  //   2. A real URL appears in Resend's auto-derived plaintext, which
+  //      means downstream readers (Gmail MCP, oncall scripts) can fetch
+  //      the image directly without parsing MIME.
+  //
+  // Best-effort: upload failure does NOT block the feedback row or the
+  // notification email — the email just goes out without the screenshot,
+  // logged so admin can investigate.
+  //
+  // Privacy: Blob URLs use `access: 'public'` with an unguessable random
+  // suffix. The screenshot may contain page content (commission numbers,
+  // customer names) so the URL itself is the access gate — don't share
+  // outside admin. Matches the existing receipt-upload precedent.
+  let screenshotUrl: string | null = null;
+  if (body.screenshotBase64) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      logger.warn('feedback_screenshot_skipped_no_blob_token', { feedbackId: created.id });
+    } else {
+      try {
+        const buffer = Buffer.from(body.screenshotBase64, 'base64');
+        const key = buildBlobKey(`feedback/${created.id}`, 'screenshot.jpg');
+        const uploaded = await put(key, buffer, {
+          access: 'public',
+          contentType: 'image/jpeg',
+        });
+        screenshotUrl = uploaded.url;
+      } catch (err) {
+        logger.warn('feedback_screenshot_upload_failed', {
+          feedbackId: created.id,
+          ...errorContext(err),
+        });
+      }
+    }
+  }
+
   // Best-effort email. If sending fails, the row persists; admin can
   // read pending feedback via DB query. Failure is logged with the
   // feedback id for traceability.
-  //
-  // Screenshot (optional): the schema validated it's well-formed base64
-  // before we got here. Prepend the data-URI prefix here — keeping the
-  // payload smaller on the wire and isolating the URI shape to one place.
-  // Screenshot bytes are NOT persisted to the DB; the email is the
-  // archive, the Feedback row is the searchable index.
-  const screenshotDataUri = body.screenshotBase64
-    ? `data:image/jpeg;base64,${body.screenshotBase64}`
-    : null;
   try {
     const { subject, html } = renderFeedbackEmail({
       userName,
@@ -96,7 +127,7 @@ export async function POST(req: NextRequest) {
       message: body.message,
       userAgent,
       createdAt: created.createdAt.toISOString(),
-      screenshotDataUri,
+      screenshotUrl,
     });
     const result = await sendEmail({
       to: FEEDBACK_RECIPIENT,

@@ -1033,7 +1033,7 @@ export default function MobileNewDeal() {
 
   const v0InputStyle = (field: string): React.CSSProperties => ({
     background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
-    border: errors[field] ? '1px solid #ef4444' : '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
+    border: errors[field] ? '1px solid var(--accent-red-solid)' : '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
     borderRadius: 14,
     padding: '16px 18px',
     fontSize: '1rem',
@@ -1360,7 +1360,7 @@ export default function MobileNewDeal() {
                             style={{
                               background: disabled ? 'color-mix(in srgb, var(--surface-pressed) 60%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 18%, transparent)' : 'var(--surface-pressed)',
                               border: `1px solid ${disabled ? 'color-mix(in srgb, var(--border-default) 70%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 60%, transparent)' : 'var(--border-default)'}`,
-                              color: disabled ? 'var(--text-muted)' : selected ? '#93c5fd' : 'var(--text-muted)',
+                              color: disabled ? 'var(--text-muted)' : selected ? 'var(--accent-blue-solid)' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: selected ? 'scale(1.04)' : 'scale(1)',
                             }}
@@ -1392,7 +1392,7 @@ export default function MobileNewDeal() {
                             style={{
                               background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
-                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
+                              color: form.prepaidSubType === opt ? 'var(--accent-purple-solid)' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
@@ -1481,7 +1481,7 @@ export default function MobileNewDeal() {
                               style={{
                                 background: disabled ? 'color-mix(in srgb, var(--surface-pressed) 60%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 18%, transparent)' : 'var(--surface-pressed)',
                                 border: `1px solid ${disabled ? 'color-mix(in srgb, var(--border-default) 70%, transparent)' : selected ? 'color-mix(in srgb, var(--accent-blue-solid) 60%, transparent)' : 'var(--border-default)'}`,
-                                color: disabled ? 'var(--text-muted)' : selected ? '#93c5fd' : 'var(--text-muted)',
+                                color: disabled ? 'var(--text-muted)' : selected ? 'var(--accent-blue-solid)' : 'var(--text-muted)',
                                 transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                                 transform: selected ? 'scale(1.04)' : 'scale(1)',
                               }}
@@ -1514,7 +1514,7 @@ export default function MobileNewDeal() {
                             style={{
                               background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
-                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
+                              color: form.prepaidSubType === opt ? 'var(--accent-purple-solid)' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
@@ -1608,7 +1608,7 @@ export default function MobileNewDeal() {
                             style={{
                               background: form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' : 'var(--surface-pressed)',
                               border: `1px solid ${form.prepaidSubType === opt ? 'color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)' : 'var(--border-default)'}`,
-                              color: form.prepaidSubType === opt ? '#c4b5fd' : 'var(--text-muted)',
+                              color: form.prepaidSubType === opt ? 'var(--accent-purple-solid)' : 'var(--text-muted)',
                               transition: 'background 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1)',
                               transform: form.prepaidSubType === opt ? 'scale(1.04)' : 'scale(1)',
                             }}
@@ -1796,7 +1796,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
-          <div key={2} className={`space-y-7 flex-1 flex flex-col pb-24 ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={2} className={`space-y-7 flex-1 flex flex-col pb-[176px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Summary card */}
             <MobileCard>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Deal Summary</p>
@@ -1805,11 +1805,11 @@ export default function MobileNewDeal() {
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
                 className="w-full text-left pb-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px' }}
+                style={{ borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
-                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span className="flex items-center gap-1 opacity-50 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -1839,11 +1839,11 @@ export default function MobileNewDeal() {
                 type="button"
                 onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
                 className="w-full text-left pt-2 mt-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid rgba(29,233,182,0.18)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
+                style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
-                  <span className="flex items-center gap-1 opacity-35 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
+                  <span className="flex items-center gap-1 opacity-50 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
                 </div>
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
@@ -2021,47 +2021,27 @@ export default function MobileNewDeal() {
               </div>
             )}
 
-            {/* Spacer to push buttons to bottom */}
-            <div className="flex-1" />
-
-            {/* Back + Submit buttons */}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={submitting}
-                className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
-                style={{
-                  background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
-                  border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
-                  borderRadius: 16,
-                  padding: 18,
-                  fontSize: 16,
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
-                style={{
-                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-
-                  borderRadius: 16,
-                  padding: 18,
-                  fontSize: 16,
-                  color: 'var(--text-primary)',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                }}
-              >
-                {submitting ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
-                ) : (
-                  <><Check className="w-4 h-4" /> Submit Deal</>
-                )}
-              </button>
+            <div
+              key="cta-2"
+              className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
+              style={{
+                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: '12px',
+                paddingTop: '12px',
+                background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <div className="flex gap-3">
+                <button type="button" onClick={handlePrev} disabled={submitting}
+                  className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-secondary)' }}
+                ><ChevronLeft className="w-4 h-4" /> Back</button>
+                <button type="submit" disabled={submitting}
+                  className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                >{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Check className="w-4 h-4" /> Submit Deal</>}</button>
+              </div>
             </div>
           </div>
         )}

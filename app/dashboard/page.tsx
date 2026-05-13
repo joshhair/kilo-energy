@@ -1087,13 +1087,18 @@ export default function DashboardPage() {
     const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
     return sum + Math.max(0, totalExpected - alreadyPaid);
   }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+    const isPrevTraineeParty = (p: typeof projects[number]) =>
+      p.repId === assignment.traineeId ||
+      p.setterId === assignment.traineeId ||
+      p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
+      p.additionalSetters?.some(s => s.userId === assignment.traineeId);
     const completedDeals = projects.filter(p =>
-      (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
+      isPrevTraineeParty(p) &&
       ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
     ).length;
     const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
     return sum + prevPeriodProjects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && (p.repId === assignment.traineeId || p.setterId === assignment.traineeId))
+      .filter(p => ACTIVE_PHASES.includes(p.phase) && isPrevTraineeParty(p))
       .reduce((pSum, p) => {
         const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
         const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
@@ -1147,17 +1152,16 @@ export default function DashboardPage() {
 
   // Sparkline data for the five stat cards — last 7 unique dates, summed per day
   const pipelineSparkData   = computeSparklineData(activeProjects.map((p) => {
-    const closerM1 = p.m1Amount ?? 0;
     const coCloserPartySpark = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
     const coSetterPartySpark = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
     const amount = p.repId === effectiveRepId
-      ? closerM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0)
+      ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
       : p.setterId === effectiveRepId
-        ? (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0)
+        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
         : coCloserPartySpark
-          ? coCloserPartySpark.m1Amount + coCloserPartySpark.m2Amount + (coCloserPartySpark.m3Amount ?? 0)
+          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartySpark.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartySpark.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartySpark.m3Amount ?? 0))
           : coSetterPartySpark
-            ? coSetterPartySpark.m1Amount + coSetterPartySpark.m2Amount + (coSetterPartySpark.m3Amount ?? 0)
+            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterPartySpark.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterPartySpark.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterPartySpark.m3Amount ?? 0))
             : 0;
     return { date: p.soldDate, amount };
   }));

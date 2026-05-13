@@ -20,7 +20,7 @@ import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deducti
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
-import { RotateCcw, Zap } from 'lucide-react';
+import { RotateCcw, Zap, ClipboardCopy, Share2, Link2 } from 'lucide-react';
 import CalcHistoryPanel from './shared/CalcHistoryPanel';
 import MobileCalculatorSkeleton from './shared/MobileCalculatorSkeleton';
 
@@ -406,6 +406,55 @@ export default function MobileCalculator() {
     setCalcHistory([]);
     saveCalcHistory([]);
     toast('History cleared', 'info');
+  };
+
+  // ── Share actions (mirrors desktop calculator) ────────────────────────────
+  const handleCopyResult = () => {
+    const parts = [
+      `Deal: ${kW.toFixed(1)} kW @ $${soldPPW.toFixed(2)}/W`,
+      `— Closer: $${closerTotal.toLocaleString()} (M1: $${split.closerM1.toLocaleString()}, M2: $${split.closerM2.toLocaleString()}${hasM3Split ? `, M3: $${split.closerM3.toLocaleString()}` : ''})`,
+    ];
+    if (isPaired && setterTotal > 0) {
+      parts.push(`· Setter: $${setterTotal.toLocaleString()} (M1: $${split.setterM1.toLocaleString()}, M2: $${split.setterM2.toLocaleString()}${hasM3Split ? `, M3: $${split.setterM3.toLocaleString()}` : ''})`);
+    }
+    navigator.clipboard.writeText(parts.join(' ')).then(
+      () => toast('Summary copied to clipboard', 'success'),
+      () => toast('Could not access clipboard', 'error'),
+    );
+  };
+
+  const handleShareResult = () => {
+    const closerBaselineDisplay = closerPerW + closerTrainerRate;
+    const lines = [
+      `Commission Calc — ${installer}`,
+      `${kW.toFixed(1)} kW @ $${soldPPW.toFixed(2)}/W`,
+      `Closer: $${closerTotal.toLocaleString()} (M1: $${split.closerM1.toLocaleString()} / M2: $${split.closerM2.toLocaleString()}${hasM3Split ? ` / M3: $${split.closerM3.toLocaleString()}` : ''})`,
+    ];
+    if (isPaired && setterTotal > 0) {
+      lines.push(`Setter: $${setterTotal.toLocaleString()}${hasM3Split ? ` (M1: $${split.setterM1.toLocaleString()} / M2: $${split.setterM2.toLocaleString()} / M3: $${split.setterM3.toLocaleString()})` : ''}`);
+    }
+    lines.push(`Baseline: $${closerBaselineDisplay.toFixed(2)}/W | Break-even: $${closerBaselineDisplay.toFixed(2)}/W`);
+    navigator.clipboard.writeText(lines.join('\n')).then(
+      () => toast('Share summary copied to clipboard', 'success'),
+      () => toast('Could not access clipboard', 'error'),
+    );
+  };
+
+  const handleShareURL = () => {
+    const params = new URLSearchParams();
+    if (installer) params.set('installer', installer);
+    if (kWSize) params.set('kW', kWSize);
+    if (netPPW) params.set('ppw', netPPW);
+    if (solarTechFamily) params.set('stFamily', solarTechFamily);
+    if (solarTechProductId) params.set('stProduct', solarTechProductId);
+    if (pcSelectedFamily) params.set('pcFamily', pcSelectedFamily);
+    if (pcProductId) params.set('pcProduct', pcProductId);
+    if (isPaired) params.set('setter', '1');
+    const url = `${window.location.origin}/dashboard/calculator?${params.toString()}`;
+    navigator.clipboard.writeText(url).then(
+      () => toast('Link copied!', 'success'),
+      () => toast('Could not access clipboard', 'error'),
+    );
   };
 
   // ── Animated commission counters ─────────────────────────────────────────
@@ -846,6 +895,19 @@ export default function MobileCalculator() {
             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
               Sold: ${soldPPW.toFixed(2)}/W · {kW.toFixed(1)} kW
             </p>
+          </div>
+
+          {/* Share actions */}
+          <div className="flex gap-2 mt-4">
+            <button type="button" onClick={handleCopyResult} title="Copy deal summary" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <ClipboardCopy className="w-3.5 h-3.5 flex-shrink-0" /> Copy
+            </button>
+            <button type="button" onClick={handleShareResult} title="Copy share summary" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <Share2 className="w-3.5 h-3.5 flex-shrink-0" /> Share
+            </button>
+            <button type="button" onClick={handleShareURL} title="Copy shareable URL" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <Link2 className="w-3.5 h-3.5 flex-shrink-0" /> Link
+            </button>
           </div>
         </MobileCard>
         </div>

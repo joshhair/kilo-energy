@@ -263,6 +263,8 @@ export default function MobileTraining({
 
   const totalOverrides = trainerEntries.filter(isPaidAndEffective).reduce((s, e) => s + (e.amount ?? 0), 0);
   const displayTotal = useCountUp(totalOverrides, 900);
+  const pendingAmount = trainerEntries.filter((e) => e.status === 'Pending').reduce((s, e) => s + (e.amount ?? 0), 0);
+  const draftAmount = trainerEntries.filter((e) => e.status === 'Draft').reduce((s, e) => s + (e.amount ?? 0), 0);
 
   // Pseudo-assignments for direct-trainer projects, grouped by closer.
   // One synthesized entry per unique closer; tier = that project's
@@ -723,12 +725,14 @@ export default function MobileTraining({
       {/* ── Hero stat strip ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
         {[
-          { label: 'Active Trainees', value: String(new Set(traineeData.filter((t) => t.assignment.isActiveTraining !== false).map((t) => t.traineeId)).size), accent: false },
-          { label: 'Override Earnings', value: fmt$(displayTotal), accent: true },
+          { label: 'Active Trainees', value: String(new Set(traineeData.filter((t) => t.assignment.isActiveTraining !== false).map((t) => t.traineeId)).size), color: 'var(--text-primary)' },
+          { label: 'Override Earnings', value: fmt$(displayTotal), color: 'var(--accent-emerald-solid)' },
+          { label: 'Pending', value: fmt$(pendingAmount), color: 'var(--accent-amber-text)' },
+          { label: 'Draft', value: fmt$(draftAmount), color: 'var(--text-secondary)' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
-            <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: stat.accent ? 'var(--accent-emerald-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+            <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: stat.color, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               {stat.value}
             </p>
           </div>

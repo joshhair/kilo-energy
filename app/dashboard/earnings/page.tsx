@@ -77,6 +77,11 @@ function RepEarningsView() {
 
   const [showReimbModal, setShowReimbModal] = useState(false);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
+  // Period filter currently has no UI control — fixed to 'all'. The setter
+  // is preserved (renamed to satisfy the unused-vars allow-underscore rule)
+  // so the period filter can re-wire to a control without ripping out the
+  // state plumbing throughout this file.
+  const [period, _setPeriod] = useState<Period>('all');
 
   const monthFilterLabel = useMemo(() => {
     if (!monthFilter) return null;
@@ -100,7 +105,7 @@ function RepEarningsView() {
   const nextPayoutTotal   = nextPayoutItems.reduce((s, p) => s + p.amount, 0);
   const nextPayoutCount   = nextPayoutItems.length;
   const myReimbs      = useMemo(() => reimbursements.filter((r) => r.repId === effectiveRepId), [reimbursements, effectiveRepId]);
-  const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs, [myReimbs, monthFilter]);
+  const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs.filter((r) => isInPeriod(r.date, period)), [myReimbs, monthFilter, period]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
@@ -137,8 +142,8 @@ function RepEarningsView() {
 
   const sortedDealsBase = useMemo((): DealRow[] => {
     const allPayrollRows: DealRow[] = payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Deal').map((e) => ({ kind: 'payroll' as const, entry: e }));
-    const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows;
-    const reimbRows: DealRow[] = (monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs).map((e) => ({ kind: 'reimb' as const, entry: e }));
+    const payrollRows = monthFilter ? allPayrollRows.filter((r) => r.entry.date.startsWith(monthFilter)) : allPayrollRows.filter((r) => isInPeriod(r.entry.date, period));
+    const reimbRows: DealRow[] = (monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs.filter((r) => isInPeriod(r.date, period))).map((e) => ({ kind: 'reimb' as const, entry: e }));
     return [...payrollRows, ...reimbRows].sort((a, b) => {
       const aDate = a.entry.date; const bDate = b.entry.date;
       const aAmt  = a.entry.amount; const bAmt = b.entry.amount;
@@ -160,7 +165,7 @@ function RepEarningsView() {
       }
       return dealSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir, monthFilter]);
+  }, [payrollEntries, myReimbs, effectiveRepId, dealSortKey, dealSortDir, monthFilter, period]);
 
   const sortedDeals = useMemo(() =>
     sortedDealsBase.filter((row) => {
@@ -202,7 +207,7 @@ function RepEarningsView() {
 
   const sortedBonuses = useMemo(() => {
     return payrollEntries.filter((p) => p.repId === effectiveRepId && p.type === 'Bonus')
-      .filter((p) => !monthFilter || p.date.startsWith(monthFilter))
+      .filter((p) => monthFilter ? p.date.startsWith(monthFilter) : isInPeriod(p.date, period))
       .sort((a, b) => {
       let cmp = 0;
       switch (bonusSortKey) {
@@ -213,7 +218,7 @@ function RepEarningsView() {
       }
       return bonusSortDir === 'asc' ? cmp : -cmp;
     });
-  }, [payrollEntries, effectiveRepId, bonusSortKey, bonusSortDir, monthFilter]);
+  }, [payrollEntries, effectiveRepId, bonusSortKey, bonusSortDir, monthFilter, period]);
 
   const bonusTotal      = sortedBonuses.length;
   const bonusTotalPages = Math.max(1, Math.ceil(bonusTotal / bonusPageSize));
@@ -1054,7 +1059,7 @@ function AdminFinancialsView() {
           {pendingPayrollCount > 0 && <p className="text-xs text-[var(--text-muted)] mt-1">{pendingPayrollCount} entries</p>}
           {payrollFilterLabel && <p className="text-xs text-[var(--text-muted)] mt-1">{payrollFilterLabel}</p>}
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-3" style={{ '--card-accent': 'rgba(100,116,139,0.12)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-3" style={{ '--card-accent': 'color-mix(in srgb, var(--accent-slate-solid) 12%, transparent)' } as React.CSSProperties}>
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 mb-3" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">Draft</span>

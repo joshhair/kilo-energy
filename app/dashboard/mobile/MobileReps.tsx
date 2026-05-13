@@ -104,7 +104,21 @@ export default function MobileReps() {
     userRole: 'rep' as 'rep' | 'admin' | 'sub-dealer' | 'project_manager',
     trainerId: '',
     sendInvite: false,
+    scopedInstallerId: '',
   });
+  const [installersForScope, setInstallersForScope] = useState<Array<{ id: string; name: string; active: boolean }>>([]);
+  useEffect(() => {
+    if (!showAddRep) return;
+    let cancelled = false;
+    fetch('/api/installers')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data)) setInstallersForScope(data.filter((i: { active?: boolean }) => i.active));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showAddRep]);
   const [isAddingUser, setIsAddingUser] = useState(false);
 
   // Inactive section expand/collapse state
@@ -1001,7 +1015,7 @@ export default function MobileReps() {
         open={showAddRep}
         onClose={() => {
           setShowAddRep(false);
-          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false });
+          setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false, scopedInstallerId: '' });
         }}
         title="Add User"
       >
@@ -1029,7 +1043,7 @@ export default function MobileReps() {
                 const res = await fetch('/api/users/invite', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, role: addForm.userRole, repType: addForm.userRole === 'rep' ? addForm.repType : undefined }),
+                  body: JSON.stringify({ firstName: fn, lastName: ln, email: em, phone: ph, role: addForm.userRole, repType: addForm.userRole === 'rep' ? addForm.repType : undefined, scopedInstallerId: addForm.userRole === 'project_manager' && addForm.scopedInstallerId ? addForm.scopedInstallerId : undefined }),
                 });
                 if (!res.ok) {
                   const body = await res.json().catch(() => ({}));
@@ -1073,7 +1087,7 @@ export default function MobileReps() {
                   .catch(() => toast('Failed to assign trainer', 'error'));
               }
               setShowAddRep(false);
-              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false });
+              setAddForm({ firstName: '', lastName: '', email: '', phone: '', repType: 'both', userRole: 'rep', trainerId: '', sendInvite: false, scopedInstallerId: '' });
             } catch (err) {
               toast((err as Error).message || 'Failed to add user', 'error');
             } finally {
@@ -1106,6 +1120,33 @@ export default function MobileReps() {
               })}
             </div>
           </div>
+          {addForm.userRole === 'project_manager' && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                Installer scope <span className="normal-case tracking-normal opacity-70">(optional)</span>
+              </label>
+              <select
+                value={addForm.scopedInstallerId}
+                onChange={(e) => setAddForm((f) => ({ ...f, scopedInstallerId: e.target.value }))}
+                className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+                style={{
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                <option value="">— Full access (internal PM) —</option>
+                {installersForScope.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
+                ))}
+              </select>
+              {addForm.scopedInstallerId && (
+                <p className="text-xs mt-1.5" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  Vendor PM — only sees projects from this installer; no payroll, pricing, or rep directory.
+                </p>
+              )}
+            </div>
+          )}
           <div>
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>First Name</label>
             <input
@@ -1147,6 +1188,22 @@ export default function MobileReps() {
               value={addForm.email}
               onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="email@example.com"
+              className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
+              style={{
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-subtle)',
+                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                '--tw-ring-color': 'var(--accent-emerald-solid)',
+              } as React.CSSProperties}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Phone</label>
+            <input
+              type="tel"
+              value={addForm.phone}
+              onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))}
+              placeholder="(555) 000-0000"
               className="w-full min-h-[48px] text-[var(--text-primary)] text-base rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-1"
               style={{
                 background: 'var(--surface-card)',

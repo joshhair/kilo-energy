@@ -267,7 +267,7 @@ function SettingsPageInner() {
   // ── Keyboard shortcuts for edits (Escape = cancel, Enter = save) ───────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const isEditActive = editingInstaller !== null || editingAssignmentId !== null || editingPrepaid !== null || editingProductName !== null;
+      const isEditActive = editingInstaller !== null || editingAssignmentId !== null || editingPrepaid !== null || editingProductName !== null || installerSelectMode || financerSelectMode;
       if (!isEditActive) return;
 
       const tag = (e.target as HTMLElement)?.tagName;

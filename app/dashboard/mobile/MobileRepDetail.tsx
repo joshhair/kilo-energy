@@ -261,6 +261,22 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               {resolvedUser.email && <p className="text-sm mt-2 truncate" style={{ color: 'var(--text-muted)' }}>{resolvedUser.email}</p>}
               {resolvedUser.phone && <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{resolvedUser.phone}</p>}
             </div>
+            {isAdmin && (
+              <button
+                onClick={() => setActionSheetOpen(true)}
+                className="shrink-0 min-h-[44px] px-3 rounded-xl flex items-center gap-1.5 text-sm font-semibold"
+                style={{
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--accent-emerald-text)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+                aria-label="Manage user"
+              >
+                <Settings className="w-4 h-4" />
+                Manage
+              </button>
+            )}
           </div>
         </div>
 
@@ -376,6 +392,117 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
             </div>
           </div>
         )}
+
+        {/* ── Account actions bottom sheet — admin only ── */}
+        {isAdmin && (
+          <MobileBottomSheet
+            open={actionSheetOpen}
+            onClose={() => setActionSheetOpen(false)}
+            title="Manage user"
+          >
+            <div className="px-5 space-y-1 pb-2">
+              <MobileBottomSheet.Item
+                label={resolvedUser.active === false ? 'Reactivate' : 'Deactivate'}
+                icon={resolvedUser.active === false ? UserCheck : UserX}
+                danger={resolvedUser.active !== false}
+                onTap={async () => {
+                  if (busy) return;
+                  setBusy(true);
+                  const wasActive = resolvedUser.active !== false;
+                  try {
+                    if (resolvedUser.role === 'sub-dealer') {
+                      if (wasActive) await deactivateSubDealer(repId);
+                      else await reactivateSubDealer(repId);
+                    } else {
+                      const res = await fetch(`/api/users/${repId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ active: !wasActive }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error ?? 'Failed to update status');
+                      }
+                      setFetchedUser((p) => p ? { ...p, active: !wasActive } : p);
+                      router.refresh();
+                    }
+                    toast(wasActive ? `${resolvedUser.firstName} deactivated` : `${resolvedUser.firstName} reactivated`, 'success');
+                    setActionSheetOpen(false);
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : 'Failed to update status', 'error');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
+              {userMeta && !userMeta.hasClerkAccount && resolvedUser.active !== false && resolvedUser.email && (
+                <MobileBottomSheet.Item
+                  label={userMeta.pendingInvitation ? 'Resend invite' : 'Send invite'}
+                  icon={Mail}
+                  onTap={async () => {
+                    if (busy) return;
+                    setBusy(true);
+                    try {
+                      const res = await fetch(`/api/users/${repId}/invite`, { method: 'POST' });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error ?? 'Invite failed');
+                      }
+                      toast('Invite sent', 'success');
+                      setActionSheetOpen(false);
+                    } catch (err) {
+                      toast(err instanceof Error ? err.message : 'Failed to send invite', 'error');
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                />
+              )}
+              {userMeta && userMeta.relationCount === 0 && (
+                <MobileBottomSheet.Item
+                  label="Permanently delete"
+                  icon={Trash2}
+                  danger
+                  onTap={() => { setActionSheetOpen(false); setConfirmDelete(true); }}
+                />
+              )}
+            </div>
+          </MobileBottomSheet>
+        )}
+
+        <ConfirmDialog
+          open={confirmDelete}
+          title="Permanently delete user"
+          message={`PERMANENTLY delete ${resolvedUser.firstName} ${resolvedUser.lastName}? This cannot be undone. Their Clerk account will also be removed.`}
+          confirmLabel="Delete permanently"
+          danger
+          onConfirm={async () => {
+            setConfirmDelete(false);
+            if (resolvedUser.role === 'sub-dealer') {
+              const result = await deleteSubDealerPermanently(repId);
+              if (result.success) {
+                toast(`${resolvedUser.firstName} ${resolvedUser.lastName} permanently deleted`, 'success');
+                router.push('/dashboard/users');
+              } else {
+                toast(result.error ?? 'Failed to delete', 'error');
+              }
+            } else {
+              try {
+                const res = await fetch(`/api/users/${repId}`, { method: 'DELETE' });
+                if (res.ok) {
+                  toast(`${resolvedUser.firstName} ${resolvedUser.lastName} permanently deleted`, 'success');
+                  router.push('/dashboard/users');
+                } else {
+                  const err = await res.json().catch(() => ({}));
+                  toast(err.error ?? 'Failed to delete', 'error');
+                }
+              } catch {
+                toast('Failed to delete', 'error');
+              }
+            }
+          }}
+          onClose={() => setConfirmDelete(false)}
+        />
       </div>
     );
   }
@@ -398,7 +525,21 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
   const todayStr = todayLocalDateStr();
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
-  const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+  const totalEst = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase)).reduce((s, p) => {
+    if (p.repId === repId) {
+      const closerM1 = p.setterId ? 0 : p.m1Amount;
+      const selfGenM1 = p.setterId === repId ? (p.m1Amount ?? 0) : 0;
+      return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0) + (p.setterId === repId ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+    } else if (p.setterId === repId) {
+      return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+    } else {
+      const closerEntry = p.additionalClosers?.find((c) => c.userId === repId);
+      const setterEntry = p.additionalSetters?.find((c) => c.userId === repId);
+      return s + (closerEntry ? (closerEntry.m1Amount ?? 0) + (closerEntry.m2Amount ?? 0) + (closerEntry.m3Amount ?? 0) : 0)
+               + (setterEntry ? (setterEntry.m1Amount ?? 0) + (setterEntry.m2Amount ?? 0) + (setterEntry.m3Amount ?? 0) : 0);
+    }
+  }, 0);
+  const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const repType = REP_TYPE_LABELS[rep.repType ?? ''] ?? rep.repType ?? 'Rep';
   const isSubDealer = resolvedUser.role === 'sub-dealer';
@@ -602,6 +743,8 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
           <>
             {' \u00B7 '}
             <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
+            {' \u00B7 '}
+            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${Math.round(totalEst).toLocaleString()}</span> est.
           </>
         )}
       </p>
@@ -838,13 +981,13 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         </div>
       )}
 
-      {/* Active Projects */}
-      <MobileSection title="Active Projects" count={activeProjects.length}>
-        {activeProjects.length === 0 ? (
-          <MobileEmptyState icon={FolderKanban} title="No active projects" />
+      {/* All Projects */}
+      <MobileSection title="Projects" count={repProjects.length}>
+        {repProjects.length === 0 ? (
+          <MobileEmptyState icon={FolderKanban} title="No projects" />
         ) : (
           <div className="rounded-2xl divide-y" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderColor: 'var(--border-subtle)' }}>
-            {activeProjects.map((proj) => (
+            {repProjects.map((proj) => (
               <MobileListItem
                 key={proj.id}
                 title={proj.customerName}
@@ -856,9 +999,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         )}
       </MobileSection>
 
-      {/* Recent Payments — hidden for PM */}
+      {/* Payment History — hidden for PM */}
       {!isPM && (
-        <MobileSection title="Recent Payments" count={repPayroll.length}>
+        <MobileSection title="Payment History" count={repPayroll.length}>
           {repPayroll.length === 0 ? (
             <MobileEmptyState icon={DollarSign} title="No payment history" />
           ) : (

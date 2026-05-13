@@ -182,3 +182,17 @@ export function getM3PayDate(milestoneDate?: Date): string {
   offsetDate.setDate(d.getDate() + 7);
   return getM2PayDate(offsetDate);
 }
+
+export function relativeTime(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const past = new Date(year, month - 1, day);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const days = Math.max(0, Math.floor((now.getTime() - past.getTime()) / (1000 * 60 * 60 * 24)));
+  if (days === 0) return 'today';
+  if (days === 1) return '1d ago';
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
+}

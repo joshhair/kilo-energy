@@ -918,7 +918,7 @@ function PayrollPageInner() {
               </thead>
               <tbody>
                 {myFiltered.map((entry, i) => (
-                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
+                  <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : 'color-mix(in srgb, var(--surface-card) 35%, var(--surface-page))' }}>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {entry.type === 'Deal' && entry.customerName && entry.projectId ? (
                         <Link href={`/dashboard/projects/${entry.projectId}`} className="hover:underline" style={{ color: 'var(--accent-cyan-text)' }}>
@@ -1194,7 +1194,7 @@ function PayrollPageInner() {
               </thead>
               <tbody>
                 {filteredReimbursements.map((r, i) => (
-                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : '#191c24' }}>
+                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : 'color-mix(in srgb, var(--surface-card) 35%, var(--surface-page))' }}>
                     <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
                     <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
                     <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>

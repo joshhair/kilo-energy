@@ -4,13 +4,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
+import { useIsHydrated } from '../../../lib/hooks';
 import { Phase } from '../../../lib/data';
 import { Search, Plus } from 'lucide-react';
 import { applyStatusFilter, type StatusFilter } from '../projects/components/shared';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
-import { fmtCompact$ } from '../../../lib/utils';
+import { fmtCompact$, relativeTime } from '../../../lib/utils';
 import { myCommissionOnProject, type CommissionStatus } from '../../../lib/commissionHelpers';
 
 // Color per commission status — aligns with hero colors used elsewhere.
@@ -47,25 +48,12 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'kWAsc',    label: 'kW (low→high)' },
 ];
 
-function relativeTime(dateStr: string): string {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const past = new Date(year, month - 1, day);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const days = Math.max(0, Math.floor((now.getTime() - past.getTime()) / (1000 * 60 * 60 * 24)));
-  if (days === 0) return 'today';
-  if (days === 1) return '1d ago';
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  const years = Math.floor(months / 12);
-  return `${years}y ago`;
-}
 
 export default function MobileProjects() {
-  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers } = useApp();
+  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers, dbReady } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isHydrated = useIsHydrated();
 
   const isSubDealer = effectiveRole === 'sub-dealer';
   const isPM = effectiveRole === 'project_manager';
@@ -89,6 +77,8 @@ export default function MobileProjects() {
     return isRep ? 'mine' : 'all';
   });
   const didInitDealScope = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const visibleCountRef = useRef(50);
   const [installerFilter, setInstallerFilter] = useState<string>(() => searchParams.get('installer') ?? '');
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     const v = searchParams.get('sort');
@@ -124,8 +114,9 @@ export default function MobileProjects() {
   const [listFading, setListFading] = useState(false);
   // Cap initial render at 50 cards to keep iOS Safari from OOM-killing the
   // tab when admins land on this page with hundreds of active projects.
-  // "Show more" reveals the next 50; resets to 50 whenever the filtered
-  // set changes so a new filter doesn't inherit a huge expanded count.
+  // IntersectionObserver auto-loads the next 50 on scroll; resets to 50
+  // whenever the filtered set changes so a new filter doesn't inherit a
+  // huge expanded count.
   const PAGE_SIZE = 50;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -227,11 +218,30 @@ export default function MobileProjects() {
     return sorted;
   }, [visibleProjects, phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode]);
 
-  // Reset pagination on filter change so a "Show more"-expanded view
-  // doesn't carry over and re-blow memory after the user narrows.
+  // Reset pagination on filter change so an expanded view doesn't carry
+  // over and re-blow memory after the user narrows.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [phaseFilter, statusFilter, installerFilter, debouncedSearch, sortMode, dealScope]);
+
+  // Keep ref in sync — avoids re-creating the observer on every page increment.
+  useEffect(() => {
+    visibleCountRef.current = visibleCount;
+  }, [visibleCount]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && filtered.length > visibleCountRef.current)
+          setVisibleCount((n) => n + PAGE_SIZE);
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered.length]);
 
   // "Are any non-default filters active?" — drives the empty-state CTA:
   // if yes, show Clear Filters; otherwise show Submit Deal.
@@ -436,7 +446,41 @@ export default function MobileProjects() {
           willChange: 'opacity, transform',
         }}
       >
-        {filtered.length === 0 ? (
+        {(!isHydrated || !dbReady) ? (
+          [0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="card-surface rounded-2xl p-4"
+              style={{ opacity: 1 - i * 0.15 }}
+            >
+              <div className="flex items-start justify-between gap-3 mb-2.5">
+                <div
+                  className="h-5 rounded-lg animate-shimmer-pulse"
+                  style={{
+                    width: `${110 + i * 20}px`,
+                    background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)',
+                    animationDelay: `${i * 80}ms`,
+                  }}
+                />
+                <div
+                  className="h-5 w-20 rounded-full animate-shimmer-pulse"
+                  style={{
+                    background: 'color-mix(in srgb, var(--text-primary) 7%, transparent)',
+                    animationDelay: `${i * 80 + 40}ms`,
+                  }}
+                />
+              </div>
+              <div
+                className="h-4 rounded-lg animate-shimmer-pulse"
+                style={{
+                  width: '58%',
+                  background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
+                  animationDelay: `${i * 80 + 20}ms`,
+                }}
+              />
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-12 px-6 text-center">
             {/* Simple folder illustration — matches the visual
                 language used in the desktop Projects empty state. */}
@@ -534,21 +578,7 @@ export default function MobileProjects() {
             );
           })
         )}
-        {filtered.length > visibleCount && (
-          <button
-            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
-            className="mt-2 mx-auto block min-h-[44px] px-5 rounded-xl text-sm font-semibold transition-colors"
-            style={{
-              background: 'var(--surface-card)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--m-text, #fff)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            Show {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
-            <span className="ml-2 opacity-60">({filtered.length - visibleCount} remaining)</span>
-          </button>
-        )}
+        <div ref={sentinelRef} aria-hidden="true" className="h-px" />
       </div>
     </div>
   );

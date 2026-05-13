@@ -468,6 +468,21 @@ export default function MobileBlitz() {
             </div>
             <MobileBadge value={STATUS_BADGE_MAP[blitz.status]} variant="status" />
           </div>
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <div className="text-center">
+              <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Reps</p>
+              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{approvedCount}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Deals</p>
+              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{totalDeals}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>kW</p>
+              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{totalKW.toFixed(1)}</p>
+            </div>
+          </div>
           {(canJoin || participationLabel || isBlitzOwner) && (
             <div className="mt-3 flex items-center gap-2">
               {isBlitzOwner && (
@@ -624,7 +639,7 @@ export default function MobileBlitz() {
             style={{ background: 'transparent', color: tab === 'requests' ? '#000' : 'var(--text-muted)', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             Requests
-            {pendingRequests.length > 0 && (
+            {isAdmin && pendingRequests.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-[var(--text-primary)] rounded-full" style={{ background: 'var(--accent-red-solid)' }}>
                 {pendingRequests.length}
               </span>

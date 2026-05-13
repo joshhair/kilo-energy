@@ -92,24 +92,30 @@ describe('renderFeedbackEmail', () => {
     expect(multiline.html).toMatch(/white-space:\s*pre-wrap/);
   });
 
-  it('renders the screenshot inline when a data URI is supplied', () => {
-    const withShot = renderFeedbackEmail({
-      ...baseData,
-      screenshotDataUri: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAQABAAD/',
-    });
+  it('renders the screenshot inline when a URL is supplied', () => {
+    const url = 'https://blob.example.com/feedback/abc/1700000000-screenshot.jpg';
+    const withShot = renderFeedbackEmail({ ...baseData, screenshotUrl: url });
     expect(withShot.html).toContain('Screenshot at submission');
-    expect(withShot.html).toContain('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAQABAAD/');
-    expect(withShot.html).toMatch(/<img[^>]+src="data:image\/jpeg;base64,/);
+    expect(withShot.html).toContain(url);
+    expect(withShot.html).toMatch(new RegExp(`<img[^>]+src="${url.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}"`));
   });
 
-  it('omits the screenshot block when no data URI is supplied', () => {
+  it('renders the URL as plaintext-readable copy so plain readers see the link', () => {
+    // Resend auto-derives plaintext from HTML; the heading paragraph
+    // survives but <img> tags are stripped. By printing the URL inside
+    // the heading text we guarantee non-HTML readers still get the link.
+    const url = 'https://blob.example.com/feedback/abc/1700000000-screenshot.jpg';
+    const { html } = renderFeedbackEmail({ ...baseData, screenshotUrl: url });
+    expect(html).toMatch(/Screenshot at submission:[^<]*https:\/\/blob\.example\.com/);
+  });
+
+  it('omits the screenshot block when no URL is supplied', () => {
     const { html } = renderFeedbackEmail(baseData);
     expect(html).not.toContain('Screenshot at submission');
-    expect(html).not.toContain('data:image/jpeg;base64');
   });
 
-  it('omits the screenshot block when data URI is null', () => {
-    const { html } = renderFeedbackEmail({ ...baseData, screenshotDataUri: null });
+  it('omits the screenshot block when URL is null', () => {
+    const { html } = renderFeedbackEmail({ ...baseData, screenshotUrl: null });
     expect(html).not.toContain('Screenshot at submission');
   });
 });

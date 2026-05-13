@@ -494,6 +494,16 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
+  const _coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
+  const _coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
+  const otherEntries = projectEntries.filter((e) =>
+    e.repId !== project.repId &&
+    e.repId !== project.setterId &&
+    !_coCloserIds.has(e.repId) &&
+    !_coSetterIds.has(e.repId) &&
+    e.paymentStage !== 'Trainer' &&
+    !e.isChargeback
+  );
 
   // ── Per-party stage helpers (admin commission breakdown) ───────────────
   // Closer paid status comes from the legacy project.m1Paid/m2Paid/m3Paid
@@ -1109,6 +1119,33 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               );
             })()}
 
+            {/* Other Payouts — bonuses, overrides not attributed to known parties */}
+            {isAdmin && otherEntries.length > 0 && (
+              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4 mt-3">
+                <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-2">Other Payouts</p>
+                <div className="space-y-1.5">
+                  {otherEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.repName}</span>
+                        <span className="text-[var(--text-muted)] text-xs ml-1.5">{entry.paymentStage}</span>
+                        {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
+                        <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
+                          entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
+                          'bg-[var(--border)] text-[var(--text-secondary)]'
+                        }`}>{entry.status}</span>
+                        <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Legacy single-row stage display — kept for rep/SD views only.
                 Admin/PM use the per-party-per-stage breakdown above which
                 shows everyone's stages with unambiguous Mark Paid actions.
@@ -1366,11 +1403,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             }}
           />
         )}
-        <MobileBottomSheet.Item
-          label={project.flagged ? 'Remove Flag' : 'Flag Project'}
-          icon={project.flagged ? FlagOff : Flag}
-          onTap={handleFlag}
-        />
+        {(isAdmin || isPM) && (
+          <MobileBottomSheet.Item
+            label={project.flagged ? 'Remove Flag' : 'Flag Project'}
+            icon={project.flagged ? FlagOff : Flag}
+            onTap={handleFlag}
+          />
+        )}
         {/* Cancel gate uses effectiveRepId so View-As surfaces it for the
             target rep (e.g. admin viewing as Bryce). currentRepId would
             keep showing the admin's own rep id and fail the equality

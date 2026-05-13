@@ -4,10 +4,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
-import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT } from '../../../lib/data';
+import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
@@ -102,6 +102,7 @@ export default function MobileDashboard() {
     payrollEntries,
     trainerAssignments,
     installerPayConfigs,
+    incentives,
     effectiveRole,
     effectiveRepId,
     effectiveRepName,
@@ -302,6 +303,13 @@ export default function MobileDashboard() {
         .sort((a, b) => b.soldDate.localeCompare(a.soldDate))
         .slice(0, 5),
     [myProjects],
+  );
+
+  const myIncentives = useMemo(
+    () => incentives.filter(
+      (i) => i.active && (i.type === 'company' || (i.type === 'personal' && i.targetRepId === effectiveRepId))
+    ),
+    [incentives, effectiveRepId],
   );
 
   // ── Sub-dealer layout ─────────────────────────────────────────────────────
@@ -885,6 +893,54 @@ export default function MobileDashboard() {
               </div>
             ))}
           </MobileCard>
+        </MobileSection>
+      )}
+
+      {/* Incentives */}
+      {myIncentives.length > 0 && (
+        <MobileSection title="Active Incentives" collapsible count={myIncentives.length}>
+          <div className="space-y-2">
+            {myIncentives.map((incentive) => {
+              const progress = computeIncentiveProgress(incentive, projects, payrollEntries);
+              const topMilestone = [...incentive.milestones].sort((a, b) => b.threshold - a.threshold)[0];
+              const pct = topMilestone ? Math.min(100, (progress / topMilestone.threshold) * 100) : 0;
+              const nextMilestone = incentive.milestones
+                .filter((m) => !m.achieved && m.threshold > progress)
+                .sort((a, b) => a.threshold - b.threshold)[0];
+              return (
+                <MobileCard key={incentive.id}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="p-1.5 rounded-lg shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)' }}>
+                        <Target className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium line-clamp-1" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{incentive.title}</p>
+                        {incentive.type === 'personal' && (
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-purple-text)', background: 'var(--accent-purple-soft)' }}>Personal</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="font-bold shrink-0 ml-2" style={{ color: 'var(--accent-emerald-solid)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{formatIncentiveMetric(incentive.metric, progress)}</p>
+                  </div>
+                  <div className="w-full rounded-full h-1.5 mb-1.5" style={{ background: 'color-mix(in srgb, var(--text-primary) 10%, transparent)' }}>
+                    <div
+                      className="h-1.5 rounded-full"
+                      style={{
+                        width: `${pct}%`,
+                        background: pct >= 100 ? 'linear-gradient(90deg,var(--accent-amber-solid),var(--accent-gold-text))' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
+                      }}
+                    />
+                  </div>
+                  {nextMilestone && (
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.8rem' }}>
+                      Next: {nextMilestone.reward} at {formatIncentiveMetric(incentive.metric, nextMilestone.threshold)}
+                    </p>
+                  )}
+                </MobileCard>
+              );
+            })}
+          </div>
         </MobileSection>
       )}
 
