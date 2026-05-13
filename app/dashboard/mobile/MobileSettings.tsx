@@ -642,7 +642,7 @@ function AdminUsersSection() {
                 </div>
                 <button
                   onClick={() => setConfirmDeleteId(admin.id)}
-                  className="p-2 active:opacity-70 transition-colors"
+                  className="p-3 rounded-xl active:scale-[0.82] active:text-[var(--accent-red-solid)] transition-all duration-150 ease-out"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -728,7 +728,7 @@ function ProjectManagersSection() {
               </div>
               <button
                 onClick={() => setConfirmDeleteId(pm.id)}
-                className="p-2 active:opacity-70 transition-colors shrink-0"
+                className="p-3 rounded-xl active:scale-[0.82] active:text-[var(--accent-red-solid)] transition-all duration-150 ease-out shrink-0"
                 style={{ color: 'var(--text-muted)' }}
               >
                 <Trash2 className="w-4 h-4" />
@@ -910,7 +910,7 @@ function ExportSection() {
           key={type}
           onClick={() => handleExport(type)}
           disabled={getStatus(type) === 'loading'}
-          className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden"
+          className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden active:scale-[0.97] transition-transform duration-100 ease-out"
           style={{
             background: getStatus(type) === 'done' ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
             border: `1px solid ${

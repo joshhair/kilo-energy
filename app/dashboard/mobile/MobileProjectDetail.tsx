@@ -69,14 +69,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     updateProject: ctxUpdateProject, installerPayConfigs,
     installerPricingVersions,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
-    isViewingAs, viewAsUser,
+    isViewingAs, viewAsUser, currentUserScopedInstallerId,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
   // Admin OR full-scope (internal) PM — vendor PMs (scopedInstallerId set)
   // and admins-viewing-as-scoped-PM are excluded from internal-only edits
   // like Lead Source / Blitz attribution.
-  const canSeeInternalOnlyUi = isAdmin || (isPM && !viewAsUser?.scopedInstallerId);
+  const canSeeInternalOnlyUi = isAdmin || (isPM && !currentUserScopedInstallerId && !viewAsUser?.scopedInstallerId);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -123,6 +123,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     additionalSetters: CoPartyDraft[];
     trainerId: string;
     trainerRate: string;
+    noChainTrainer: boolean;
     leadSource: string;
     blitzId: string;
   }>({
@@ -130,7 +131,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     setterId: '', notes: '', useBaselineOverride: false,
     overrideCloserPerW: '', overrideSetterPerW: '', overrideKiloPerW: '',
     solarTechProductId: '', additionalClosers: [], additionalSetters: [],
-    trainerId: '', trainerRate: '',
+    trainerId: '', trainerRate: '', noChainTrainer: false,
     leadSource: '', blitzId: '',
   });
 
@@ -286,6 +287,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       })),
       trainerId: project.trainerId ?? '',
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
+      noChainTrainer: project.noChainTrainer ?? false,
       leadSource: project.leadSource ?? '',
       blitzId: project.blitzId ?? '',
     });
@@ -392,6 +394,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       trainerId: nextTrainerId,
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
+      noChainTrainer: editDraft.noChainTrainer,
       ...(baselineResolutionFailed ? {} : {
         m1Amount: newM1Amount,
         m2Amount: newM2Amount,
@@ -1259,7 +1262,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Admin Notes — per-note list, admin + internal PM only. Vendor
           PMs are blocked at the endpoint. */}
-      {(isAdmin || isPM) && (
+      {canSeeInternalOnlyUi && (
         <MobileSection title="Admin Notes" collapsible defaultOpen={false}>
           <p className="text-xs text-[var(--text-dim)] mb-2">
             Private reference notes. Never visible to reps, trainers, sub-dealers, or vendor PMs.
@@ -1532,7 +1535,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 {editDraft.trainerId && (
                   <button
                     type="button"
-                    onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '' }))}
+                    onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '', noChainTrainer: true }))}
                     className="text-xs"
                     style={{ color: 'color-mix(in srgb, var(--accent-red-solid) 80%, transparent)' }}
                   >
@@ -1545,7 +1548,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               </p>
               <select
                 value={editDraft.trainerId}
-                onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value }))}
+                onChange={(e) => setEditDraft((d) => ({ ...d, trainerId: e.target.value, noChainTrainer: false }))}
                 className="w-full mb-2"
                 style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
               >
