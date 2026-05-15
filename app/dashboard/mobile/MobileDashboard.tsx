@@ -6,7 +6,8 @@ import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
-import { sumPaid, sumGrossPaid, sumPendingChargebacks } from '../../../lib/aggregators';
+import { isHistoricalPeriod, getPeriodLabel } from '../../../lib/period';
+import { sumPaid, sumGrossPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
 import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -345,6 +346,25 @@ export default function MobileDashboard() {
     [periodProjects],
   );
 
+  // Historical-period metrics — meaningful only when looking back at a
+  // closed period. "Added to pipeline" answers *"what did I produce in
+  // that window?"* (different question than periodPaid which is *"what
+  // did I get paid in that window?"*). "Deals closed" is the count of
+  // non-cancelled deals SUBMITTED in the period — same shape, useful
+  // for "I had a strong month" framing.
+  //
+  // These are computed unconditionally so the count-up animations can
+  // smoothly transition when the rep switches periods. Render gates
+  // below decide whether to display them.
+  const periodAddedToPipeline = useMemo(
+    () => sumAddedToPipeline(myProjects, effectiveRepId, (d) => isInPeriod(d, period)),
+    [myProjects, effectiveRepId, period],
+  );
+  const periodDealsClosed = useMemo(
+    () => periodProjects.filter((p) => p.phase !== 'Cancelled').length,
+    [periodProjects],
+  );
+
   // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware
   const pipelineValue = useMemo(
     () => {
@@ -482,6 +502,15 @@ export default function MobileDashboard() {
   const animatedPayout = useCountUp(pendingPayrollTotal, 300);
   const animatedPaid = useCountUp(periodPaid, 300);
   const animatedPipeline = useCountUp(pipelineValue, 300);
+  const animatedAddedToPipeline = useCountUp(periodAddedToPipeline, 300);
+  const animatedDealsClosed = useCountUp(periodDealsClosed, 300);
+
+  // Period category decides which hero variant + which stats render.
+  // Historical = backward-looking ("what did I earn / produce?");
+  // current/all = forward-looking ("on pace for?"). This is the user-
+  // visible fix for the "on pace number doesn't change when I switch
+  // periods" wart — the cards are now period-aware.
+  const isHistorical = isHistoricalPeriod(period);
 
   // ── @mentions / My Tasks (fetched for rep + sub-dealer) ──────────────────
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
@@ -802,7 +831,34 @@ export default function MobileDashboard() {
           provide smooth value transitions on period change, so the
           fade is redundant anyway. */}
       <MobileCard hero>
-        {onPaceAnnual > 0 ? (
+        {isHistorical ? (
+          // ─── Historical period variant ────────────────────────────────
+          // Backward-looking: "what did I earn in that window?" rather than
+          // "what am I on pace for?". Subtitle adds the production context
+          // (deals closed + value added to pipeline) so the card answers
+          // both *cash collected* and *value created* — two distinct
+          // metrics reps care about post-period.
+          <div>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>
+              Earned · {getPeriodLabel(period)}
+            </p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>
+              {fmt$(animatedPaid)}
+            </p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
+              {periodDealsClosed} deal{periodDealsClosed === 1 ? '' : 's'} · added {fmtCompact$(animatedAddedToPipeline)} to pipeline
+            </p>
+            {/* Next Payout — secondary, always useful regardless of period. */}
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="flex items-baseline justify-between">
+                <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>Next Payout</p>
+                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+              </div>
+              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
+            </div>
+          </div>
+        ) : onPaceAnnual > 0 ? (
+          // ─── Current / all-time variant (forward-looking) ─────────────
           <div>
             <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>On Pace For {new Date().getFullYear()}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
@@ -832,9 +888,18 @@ export default function MobileDashboard() {
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Paid</p>
           </div>
+          {/* Pipeline cell — period-adaptive. Current/all-time shows the
+              live active-pipeline value (what's in flight now). Historical
+              shows "Added to Pipeline" — the value of deals submitted in
+              that closed period, answering *"what did I produce?"*. Same
+              accent color so the cell reads as the same slot mentally. */}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both' }}>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>{fmtCompact$(animatedPipeline)}</p>
-            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Pipeline</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>
+              {fmtCompact$(isHistorical ? animatedAddedToPipeline : animatedPipeline)}
+            </p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>
+              {isHistorical ? 'Pipeline Added' : 'Pipeline'}
+            </p>
           </div>
           {(() => { const t = formatCompactKWParts(periodKW); return (
             <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
@@ -842,9 +907,16 @@ export default function MobileDashboard() {
               <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>{t.unit} Sold</p>
             </div>
           ); })()}
+          {/* Active / Deals Closed cell — current shows pipeline activity
+              right now; historical shows total non-cancelled deals
+              submitted in the period (matches the hero subtitle). */}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{periodActive.length}</p>
-            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Active</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              {isHistorical ? animatedDealsClosed : periodActive.length}
+            </p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>
+              {isHistorical ? 'Deals' : 'Active'}
+            </p>
           </div>
         </div>
       </MobileCard>

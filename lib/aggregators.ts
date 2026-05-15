@@ -227,6 +227,97 @@ export function sumChargebacks<T extends PayrollAggregable>(
  * of isChargeback entries in the same bucket (negative number) so the UI
  * can surface "Deals $X (−$Y chargebacks)" inline when non-zero.
  */
+// ─── Pipeline-added aggregator (historical period dashboards) ──────────────
+
+/**
+ * Shape a project needs to expose for `sumAddedToPipeline` to compute
+ * a viewer's expected commission. The dashboard's `myProjects` array
+ * already matches this shape (Project type from lib/data with the
+ * additionalClosers/Setters arrays role-resolved into m1/m2/m3
+ * amounts), but defining the contract here keeps this aggregator
+ * decoupled from the heavier Project DTO.
+ */
+export interface PipelineProject {
+  soldDate: string; // YYYY-MM-DD
+  phase: string;
+  // Identity fields are intentionally optional + nullable. The
+  // client-side Project type uses `string | undefined` for optional
+  // FKs (repId is present, setterId may be omitted), while the Prisma
+  // DTO can serialize absent FKs as null. The === comparison against
+  // repId resolves "not on this deal" correctly for null, undefined,
+  // OR missing field.
+  repId?: string | null;
+  setterId?: string | null;
+  m1Amount?: number | null;
+  m2Amount?: number | null;
+  m3Amount?: number | null;
+  setterM1Amount?: number | null;
+  setterM2Amount?: number | null;
+  setterM3Amount?: number | null;
+  additionalClosers?: ReadonlyArray<{ userId: string; m1Amount: number; m2Amount: number; m3Amount?: number | null }>;
+  additionalSetters?: ReadonlyArray<{ userId: string; m1Amount: number; m2Amount: number; m3Amount?: number | null }>;
+}
+
+/**
+ * Sum the expected commission (M1 + M2 + M3, role-aware) on deals
+ * whose `soldDate` falls within the given period AND whose phase
+ * is not Cancelled. This is the **"added to pipeline in this
+ * period"** metric — the value a rep brought into the pipeline by
+ * submitting deals during that window, regardless of whether those
+ * deals have paid out yet.
+ *
+ * Used on the mobile dashboard's historical period cards (Last
+ * Month / Last Year) — answers *"what did I produce in that
+ * window?"* in a way that's complementary to *"what did I get paid
+ * in that window?"* (`sumPaid`):
+ *
+ *   - `sumPaid(payroll, { asOf: periodEnd })` → cash collected
+ *   - `sumAddedToPipeline(projects, repId, period)` → value created
+ *
+ * Two different stories, both interesting for reps reviewing their
+ * historical output.
+ *
+ * Role resolution follows the same shape as the on-pace calculation
+ * (MobileDashboard.tsx:414-422) and the user-detail Expected Pay
+ * column: closer → m1+m2+m3, setter → setterM1+M2+M3, co-party →
+ * that party row's m1+m2+m3.
+ */
+export function sumAddedToPipeline(
+  projects: ReadonlyArray<PipelineProject>,
+  repId: string | null,
+  isInPeriodFn: (dateStr: string) => boolean,
+): number {
+  if (!repId) return 0;
+  let total = 0;
+  for (const p of projects) {
+    if (p.phase === 'Cancelled') continue;
+    if (!isInPeriodFn(p.soldDate)) continue;
+
+    // Role-aware commission for this viewer. Mirrors the established
+    // resolution logic in commissionHelpers + the dashboard on-pace memo:
+    // primary closer → m1+m2+m3; primary setter → setter milestones;
+    // co-closer/co-setter → that party row's milestones; not on deal → 0.
+    let commission = 0;
+    if (p.repId === repId) {
+      commission = (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
+    } else if (p.setterId === repId) {
+      commission = (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
+    } else {
+      const cc = p.additionalClosers?.find((c) => c.userId === repId);
+      if (cc) {
+        commission = cc.m1Amount + cc.m2Amount + (cc.m3Amount ?? 0);
+      } else {
+        const cs = p.additionalSetters?.find((s) => s.userId === repId);
+        if (cs) {
+          commission = cs.m1Amount + cs.m2Amount + (cs.m3Amount ?? 0);
+        }
+      }
+    }
+    total += commission;
+  }
+  return total;
+}
+
 export interface StatusBreakdown {
   total: number;
   deal: number;
