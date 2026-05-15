@@ -6,7 +6,8 @@ import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
-import { isHistoricalPeriod, getPeriodLabel } from '../../../lib/period';
+import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
+import { computePeriodProjection } from '../../../lib/period-projection';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
 import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -423,12 +424,12 @@ export default function MobileDashboard() {
   );
 
   // On Pace: annual projection — matches desktop My Pay calculation exactly
-  const { onPaceAnnual, dealsPerMonth: paceDPM } = useMemo(() => {
+  const { onPaceAnnual, dealsPerMonth: paceDPM, monthlyEarningRate, pipelineBoostAnnual } = useMemo(() => {
     const now = new Date();
     const todayISO = localDateString(now);
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
     const totalDeals = allMyProjects.length;
-    if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0 };
+    if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0, monthlyEarningRate: 0, pipelineBoostAnnual: 0 };
 
     // Average commission per deal (M1 + M2), role-aware
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
@@ -456,18 +457,31 @@ export default function MobileDashboard() {
     // shown to the user, use sumPaid (net) instead.
     const totalPaidPositive = sumGrossPaid(myPayroll, { asOf: todayISO });
 
-    let annual: number;
+    // Blended monthly earning rate. Used (a) as `× 12` for the all-time
+    // annual projection (existing behavior) and (b) as the pace input
+    // into computePeriodProjection() for shorter horizons (this-month,
+    // this-quarter). Exposed from the memo so both paths share the same
+    // rate — no divergence between "On Pace For 2026" and
+    // "On Pace · This Month" beyond the deliberate horizon scaling.
+    let monthlyEarningRate: number;
+    let annualPaceComponent: number;
     if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
       // Blended: 60% pace-based + 40% actual paid rate
       const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
-      const monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
-      annual = monthlyAvg * 12;
+      monthlyEarningRate = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
+      annualPaceComponent = monthlyEarningRate * 12;
     } else {
-      // Pure pace-based
-      annual = Math.round(paceBasedAnnual);
+      // Pure pace-based — preserve the existing `Math.round(paceBasedAnnual)`
+      // result exactly (avoids a $0-$11 drift from round(annual/12)*12
+      // vs round(annual)). The unrounded monthly rate goes to the
+      // period-projection helper, which rounds its own final output.
+      annualPaceComponent = Math.round(paceBasedAnnual);
+      monthlyEarningRate = paceBasedAnnual / 12;
     }
 
-    // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay)
+    // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay).
+    // This is the FULL ANNUAL boost; computePeriodProjection scales it
+    // linearly by horizon length when projecting to shorter periods.
     const preAcceptance = ['New'];
     const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
     const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => {
@@ -490,20 +504,32 @@ export default function MobileDashboard() {
       else if (coSetterParty) m2 = coSetterParty.m2Amount;
       return s + m2;
     }, 0);
-    annual += Math.round((projM1 + projM2) * 0.15);
+    const pipelineBoostAnnual = Math.round((projM1 + projM2) * 0.15);
+    const annual = annualPaceComponent + pipelineBoostAnnual;
 
-    return { onPaceAnnual: annual, dealsPerMonth };
+    return { onPaceAnnual: annual, dealsPerMonth, monthlyEarningRate, pipelineBoostAnnual };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- activeProjects reports as unnecessary but it's a reference the memo must invalidate on
   }, [myProjects, myPayroll, activeProjects]);
 
   // ── Animated counters (rep layout) ───────────────────────────────────────
 
-  const animatedOnPace = useCountUp(onPaceAnnual, 350);
-  const animatedPayout = useCountUp(pendingPayrollTotal, 300);
-  const animatedPaid = useCountUp(periodPaid, 300);
-  const animatedPipeline = useCountUp(pipelineValue, 300);
-  const animatedAddedToPipeline = useCountUp(periodAddedToPipeline, 300);
-  const animatedDealsClosed = useCountUp(periodDealsClosed, 300);
+  // Period-scoped on-pace projection. For 'all' and 'this-year' this
+  // collapses to the existing onPaceAnnual (annual run rate). For
+  // 'this-month' / 'this-quarter' it scales the rate + boost down to
+  // the remaining-days horizon so the headline answers *"what will I
+  // close THIS month at this pace?"* rather than *"what would I close
+  // in 12 months at this pace?"*.
+  const onPacePeriod = useMemo(() => {
+    if (period === 'all' || period === 'this-year') return onPaceAnnual;
+    const daysRemaining = getPeriodDaysRemaining(period);
+    if (daysRemaining === null) return onPaceAnnual;
+    return computePeriodProjection({
+      paidInPeriodSoFar: periodPaid,
+      monthlyEarningRate,
+      pipelineBoostAnnual,
+      daysRemaining,
+    });
+  }, [period, onPaceAnnual, monthlyEarningRate, pipelineBoostAnnual, periodPaid]);
 
   // Period category decides which hero variant + which stats render.
   // Historical = backward-looking ("what did I earn / produce?");
@@ -511,6 +537,44 @@ export default function MobileDashboard() {
   // visible fix for the "on pace number doesn't change when I switch
   // periods" wart — the cards are now period-aware.
   const isHistorical = isHistoricalPeriod(period);
+
+  // Single source of truth for the on-pace big-number — onPaceAnnual
+  // for all-time/this-year, onPacePeriod for this-month/this-quarter,
+  // 0 in historical (where this value isn't rendered anyway). Animation
+  // hook reads this, so the count-up transitions smoothly when the
+  // user flips the period.
+  const heroOnPaceValue = isHistorical
+    ? 0
+    : (period === 'all' || period === 'this-year')
+      ? onPaceAnnual
+      : onPacePeriod;
+
+  const animatedOnPace = useCountUp(heroOnPaceValue, 350);
+  const animatedPayout = useCountUp(pendingPayrollTotal, 300);
+  const animatedPaid = useCountUp(periodPaid, 300);
+  const animatedPipeline = useCountUp(pipelineValue, 300);
+  const animatedAddedToPipeline = useCountUp(periodAddedToPipeline, 300);
+  const animatedDealsClosed = useCountUp(periodDealsClosed, 300);
+
+  // Hero label + subtitle copy for the forward-looking variant. Pulled
+  // into a single computed shape so the JSX below stays readable —
+  // separate labels for all-time vs current-period, with "X days left"
+  // grounding the current-period projection in something tangible.
+  const heroOnPaceCopy = useMemo(() => {
+    if (period === 'all' || period === 'this-year') {
+      return {
+        label: `On Pace For ${new Date().getFullYear()}`,
+        subtitle: period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`,
+      };
+    }
+    // this-month, this-quarter
+    const daysRemaining = getPeriodDaysRemaining(period) ?? 0;
+    const dayLabel = daysRemaining === 1 ? '1 day left' : `${daysRemaining} days left`;
+    return {
+      label: `On Pace · ${getPeriodLabel(period)}`,
+      subtitle: `${dayLabel} · ${paceDPM.toFixed(1)} deals/mo pace`,
+    };
+  }, [period, paceDPM]);
 
   // ── @mentions / My Tasks (fetched for rep + sub-dealer) ──────────────────
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
@@ -835,9 +899,10 @@ export default function MobileDashboard() {
           // ─── Historical period variant ────────────────────────────────
           // Backward-looking: "what did I earn in that window?" rather than
           // "what am I on pace for?". Subtitle adds the production context
-          // (deals closed + value added to pipeline) so the card answers
-          // both *cash collected* and *value created* — two distinct
-          // metrics reps care about post-period.
+          // (deals closed + value added to pipeline) but is SUPPRESSED for
+          // empty periods (new reps looking back at a window before they
+          // joined) — showing "0 deals · added $0 to pipeline" reads as
+          // demoralizing system noise, not data.
           <div>
             <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>
               Earned · {getPeriodLabel(period)}
@@ -845,9 +910,11 @@ export default function MobileDashboard() {
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>
               {fmt$(animatedPaid)}
             </p>
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
-              {periodDealsClosed} deal{periodDealsClosed === 1 ? '' : 's'} · added {fmtCompact$(animatedAddedToPipeline)} to pipeline
-            </p>
+            {(periodDealsClosed > 0 || periodAddedToPipeline > 0) && (
+              <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
+                {periodDealsClosed} deal{periodDealsClosed === 1 ? '' : 's'} · added {fmtCompact$(animatedAddedToPipeline)} to pipeline
+              </p>
+            )}
             {/* Next Payout — secondary, always useful regardless of period. */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex items-baseline justify-between">
@@ -857,13 +924,18 @@ export default function MobileDashboard() {
               <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
             </div>
           </div>
-        ) : onPaceAnnual > 0 ? (
+        ) : heroOnPaceValue > 0 ? (
           // ─── Current / all-time variant (forward-looking) ─────────────
+          // Label + subtitle adapt by period (see heroOnPaceCopy memo):
+          //   all / this-year     → "On Pace For 2026" + "Based on X deals/mo"
+          //   this-month/quarter  → "On Pace · This Month" + "X days left · ..."
+          // The big number adapts too (heroOnPaceValue): annual for the
+          // long horizons, period-scoped for this-month / this-quarter.
           <div>
-            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>On Pace For {new Date().getFullYear()}</p>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>{heroOnPaceCopy.label}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
-              {period === 'this-year' ? 'This Year' : `Based on ${paceDPM.toFixed(1)} deals/mo`}
+              {heroOnPaceCopy.subtitle}
             </p>
             {/* Next Payout — secondary */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
