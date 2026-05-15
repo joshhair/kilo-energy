@@ -17,7 +17,7 @@ import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
-import { ArrowLeft, MapPin, Calendar, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, CalendarPlus, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
@@ -651,6 +651,20 @@ export default function BlitzDetailPage() {
                 {blitz.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>}
                 <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}</span>
                 {blitz.housing && <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>}
+                {/* Add to Calendar — visible to every viewer (admin / PM / owner /
+                    creator / participant — anyone who has access to view the blitz
+                    has access to the .ics endpoint via the same auth gate).
+                    Anchor tag with `download` triggers the browser's save dialog
+                    on desktop and the calendar picker on iOS/Android. */}
+                <a
+                  href={`/api/blitzes/${blitz.id}/ics`}
+                  download
+                  className="inline-flex items-center gap-1.5 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] transition-colors"
+                  aria-label="Add this blitz to your calendar"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  Add to calendar
+                </a>
               </div>
             </div>
             {canManage ? (

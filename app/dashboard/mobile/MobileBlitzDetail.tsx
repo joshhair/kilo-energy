@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
-import { ArrowLeft, Pencil, Trash2, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
@@ -242,6 +242,27 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {blitz.location && <>{blitz.location} &middot; </>}
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
+
+        {/* Add to Calendar — visible to every viewer who can see the blitz.
+            Anchor with `download` triggers iOS Calendar.app / Android
+            calendar picker / desktop browser save flow. The .ics endpoint
+            shares the same auth gate as the main blitz GET. Sits between
+            the dates and the action pills so it's always visible without
+            cluttering the action row. */}
+        <a
+          href={`/api/blitzes/${blitz.id}/ics`}
+          download
+          className="inline-flex items-center gap-1.5 mt-2 text-sm active:scale-[0.97] transition-transform duration-100"
+          style={{
+            color: 'var(--accent-emerald-text)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          aria-label="Add this blitz to your calendar"
+        >
+          <CalendarPlus className="w-3.5 h-3.5" />
+          Add to calendar
+        </a>
 
         {/* Action pills — match the tab pill style so the edit/delete/
             cancel affordances are obvious. Icon-only buttons in the top
