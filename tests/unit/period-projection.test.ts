@@ -1,9 +1,11 @@
 /**
  * period-projection.test.ts — coverage for computePeriodProjection.
  *
- * Locks in the period-scoped projection math the mobile dashboard
- * hero card uses for the "On Pace · This Month / Quarter" headlines.
- * Pure function; tests are deterministic.
+ * The function takes the boost ALREADY scaled to the horizon (caller
+ * pre-computes via computePhaseWeightedBoost). So these tests focus
+ * on the addition semantics: paid + pace × days/30.44 + boost.
+ * Phase-weighted boost math is covered separately in
+ * tests/unit/phase-weighted-boost.test.ts.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,11 +13,11 @@ import { computePeriodProjection } from '@/lib/period-projection';
 
 describe('computePeriodProjection', () => {
   describe('all-time horizon (daysRemaining = null)', () => {
-    it('returns monthlyRate × 12 + pipelineBoost', () => {
+    it('returns monthlyRate × 12 + full boost', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 999, // ignored on all-time path
         monthlyEarningRate: 5000,
-        pipelineBoostAnnual: 1200,
+        pipelineBoostForHorizon: 1200,
         daysRemaining: null,
       });
       expect(result).toBe(5000 * 12 + 1200);
@@ -25,7 +27,7 @@ describe('computePeriodProjection', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 0,
         monthlyEarningRate: 0,
-        pipelineBoostAnnual: 0,
+        pipelineBoostForHorizon: 0,
         daysRemaining: null,
       });
       expect(result).toBe(0);
@@ -35,7 +37,7 @@ describe('computePeriodProjection', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 0,
         monthlyEarningRate: -100, // shouldn't happen but defend
-        pipelineBoostAnnual: -50,
+        pipelineBoostForHorizon: -50,
         daysRemaining: null,
       });
       expect(result).toBe(0);
@@ -43,44 +45,43 @@ describe('computePeriodProjection', () => {
   });
 
   describe('open-period horizon (daysRemaining > 0)', () => {
-    it('this-month case (~30 days) — adds ~1 month of pace + 8% of boost', () => {
-      // 17 days remaining (mid-May → June 1)
+    it('adds paid + pace × (days/30.44) + boost (no internal scaling)', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 2500,
         monthlyEarningRate: 4000,
-        pipelineBoostAnnual: 6000,
+        pipelineBoostForHorizon: 1000, // pre-scaled by caller
         daysRemaining: 17,
       });
-      // Expected: 2500 + 4000 × (17/30.44) + 6000 × (17/365)
-      //        = 2500 + 2233.9 + 279.5 ≈ 5013
-      expect(result).toBeGreaterThan(4900);
-      expect(result).toBeLessThan(5100);
+      // Expected: 2500 + 4000 × (17/30.44) + 1000
+      //        = 2500 + 2233.9 + 1000 ≈ 5734
+      expect(result).toBeGreaterThan(5700);
+      expect(result).toBeLessThan(5800);
     });
 
-    it('this-quarter case (~90 days) — adds ~3 months of pace + ~25% of boost', () => {
+    it('this-quarter scenario (~46 days, mid-May → Jun 30)', () => {
       const result = computePeriodProjection({
-        paidInPeriodSoFar: 8000,
-        monthlyEarningRate: 4000,
-        pipelineBoostAnnual: 6000,
-        daysRemaining: 78, // about 11 weeks into Q
+        paidInPeriodSoFar: 10000,
+        monthlyEarningRate: 5000,
+        pipelineBoostForHorizon: 13500, // caller did phase-weighted compute
+        daysRemaining: 46,
       });
-      // Expected: 8000 + 4000 × (78/30.44) + 6000 × (78/365)
-      //        = 8000 + 10249.7 + 1282.2 ≈ 19532
-      expect(result).toBeGreaterThan(19400);
-      expect(result).toBeLessThan(19700);
+      // Expected: 10000 + 5000 × (46/30.44) + 13500
+      //        = 10000 + 7556 + 13500 ≈ 31056
+      expect(result).toBeGreaterThan(31000);
+      expect(result).toBeLessThan(31200);
     });
 
-    it('this-year case (~231 days from May 15) — close to annual but not identical', () => {
+    it('this-year scenario (~231 days from May 15)', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 20000,
         monthlyEarningRate: 5000,
-        pipelineBoostAnnual: 12000,
+        pipelineBoostForHorizon: 15000, // caller used 365-day table (all 1.0) × 0.15 × pipeline
         daysRemaining: 231,
       });
-      // Expected: 20000 + 5000 × (231/30.44) + 12000 × (231/365)
-      //        = 20000 + 37944 + 7594 ≈ 65538
-      expect(result).toBeGreaterThan(65000);
-      expect(result).toBeLessThan(66000);
+      // Expected: 20000 + 5000 × (231/30.44) + 15000
+      //        = 20000 + 37944 + 15000 ≈ 72944
+      expect(result).toBeGreaterThan(72900);
+      expect(result).toBeLessThan(73000);
     });
   });
 
@@ -89,7 +90,7 @@ describe('computePeriodProjection', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 4250,
         monthlyEarningRate: 5000,
-        pipelineBoostAnnual: 1000,
+        pipelineBoostForHorizon: 1000,
         daysRemaining: 0,
       });
       expect(result).toBe(4250);
@@ -99,73 +100,62 @@ describe('computePeriodProjection', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 1000,
         monthlyEarningRate: 5000,
-        pipelineBoostAnnual: 1000,
+        pipelineBoostForHorizon: 1000,
         daysRemaining: -5,
       });
       expect(result).toBe(1000);
     });
   });
 
-  describe('linear horizon scaling — pipeline boost component', () => {
-    it('30 days → ~8% of annual boost', () => {
-      const a = computePeriodProjection({
-        paidInPeriodSoFar: 0,
-        monthlyEarningRate: 0,
-        pipelineBoostAnnual: 12000,
-        daysRemaining: 30,
-      });
-      // 12000 × (30/365) ≈ 986
-      expect(a).toBeGreaterThan(950);
-      expect(a).toBeLessThan(1020);
-    });
-
-    it('365 days → full annual boost', () => {
-      const a = computePeriodProjection({
-        paidInPeriodSoFar: 0,
-        monthlyEarningRate: 0,
-        pipelineBoostAnnual: 12000,
-        daysRemaining: 365,
-      });
-      expect(a).toBe(12000);
-    });
-
-    it('twice the days → twice the boost (linear)', () => {
-      const at30 = computePeriodProjection({
-        paidInPeriodSoFar: 0,
-        monthlyEarningRate: 0,
-        pipelineBoostAnnual: 12000,
-        daysRemaining: 30,
-      });
-      const at60 = computePeriodProjection({
-        paidInPeriodSoFar: 0,
-        monthlyEarningRate: 0,
-        pipelineBoostAnnual: 12000,
-        daysRemaining: 60,
-      });
-      expect(at60).toBeCloseTo(at30 * 2, -1); // tolerance for rounding
-    });
-  });
-
   describe('rounding behavior', () => {
-    it('rounds the final result, not intermediates', () => {
+    it('returns integer (no fractional dollars)', () => {
+      const result = computePeriodProjection({
+        paidInPeriodSoFar: 100.7,
+        monthlyEarningRate: 200.3,
+        pipelineBoostForHorizon: 100.9,
+        daysRemaining: 15,
+      });
+      expect(Number.isInteger(result)).toBe(true);
+    });
+
+    it('all components sum: small pace and small boost still round to 0 or small int', () => {
       const result = computePeriodProjection({
         paidInPeriodSoFar: 0,
         monthlyEarningRate: 1, // 1/month
-        pipelineBoostAnnual: 0,
+        pipelineBoostForHorizon: 0,
         daysRemaining: 1,
       });
       // 0 + 1 × (1/30.44) + 0 = 0.0329 → rounds to 0
       expect(result).toBe(0);
     });
+  });
 
-    it('returns integer (no fractional dollars)', () => {
-      const result = computePeriodProjection({
-        paidInPeriodSoFar: 100.7,
-        monthlyEarningRate: 200.3,
-        pipelineBoostAnnual: 100.9,
-        daysRemaining: 15,
+  describe('cross-period reconciliation invariant', () => {
+    // The user-facing requirement: this-year ≥ this-quarter ≥ this-month
+    // for a typical rep. Verifies the math doesn't produce weird
+    // inversions (e.g., year < quarter because of compound rounding).
+    it('a stable rep sees this-year > this-quarter > this-month', () => {
+      // Same rep, same rate, varying days remaining + scaled boost
+      const month = computePeriodProjection({
+        paidInPeriodSoFar: 2000,
+        monthlyEarningRate: 5000,
+        pipelineBoostForHorizon: 1500, // ~ 30-day phase-weighted boost
+        daysRemaining: 17,
       });
-      expect(Number.isInteger(result)).toBe(true);
+      const quarter = computePeriodProjection({
+        paidInPeriodSoFar: 10000,
+        monthlyEarningRate: 5000,
+        pipelineBoostForHorizon: 9000, // ~ 90-day phase-weighted boost
+        daysRemaining: 46,
+      });
+      const year = computePeriodProjection({
+        paidInPeriodSoFar: 20000,
+        monthlyEarningRate: 5000,
+        pipelineBoostForHorizon: 15000, // ~ full annual boost
+        daysRemaining: 231,
+      });
+      expect(year).toBeGreaterThan(quarter);
+      expect(quarter).toBeGreaterThan(month);
     });
   });
 });
