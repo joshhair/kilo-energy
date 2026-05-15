@@ -16,6 +16,7 @@ import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge, { PHASE_COLORS } from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
+import { UpcomingBlitzBanner } from '../components/UpcomingBlitzBanner';
 
 type MentionItem = {
   id: string;
@@ -865,6 +866,11 @@ export default function MobileDashboard() {
     <div className="px-5 pt-4 pb-28 space-y-5" style={{ fontFamily: FONT_BODY }}>
       {/* Greeting */}
       <h1 className="truncate" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.15rem, 4.8vw, 1.5rem)', color: 'var(--text-primary)', lineHeight: 1.2 }}>{getGreeting(effectiveRepName ?? '')}</h1>
+
+      {/* Upcoming blitz banner — surfaces the soonest upcoming blitz the
+          rep can see (within 7 days). Auto-hides when nothing qualifies.
+          Visual weight scales with proximity. */}
+      <UpcomingBlitzBanner variant="mobile" />
 
       {/* Period filter */}
       <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>

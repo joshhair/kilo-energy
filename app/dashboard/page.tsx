@@ -28,6 +28,7 @@ import { PMDashboard } from './components/PMDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SubDealerDashboard } from './components/SubDealerDashboard';
 import { DashboardSkeleton } from './components/DashboardSkeleton';
+import { UpcomingBlitzBanner } from './components/UpcomingBlitzBanner';
 
 // ── Re-export Period type for extracted components ───────────────────────────
 export type { Period } from './components/dashboard-utils';
@@ -1299,6 +1300,11 @@ export default function DashboardPage() {
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 animate-fade-in-up">
+
+      {/* Upcoming blitz banner — surfaces the soonest upcoming or active
+          blitz the rep can see (within 7 days). Auto-hides when nothing
+          qualifies. Visual weight scales with proximity. Phase 2c. */}
+      <UpcomingBlitzBanner variant="desktop" />
 
       {/* ── Welcome Banner with Glow CTA ─────────────────────────────────── */}
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
