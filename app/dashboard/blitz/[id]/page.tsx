@@ -22,6 +22,7 @@ import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { BlitzEarningsForecast } from '../../components/BlitzEarningsForecast';
 import { BlitzLeaderboard } from './BlitzLeaderboard';
 import { BlitzProfitability } from './BlitzProfitability';
 import { computeBlitzLeaderboard, LeaderboardEntry } from '../../../../lib/blitzComputed';
@@ -816,7 +817,12 @@ export default function BlitzDetailPage() {
       </div>
 
       {/* Overview */}
-      {tab === 'overview' && (<div key="overview" className="animate-tab-enter">{(() => {
+      {tab === 'overview' && (<div key="overview" className="animate-tab-enter">
+        {/* Earnings forecast — visible to reps + sub-dealers only.
+            Slider lets them project earnings at this blitz against
+            their historical avg. Phase 2d. */}
+        <BlitzEarningsForecast variant="desktop" />
+      {(() => {
         const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
         const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
         const nowMs = new Date().setHours(0, 0, 0, 0);

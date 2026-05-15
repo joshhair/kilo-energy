@@ -16,6 +16,7 @@ import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { computeBlitzLeaderboard, computeBlitzKiloMargin, computeCostsByCategory } from '../../../lib/blitzComputed';
 import { useToast } from '../../../lib/toast';
 import BlitzTabs, { BlitzTabKey, BlitzTab } from './blitz-detail/BlitzTabs';
+import { BlitzEarningsForecast } from '../components/BlitzEarningsForecast';
 import BlitzOverview from './blitz-detail/BlitzOverview';
 import BlitzParticipants from './blitz-detail/BlitzParticipants';
 import BlitzDeals from './blitz-detail/BlitzDeals';
@@ -412,6 +413,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       <div key={tab} className={panelDir === 'right' ? 'animate-panel-right' : 'animate-panel-left'}>
         {tab === 'overview' && (
           <div className="space-y-4">
+            <BlitzEarningsForecast variant="mobile" />
             <BlitzOverview
               participantCount={approvedParticipants.length}
               totalDeals={approvedVisibleProjects.length}
