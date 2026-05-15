@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
-import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus, UserPlus } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
@@ -32,6 +32,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const { effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
   const hydrated = useIsHydrated();
   const isAdmin = effectiveRole === 'admin';
+  const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
 
   const [blitz, setBlitz] = useState<any>(null);
@@ -91,6 +92,43 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
   const isOwner = !isAdmin && effectiveRepId != null && blitz?.owner?.id === effectiveRepId;
   const canManage = isAdmin || isOwner;
+
+  // Viewer's own participant record — drives FOMO banner for
+  // non-participants (Phase 2b roster transparency on mobile).
+  const viewerParticipant = useMemo(
+    () => (blitz?.participants ?? []).find((p: any) => p.user?.id === effectiveRepId) ?? null,
+    [blitz?.participants, effectiveRepId],
+  );
+  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | null = viewerParticipant?.joinStatus ?? null;
+  const canShowFomoBanner =
+    blitz != null
+    && !canManage
+    && !isPM
+    && (viewerJoinStatus === null || viewerJoinStatus === 'declined')
+    && (blitz.status === 'upcoming' || blitz.status === 'active');
+  const [requestingJoin, setRequestingJoin] = useState(false);
+  const handleJoinRequest = async () => {
+    if (!blitz || !effectiveRepId || requestingJoin) return;
+    setRequestingJoin(true);
+    try {
+      const res = await fetch(`/api/blitzes/${blitz.id}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: effectiveRepId }),
+      });
+      if (res.ok) {
+        toast('Request sent to blitz owner', 'success');
+        loadBlitz();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || 'Failed to request', 'error');
+      }
+    } catch {
+      toast('Network error', 'error');
+    } finally {
+      setRequestingJoin(false);
+    }
+  };
 
   const projects = useMemo<any[]>(() => blitz?.projects ?? [], [blitz]);
   const participants = useMemo<any[]>(() => blitz?.participants ?? [], [blitz]);
@@ -311,6 +349,63 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           </div>
         )}
       </div>
+
+      {/* FOMO banner — Phase 2b roster transparency on mobile. Visible
+          to non-participant reps to surface a clear "Request to Join"
+          CTA. Pending state has its own gentler banner so reps know
+          they're waiting on owner approval. */}
+      {canShowFomoBanner && (
+        <div
+          className="rounded-2xl p-4 mb-4"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
+          }}
+        >
+          <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            {approvedParticipants.length > 0
+              ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going — join them?`
+              : 'Be the first to join this blitz'}
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            {viewerJoinStatus === 'declined'
+              ? 'You opted out earlier. Changed your mind? Send another request.'
+              : `${blitz?.owner?.firstName ?? 'The owner'} will approve your request to join.`}
+          </p>
+          <button
+            onClick={handleJoinRequest}
+            disabled={requestingJoin}
+            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
+              border: '1px solid var(--accent-emerald-solid)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            {requestingJoin ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
+            ) : viewerJoinStatus === 'declined' ? (
+              <><UserPlus className="w-4 h-4" /> Re-request to join</>
+            ) : (
+              <><UserPlus className="w-4 h-4" /> Request to join</>
+            )}
+          </button>
+        </div>
+      )}
+      {!canManage && !isPM && viewerJoinStatus === 'pending' && (
+        <div
+          className="rounded-2xl p-3 mb-4"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-amber-solid) 6%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 24%, transparent)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            Your request to join is pending {blitz?.owner?.firstName ?? 'the owner'}&apos;s approval.
+          </p>
+        </div>
+      )}
 
       <BlitzTabs tabs={tabs} active={tab} onChange={handleTabChange} />
 

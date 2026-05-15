@@ -69,6 +69,7 @@ export default function BlitzDetailPage() {
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isAdmin = effectiveRole === 'admin';
+  const isPM = effectiveRole === 'project_manager';
   const { toast } = useToast();
   const blitzId = params.id as string;
 
@@ -168,6 +169,49 @@ export default function BlitzDetailPage() {
   // Owner check — blitz leaders get participant management powers
   const isOwner = !isAdmin && effectiveRepId != null && blitz?.owner?.id === effectiveRepId;
   const canManage = isAdmin || isOwner;
+
+  // Viewer's own participant record on this blitz. Drives the FOMO banner
+  // for non-participants (roster transparency, Phase 2b — Phase 2b lets
+  // ANY rep discover blitzes, so we surface a "Request to Join" CTA for
+  // those who aren't already in).
+  const viewerParticipant = useMemo(
+    () => (blitz?.participants ?? []).find((p: any) => p.user?.id === effectiveRepId) ?? null,
+    [blitz?.participants, effectiveRepId],
+  );
+  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | null = viewerParticipant?.joinStatus ?? null;
+  // Show FOMO banner only to reps + sub-dealers + trainers who are NOT
+  // admin/PM and who don't already have an approved/pending record.
+  // Owner/creator are inferred from canManage. Declined viewers also see
+  // it — they can re-request.
+  const canShowFomoBanner =
+    blitz != null
+    && !canManage
+    && !isPM
+    && (viewerJoinStatus === null || viewerJoinStatus === 'declined')
+    && (blitz.status === 'upcoming' || blitz.status === 'active');
+  const [requestingJoin, setRequestingJoin] = useState(false);
+  const handleJoinRequest = async () => {
+    if (!blitz || !effectiveRepId || requestingJoin) return;
+    setRequestingJoin(true);
+    try {
+      const res = await fetch(`/api/blitzes/${blitz.id}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: effectiveRepId }),
+      });
+      if (res.ok) {
+        toast('Request sent to blitz owner', 'success');
+        loadBlitz();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || 'Failed to request', 'error');
+      }
+    } catch {
+      toast('Network error', 'error');
+    } finally {
+      setRequestingJoin(false);
+    }
+  };
 
   // For reps (non-admin, non-owner), filter deals to only their own
   const visibleProjects = useMemo(() => {
@@ -685,6 +729,68 @@ export default function BlitzDetailPage() {
           </div>
         )}
       </div>
+
+      {/* FOMO banner — visible to non-participant reps (Phase 2b roster
+          transparency). Once they tap Request, the join flow posts to
+          /participants with pending status; owner approves via the
+          existing participant management UI. Status='declined' shows
+          "Re-request" copy so reps can ask again if they changed their
+          mind. Hidden for admin/PM/owner — they have full access. */}
+      {canShowFomoBanner && (
+        <div
+          className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 mt-1"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
+          }}
+        >
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-[var(--text-primary)]">
+              {approvedParticipants.length > 0
+                ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going — join them?`
+                : 'Be the first to join this blitz'}
+            </p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
+              {viewerJoinStatus === 'declined'
+                ? 'You opted out earlier. Changed your mind? Send another request.'
+                : `${blitz?.owner?.firstName ?? 'The owner'} will approve your request to join.`}
+            </p>
+          </div>
+          <button
+            onClick={handleJoinRequest}
+            disabled={requestingJoin}
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
+              border: '1px solid var(--accent-emerald-solid)',
+            }}
+          >
+            {requestingJoin ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</>
+            ) : viewerJoinStatus === 'declined' ? (
+              <><UserPlus className="w-3.5 h-3.5" /> Re-request to join</>
+            ) : (
+              <><UserPlus className="w-3.5 h-3.5" /> Request to join</>
+            )}
+          </button>
+        </div>
+      )}
+      {/* Pending state — viewer requested but waiting on owner approval.
+          Subtle ghost banner so they know the request is in flight. */}
+      {!canManage && !isPM && viewerJoinStatus === 'pending' && (
+        <div
+          className="rounded-2xl p-4 flex items-center justify-between gap-3 mb-5 mt-1"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-amber-solid) 6%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 24%, transparent)',
+          }}
+        >
+          <p className="text-sm font-medium text-[var(--accent-amber-text)]">
+            Your request to join is pending {blitz?.owner?.firstName ?? 'the owner'}&apos;s approval.
+          </p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-0.5 border-b border-[var(--border-subtle)]/50 overflow-x-auto tab-bar-container">

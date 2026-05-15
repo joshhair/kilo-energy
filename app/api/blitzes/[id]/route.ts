@@ -43,16 +43,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // ─── Visibility check ───
-  if (user.role !== 'admin' && user.role !== 'project_manager') {
-    const isOwner = blitz.ownerId === user.id;
-    const isCreator = blitz.createdById === user.id;
-    const isParticipant = blitz.participants.some(
-      (p) => p.userId === user.id && (p.joinStatus === 'approved' || p.joinStatus === 'pending'),
-    );
-    if (!isOwner && !isCreator && !isParticipant) {
-      return NextResponse.json({ error: 'Forbidden — not a participant' }, { status: 403 });
-    }
-  }
+  // Internal reps (rep, sub-dealer, trainer) can DISCOVER any blitz, not
+  // just ones they're on. Roster transparency was Phase 2b's pillar —
+  // reps were missing blitzes because the prior gate hid them from
+  // non-participants. Sensitive data (BlitzCost rows, project-level
+  // commission amounts) stays gated below via scrubProjectForViewer and
+  // the costs-admin-only filter; nothing on the open-discovery side
+  // leaks margin or pay info.
+  //
+  // The frontend uses the join-status to render a FOMO "Request to Join"
+  // CTA for non-participants. Owner approves via the existing
+  // /participants PATCH flow.
+  //
+  // No additional gate for non-admin/non-PM users — they all see.
 
   // BlitzCost rows are strictly admin-only. Earlier revisions exposed them
   // to the blitz owner on the theory that "they're running the blitz, they
