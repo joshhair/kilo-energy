@@ -443,12 +443,20 @@ export default function MobileDashboard() {
     // this-quarter). Exposed from the memo so both paths share the same
     // rate — no divergence between "On Pace For 2026" and
     // "On Pace · This Month" beyond the deliberate horizon scaling.
+    //
+    // Threshold: 270 days (~9 months) before paid history blends in.
+    // Solar milestone payouts (M1 at Acceptance, M2 at Install, M3 at
+    // PTO) span 6-9 months per deal — blending earlier than that drags
+    // the projection well below the rep's actual forward pace because
+    // most of their pipeline value hasn't fired yet. Once the rep has
+    // a full payment cycle in the books, the actual paid rate is
+    // meaningful and gets 15% weight as a reality check.
     let monthlyEarningRate: number;
     let annualPaceComponent: number;
-    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
-      // Blended: 60% pace-based + 40% actual paid rate
+    if (daysSinceFirst >= 270 && totalPaidPositive > 0) {
+      // Blended: 85% pace-based + 15% actual paid rate.
       const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
-      monthlyEarningRate = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
+      monthlyEarningRate = Math.round(paceBasedAnnual / 12 * 0.85 + paidMonthlyRate * 0.15);
       annualPaceComponent = monthlyEarningRate * 12;
     } else {
       // Pure pace-based — preserve the existing `Math.round(paceBasedAnnual)`
