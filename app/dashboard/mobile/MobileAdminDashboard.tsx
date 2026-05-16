@@ -353,8 +353,8 @@ export default function MobileAdminDashboard() {
       {/* ── Hero: Revenue with Profit / Paid Out ── */}
       <MobileCard hero style={{ border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', boxShadow: 'none' }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: 'var(--accent-cyan-display)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Revenue</p>
-          <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-cyan-display)' }} />
+          <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Revenue</p>
+          <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
         </div>
         <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: 'var(--accent-cyan-display)', lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
