@@ -435,6 +435,7 @@ export default function MobileBlitz() {
 
   const renderBlitzCard = (blitz: BlitzData, index: number) => {
     const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+    const pendingJoinCount = blitz.participants.filter((p) => p.joinStatus === 'pending').length;
     const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
     const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
       .filter(Boolean)
@@ -522,6 +523,11 @@ export default function MobileBlitz() {
             <div className="mt-3 flex items-center gap-2">
               {isBlitzOwner && (
                 <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
+              )}
+              {(isAdmin || isBlitzOwner) && pendingJoinCount > 0 && (
+                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-amber-text)', background: 'var(--accent-amber-soft)' }}>
+                  {pendingJoinCount} Pending
+                </span>
               )}
               {canJoin && (
                 /* role=button (not a real <button>) — MobileCard wraps each row in

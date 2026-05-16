@@ -263,8 +263,13 @@
   --border-strong: #334155;
   --accent-emerald-soft: rgba(0, 229, 160, 0.10);
   --accent-emerald-glow: rgba(0, 229, 160, 0.30);
-  --accent-emerald-text: #00e5a0;
-  --accent-emerald-display: #00e5a0;
+  /* Dark-mode emerald downshifted from #00e5a0 neon to #10b981 (Tailwind
+     emerald-500) so primary CTAs and active states feel premium — same
+     refinement philosophy applied to light mode (revenue-green family).
+     Black text on #10b981 = 10:1 contrast (passes AAA). */
+  --accent-emerald-solid: #10b981;
+  --accent-emerald-text: #10b981;
+  --accent-emerald-display: #10b981;
   --accent-cyan-soft: rgba(0, 180, 216, 0.10);
   --accent-cyan-glow: rgba(0, 180, 216, 0.30);
   --accent-cyan-text: #00b4d8;
