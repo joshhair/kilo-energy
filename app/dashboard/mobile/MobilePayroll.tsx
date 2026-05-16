@@ -671,14 +671,14 @@ export default function MobilePayroll() {
               type="date"
               value={filterFrom}
               onChange={(e) => setFilterFrom(e.target.value)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterFrom ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             <input
               type="date"
               value={filterTo}
               onChange={(e) => setFilterTo(e.target.value)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterTo ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             {(filterFrom || filterTo) && (
