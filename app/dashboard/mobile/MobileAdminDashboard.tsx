@@ -350,26 +350,22 @@ export default function MobileAdminDashboard() {
         />
       </div>
 
-      {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
-      {/* Override the MobileCard hero defaults to match Premium Spec rule 1:
-          hairline accent border, no halo glow. The internal subtle
-          surface-card → surface-elevated gradient is preserved by the
-          primitive. */}
+      {/* ── Hero: Revenue with Profit / Paid Out ── */}
       <MobileCard hero style={{ border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', boxShadow: 'none' }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Revenue</p>
-          <TrendingUp className="w-5 h-5" style={{ color: ACCENT_DISP }} />
+          <p className="tracking-widest uppercase" style={{ color: 'var(--accent-cyan-display)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Revenue</p>
+          <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-cyan-display)' }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: HERO_NUM, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: 'var(--accent-cyan-display)', lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedProfit)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--accent-emerald-text)' }}>{fmtCompact$(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
           <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
           <div>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedPaid)}</p>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid Out</p>
           </div>
         </div>
       </MobileCard>
