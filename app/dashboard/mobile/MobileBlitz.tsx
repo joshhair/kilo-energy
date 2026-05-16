@@ -596,29 +596,24 @@ export default function MobileBlitz() {
               <Tent className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
             </div>
             <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2.5rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{upcomingBlitzes}</p>
-            <div className="flex items-center gap-4 mt-4 [&>div:not(:first-child)]:pl-4">
+            <div className={`grid gap-x-4 gap-y-3 mt-4 pt-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="min-w-0">
                 <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{activeBlitzes}</p>
                 <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Active</p>
               </div>
-              <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
               <div className="min-w-0">
                 <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{summaryTotalDeals}</p>
                 <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Deals</p>
               </div>
-              <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
               <div className="min-w-0">
                 <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{kw.value} {kw.unit}</p>
                 <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Total</p>
               </div>
               {isAdmin && (
-                <>
-                  <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
-                  <div className="min-w-0">
-                    <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(summaryTotalCosts)}</p>
-                    <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Costs</p>
-                  </div>
-                </>
+                <div className="min-w-0">
+                  <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(summaryTotalCosts)}</p>
+                  <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Costs</p>
+                </div>
               )}
             </div>
           </MobileCard>
