@@ -843,14 +843,16 @@ export default function MobileDashboard() {
                 {periodDealsClosed} deal{periodDealsClosed === 1 ? '' : 's'} · added {fmtCompact$(animatedAddedToPipeline)} to pipeline
               </p>
             )}
-            {/* Next Payout — secondary, always useful regardless of period. */}
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
-                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+            {/* Next Payout — secondary. Hidden when nothing pending. */}
+            {pendingPayrollTotal > 0 && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-baseline justify-between">
+                  <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
+                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+                </div>
+                <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
-            </div>
+            )}
           </div>
         ) : heroOnPaceValue > 0 ? (
           // ─── Current / all-time variant (forward-looking) ─────────────
@@ -868,20 +870,27 @@ export default function MobileDashboard() {
                 {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned + {fmtCompact$(heroOnPaceCopy.breakdown.pace)} pace · {heroOnPaceCopy.dealsPerMonth}/mo
               </p>
             )}
-            {/* Next Payout — secondary */}
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
-                <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+            {/* Next Payout — secondary. Hidden when nothing pending. */}
+            {pendingPayrollTotal > 0 && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-baseline justify-between">
+                  <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
+                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+                </div>
+                <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
               </div>
-              <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
-            </div>
+            )}
           </div>
-        ) : (
+        ) : pendingPayrollTotal > 0 ? (
           <div>
             <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.22em' }}>Next Payout</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday} days</span></>}</p>
+          </div>
+        ) : (
+          <div>
+            <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', letterSpacing: '0.22em' }}>Welcome</p>
+            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem', lineHeight: 1.4 }}>Sell your first deal to see your earning projection here.</p>
           </div>
         )}
 
