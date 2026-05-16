@@ -1178,7 +1178,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             trainerAssignmentsRef.current,
             payrollEntriesRef.current,
           );
-          if (closerRes.rate > 0) {
+          // Self-trainer-with-setter guard: when trainer === closer and a
+          // setter is present, the setter-trainer leg owns the override
+          // (deducted from setter pay via splitPoint). Skipping the closer
+          // deduction here keeps live-edit preview in lockstep with the
+          // install-time generator at project-transitions.ts:340-350.
+          const closerSelfTrainerWithSetter = closerRes.trainerId === old.repId && !!old.setterId;
+          if (closerRes.rate > 0 && !closerSelfTrainerWithSetter) {
             if (updates.m2Amount !== undefined) {
               closerM2TrainerDeduction = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
             }
