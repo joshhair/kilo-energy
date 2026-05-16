@@ -400,11 +400,11 @@ export default function MobileDashboard() {
     [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs, myPayroll, todayStr],
   );
 
-  // On Pace ingredients — monthlyEarningRate + dealsPerMonth feed the
-  // period-scoped projection (computePeriodProjection). onPaceAnnual is
-  // still computed for the breakdown subtitle but no longer drives the
-  // hero number directly.
-  const { onPaceAnnual: _onPaceAnnual, dealsPerMonth: paceDPM, monthlyEarningRate } = useMemo(() => {
+  // On Pace ingredients — monthlyEarningRate, dealsPerMonth, and
+  // onPaceAnnual (rate × 12 + 0.15 × pipeline). onPaceAnnual is the
+  // forward-looking annualized projection used for All Time + This
+  // Year heroes. monthlyEarningRate feeds period-scoped projections.
+  const { onPaceAnnual, dealsPerMonth: paceDPM, monthlyEarningRate } = useMemo(() => {
     const now = new Date();
     const todayISO = localDateString(now);
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
@@ -507,26 +507,33 @@ export default function MobileDashboard() {
   // where phaseBoost is the phase-weighted pipeline contribution scaled
   // to the horizon (computePhaseWeightedBoost handles the weighting).
   //
-  // 'all' shares the same hero label as 'this-year' ("On Pace For YYYY"),
-  // so it now uses the same year-end projection formula. The rest of the
-  // dashboard (paid card, deals, kW) still shows lifetime numbers under
-  // 'all' — only the hero on-pace value is unified.
+  // Year-to-date paid (used in the breakdown subtitle for All Time / This
+  // Year). The hero value itself is the forward-looking annualized run
+  // rate for those two periods — see onPacePeriod below.
   const yearToDatePaid = useMemo(
     () => sumPaid(myPayroll.filter((p) => isInPeriod(p.date, 'this-year'))),
     [myPayroll],
   );
+  // Hero on-pace value.
+  //   All Time + This Year → annualized run rate (rate × 12 + 0.15 ×
+  //     pipeline). Answers "if you keep this pace for 12 months, what's
+  //     your earning power?" — forward-looking, ignores what you've
+  //     already collected. Both share the "On Pace For YYYY" label and
+  //     therefore must produce the same number.
+  //   This Month / This Quarter → period-scoped (paidInPeriod + pace ×
+  //     remaining + phase-weighted boost). Answers "what will you finish
+  //     the current month/quarter with?".
   const onPacePeriod = useMemo(() => {
-    const horizonPeriod = period === 'all' ? 'this-year' : period;
-    const daysRemaining = getPeriodDaysRemaining(horizonPeriod);
+    if (period === 'all' || period === 'this-year') return onPaceAnnual;
+    const daysRemaining = getPeriodDaysRemaining(period);
     const phaseBoost = computePhaseWeightedBoost(myProjects, effectiveRepId, daysRemaining);
-    const paidForHero = period === 'all' ? yearToDatePaid : periodPaid;
     return computePeriodProjection({
-      paidInPeriodSoFar: paidForHero,
+      paidInPeriodSoFar: periodPaid,
       monthlyEarningRate,
       pipelineBoostForHorizon: phaseBoost,
       daysRemaining,
     });
-  }, [period, monthlyEarningRate, periodPaid, yearToDatePaid, myProjects, effectiveRepId]);
+  }, [period, onPaceAnnual, monthlyEarningRate, periodPaid, myProjects, effectiveRepId]);
 
   // Period category decides which hero variant + which stats render.
   // Historical = backward-looking ("what did I earn / produce?");
@@ -554,27 +561,36 @@ export default function MobileDashboard() {
   // pipeline boost) so reps can mentally verify the math — addresses the
   // "why is this number what it is?" question proactively.
   const heroOnPaceCopy = useMemo(() => {
-    // 'all' shares the same horizon and breakdown components as 'this-year'
-    // so the headline reconciles when toggling between the two filters.
-    const horizonPeriod = period === 'all' ? 'this-year' : period;
-    const daysRemaining = getPeriodDaysRemaining(horizonPeriod) ?? 0;
+    const isYearLike = period === 'all' || period === 'this-year';
+    if (isYearLike) {
+      // Annualized run rate decomposition. "Pace × 12" + pipeline boost
+      // — same components that drove onPaceAnnual upstream.
+      const paceAnnualized = Math.round(monthlyEarningRate * 12);
+      const fullPipelineBoost = Math.max(0, onPaceAnnual - paceAnnualized);
+      return {
+        label: `On Pace For ${new Date().getFullYear()}`,
+        subtitle: `${paceDPM.toFixed(1)} deals/mo · ${fmtCompact$(Math.round(monthlyEarningRate))}/mo earning pace`,
+        breakdown: {
+          paid: Math.round(yearToDatePaid),
+          pace: paceAnnualized,
+          boost: fullPipelineBoost,
+        },
+      };
+    }
+    const daysRemaining = getPeriodDaysRemaining(period) ?? 0;
     const dayLabel = daysRemaining === 1 ? '1 day left' : `${daysRemaining} days left`;
-    // Recompute the boost so the breakdown shows the same number that
-    // went into onPacePeriod. Cheap — already memoized in onPacePeriod.
     const phaseBoost = computePhaseWeightedBoost(myProjects, effectiveRepId, daysRemaining);
     const paceComponent = Math.round(monthlyEarningRate * (daysRemaining / 30.44));
-    const paidForBreakdown = period === 'all' ? yearToDatePaid : periodPaid;
-    const isYearLike = period === 'all' || period === 'this-year';
     return {
-      label: isYearLike ? `On Pace For ${new Date().getFullYear()}` : `On Pace · ${getPeriodLabel(period)}`,
+      label: `On Pace · ${getPeriodLabel(period)}`,
       subtitle: `${dayLabel} · ${paceDPM.toFixed(1)} deals/mo pace`,
       breakdown: {
-        paid: Math.round(paidForBreakdown),
+        paid: Math.round(periodPaid),
         pace: paceComponent,
         boost: phaseBoost,
       },
     };
-  }, [period, paceDPM, monthlyEarningRate, periodPaid, yearToDatePaid, myProjects, effectiveRepId]);
+  }, [period, paceDPM, monthlyEarningRate, onPaceAnnual, periodPaid, yearToDatePaid, myProjects, effectiveRepId]);
 
   // ── @mentions / My Tasks (fetched for rep + sub-dealer) ──────────────────
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
