@@ -7,10 +7,11 @@ import { useToast } from '../../../lib/toast';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
-  getInstallerRatesForDeal, splitCloserSetterPay, resolveTrainerRate,
+  getInstallerRatesForDeal, splitCloserSetterPay,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
+import { computeProjectedTrainerLegs } from '../../../lib/trainer-projection';
 import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy } from 'lucide-react';
 import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
@@ -490,7 +491,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   // Shared helper computes total + per-stage applicability + status for
   // both reps and sub-dealers. SDs don't get an M1, and M3 only applies
   // when the installer has an M2/M3 structure (project.m3Amount > 0).
-  const myCommission = myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries);
+  // trainerAssignments threaded in so myCommission folds projected
+  // trainer pay into `total` — the "YOUR COMMISSION" header card
+  // shows closer + trainer combined for chain-trainer reps (Hunter
+  // viewing McMorrow case).
+  const myCommission = myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries, trainerAssignments);
 
   // Find payroll entry dates for milestones
   const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
@@ -1031,89 +1036,105 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     return renderPartyRow(`cs-${co.userId}`, co.userName, `co-setter · #${co.position}`, coTotal, cells);
                   })}
 
-                  {/* Trainer row — same expand/collapse pattern, single
-                      Trainer-stage cell that fires alongside M2. */}
+                  {/* Trainer rows — one per resolved trainer leg.
+                      The previous implementation only resolved the
+                      closer's chain, hiding setter-trainer cases like
+                      Hunter (closer) → Chris (setter)'s chain trainer.
+                      Switched to computeProjectedTrainerLegs which
+                      returns both legs and de-dupes per the same
+                      guard install-time payroll generation uses. */}
                   {isAdmin && (() => {
-                    const { rate: effTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
-                      { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
-                      project.repId,
+                    const legs = computeProjectedTrainerLegs(
+                      {
+                        id: project.id,
+                        trainerId: project.trainerId ?? null,
+                        trainerRate: project.trainerRate ?? null,
+                        repId: project.repId,
+                        setterId: project.setterId ?? null,
+                        kWSize: project.kWSize ?? 0,
+                      },
                       trainerAssignments,
                       payrollEntries,
                     );
-                    if (!effTrainerId || effTrainerRate <= 0) return null;
-                    const trainerName = project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? 'Trainer';
-                    const trainerTotal = effTrainerRate * (project.kWSize ?? 0) * 1000;
-                    const entry = findPartyEntry(effTrainerId, 'Trainer');
-                    const paid = entry?.status === 'Paid';
-                    const isOpen = expandedParty === 'trainer';
-                    const summary = paid ? 'paid' : 'pending';
-                    const summaryColor = paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)';
-                    return (
-                      <div className="rounded-xl overflow-hidden" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>
-                        <button
-                          onClick={() => setExpandedParty(isOpen ? null : 'trainer')}
-                          aria-expanded={isOpen}
-                          className="w-full flex items-center justify-between gap-3 px-4 py-3 active:opacity-80 transition-opacity"
-                          style={{ WebkitTapHighlightColor: 'transparent' }}
-                        >
-                          <div className="flex flex-col items-start min-w-0 flex-1">
-                            <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                              {trainerName}
-                            </p>
-                            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
-                              trainer · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
-                            </p>
-                          </div>
-                          <span className="text-base font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                            {fmt$(trainerTotal)}
-                          </span>
-                          <span
-                            className="shrink-0 text-[var(--text-muted)] text-xs leading-none"
-                            aria-hidden="true"
-                            style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
-                          >▶</span>
-                        </button>
-                        <Collapse open={isOpen}>
-                          <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
-                            <div className="flex items-center justify-between gap-3 py-2">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <span className="inline-flex items-center justify-center px-2.5 h-9 rounded-full text-xs font-bold shrink-0"
-                                  style={{
-                                    background: paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 14%, transparent)',
-                                    border: '1.5px solid ' + (paid ? 'var(--accent-emerald-display)' : 'var(--accent-amber-display)'),
-                                    color: paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
-                                  }}
-                                >Trainer</span>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-base font-bold tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                                    {fmt$(trainerTotal)}
-                                  </span>
-                                  <span className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
-                                    ${effTrainerRate.toFixed(2)}/W × {project.kWSize} kW
-                                  </span>
-                                </div>
-                              </div>
-                              {entry ? (
-                                <button
-                                  onClick={() => togglePartyEntryPaid(effTrainerId, 'Trainer')}
-                                  className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
-                                  style={{
-                                    background: paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 18%, transparent)',
-                                    color: paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
-                                    border: '1px solid ' + (paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)'),
-                                    WebkitTapHighlightColor: 'transparent',
-                                  }}
-                                >
-                                  {paid ? 'Mark Unpaid' : 'Mark Paid'}
-                                </button>
-                              ) : (
-                                <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>No entry yet</span>
-                              )}
+                    if (legs.length === 0) return null;
+                    return legs.map((leg) => {
+                      const trainerName = reps.find((r) => r.id === leg.trainerId)?.name ?? 'Trainer';
+                      const expandKey = `trainer-${leg.leg}-${leg.trainerId}`;
+                      const isOpen = expandedParty === expandKey;
+                      const summary = leg.paid ? 'paid' : leg.hasEntry ? 'pending' : 'projected';
+                      const summaryColor = leg.paid
+                        ? 'var(--accent-emerald-text)'
+                        : leg.hasEntry ? 'var(--accent-amber-text)' : 'var(--text-muted)';
+                      const traineeRepName = leg.leg === 'setter-trainer'
+                        ? (project.setterName ?? '')
+                        : (project.repName ?? '');
+                      return (
+                        <div key={expandKey} className="rounded-xl overflow-hidden" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>
+                          <button
+                            onClick={() => setExpandedParty(isOpen ? null : expandKey)}
+                            aria-expanded={isOpen}
+                            className="w-full flex items-center justify-between gap-3 px-4 py-3 active:opacity-80 transition-opacity"
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
+                          >
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <p className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                                {trainerName}
+                              </p>
+                              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                                trainer for {traineeRepName} · <span style={{ color: summaryColor, fontWeight: 600 }}>{summary}</span>
+                              </p>
                             </div>
-                          </div>
-                        </Collapse>
-                      </div>
-                    );
+                            <span className="text-base font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                              {fmt$(leg.amount)}
+                            </span>
+                            <span
+                              className="shrink-0 text-[var(--text-muted)] text-xs leading-none"
+                              aria-hidden="true"
+                              style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+                            >▶</span>
+                          </button>
+                          <Collapse open={isOpen}>
+                            <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
+                              <div className="flex items-center justify-between gap-3 py-2">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <span className="inline-flex items-center justify-center px-2.5 h-9 rounded-full text-xs font-bold shrink-0"
+                                    style={{
+                                      background: leg.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 14%, transparent)',
+                                      border: '1.5px solid ' + (leg.paid ? 'var(--accent-emerald-display)' : 'var(--accent-amber-display)'),
+                                      color: leg.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                                    }}
+                                  >Trainer</span>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-base font-bold tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                                      {fmt$(leg.amount)}
+                                    </span>
+                                    <span className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
+                                      ${leg.rate.toFixed(2)}/W × {project.kWSize} kW
+                                    </span>
+                                  </div>
+                                </div>
+                                {leg.hasEntry ? (
+                                  <button
+                                    onClick={() => togglePartyEntryPaid(leg.trainerId, 'Trainer')}
+                                    className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
+                                    style={{
+                                      background: leg.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 18%, transparent)',
+                                      color: leg.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
+                                      border: '1px solid ' + (leg.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)'),
+                                      WebkitTapHighlightColor: 'transparent',
+                                    }}
+                                  >
+                                    {leg.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                  </button>
+                                ) : (
+                                  <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>Projected (no entry until install)</span>
+                                )}
+                              </div>
+                            </div>
+                          </Collapse>
+                        </div>
+                      );
+                    });
                   })()}
                 </div>
               );

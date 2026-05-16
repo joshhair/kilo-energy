@@ -6,7 +6,11 @@
  * page (YOUR COMMISSION header block).
  */
 
-import type { Project, PayrollEntry } from "./data";
+import type { Project, PayrollEntry, TrainerAssignment } from "./data";
+import {
+  computeProjectedTrainerLegs,
+  sumProjectedTrainerPayForRep,
+} from "./trainer-projection";
 
 export type CommissionStatus =
   | "paid" // all applicable milestones paid
@@ -22,6 +26,18 @@ export interface MyCommission {
     m2: { applicable: boolean; amount: number; paid: boolean };
     m3: { applicable: boolean; amount: number; paid: boolean };
   };
+  /**
+   * Projected trainer pay for this viewer on this deal, in addition to
+   * any closer/setter role they have. Populated when the viewer
+   * resolves as the chain trainer (or per-project override target)
+   * for the deal's closer and/or setter. Always 0 when
+   * `trainerAssignments` is not passed to `myCommissionOnProject`.
+   *
+   * This is summed into `total` so the "YOUR COMMISSION" header card
+   * reflects combined closer + trainer pay in a single number, per the
+   * Hunter-on-McMorrow case where the rep is both.
+   */
+  trainerProjection: number;
 }
 
 /**
@@ -47,12 +63,31 @@ export function myCommissionOnProject(
   repId: string | null,
   role: string | null,
   payrollEntries: PayrollEntry[],
+  trainerAssignments: readonly TrainerAssignment[] = [],
 ): MyCommission {
   const isSubDealer = role === "sub-dealer";
   const isViewerCloser = project.repId === repId;
   const isViewerSetter = project.setterId === repId;
   const isViewerSubDealer = project.subDealerId === repId;
-  const isViewerTrainer = project.trainerId === repId;
+
+  // Compute every projected trainer leg on this deal (closer-trainer +
+  // setter-trainer), then pull the viewer-targeted total. This makes
+  // the chain trainer visible in pay summaries even before phase=Installed
+  // generates real PayrollEntry rows. Empty when trainerAssignments isn't
+  // passed (backward-compat for the projects-list caller).
+  const projectedLegs = computeProjectedTrainerLegs(
+    {
+      id: project.id,
+      trainerId: project.trainerId ?? null,
+      trainerRate: project.trainerRate ?? null,
+      repId: project.repId,
+      setterId: project.setterId ?? null,
+      kWSize: project.kWSize ?? 0,
+    },
+    trainerAssignments,
+    payrollEntries,
+  );
+  const viewerTrainerPay = sumProjectedTrainerPayForRep(projectedLegs, repId);
 
   // Pull this viewer's payroll entries once — used across branches to
   // surface paid/not-paid status for each stage.
@@ -62,31 +97,27 @@ export function myCommissionOnProject(
   const paidStage = (stage: "M1" | "M2" | "M3") =>
     myEntries.some((e) => e.paymentStage === stage && e.status === "Paid");
 
-  // ─ Trainer path ─
-  // A rep who's the per-project trainer (or resolves via the assignment
-  // chain) gets paid as one lump sum at the Trainer paymentStage, not
-  // split into M1/M2/M3. Their total = trainerRate × kW × 1000.
-  if (isViewerTrainer && !isViewerCloser && !isViewerSetter) {
+  // ─ Trainer-only path ─
+  // Viewer is the trainer on this deal (via project override or chain)
+  // and is NOT also the closer/setter/sub-dealer. Pay = trainer projection.
+  // For mixed roles (closer + trainer, etc.) the trainer add-on is folded
+  // into the role branch below via `trainerProjection`.
+  if (viewerTrainerPay > 0 && !isViewerCloser && !isViewerSetter && !isViewerSubDealer) {
     const trainerEntries = payrollEntries.filter(
       (e) => e.projectId === project.id && e.repId === repId && e.paymentStage === "Trainer",
     );
     const paidEntries = trainerEntries.filter((e) => e.status === "Paid");
-    // Total = projected trainer override (rate × kW × 1000). Drafted
-    // payroll entries reflect the same amount; using the projection
-    // makes the total stable across the deal's lifecycle even before
-    // any Trainer entry has been created.
-    const total = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
     const allPaid = trainerEntries.length > 0 && paidEntries.length === trainerEntries.length;
     const anyPaid = paidEntries.length > 0;
 
     const stages = {
       m1: { applicable: false, amount: 0, paid: false },
-      m2: { applicable: true, amount: total, paid: allPaid },
+      m2: { applicable: true, amount: viewerTrainerPay, paid: allPaid },
       m3: { applicable: false, amount: 0, paid: false },
     };
 
     const status: CommissionStatus = allPaid ? "paid" : anyPaid ? "partial" : "projected";
-    return { total, status, stages };
+    return { total: viewerTrainerPay, status, stages, trainerProjection: viewerTrainerPay };
   }
 
   // ─ Closer / sub-dealer ─
@@ -115,10 +146,15 @@ export function myCommissionOnProject(
       },
     };
 
+    // viewerTrainerPay folds in the closer-also-trainer case (Hunter on
+    // McMorrow): closer total + projected trainer leg = combined pay
+    // shown on the YOUR COMMISSION header card. 0 when viewer isn't
+    // also the trainer on this deal.
     return {
-      total: m1Amount + m2Amount + m3Amount,
+      total: m1Amount + m2Amount + m3Amount + viewerTrainerPay,
       status: deriveStatus(stages),
       stages,
+      trainerProjection: viewerTrainerPay,
     };
   }
 
@@ -135,9 +171,10 @@ export function myCommissionOnProject(
     };
 
     return {
-      total: m1Amount + m2Amount + m3Amount,
+      total: m1Amount + m2Amount + m3Amount + viewerTrainerPay,
       status: deriveStatus(stages),
       stages,
+      trainerProjection: viewerTrainerPay,
     };
   }
 
@@ -153,9 +190,10 @@ export function myCommissionOnProject(
       m3: { applicable: m3Amount > 0, amount: m3Amount, paid: paidStage("M3") },
     };
     return {
-      total: m1Amount + m2Amount + m3Amount,
+      total: m1Amount + m2Amount + m3Amount + viewerTrainerPay,
       status: deriveStatus(stages),
       stages,
+      trainerProjection: viewerTrainerPay,
     };
   }
 
@@ -170,9 +208,10 @@ export function myCommissionOnProject(
       m3: { applicable: m3Amount > 0, amount: m3Amount, paid: paidStage("M3") },
     };
     return {
-      total: m1Amount + m2Amount + m3Amount,
+      total: m1Amount + m2Amount + m3Amount + viewerTrainerPay,
       status: deriveStatus(stages),
       stages,
+      trainerProjection: viewerTrainerPay,
     };
   }
 
@@ -185,6 +224,7 @@ export function myCommissionOnProject(
       m2: { applicable: false, amount: 0, paid: false },
       m3: { applicable: false, amount: 0, paid: false },
     },
+    trainerProjection: 0,
   };
 }
 

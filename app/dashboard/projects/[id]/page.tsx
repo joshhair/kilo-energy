@@ -16,6 +16,7 @@ import {
   SOLARTECH_FAMILIES,
 } from '../../../../lib/data';
 import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-deduction';
+import { computeProjectedTrainerLegs } from '../../../../lib/trainer-projection';
 import { formatDate } from '../../../../lib/utils';
 import { Flag, FlagOff, AlertTriangle, X, Pencil, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -662,13 +663,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterTotalExpected = project.setterId
     ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
     : 0;
-  const { rate: effectiveTrainerRate, trainerId: effTrainerId } = resolveTrainerRate(
-    { id: project.id, trainerId: project.trainerId ?? null, trainerRate: project.trainerRate ?? null },
-    project.repId,
+  // Compute every projected trainer leg (closer-trainer + setter-trainer)
+  // and pick the primary for display alongside the existing single-row
+  // trainer block. Previously this only resolved the closer's chain —
+  // missing the setter-trainer leg (Hunter → Chris on McMorrow). With
+  // the projection helper, both legs surface.
+  const projectedTrainerLegs = computeProjectedTrainerLegs(
+    {
+      id: project.id,
+      trainerId: project.trainerId ?? null,
+      trainerRate: project.trainerRate ?? null,
+      repId: project.repId,
+      setterId: project.setterId ?? null,
+      kWSize: project.kWSize ?? 0,
+    },
     trainerAssignments,
     payrollEntries,
   );
-  const trainerTotalExpected = effectiveTrainerRate * (project.kWSize ?? 0) * 1000;
+  const primaryTrainerLeg = projectedTrainerLegs[0] ?? null;
+  const effectiveTrainerRate = primaryTrainerLeg?.rate ?? 0;
+  const effTrainerId = primaryTrainerLeg?.trainerId ?? null;
+  const trainerTotalExpected = projectedTrainerLegs.reduce((s, l) => s + l.amount, 0);
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
@@ -929,7 +944,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const myExpM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
             const myExpM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
             const myExpM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
-            const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0);
+            // Trainer-leg projection: fold in chain-trainer pay so a rep
+            // who's BOTH closer/setter AND the chain trainer (Hunter on
+            // McMorrow) sees combined pay in the hero number.
+            const projectedLegs = computeProjectedTrainerLegs(
+              {
+                id: project.id,
+                trainerId: project.trainerId ?? null,
+                trainerRate: project.trainerRate ?? null,
+                repId: project.repId,
+                setterId: project.setterId ?? null,
+                kWSize: project.kWSize ?? 0,
+              },
+              trainerAssignments,
+              payrollEntries,
+            );
+            const viewerTrainerPay = projectedLegs
+              .filter((l) => l.trainerId === effectiveRepId)
+              .reduce((s, l) => s + l.amount, 0);
+            const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0) + viewerTrainerPay;
             return myTotal > 0 ? (
               <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
@@ -939,7 +972,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
                   ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
-                <p className="text-[var(--text-secondary)] text-sm mt-1">Projected earnings on this deal</p>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">
+                  Projected earnings on this deal
+                  {viewerTrainerPay > 0 && ` (includes $${viewerTrainerPay.toLocaleString(undefined, { maximumFractionDigits: 0 })} trainer override)`}
+                </p>
               </div>
             ) : null;
           })()}
@@ -1190,7 +1226,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 override) OR if any Trainer-stage payroll rows exist. Trainer
                 info is scrubbed server-side for non-admin/PM viewers, so
                 project.trainerName / trainerRate will be undefined for reps. */}
-            {(project.trainerId || trainerEntries.length > 0) && (
+            {(project.trainerId || trainerEntries.length > 0 || effTrainerId) && (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
