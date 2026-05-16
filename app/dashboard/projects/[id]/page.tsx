@@ -883,6 +883,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Commission — rep view shows their own payroll entries */}
       {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (() => {
+        // isTrainerOnDeal flags the trainer-ONLY case (drives the
+        // "My Commission (Trainer)" heading + dedicated trainer entries
+        // list below). When the viewer is also the closer/setter/co-party,
+        // their projected trainer pay folds into the role hero card via
+        // `viewerTrainerPay` below — the trainer-only heading would be
+        // misleading. So we keep the exclusion guards here.
         const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
         const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
         return (
@@ -898,9 +904,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
             const isSetterRep = project.setterId === effectiveRepId;
             const isCloserRep2 = project.repId === effectiveRepId;
+            // isTrainerRep gates the "trainer-only" hero card path. When the
+            // viewer is also closer/setter/co-party, the trainer projection
+            // is folded into their role hero card (`viewerTrainerPay` block
+            // below), so the standalone trainer card only fires when this
+            // is purely a trainer view — no other role on the deal.
             const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
 
-            // Trainer path: single lump paid at Trainer stage, no M1/M2/M3.
+            // Trainer-only path: single lump paid at Trainer stage, no M1/M2/M3.
             // Projected as trainerRate × kW × 1000; paid entries override if
             // they exist.
             if (isTrainerRep) {
@@ -1663,7 +1674,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     >
                       <option value="">— none —</option>
                       {reps
-                        .filter((r) => r.active && r.id !== project.repId && r.id !== editVals.setterId)
+                        .filter((r) => r.active && r.id !== editVals.setterId)
                         .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   </div>
@@ -1696,6 +1707,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-[var(--accent-red-text)] text-xs mt-2">
                     Trainer removed — chain trainer (if any) will not see this deal or earn override.
                     Pick a trainer above to restore.
+                  </p>
+                )}
+                {editVals.trainerId === project.repId && editVals.setterId && (
+                  <p className="text-[var(--accent-cyan-text)] text-xs mt-2">
+                    The closer is also the trainer on this deal — the override pays the closer
+                    for training the setter. Deducted from the setter&apos;s split, not the closer&apos;s.
                   </p>
                 )}
               </div>

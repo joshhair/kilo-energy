@@ -22,6 +22,7 @@ export interface LeaderboardEntry {
   deals: number;
   kW: number;
   payout: number;
+  targetDeals: number | null;
 }
 
 /**
@@ -96,6 +97,7 @@ export function computeBlitzLeaderboard(blitz: any): LeaderboardEntry[] {
       deals: stats.deals,
       kW: stats.kW,
       payout: stats.payout,
+      targetDeals: typeof p.targetDeals === 'number' ? p.targetDeals : null,
     };
   });
   entries.sort((a, b) => b.deals - a.deals || b.kW - a.kW);

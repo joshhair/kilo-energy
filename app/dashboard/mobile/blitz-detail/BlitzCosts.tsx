@@ -78,10 +78,15 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
     <div className="space-y-4">
       <button
         onClick={() => setShowAdd(true)}
-        className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-        style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[40px] rounded-full text-[13px] font-medium tracking-wide active:scale-[0.98] transition-all"
+        style={{
+          color: 'var(--accent-emerald-text)',
+          background: 'transparent',
+          border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+        }}
       >
-        <Plus className="w-4 h-4" /> Add Cost
+        <Plus className="w-3.5 h-3.5" /> Add cost
       </button>
 
       {costs.length === 0 ? (
@@ -203,8 +208,7 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             disabled={adding || !amount}
             className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 0 20px var(--accent-emerald-glow)',
+              background: 'var(--accent-emerald-solid)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Trophy } from 'lucide-react';
 import { formatCurrency } from '../../../../lib/utils';
 
-type LeaderboardEntry = { userId: string; name: string; initials: string; deals: number; kW: number; payout: number };
+type LeaderboardEntry = { userId: string; name: string; initials: string; deals: number; kW: number; payout: number; targetDeals?: number | null };
 
 const RANK_GRADIENTS = ['from-yellow-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-amber-600 to-amber-800'];
 const RANK_BG = ['bg-[var(--accent-amber-soft)] border-yellow-600/30', 'bg-[var(--surface-card)]/40 border-[var(--border)]/30', 'bg-[var(--accent-amber-soft)] border-amber-700/30'];
@@ -32,7 +32,12 @@ export function BlitzLeaderboard({ entries, showPayout = false }: { entries: Lea
               <Link href={`/dashboard/users/${rep.userId}`} className={`flex-1 text-sm font-medium truncate hover:text-[var(--accent-cyan-text)] transition-colors ${
                 isTop3 ? RANK_TEXT[rank - 1] : 'text-[var(--text-secondary)]'
               }`}>{rep.name}</Link>
-              <span className="text-xs text-[var(--text-secondary)] tabular-nums whitespace-nowrap">{rep.deals} deal{rep.deals !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
+                {rep.deals}{rep.targetDeals ? `/${rep.targetDeals}` : ''} deal{(rep.targetDeals ?? rep.deals) !== 1 ? 's' : ''}
+                {rep.targetDeals != null && rep.deals >= rep.targetDeals && (
+                  <span className="ml-1" title="Goal hit">✓</span>
+                )}
+              </span>
               <span className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap">{rep.kW.toFixed(1)} kW</span>
               {/* Payout column gated to admins + the blitz owner. Regular
                   reps must not see other reps' commission on the blitz —

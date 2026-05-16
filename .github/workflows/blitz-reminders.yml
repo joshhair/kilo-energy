@@ -1,0 +1,35 @@
+name: Blitz Reminders
+
+# Daily T-7 / T-3 / T-1 / T-0 reminders for upcoming blitzes.
+# Lives in GitHub Actions instead of vercel.json because the Hobby plan
+# caps cron entries at 2 (already used by retention + privacy-prober).
+#
+# Triggers:
+#   - schedule: 7:00 AM Pacific (14:00 UTC). Early enough to land before
+#     the workday starts on the West Coast, late enough that overnight
+#     pipeline writes have settled.
+#   - workflow_dispatch: manual run from the GitHub UI for testing.
+#
+# Auth: GitHub repo secret BLITZ_REMINDERS_TOKEN must match the Vercel
+# env of the same name (or CRON_SECRET as a fallback). Mismatch → 401.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger blitz-reminders endpoint
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "${APP_URL}/api/cron/blitz-reminders" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://app.kiloenergies.com' }}
+          TOKEN: ${{ secrets.BLITZ_REMINDERS_TOKEN }}

@@ -192,8 +192,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
           onClick={() => router.push('/dashboard/projects')}
           className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-            boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
+            background: 'var(--accent-emerald-solid)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -1033,7 +1032,7 @@ export default function MobileNewDeal() {
 
   const v0InputStyle = (field: string): React.CSSProperties => ({
     background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
-    border: errors[field] ? '1px solid var(--accent-red-solid)' : '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
+    border: errors[field] ? '1px solid var(--accent-red-solid)' : '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
     borderRadius: 14,
     padding: '16px 18px',
     fontSize: '1rem',
@@ -1255,13 +1254,13 @@ export default function MobileNewDeal() {
                 disabled={!!exitAnimClass}
                 className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
                 style={{
-                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-
-                  borderRadius: 16,
-                  padding: 18,
-                  fontSize: 16,
-                  color: 'var(--text-primary)',
+                  background: 'var(--accent-emerald-solid)',
+                  borderRadius: 14,
+                  padding: '14px 18px',
+                  fontSize: 14,
+                  color: 'var(--text-on-accent)',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                  letterSpacing: '0.02em',
                 }}
               >
                 Next <ArrowRight className="w-4 h-4" />
@@ -1763,7 +1762,7 @@ export default function MobileNewDeal() {
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
                     background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
-                    border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)',
                     borderRadius: 16,
                     padding: 18,
                     fontSize: 16,
@@ -1778,7 +1777,7 @@ export default function MobileNewDeal() {
                   disabled={!!exitAnimClass}
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
-                    background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                    background: 'var(--accent-emerald-solid)',
 
                     borderRadius: 16,
                     padding: 18,
@@ -2035,11 +2034,11 @@ export default function MobileNewDeal() {
               <div className="flex gap-3">
                 <button type="button" onClick={handlePrev} disabled={submitting}
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
-                  style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-secondary)' }}
+                  style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-secondary)' }}
                 ><ChevronLeft className="w-4 h-4" /> Back</button>
                 <button type="submit" disabled={submitting}
                   className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ background: 'var(--accent-emerald-solid)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Check className="w-4 h-4" /> Submit Deal</>}</button>
               </div>
             </div>

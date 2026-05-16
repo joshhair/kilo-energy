@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
-import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus, UserPlus, Megaphone } from 'lucide-react';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
@@ -57,6 +57,10 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showCancelRequest, setShowCancelRequest] = useState(false);
+  // Phase 3c — mobile broadcast composer.
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcasting, setBroadcasting] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [submittingAction, setSubmittingAction] = useState(false);
 
@@ -100,7 +104,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     () => (blitz?.participants ?? []).find((p: any) => p.user?.id === effectiveRepId) ?? null,
     [blitz?.participants, effectiveRepId],
   );
-  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | null = viewerParticipant?.joinStatus ?? null;
+  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | 'waitlist' | null = viewerParticipant?.joinStatus ?? null;
   const canShowFomoBanner =
     blitz != null
     && !canManage
@@ -282,114 +286,128 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
 
-        {/* Add to Calendar — visible to every viewer who can see the blitz.
-            Anchor with `download` triggers iOS Calendar.app / Android
-            calendar picker / desktop browser save flow. The .ics endpoint
-            shares the same auth gate as the main blitz GET. Sits between
-            the dates and the action pills so it's always visible without
-            cluttering the action row. */}
-        <a
-          href={`/api/blitzes/${blitz.id}/ics`}
-          download
-          className="inline-flex items-center gap-1.5 mt-2 text-sm active:scale-[0.97] transition-transform duration-100"
-          style={{
-            color: 'var(--accent-emerald-text)',
-            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            WebkitTapHighlightColor: 'transparent',
-          }}
-          aria-label="Add this blitz to your calendar"
-        >
-          <CalendarPlus className="w-3.5 h-3.5" />
-          Add to calendar
-        </a>
-
-        {/* Action pills — match the tab pill style so the edit/delete/
-            cancel affordances are obvious. Icon-only buttons in the top
-            row were ambiguous ("no way to edit from that icon"). */}
-        {(canManage || canCancelRequest || isAdmin) && (
-          <div className="flex gap-2 mt-3 flex-wrap">
+        {/* Refined utility row — calendar export sits beside the
+            management actions as a quiet text link, not a chunky pill.
+            Shared scale + middot dividers match the premium feel of My
+            Pay / dashboard. Add to calendar is always visible; the
+            management actions render per-role. */}
+        {/* Premium utility row: left-aligned text-link actions, right-
+            aligned icon-only Delete (admin). All fit on one row at
+            phone widths because labels are tight and middot dividers
+            collapse when items are missing. No wrap. */}
+        <div className="flex items-center justify-between gap-3 mt-3 text-[12px]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+            <a
+              href={`/api/blitzes/${blitz.id}/ics`}
+              download
+              className="inline-flex items-center gap-1 active:opacity-70 transition-opacity whitespace-nowrap"
+              style={{ color: 'var(--text-secondary)', WebkitTapHighlightColor: 'transparent' }}
+              aria-label="Add this blitz to your calendar"
+            >
+              <CalendarPlus className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+              Calendar
+            </a>
             {canManage && (
-              <button
-                onClick={() => setShowEdit(true)}
-                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
-                style={{
-                  color: 'var(--accent-emerald-text)',
-                  border: '1px solid var(--accent-emerald-solid)',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                }}
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </button>
+              <>
+                <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="inline-flex items-center gap-1 active:opacity-70 transition-opacity whitespace-nowrap"
+                  style={{ color: 'var(--text-secondary)', WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} /> Edit
+                </button>
+              </>
+            )}
+            {canManage && (blitz.status === 'upcoming' || blitz.status === 'active') && (
+              <>
+                <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                <button
+                  onClick={() => { setBroadcastMessage(''); setShowBroadcast(true); }}
+                  className="inline-flex items-center gap-1 active:opacity-70 transition-opacity whitespace-nowrap"
+                  style={{ color: 'var(--text-secondary)', WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <Megaphone className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} /> Broadcast
+                </button>
+              </>
             )}
             {canCancelRequest && (
-              <button
-                onClick={() => setShowCancelRequest(true)}
-                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
-                style={{
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                }}
-              >
-                <XCircle className="w-3.5 h-3.5" /> Request Cancel
-              </button>
-            )}
-            {isAdmin && (
-              <button
-                onClick={() => setShowDelete(true)}
-                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 text-sm font-semibold rounded-full transition-colors"
-                style={{
-                  color: 'var(--accent-red-text)',
-                  border: '1px solid var(--accent-red-solid)',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                }}
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
+              <>
+                <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                <button
+                  onClick={() => setShowCancelRequest(true)}
+                  className="inline-flex items-center gap-1 active:opacity-70 transition-opacity whitespace-nowrap"
+                  style={{ color: 'var(--text-muted)', WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </>
             )}
           </div>
-        )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowDelete(true)}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg active:opacity-70 transition-opacity shrink-0"
+              style={{
+                color: 'var(--accent-red-text)',
+                opacity: 0.7,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              aria-label="Delete blitz"
+              title="Delete blitz"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* FOMO banner — Phase 2b roster transparency on mobile. Visible
-          to non-participant reps to surface a clear "Request to Join"
-          CTA. Pending state has its own gentler banner so reps know
-          they're waiting on owner approval. */}
+      {/* FOMO banner — Phase 2b roster transparency on mobile. Premium
+          card-surface treatment matches My Pay / dashboard: subtle
+          left-edge emerald stripe instead of a saturated tint, refined
+          serif headline, ghost-outlined CTA. */}
       {canShowFomoBanner && (
         <div
-          className="rounded-2xl p-4 mb-4"
-          style={{
-            background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, var(--surface-card))',
-            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
-          }}
+          className="card-surface rounded-2xl p-5 mb-4 border-l-2"
+          style={{ borderLeftColor: 'color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}
         >
-          <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <p
+            className="text-[10px] uppercase tracking-[0.22em] mb-1.5"
+            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
             {approvedParticipants.length > 0
-              ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going — join them?`
-              : 'Be the first to join this blitz'}
+              ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going`
+              : 'Open spot'}
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          <p
+            className="text-xl leading-tight text-[var(--text-primary)]"
+            style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+          >
+            {approvedParticipants.length > 0 ? 'Join the crew?' : 'Be the first in.'}
+          </p>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             {viewerJoinStatus === 'declined'
-              ? 'You opted out earlier. Changed your mind? Send another request.'
-              : `${blitz?.owner?.firstName ?? 'The owner'} will approve your request to join.`}
+              ? 'You opted out earlier — send another request anytime.'
+              : `${blitz?.owner?.firstName ?? 'The owner'} approves the roster.`}
           </p>
           <button
             onClick={handleJoinRequest}
             disabled={requestingJoin}
-            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 inline-flex items-center justify-center gap-2 min-h-[40px] px-5 rounded-full text-[13px] font-semibold tracking-wide active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: 'var(--accent-emerald-solid)',
-              color: 'var(--text-on-accent)',
-              border: '1px solid var(--accent-emerald-solid)',
+              background: 'transparent',
+              color: 'var(--accent-emerald-text)',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               WebkitTapHighlightColor: 'transparent',
             }}
           >
             {requestingJoin ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Requesting…</>
             ) : viewerJoinStatus === 'declined' ? (
-              <><UserPlus className="w-4 h-4" /> Re-request to join</>
+              <><UserPlus className="w-3.5 h-3.5" /> Re-request to join</>
             ) : (
-              <><UserPlus className="w-4 h-4" /> Request to join</>
+              <><UserPlus className="w-3.5 h-3.5" /> Request to join</>
             )}
           </button>
         </div>
@@ -407,13 +425,34 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           </p>
         </div>
       )}
+      {!canManage && !isPM && viewerJoinStatus === 'waitlist' && (
+        <div
+          className="rounded-2xl p-3 mb-4"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-cyan-solid) 6%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 24%, transparent)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            You&apos;re on the waitlist. {blitz?.owner?.firstName ?? 'The owner'} will promote you if a spot opens.
+          </p>
+        </div>
+      )}
 
       <BlitzTabs tabs={tabs} active={tab} onChange={handleTabChange} />
 
       <div key={tab} className={panelDir === 'right' ? 'animate-panel-right' : 'animate-panel-left'}>
         {tab === 'overview' && (
           <div className="space-y-4">
-            <BlitzEarningsForecast variant="mobile" />
+            {(blitz.status === 'upcoming' || blitz.status === 'active') && (
+              <BlitzEarningsForecast
+                variant="mobile"
+                blitzId={viewerJoinStatus === 'approved' ? blitz.id : undefined}
+                viewerUserId={viewerJoinStatus === 'approved' ? effectiveRepId ?? undefined : undefined}
+                currentTarget={viewerParticipant?.targetDeals ?? null}
+                onTargetSaved={loadBlitz}
+              />
+            )}
             <BlitzOverview
               participantCount={approvedParticipants.length}
               totalDeals={approvedVisibleProjects.length}
@@ -438,7 +477,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 return s + (p.closer?.id === effectiveRepId || isAdditionalCloser ? p.kWSize : 0);
               }, 0);
               return (
-                <div className="rounded-xl p-4 border-l-2 border-l-blue-500/60" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                <div className="rounded-xl p-4 border-l-2" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderLeftColor: 'color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}>
                   <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Blitz Summary</p>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="blitz-stat-0">
@@ -624,6 +663,65 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
             style={{ color: 'var(--accent-red-text)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             {submittingAction ? 'Submitting...' : 'Submit request'}
+          </button>
+        </div>
+      </MobileBottomSheet>
+
+      {/* Phase 3c — Mobile broadcast composer. Owner/admin sends a message
+          that fans out to every approved participant via notify(). */}
+      <MobileBottomSheet open={showBroadcast} onClose={() => setShowBroadcast(false)} title="Broadcast to participants">
+        <div className="px-5 space-y-4 pb-4">
+          <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            Sends an email to every approved participant on &quot;{blitz.name}&quot;. Reps with email notifications off won&apos;t receive it.
+          </p>
+          <textarea
+            value={broadcastMessage}
+            onChange={(e) => setBroadcastMessage(e.target.value)}
+            rows={5}
+            maxLength={2000}
+            placeholder="Kickoff is 7am at the house. Bring your A-game."
+            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[120px] resize-none focus:outline-none focus:ring-1"
+            style={{
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+              '--tw-ring-color': 'var(--accent-emerald-solid)',
+            } as React.CSSProperties}
+          />
+          <p className="text-[10px] text-right tabular-nums" style={{ color: 'var(--text-dim)' }}>{broadcastMessage.length} / 2000</p>
+          <button
+            onClick={async () => {
+              if (!broadcastMessage.trim() || broadcasting) return;
+              setBroadcasting(true);
+              try {
+                const r = await fetch(`/api/blitzes/${blitzId}/broadcast`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ message: broadcastMessage.trim() }),
+                });
+                if (!r.ok) {
+                  const data = await r.json().catch(() => ({}));
+                  toast(data.error ?? 'Broadcast failed', 'error');
+                  return;
+                }
+                const data = await r.json();
+                toast(`Broadcast sent to ${data.recipientsOk} rep${data.recipientsOk === 1 ? '' : 's'}.`);
+                setShowBroadcast(false);
+              } catch {
+                toast('Network error sending broadcast', 'error');
+              } finally {
+                setBroadcasting(false);
+              }
+            }}
+            disabled={broadcasting || broadcastMessage.trim().length === 0}
+            className="w-full min-h-[48px] text-base font-semibold rounded-lg transition-colors disabled:opacity-40"
+            style={{
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {broadcasting ? 'Sending…' : 'Send broadcast'}
           </button>
         </div>
       </MobileBottomSheet>

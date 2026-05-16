@@ -754,6 +754,16 @@ model Blitz {
   /// "upcoming" | "active" | "completed" | "cancelled"
   status String @default("upcoming")
 
+  /// RSVP confirmation deadline (Phase 2e). Owner-configurable; UI
+  /// suggests startDate - 7 days as default. After this passes, new
+  /// join requests auto-route to 'waitlist' instead of 'pending'.
+  /// Null = open enrollment with no cutoff.
+  confirmDeadline DateTime?
+
+  /// Optional headcount cap (Phase 2e). When approved count reaches this
+  /// number, additional join requests go to 'waitlist'. Null = unlimited.
+  maxParticipants Int?
+
   createdById String
   createdBy   User   @relation("BlitzCreator", fields: [createdById], references: [id])
   ownerId     String
@@ -780,10 +790,19 @@ model BlitzParticipant {
   userId  String
   user    User   @relation(fields: [userId], references: [id])
 
-  /// "pending" | "approved" | "declined"
+  /// "pending" | "approved" | "declined" | "waitlist"
+  /// 'waitlist' added in Phase 2e: rep requested to join after the
+  /// blitz's confirmDeadline passed OR after maxParticipants was hit.
+  /// Owner can promote waitlist → approved via the participants PATCH.
   joinStatus       String  @default("pending")
   /// "attended" | "no_show" | "partial" — null until recorded
   attendanceStatus String?
+
+  /// Personal blitz goal — number of deals this participant aims to
+  /// close during the blitz (Phase 3a). Drives progress UI on the
+  /// leaderboard. Null = no goal set; participant uses leaderboard
+  /// as-is. Edited by the participant themselves or admin.
+  targetDeals Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

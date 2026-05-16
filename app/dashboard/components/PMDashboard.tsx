@@ -5,6 +5,7 @@ import { formatCompactKW } from '../../../lib/utils';
 import { ACTIVE_PHASES } from '../../../lib/data';
 import type { useApp } from '../../../lib/context';
 import { getGreeting, type Period } from './dashboard-utils';
+import { SegmentedPills } from '../../../components/ui';
 
 export function PMDashboard({
   projects,
@@ -38,12 +39,14 @@ export function PMDashboard({
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{getGreeting(currentRepName)}</h1>
         <p className="text-sm font-medium tracking-wide mt-1" style={{ color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>Project Manager · Pipeline overview</p>
       </div>
-      {/* Period filter */}
-      <div className="flex items-center gap-2">
-        {PERIODS.map((p) => (
-          <button key={p.value} onClick={() => setPeriod(p.value)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${period === p.value ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'}`}>{p.label}</button>
-        ))}
-      </div>
+      {/* Period filter — shared SegmentedPills primitive */}
+      <SegmentedPills
+        options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+        value={period}
+        onChange={setPeriod}
+        size="sm"
+        ariaLabel="Filter dashboard by period"
+      />
 
       {/* Summary cards — NO dollar amounts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

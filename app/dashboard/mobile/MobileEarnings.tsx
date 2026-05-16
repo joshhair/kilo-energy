@@ -8,6 +8,7 @@ import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
 import { CheckCircle2, XCircle, Archive, Download, Clock, Receipt } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import { ReimbursementModal } from '../components/ReimbursementModal';
+import { SegmentedPills } from '../../../components/ui';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -294,23 +295,14 @@ export default function MobileEarnings() {
         </div>
       </div>
 
-      {/* ── Period tabs ─────────────────────────────────────────────────── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className="min-h-[48px] px-4 rounded-xl text-base font-medium whitespace-nowrap transition-colors"
-            style={{
-              background: period === p.key ? 'var(--accent-emerald-solid)' : 'transparent',
-              color: period === p.key ? '#000' : 'var(--text-muted)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {/* ── Period tabs — shared SegmentedPills ─────────────────────────── */}
+      <SegmentedPills
+        options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
+        value={period}
+        onChange={setPeriod}
+        scrollable
+        ariaLabel="Filter earnings by period"
+      />
 
       {/* ── Monthly Earnings Bar Chart ──────────────────────────────────── */}
       {monthlyBarData.length > 0 && (

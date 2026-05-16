@@ -178,10 +178,12 @@ export default function NotificationsSection() {
             Notifications
           </h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Choose how Kilo reaches you. SMS and Push are coming soon.
+            Choose how Kilo reaches you. SMS is coming soon.
           </p>
         </div>
       </div>
+
+      <DevicePushToggle />
 
       {/* Per-category preference cards */}
       {grouped.map(({ category, events }) => (
@@ -397,6 +399,77 @@ export default function NotificationsSection() {
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+/** Device-level Web Push enable toggle. Phase 4. Independent from the
+ *  per-event "push" preference column — both need to be on for a push
+ *  notification to physically arrive. This toggle owns the service
+ *  worker registration + PushSubscription lifecycle. */
+function DevicePushToggle() {
+  const { toast } = useToast();
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const mod = await import('../../../../lib/web-push-client');
+      if (cancelled) return;
+      setSupported(mod.isWebPushSupported());
+      if (mod.isWebPushSupported()) {
+        setEnabled(await mod.isPushEnabled());
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const onToggle = async (next: boolean) => {
+    setBusy(true);
+    try {
+      const mod = await import('../../../../lib/web-push-client');
+      if (next) {
+        const res = await mod.enableWebPush();
+        if (!res.ok) { toast(res.reason ?? 'Could not enable push', 'error'); return; }
+        setEnabled(true);
+        toast('Push enabled on this device');
+      } else {
+        await mod.disableWebPush();
+        setEnabled(false);
+        toast('Push disabled on this device');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (supported === null) return null;
+
+  return (
+    <div
+      className="rounded-xl p-5 flex items-center gap-4"
+      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
+    >
+      <Smartphone className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Push on this device
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          {supported
+            ? 'Enable to get instant push when you\'re away from your inbox. Per-event toggles below must also be on.'
+            : 'Your browser doesn\'t support push. Try Chrome, Edge, or install Kilo to your home screen.'}
+        </p>
+      </div>
+      {supported && (
+        <Switch
+          checked={enabled}
+          onChange={(next) => { if (!busy) onToggle(next); }}
+          ariaLabel="Enable push on this device"
+        />
+      )}
+    </div>
+  );
 }
 
 /** Mobile per-channel row: icon + label on the left, switch on the right.

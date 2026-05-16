@@ -174,6 +174,27 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     category: 'blitz',
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
   },
+  {
+    type: 'blitz_invitation',
+    label: 'A blitz leader invited you',
+    description: 'A leader added you to their blitz. Confirm or decline so they can plan housing and headcount.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
+  {
+    type: 'blitz_reminder',
+    label: 'Blitz reminder (T-7 / T-3 / T-1 / day-of)',
+    description: 'Scheduled countdown reminders for blitzes you\'re approved on.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
+  {
+    type: 'blitz_broadcast',
+    label: 'Blitz announcement from the leader',
+    description: 'One-click broadcast a blitz leader sends to all approved participants.',
+    category: 'blitz',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+  },
 
   // ─── Admin (admin-only audience) ───────────────────────────────────
   {

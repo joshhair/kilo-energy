@@ -135,6 +135,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (user.role !== 'admin') return NextResponse.json({ error: 'Only admins can transfer blitz ownership' }, { status: 403 });
     data.ownerId = body.ownerId;
   }
+  // Phase 2e — RSVP fields. Owner-editable. confirmDeadline is stored as
+  // DateTime; the client passes ISO string and Prisma coerces. Both fields
+  // tolerate null to clear.
+  if (body.confirmDeadline !== undefined) {
+    data.confirmDeadline = body.confirmDeadline === null ? null : new Date(body.confirmDeadline);
+  }
+  if (body.maxParticipants !== undefined) {
+    data.maxParticipants = body.maxParticipants;
+  }
 
   const blitz = await prisma.blitz.update({
     where: { id },

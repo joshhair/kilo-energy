@@ -33,6 +33,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: 'upcoming', ownerId: '',
+    confirmDeadline: '', maxParticipants: '',
   });
 
   useEffect(() => {
@@ -46,6 +47,8 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
       notes: blitz.notes ?? '',
       status: blitz.status ?? 'upcoming',
       ownerId: blitz.owner?.id ?? '',
+      confirmDeadline: blitz.confirmDeadline ? String(blitz.confirmDeadline).slice(0, 10) : '',
+      maxParticipants: blitz.maxParticipants != null ? String(blitz.maxParticipants) : '',
     });
   }, [open, blitz]);
 
@@ -77,7 +80,12 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           if (!pr.ok) { toast('Failed to approve new owner', 'error'); return; }
         }
       }
-      const body = isAdmin ? form : (({ ownerId: _o, status: _s, ...rest }) => rest)(form);
+      const normalized = {
+        ...form,
+        confirmDeadline: form.confirmDeadline === '' ? null : form.confirmDeadline,
+        maxParticipants: form.maxParticipants === '' ? null : Number(form.maxParticipants),
+      };
+      const body = isAdmin ? normalized : (({ ownerId: _o, status: _s, ...rest }) => rest)(normalized);
       const r = await fetch(`/api/blitzes/${blitz.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -146,6 +154,29 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
             />
           </Field>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="RSVP deadline">
+            <input
+              type="date"
+              value={form.confirmDeadline}
+              onChange={(e) => setForm({ ...form, confirmDeadline: e.target.value })}
+              max={form.startDate || undefined}
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
+              style={SELECT_STYLE}
+            />
+          </Field>
+          <Field label="Max participants">
+            <input
+              type="number"
+              min={1}
+              placeholder="No cap"
+              value={form.maxParticipants}
+              onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })}
+              className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
+              style={SELECT_STYLE}
+            />
+          </Field>
+        </div>
         {isAdmin && (
           <>
             <Field label="Status">
@@ -190,8 +221,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           disabled={saving || !form.name.trim()}
           className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors mt-2"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-            boxShadow: '0 0 20px var(--accent-emerald-glow)',
+            background: 'var(--accent-emerald-solid)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >

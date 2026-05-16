@@ -158,7 +158,15 @@ export default function MobileBottomSheet({
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2 shrink-0">
-            <p id={titleId} className="text-base font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{title}</p>
+            <p
+              id={titleId}
+              className="leading-tight"
+              style={{
+                color: 'var(--text-primary)',
+                fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                fontSize: '1.125rem',
+              }}
+            >{title}</p>
             <button
               onClick={onClose}
               aria-label="Close"

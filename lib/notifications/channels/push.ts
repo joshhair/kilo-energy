@@ -1,10 +1,16 @@
 /**
- * Push channel adapter — Web Push (today) / APNs+FCM (post-app-store).
+ * Push channel adapter — Web Push today; APNs+FCM once native apps ship.
  *
- * STUBBED in Phase 2. Implementation lands in Phase 5 alongside the
- * service worker, VAPID key wiring, and the subscribe-on-permission
- * flow. Native push (APNs/FCM) waits until the iOS/Android apps ship
- * — see PushSubscription.provider for the discriminator.
+ * Phase 4 implementation:
+ *   - Uses `web-push` for VAPID-authenticated payload delivery.
+ *   - VAPID keys are loaded from env: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
+ *     VAPID_SUBJECT (mailto: or app URL). Missing keys → channel reports
+ *     NOT_CONFIGURED rather than throwing.
+ *   - 410/404 responses from the push service indicate a dead subscription;
+ *     the caller (notifications service) is expected to upsert/delete the
+ *     PushSubscription row based on errorReason='GONE'.
+ *   - Native providers (apns/fcm) return UNSUPPORTED so the caller can
+ *     gracefully skip them while still recording a delivery row.
  */
 
 import type { Channel, DeliveryStatus } from '../types';
@@ -20,6 +26,8 @@ export interface PushEnvelope {
   nativeToken?: string | null;
   title: string;
   body: string;
+  /** Optional deep-link URL the service worker uses on notification click. */
+  url?: string;
 }
 
 export interface ChannelSendResult {
@@ -27,14 +35,80 @@ export interface ChannelSendResult {
   ok: boolean;
   status: DeliveryStatus;
   providerMessageId?: string;
+  /** GONE | NOT_CONFIGURED | UNSUPPORTED | <provider error>. */
   errorReason?: string;
 }
 
-export async function sendPushChannel(_env: PushEnvelope): Promise<ChannelSendResult> {
-  return {
-    channel: 'push',
-    ok: false,
-    status: 'failed',
-    errorReason: 'NOT_CONFIGURED: Push adapter ships in Phase 5 (Web Push) and Phase 6 (native).',
-  };
+function loadVapid(): { publicKey: string; privateKey: string; subject: string } | null {
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const subject = process.env.VAPID_SUBJECT || 'mailto:support@kiloenergies.com';
+  if (!publicKey || !privateKey) return null;
+  return { publicKey, privateKey, subject };
+}
+
+export async function sendPushChannel(env: PushEnvelope): Promise<ChannelSendResult> {
+  if (env.provider !== 'web_push') {
+    return {
+      channel: 'push',
+      ok: false,
+      status: 'failed',
+      errorReason: 'UNSUPPORTED: native push (apns/fcm) ships with the iOS/Android apps.',
+    };
+  }
+
+  const vapid = loadVapid();
+  if (!vapid) {
+    return {
+      channel: 'push',
+      ok: false,
+      status: 'failed',
+      errorReason: 'NOT_CONFIGURED: VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY env not set.',
+    };
+  }
+
+  if (!env.p256dh || !env.auth) {
+    return {
+      channel: 'push',
+      ok: false,
+      status: 'failed',
+      errorReason: 'INVALID_SUBSCRIPTION: missing p256dh or auth keys.',
+    };
+  }
+
+  // Lazy import so the build doesn't pull web-push into the client bundle.
+  const webpush = (await import('web-push')).default;
+  webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+
+  const payload = JSON.stringify({
+    title: env.title,
+    body: env.body,
+    url: env.url,
+  });
+
+  try {
+    const result = await webpush.sendNotification(
+      {
+        endpoint: env.endpoint,
+        keys: { p256dh: env.p256dh, auth: env.auth },
+      },
+      payload,
+      { TTL: 3600 },
+    );
+    return {
+      channel: 'push',
+      ok: true,
+      status: 'sent',
+      providerMessageId: String(result.statusCode),
+    };
+  } catch (err: unknown) {
+    const e = err as { statusCode?: number; body?: string; message?: string };
+    const isGone = e?.statusCode === 404 || e?.statusCode === 410;
+    return {
+      channel: 'push',
+      ok: false,
+      status: 'failed',
+      errorReason: isGone ? 'GONE' : `WEB_PUSH_ERROR: ${e?.statusCode ?? '?'} ${e?.body ?? e?.message ?? ''}`.slice(0, 240),
+    };
+  }
 }

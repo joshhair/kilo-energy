@@ -12,6 +12,10 @@ export const createBlitzSchema = z.object({
   notes: optionalString.default(''),
   status: z.enum(['upcoming', 'active', 'completed', 'cancelled']).optional().default('upcoming'),
   ownerId: optionalId,          // admin-only override; non-admins are forced
+  // Phase 2e — RSVP fields. ISO datetime for confirmDeadline so client
+  // can pass either a date or a full timestamp; server stores as DateTime.
+  confirmDeadline: z.string().datetime().nullable().optional(),
+  maxParticipants: z.number().int().positive().max(500).nullable().optional(),
 });
 export type CreateBlitzInput = z.infer<typeof createBlitzSchema>;
 
@@ -24,6 +28,8 @@ export const patchBlitzSchema = z.object({
   notes: z.string().max(5000).optional(),
   status: z.enum(['upcoming', 'active', 'completed', 'cancelled']).optional(),
   ownerId: idSchema.optional(),  // only honored when caller is admin
+  confirmDeadline: z.string().datetime().nullable().optional(),
+  maxParticipants: z.number().int().positive().max(500).nullable().optional(),
 }).strict();
 export type PatchBlitzInput = z.infer<typeof patchBlitzSchema>;
 
@@ -39,7 +45,11 @@ export type CreateBlitzCostInput = z.infer<typeof createBlitzCostSchema>;
 
 // ─── Blitz participants ─────────────────────────────────────────────────────
 
-const joinStatusEnum = z.enum(['pending', 'approved', 'declined']);
+// 'waitlist' added in Phase 2e — rep requested after deadline OR after
+// capacity hit. Owner can promote waitlist → approved via patch.
+// 'invited' added Phase 3d — owner added the rep, awaiting rep confirm.
+// Distinct from 'pending' (rep self-requested, awaiting owner approval).
+const joinStatusEnum = z.enum(['pending', 'approved', 'declined', 'waitlist', 'invited']);
 const attendanceStatusEnum = z.enum(['attended', 'no-show', 'partial']);
 
 export const createBlitzParticipantSchema = z.object({
@@ -52,9 +62,11 @@ export const patchBlitzParticipantSchema = z.object({
   userId: idSchema,
   joinStatus: joinStatusEnum.optional(),
   attendanceStatus: attendanceStatusEnum.nullable().optional(),
+  /** Personal blitz deal-count target (Phase 3a). Null clears the goal. */
+  targetDeals: z.number().int().min(0).max(99).nullable().optional(),
 }).refine(
-  (d) => d.joinStatus !== undefined || d.attendanceStatus !== undefined,
-  { message: 'joinStatus or attendanceStatus required' },
+  (d) => d.joinStatus !== undefined || d.attendanceStatus !== undefined || d.targetDeals !== undefined,
+  { message: 'joinStatus, attendanceStatus, or targetDeals required' },
 );
 export type PatchBlitzParticipantInput = z.infer<typeof patchBlitzParticipantSchema>;
 

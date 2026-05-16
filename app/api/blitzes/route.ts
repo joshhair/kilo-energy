@@ -111,6 +111,21 @@ export async function POST(req: NextRequest) {
   const ownerId = user.role === 'admin' && body.ownerId ? body.ownerId : user.id;
   const createdById = user.id;
 
+  // Phase 2e — RSVP defaults. If client didn't supply a confirmDeadline,
+  // suggest startDate - 7 days at midnight local. Owner can edit later.
+  // maxParticipants stays null (no cap) unless explicitly set.
+  let defaultConfirmDeadline: Date | null = null;
+  if (body.confirmDeadline === undefined && body.startDate) {
+    const [y, m, d] = body.startDate.split('-').map(Number);
+    if (y && m && d) {
+      const startDateLocal = new Date(y, m - 1, d, 0, 0, 0);
+      startDateLocal.setDate(startDateLocal.getDate() - 7);
+      defaultConfirmDeadline = startDateLocal;
+    }
+  } else if (body.confirmDeadline) {
+    defaultConfirmDeadline = new Date(body.confirmDeadline);
+  }
+
   const blitz = await prisma.blitz.create({
     data: {
       name: body.name,
@@ -122,6 +137,8 @@ export async function POST(req: NextRequest) {
       status: body.status,
       createdById,
       ownerId,
+      confirmDeadline: defaultConfirmDeadline,
+      maxParticipants: body.maxParticipants ?? null,
       // Auto-add the owner as an approved participant
       participants: {
         create: { userId: ownerId, joinStatus: 'approved' },

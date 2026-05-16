@@ -71,7 +71,7 @@ export default function MobileBulkActionBar({
             <button
               onClick={() => withExit(onRestore)}
               className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-xl active:scale-[0.92] transition-transform duration-[280ms] [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'black' }}
+              style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
             >
               <Eye className="w-3.5 h-3.5" /> Restore
             </button>

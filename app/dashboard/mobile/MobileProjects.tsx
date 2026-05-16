@@ -12,6 +12,7 @@ import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import { fmtCompact$, relativeTime } from '../../../lib/utils';
+import { SegmentedPills } from '../../../components/ui';
 import { myCommissionOnProject, type CommissionStatus } from '../../../lib/commissionHelpers';
 
 // Color per commission status — aligns with hero colors used elsewhere.
@@ -108,8 +109,7 @@ export default function MobileProjects() {
     router.replace(qs ? `?${qs}` : '/dashboard/projects', { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, phaseFilter, installerFilter, sortMode, statusFilter, dealScope]);
-  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [spotlight, setSpotlight] = useState<{ left: number; width: number } | null>(null);
+  // Phase-pill sliding indicator + scroll-into-view are owned by SegmentedPills.
   const [listKey, setListKey] = useState(0);
   const [listFading, setListFading] = useState(false);
   // Cap initial render at 50 cards to keep iOS Safari from OOM-killing the
@@ -126,20 +126,7 @@ export default function MobileProjects() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const activeIndex = PHASE_FILTERS.indexOf(phaseFilter);
-    const el = pillRefs.current[activeIndex];
-    if (el) {
-      setSpotlight({ left: el.offsetLeft, width: el.offsetWidth });
-      // Auto-center active pill — respects reduced-motion preference
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollIntoView({
-        behavior: prefersReduced ? 'instant' : 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
-    }
-  }, [phaseFilter]);
+  // Phase pill sliding + scroll-into-view handled by SegmentedPills.
 
   useEffect(() => {
     const prefersReduced =
@@ -344,93 +331,31 @@ export default function MobileProjects() {
 
       {/* My Deals / All Deals toggle — admin/PM only */}
       {!isRep && (
-        <div className="inline-flex w-fit gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          {(['all', 'mine'] as const).map((scope) => {
-            const isActive = dealScope === scope;
-            return (
-              <button
-                key={scope}
-                onClick={() => setDealScope(scope)}
-                className="min-h-[40px] px-4 rounded-lg text-sm font-semibold transition-all duration-150"
-                style={isActive
-                  ? {
-                      background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                      color: 'var(--text-primary)',
-                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                    }
-                  : {
-                      background: 'transparent',
-                      border: '1px solid transparent',
-                      color: 'var(--text-secondary)',
-                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                    }
-                }
-              >
-                {scope === 'all' ? 'All Deals' : 'My Deals'}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedPills<'all' | 'mine'>
+          options={[
+            { value: 'all', label: 'All Deals' },
+            { value: 'mine', label: 'My Deals' },
+          ]}
+          value={dealScope}
+          onChange={setDealScope}
+          size="sm"
+          ariaLabel="Deal scope"
+        />
       )}
 
-      {/* Phase filter pills */}
-      <div className="relative flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
-        {spotlight && (
-          <div
-            className="absolute top-0 rounded-xl pointer-events-none phase-spotlight"
-            style={{
-              // `left: 0` anchors the spotlight to the flex container's
-              // content-box origin so the subsequent translateX(offsetLeft)
-              // is the sole positional driver. Without this, the spotlight's
-              // static position is determined by flex flow (which equals the
-              // container's left padding), and the translateX gets added on
-              // top — shifting the highlight ~20px right and landing it on
-              // the wrong button.
-              left: 0,
-              height: 36,
-              background: 'var(--accent-emerald-solid)',
-              transform: `translateX(${spotlight.left}px)`,
-              width: spotlight.width,
-              transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), width 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              willChange: 'transform, width',
-            }}
-          />
-        )}
-        {PHASE_FILTERS.map((phase, i) => {
-          const isActive = phaseFilter === phase;
-          return (
-            <button
-              key={phase}
-              ref={el => { pillRefs.current[i] = el; }}
-              onClick={() => setPhaseFilter(phase)}
-              className="relative z-10 shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-medium active:scale-[0.92]"
-              style={{
-                background: 'transparent',
-                color: isActive ? 'var(--text-on-accent)' : 'var(--text-muted)',
-                border: isActive ? 'none' : '1px solid var(--border-subtle)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                transition: 'color 200ms ease, transform 75ms cubic-bezier(0.34,1.56,0.64,1)',
-              }}
-            >
-              {phase}
-              {phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 && (
-                <span style={{
-                  background: isActive ? 'color-mix(in srgb, var(--text-on-accent) 20%, transparent)' : 'var(--border-subtle)',
-                  color: isActive ? 'var(--text-on-accent)' : 'var(--text-muted)',
-                  borderRadius: 999,
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  marginLeft: 5,
-                  lineHeight: 1.5,
-                  display: 'inline-block',
-                  animation: 'scalePop 200ms cubic-bezier(0.34,1.56,0.64,1) both',
-                }}>{phaseCounts[phase]}</span>
-              )}
-            </button>
-          );
-        })}
+      {/* Phase filter pills — shared SegmentedPills with per-phase counts */}
+      <div className="-mx-5 px-5">
+        <SegmentedPills<Phase | 'All'>
+          options={PHASE_FILTERS.map((phase) => ({
+            value: phase,
+            label: phase,
+            badge: phase !== 'All' && (phaseCounts[phase] ?? 0) > 0 ? phaseCounts[phase] : undefined,
+          }))}
+          value={phaseFilter}
+          onChange={setPhaseFilter}
+          scrollable
+          ariaLabel="Filter projects by phase"
+        />
       </div>
 
       {/* Project cards */}
@@ -515,7 +440,7 @@ export default function MobileProjects() {
                     href="/dashboard/new-deal"
                     className="mt-2 inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-sm font-semibold"
                     style={{
-                      background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                      background: 'var(--accent-emerald-solid)',
                       color: 'var(--text-on-accent)',
                     }}
                   >

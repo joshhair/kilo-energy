@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
@@ -17,6 +17,7 @@ import MobileStatCard from './shared/MobileStatCard';
 import MobileBadge, { PHASE_COLORS } from './shared/MobileBadge';
 import MobileAdminDashboard from './MobileAdminDashboard';
 import { UpcomingBlitzBanner } from '../components/UpcomingBlitzBanner';
+import { SegmentedPills } from '../../../components/ui';
 
 type MentionItem = {
   id: string;
@@ -42,7 +43,7 @@ const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';
 const ACCENT2 = 'var(--accent-cyan-solid)';
-const ACCENT_DISP = 'var(--accent-emerald-display)';
+const _ACCENT_DISP = 'var(--accent-emerald-display)';
 const ACCENT2_DISP = 'var(--accent-cyan-display)';
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
@@ -113,34 +114,9 @@ export default function MobileDashboard() {
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
   const [_statVersion, setStatVersion] = useState(0);
-  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
-  const [pillReady, setPillReady] = useState(false);
 
-  // useLayoutEffect (synchronous, pre-paint) instead of useEffect so the
-  // active-pill highlight is positioned before the user sees the first
-  // frame. With the post-paint useEffect, switching from admin → rep view
-  // (the dashboard component swap in the parent layout) sometimes left
-  // the highlight unset until the user re-tapped a pill — refs were
-  // populated but the effect's measurement hadn't completed before paint.
-  // Layout effect avoids that race. We also re-measure once via rAF in
-  // case fonts/scroll-snap settle on the next frame.
-  useLayoutEffect(() => {
-    const measure = () => {
-      const idx = PERIODS.findIndex(p => p.value === period);
-      const el = pillRefs.current[idx];
-      if (!el) return;
-      const parent = el.parentElement;
-      if (!parent) return;
-      const parentRect = parent.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
-      setPillReady(true);
-    };
-    measure();
-    const raf = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(raf);
-  }, [period]);
+  // Sliding indicator + scroll-into-view now live inside the shared
+  // SegmentedPills primitive — no per-page refs/measure code needed.
 
   useEffect(() => { setStatVersion(v => v + 1); }, [period]);
 
@@ -742,7 +718,7 @@ export default function MobileDashboard() {
                     key={p.id}
                     onClick={() => router.push(`/dashboard/projects/${p.id}`)}
                     className="w-full flex items-stretch rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform duration-150"
-                    style={{ background: 'var(--surface-card)', border: '1px solid #2a3858', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                   >
                     <div className="shrink-0" style={{ width: 4, background: accent }} />
                     <div className="flex-1 min-w-0 px-4 py-3">
@@ -872,40 +848,15 @@ export default function MobileDashboard() {
           Visual weight scales with proximity. */}
       <UpcomingBlitzBanner variant="mobile" />
 
-      {/* Period filter */}
-      <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
-        <div className="relative flex gap-2 overflow-x-auto no-scrollbar px-5">
-          {pillReady && (
-            <span
-              className="absolute top-0 h-full rounded-full pointer-events-none"
-              style={{
-                left: pillStyle.left,
-                width: pillStyle.width,
-                background: ACCENT,
-                transition: 'left 200ms cubic-bezier(0.34, 1.56, 0.64, 1), width 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            />
-          )}
-          {PERIODS.map((p, idx) => (
-            <button
-              key={p.value}
-              ref={(el) => { pillRefs.current[idx] = el; }}
-              onClick={() => { setPeriod(p.value); requestAnimationFrame(() => { pillRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }); }}
-              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all transition-colors duration-200 min-h-[44px] touch-manipulation active:scale-[0.95]"
-              style={{
-                fontFamily: FONT_BODY,
-                color: period === p.value ? '#000' : MUTED,
-                fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--border-subtle)',
-                position: 'relative',
-                zIndex: 1,
-                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+      {/* Period filter — shared SegmentedPills primitive */}
+      <div className="-mx-5 px-5">
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+          value={period}
+          onChange={setPeriod}
+          scrollable
+          ariaLabel="Filter dashboard by period"
+        />
       </div>
 
       {/* Hero card — On Pace is the headline, Next Payout secondary.
@@ -943,7 +894,7 @@ export default function MobileDashboard() {
             {/* Next Payout — secondary, always useful regardless of period. */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>Next Payout</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
               </div>
               <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
@@ -975,7 +926,7 @@ export default function MobileDashboard() {
             {/* Next Payout — secondary */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="flex items-baseline justify-between">
-                <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.12em' }}>Next Payout</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
                 <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
               </div>
               <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
@@ -983,7 +934,7 @@ export default function MobileDashboard() {
           </div>
         ) : (
           <div>
-            <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+            <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.22em' }}>Next Payout</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedPayout)}</p>
             <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1.1rem', marginTop: '0.5rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday} days</span></>}</p>
           </div>
@@ -992,16 +943,15 @@ export default function MobileDashboard() {
         {/* Stats inside hero card */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT, lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-emerald-text)', lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
             <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Paid</p>
           </div>
-          {/* Pipeline cell — period-adaptive. Current/all-time shows the
-              live active-pipeline value (what's in flight now). Historical
-              shows "Added to Pipeline" — the value of deals submitted in
-              that closed period, answering *"what did I produce?"*. Same
-              accent color so the cell reads as the same slot mentally. */}
+          {/* Pipeline cell — period-adaptive. Refined cyan-text accent
+              differentiates "in-flight" pipeline value from the locked-
+              in "paid" emerald, while staying within the muted-text
+              vocabulary (no neon). */}
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both' }}>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: ACCENT2, lineHeight: 1.15 }}>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-cyan-text)', lineHeight: 1.15 }}>
               {fmtCompact$(isHistorical ? animatedAddedToPipeline : animatedPipeline)}
             </p>
             <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>
@@ -1034,7 +984,7 @@ export default function MobileDashboard() {
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-5 h-5" style={{ color: ACCENT }} />
             <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1.1rem' }}>Needs Attention</p>
-            <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{attentionItems.length}</span>
+            <span className="ml-auto font-bold px-2 py-0.5 rounded-full text-xs" style={{ background: 'transparent', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', color: 'var(--accent-emerald-text)', fontFamily: FONT_DISPLAY }}>{attentionItems.length}</span>
           </div>
           {attentionItems.map((item, i) => (
             <button
@@ -1090,24 +1040,24 @@ export default function MobileDashboard() {
                 <MobileCard key={incentive.id}>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="p-1.5 rounded-lg shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)' }}>
+                      <div className="p-1.5 rounded-lg shrink-0" style={{ background: 'transparent', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' }}>
                         <Target className="w-4 h-4" style={{ color: 'var(--accent-emerald-solid)' }} />
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium line-clamp-1" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{incentive.title}</p>
                         {incentive.type === 'personal' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-purple-text)', background: 'var(--accent-purple-soft)' }}>Personal</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'transparent', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 35%, transparent)', color: 'var(--accent-purple-text)' }}>Personal</span>
                         )}
                       </div>
                     </div>
-                    <p className="font-bold shrink-0 ml-2" style={{ color: 'var(--accent-emerald-solid)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{formatIncentiveMetric(incentive.metric, progress)}</p>
+                    <p className="font-medium shrink-0 ml-2 tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.9rem' }}>{formatIncentiveMetric(incentive.metric, progress)}</p>
                   </div>
                   <div className="w-full rounded-full h-1.5 mb-1.5" style={{ background: 'color-mix(in srgb, var(--text-primary) 10%, transparent)' }}>
                     <div
                       className="h-1.5 rounded-full"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 100 ? 'linear-gradient(90deg,var(--accent-amber-solid),var(--accent-gold-text))' : 'linear-gradient(90deg,var(--accent-emerald-solid),var(--accent-cyan-solid))',
+                        background: pct >= 100 ? 'var(--accent-amber-solid)' : 'var(--accent-emerald-solid)',
                       }}
                     />
                   </div>

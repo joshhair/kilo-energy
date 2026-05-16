@@ -337,6 +337,12 @@ export function createMilestonePayroll(
 
   // Pre-compute closer trainer deduction for M2 so the trainer's cut comes out of
   // the closer's share rather than being paid on top (mirrors setter's splitPoint logic).
+  // Self-trainer-with-setter guard: when the resolved trainer is the closer
+  // themselves AND a setter exists, the setter-trainer leg owns this override
+  // (deducted from setter pay via splitPoint). Deducting again from closer
+  // pay would double-debit the closer. Self-gen (no setter) still applies
+  // the deduction — that's a literal self-loop the dropdown filter prevented
+  // historically; preserved here for backward compatibility.
   let closerM2TrainerDeduction = 0;
   if (isInstalled) {
     const res = resolveTrainerRate(
@@ -345,7 +351,8 @@ export function createMilestonePayroll(
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    if (res.rate > 0) {
+    const selfTrainerWithSetter = res.trainerId === old.repId && !!freshProject.setterId;
+    if (res.rate > 0 && !selfTrainerWithSetter) {
       closerM2TrainerDeduction = Math.round(res.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
     }
   }
@@ -486,7 +493,12 @@ export function createMilestonePayroll(
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    if (closerRes.rate > 0 && closerRes.trainerId) {
+    // Self-trainer-with-setter guard: same rule as the M2 deduction
+    // above — if the trainer IS the closer AND a setter is present,
+    // the setter-trainer leg (below) emits the entry that pays this
+    // person. Emitting here too would double-pay.
+    const closerSelfTrainerWithSetter = closerRes.trainerId === old.repId && !!freshProject.setterId;
+    if (closerRes.rate > 0 && closerRes.trainerId && !closerSelfTrainerWithSetter) {
       const trainerRep = deps.repsRef.current.find(r => r.id === closerRes.trainerId);
       const m2TrainerAmount = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
       const closerTraineeNotesPrefix = `Trainer override M2 — ${closerRep?.name ?? old.repName ?? ''}`;
@@ -621,7 +633,9 @@ export function createM3Payroll(
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    if (closerResM3.rate > 0 && closerResM3.trainerId) {
+    // Self-trainer-with-setter guard mirrors the M2 deduction rule.
+    const closerSelfTrainerWithSetterM3 = closerResM3.trainerId === old.repId && !!proj?.setterId;
+    if (closerResM3.rate > 0 && closerResM3.trainerId && !closerSelfTrainerWithSetterM3) {
       const m2CloserTrainerEntryForM3 = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerResM3.trainerId);
       const m2RateMatchForM3 = m2CloserTrainerEntryForM3?.notes?.match(/\(\$([0-9.]+)\/W\)/);
       const m2ParsedForM3 = m2RateMatchForM3 ? parseFloat(m2RateMatchForM3[1]) : NaN;
@@ -759,7 +773,8 @@ export function createM3Payroll(
   const closerTrainerM3AlreadyExists = closerResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
     (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerResM3Entry.trainerId
   ) : false;
-  if (closerResM3Entry.rate > 0 && closerResM3Entry.trainerId && m3 > 0 && !old.subDealerId && !closerTrainerM3AlreadyExists) {
+  const closerSelfTrainerWithSetterM3Entry = closerResM3Entry.trainerId === old.repId && !!proj?.setterId;
+  if (closerResM3Entry.rate > 0 && closerResM3Entry.trainerId && m3 > 0 && !old.subDealerId && !closerTrainerM3AlreadyExists && !closerSelfTrainerWithSetterM3Entry) {
     const trainerRep = deps.repsRef.current.find(r => r.id === closerResM3Entry.trainerId);
     // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
     const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerResM3Entry.trainerId);

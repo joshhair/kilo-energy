@@ -121,19 +121,19 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
   const config = {
     success: {
-      icon: <CheckCircle className="w-4 h-4 text-[#00e07a] flex-shrink-0" />,
-      border: 'border-[#00e07a]/30',
-      progress: 'bg-[#00e07a]',
+      icon: <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-emerald-text)' }} />,
+      borderColor: 'color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)',
+      progressColor: 'var(--accent-emerald-solid)',
     },
     error: {
-      icon: <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />,
-      border: 'border-red-500/30',
-      progress: 'bg-red-500',
+      icon: <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-red-text)' }} />,
+      borderColor: 'color-mix(in srgb, var(--accent-red-solid) 30%, transparent)',
+      progressColor: 'var(--accent-red-solid)',
     },
     info: {
-      icon: <Info className="w-4 h-4 text-[#00e07a] flex-shrink-0" />,
-      border: 'border-[#00e07a]/30',
-      progress: 'bg-[#00e07a]',
+      icon: <Info className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-emerald-text)' }} />,
+      borderColor: 'color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)',
+      progressColor: 'var(--accent-emerald-solid)',
     },
   }[toast.type];
 
@@ -144,11 +144,11 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       className={[
         'toast-item',
         'pointer-events-auto relative flex items-center gap-3 px-4 py-3',
-        'rounded-xl border bg-[var(--surface-card)]',
-        config.border,
+        'rounded-xl border card-surface',
         'min-w-[280px] max-w-[400px] shadow-2xl overflow-hidden',
         leaving ? 'animate-toast-out' : 'animate-toast-in',
       ].join(' ')}
+      style={{ borderColor: config.borderColor }}
     >
       {config.icon}
       <span className="text-[var(--text-primary)] text-sm flex-1 leading-snug">{toast.message}</span>
@@ -158,7 +158,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
             toast.action!.onClick();
             onDismiss(toast.id);
           }}
-          className="text-[#00e07a] hover:text-[#00c4f0] font-medium text-sm transition-colors flex-shrink-0 ml-1"
+          className="font-medium text-sm transition-colors flex-shrink-0 ml-1"
+          style={{ color: 'var(--accent-emerald-text)' }}
         >
           {toast.action.label}
         </button>
@@ -170,12 +171,10 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         <X className="w-3.5 h-3.5" />
       </button>
 
-      {/* Auto-dismiss progress bar — shrinks from 100 → 0% over visibleDuration.
-          animationDuration overrides the CSS default (3.5s) when this is an
-          action toast so the bar and the timer stay in sync. */}
+      {/* Auto-dismiss progress bar — shrinks from 100 → 0% over visibleDuration. */}
       <div
-        className={`toast-progress absolute bottom-0 left-0 h-[2px] w-full ${config.progress}`}
-        style={{ animationDuration: `${visibleDuration}ms` }}
+        className="toast-progress absolute bottom-0 left-0 h-[2px] w-full"
+        style={{ animationDuration: `${visibleDuration}ms`, background: config.progressColor }}
       />
     </div>
   );

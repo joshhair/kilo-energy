@@ -855,17 +855,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             : viewAsUser.role === 'sub-dealer' ? 'sub-dealer'
             : viewAsUser.role;
           return (
-            <div className="mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[var(--accent-amber-text)]" />
-                <span className="text-[var(--accent-amber-text)] text-sm font-medium">
+            <div
+              className="card-surface mx-4 mt-4 p-3 rounded-xl border-l-2 flex items-center justify-between"
+              style={{ borderLeftColor: 'color-mix(in srgb, var(--accent-amber-solid) 45%, transparent)' }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Eye className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent-amber-text)' }} />
+                <span className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                   {isSelfView
-                    ? <>My Rep View <span className="text-[var(--accent-amber-text)]/60">— same as any rep sees</span></>
-                    : <>Viewing as <span className="text-[var(--text-primary)] font-semibold">{viewAsUser.name}</span> <span className="text-[var(--accent-amber-text)]/60">({roleLabel})</span></>
+                    ? <>My Rep View <span style={{ color: 'var(--text-muted)' }}>— same as any rep sees</span></>
+                    : <>Viewing as <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{viewAsUser.name}</span> <span style={{ color: 'var(--text-muted)' }}>({roleLabel})</span></>
                   }
                 </span>
               </div>
-              <button onClick={clearViewAs} className="flex items-center gap-1 text-xs text-[var(--accent-amber-text)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-lg hover:bg-amber-500/10">
+              <button
+                onClick={clearViewAs}
+                className="inline-flex items-center gap-1 text-xs transition-opacity hover:opacity-80 shrink-0 ml-3"
+                style={{ color: 'var(--accent-amber-text)' }}
+              >
                 <XCircle className="w-3.5 h-3.5" /> Back to admin
               </button>
             </div>

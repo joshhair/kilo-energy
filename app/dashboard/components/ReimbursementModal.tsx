@@ -182,8 +182,8 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
               Cancel
             </button>
             <button type="submit"
-              className="flex-1 btn-primary text-black font-semibold px-5 py-2.5 rounded-xl text-sm active:scale-[0.97]"
-              style={{ backgroundColor: 'var(--brand)' }}>
+              className="flex-1 btn-primary font-semibold px-5 py-2.5 rounded-xl text-sm active:scale-[0.97]"
+              style={{ backgroundColor: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}>
               Submit Request
             </button>
           </div>

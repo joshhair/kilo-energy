@@ -15,8 +15,8 @@
 
   "BaselinesSection.tsx": {
     "rawInputs": 44,
-    "rawButtons": 49,
-    "reason": "Largest Settings section (1948 LOC) with deeply custom UI: per-tier rate inputs, version timeline, refresh-pricing modal, archived-tab swap, bulk-tier-adjust dialog, and the SolarTech ↔ Product Catalog parity surfaces. PR 1 wired the inline validateProductName to the shared validateName; full primitive migration is deferred to a dedicated multi-PR effort because the surface is too risky to migrate in one shot."
+    "rawButtons": 46,
+    "reason": "Largest Settings section (1948 LOC) with deeply custom UI: per-tier rate inputs, version timeline, refresh-pricing modal, archived-tab swap, bulk-tier-adjust dialog, and the SolarTech ↔ Product Catalog parity surfaces. PR 1 wired the inline validateProductName to the shared validateName; full primitive migration is deferred to a dedicated multi-PR effort because the surface is too risky to migrate in one shot. -3 buttons on 2026-05-15 — the 3 tab-row segmented controls migrated to the shared SegmentedPills primitive."
   },
 
   "BlitzPermissionsSection.tsx": {

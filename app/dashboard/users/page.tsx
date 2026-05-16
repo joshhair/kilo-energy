@@ -12,6 +12,7 @@ import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, X, Mail, Clock,
 import ConfirmDialog from '../components/ConfirmDialog';
 import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
+import { SegmentedPills } from '../../../components/ui';
 import { GradCard } from './components/GradCard';
 import { RepsSkeleton } from './components/RepsSkeleton';
 import { TopPerformersPodium } from './components/TopPerformersPodium';
@@ -413,15 +414,7 @@ function UsersPageInner() {
     }
   };
 
-  // ── Filter tab indicator ─────────────────────────────────────────────────
-  const filterTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [filterIndicator, setFilterIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const idx = FILTER_TABS.findIndex((t) => t.value === filterTab);
-    const el = filterTabRefs.current[idx];
-    if (el) setFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [filterTab, roleFilter, isHydrated]);
+  // Filter tab sliding pill owned by SegmentedPills.
 
   // ── Active deals count per rep (pipeline = not Cancelled/On Hold/Completed) ──
   const activeDealsByRep = useMemo(() => {
@@ -1318,20 +1311,15 @@ function UsersPageInner() {
         )}
       </div>
 
-      {/* ── Role filter tabs ──────────────────────────────────────────────── */}
-      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        {filterIndicator && <div className="tab-indicator" style={{ ...filterIndicator, background: 'var(--accent-emerald-solid)' }} />}
-        {FILTER_TABS.map((t, i) => (
-          <button
-            key={t.value}
-            ref={(el) => { filterTabRefs.current[i] = el; }}
-            onClick={() => setFilterTab(t.value)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97]`}
-            style={{ color: filterTab === t.value ? 'var(--text-on-accent)' : 'var(--text-muted)' }}
-          >
-            {t.label}
-          </button>
-        ))}
+      {/* ── Role filter tabs — shared SegmentedPills ─────────────────────── */}
+      <div className="mb-4">
+        <SegmentedPills<FilterTab>
+          options={FILTER_TABS.map((t) => ({ value: t.value, label: t.label }))}
+          value={filterTab}
+          onChange={setFilterTab}
+          size="sm"
+          ariaLabel="Filter users by role"
+        />
       </div>
 
       <div className="relative max-w-xs mb-6">
@@ -1377,7 +1365,18 @@ function UsersPageInner() {
         <div className="mb-6">
           <button
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${compareMode ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}`}
+            className="text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+            style={compareMode
+              ? {
+                  background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                  color: 'var(--accent-emerald-text)',
+                }
+              : {
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                }}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Click to exit` : 'Compare Reps'}
           </button>
@@ -1433,14 +1432,14 @@ function UsersPageInner() {
                 <h3 className="text-[var(--text-primary)] font-bold text-base">Rep Comparison</h3>
                 {ranges.prev && <span className="text-xs text-[var(--text-muted)]">vs {ranges.prev.label}</span>}
               </div>
-              <div className="flex flex-wrap gap-1">
-                {PERIOD_OPTIONS.map((opt) => (
-                  <button key={opt.value} onClick={() => setComparePeriod(opt.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${comparePeriod === opt.value ? 'filter-tab-active' : 'bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedPills
+                options={PERIOD_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                value={comparePeriod}
+                onChange={setComparePeriod}
+                size="sm"
+                scrollable
+                ariaLabel="Compare reps period filter"
+              />
               {comparePeriod === 'custom' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}

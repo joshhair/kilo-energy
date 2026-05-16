@@ -14,6 +14,7 @@ import KanbanView from './components/KanbanView';
 import TableView from './components/TableView';
 import ProjectsSkeleton from './components/ProjectsSkeleton';
 import { applyStatusFilter, STATUS_LABELS, type StatusFilter } from './components/shared';
+import { SegmentedPills } from '../../../components/ui';
 
 export default function ProjectsPage() {
   return (
@@ -81,24 +82,7 @@ function ProjectsPageInner() {
   }, [tab, statusFilter, installerFilter, phaseFilter, dealScope, debouncedSearch]);
 
   // Sliding tab indicators
-  const viewTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [viewIndicator, setViewIndicator] = useState<{ left: number; width: number } | null>(null);
-  const statusFilterRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [statusFilterIndicator, setStatusFilterIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const VIEW_TABS = ['phase', 'all'] as const;
-    const idx = VIEW_TABS.indexOf(tab);
-    const el = viewTabRefs.current[idx];
-    if (el) setViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab, isHydrated]);
-
-  useEffect(() => {
-    const STATUS_FILTER_TABS: StatusFilter[] = ['active', 'all', 'completed', 'cancelled', 'on-hold', 'inactive'];
-    const idx = STATUS_FILTER_TABS.indexOf(statusFilter);
-    const el = statusFilterRefs.current[idx];
-    if (el) setStatusFilterIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [statusFilter, isHydrated]);
+  // View / status sliding pill measurements are owned by SegmentedPills.
 
   // Debounce searchInput → debouncedSearch (300ms; 0ms when cleared for instant feedback).
   useEffect(() => {
@@ -244,80 +228,48 @@ function ProjectsPageInner() {
 
       {/* View + Status tabs */}
       <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4 md:flex-wrap">
-        <div className="flex gap-1 rounded-xl p-1 tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          {viewIndicator && <div className="tab-indicator" style={viewIndicator} />}
-          {(['phase', 'all'] as const).map((t, i) => (
-            <button
-              key={t}
-              ref={(el) => { viewTabRefs.current[i] = el; }}
-              onClick={() => setTab(t)}
-              className="relative z-10 px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors"
-              style={tab === t
-                ? {
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                    border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                    boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
-                    color: 'var(--text-primary)',
-                    fontWeight: 600,
-                  }
-                : { color: 'var(--text-secondary)' }
-              }
-            >
-              {t === 'phase' ? 'By Phase' : 'All Projects'}
-            </button>
-          ))}
-        </div>
+        <SegmentedPills<'phase' | 'all'>
+          options={[
+            { value: 'phase', label: 'By Phase' },
+            { value: 'all', label: 'All Projects' },
+          ]}
+          value={tab}
+          onChange={setTab}
+          size="sm"
+          ariaLabel="View mode"
+        />
 
         {/* My Deals / All Deals segmented control — admin only */}
         {!isRep && (
-          <div className="flex gap-0.5 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            {(['all', 'mine'] as const).map((scope) => (
-              <button
-                key={scope}
-                onClick={() => setDealScope(scope)}
-                className="relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
-                style={dealScope === scope
-                  ? {
-                      background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                      boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
-                      color: 'var(--text-primary)',
-                      fontWeight: 600,
-                    }
-                  : { color: 'var(--text-secondary)' }
-                }
-              >
-                {scope === 'all' ? 'All Deals' : 'My Deals'}
-              </button>
-            ))}
-          </div>
+          <SegmentedPills<'all' | 'mine'>
+            options={[
+              { value: 'all', label: 'All Deals' },
+              { value: 'mine', label: 'My Deals' },
+            ]}
+            value={dealScope}
+            onChange={setDealScope}
+            size="sm"
+            ariaLabel="Deal scope"
+          />
         )}
 
-        {/* Status filter */}
-        <div className="flex gap-1 rounded-xl p-1 tab-bar-container overflow-x-auto scrollbar-hide w-full md:w-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          {statusFilterIndicator && <div className="tab-indicator" style={statusFilterIndicator} />}
-          {([
+        {/* Status filter — shared SegmentedPills primitive */}
+        <SegmentedPills<StatusFilter>
+          options={[
             { value: 'active', label: 'Active' },
             { value: 'all', label: 'All' },
-            { value: 'completed', label: '✓ Completed' },
+            { value: 'completed', label: 'Completed' },
             { value: 'cancelled', label: 'Cancelled' },
             { value: 'on-hold', label: 'On Hold' },
             { value: 'inactive', label: 'Inactive' },
-          ] as { value: StatusFilter; label: string }[]).map((s, i) => (
-            <button
-              key={s.value}
-              ref={(el) => { statusFilterRefs.current[i] = el; }}
-              onClick={() => setStatusFilter(s.value)}
-              className="relative z-10 px-4 py-1.5 min-h-[40px] rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap"
-              style={statusFilter === s.value
-                ? { color: 'var(--text-primary)', fontWeight: 600 }
-                : { color: 'var(--text-muted)' }
-              }
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+          ]}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          scrollable
+          size="sm"
+          ariaLabel="Filter projects by status"
+          className="w-full md:w-auto"
+        />
 
         {/* Installer filter */}
         <select

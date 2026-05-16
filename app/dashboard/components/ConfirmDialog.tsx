@@ -55,16 +55,20 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div ref={panelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
+      <div ref={panelRef} className="card-surface border border-[var(--border-subtle)] shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-sm">
         <div className="flex items-center gap-3 mb-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            danger
-              ? 'bg-red-500/15 border border-red-500/30'
-              : 'bg-[var(--accent-emerald-solid)]/15 border border-[var(--accent-emerald-solid)]/30'
-          }`}>
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: danger
+                ? 'color-mix(in srgb, var(--accent-red-solid) 12%, transparent)'
+                : 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
+              border: `1px solid color-mix(in srgb, ${danger ? 'var(--accent-red-solid)' : 'var(--accent-emerald-solid)'} 30%, transparent)`,
+            }}
+          >
             <AlertTriangle className={`w-4 h-4 ${danger ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`} />
           </div>
-          <h3 className="text-[var(--text-primary)] font-bold">{title}</h3>
+          <h3 className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: '1.125rem' }}>{title}</h3>
         </div>
         <p className="text-[var(--text-secondary)] text-sm mb-5">{message}</p>
         <div className="flex gap-3">

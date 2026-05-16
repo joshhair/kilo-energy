@@ -10,19 +10,20 @@
  * readers know it's not laziness.
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../../lib/utils';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
-import { ArrowLeft, MapPin, Calendar, CalendarPlus, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, CalendarPlus, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp, Megaphone } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 import { deriveBlitzStatus } from '../../../../lib/blitzStatus';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { BlitzEarningsForecast } from '../../components/BlitzEarningsForecast';
+import { SegmentedPills } from '../../../../components/ui';
 import { BlitzLeaderboard } from './BlitzLeaderboard';
 import { BlitzProfitability } from './BlitzProfitability';
 import { computeBlitzLeaderboard, LeaderboardEntry } from '../../../../lib/blitzComputed';
@@ -79,10 +80,9 @@ export default function BlitzDetailPage() {
   const [tab, setTab] = useState<TabKey>('overview');
   const [profAnimKey, setProfAnimKey] = useState(0);
   const [dealsSort, setDealsSort] = useState<{ col: 'customer' | 'kw' | 'ppw' | 'payout'; dir: 'asc' | 'desc' }>({ col: 'kw', dir: 'desc' });
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
+  // Sliding tab indicator owned by SegmentedPills.
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '' });
+  const [editForm, setEditForm] = useState({ name: '', location: '', housing: '', startDate: '', endDate: '', notes: '', status: '', ownerId: '', confirmDeadline: '', maxParticipants: '' });
   // Confirmation dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
 
@@ -100,6 +100,11 @@ export default function BlitzDetailPage() {
 
   // Participant form
   const [showAddParticipant, setShowAddParticipant] = useState(false);
+
+  // Phase 3c — broadcast composer (owner / admin only).
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcasting, setBroadcasting] = useState(false);
 
   // Reset costDate to today each time the Add Cost panel opens
   useEffect(() => {
@@ -125,7 +130,18 @@ export default function BlitzDetailPage() {
       // terminals unchanged.
       const normalized = { ...data, status: deriveBlitzStatus(data) };
       setBlitz(normalized);
-      if (!editing || forceUpdateForm) setEditForm({ name: data.name, location: data.location, housing: data.housing, startDate: data.startDate, endDate: data.endDate, notes: data.notes, status: normalized.status, ownerId: data.owner?.id ?? '' });
+      if (!editing || forceUpdateForm) setEditForm({
+        name: data.name,
+        location: data.location,
+        housing: data.housing,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        notes: data.notes,
+        status: normalized.status,
+        ownerId: data.owner?.id ?? '',
+        confirmDeadline: data.confirmDeadline ? String(data.confirmDeadline).slice(0, 10) : '',
+        maxParticipants: data.maxParticipants != null ? String(data.maxParticipants) : '',
+      });
       setLoading(false);
     }).catch(() => { setLoading(false); });
   };
@@ -139,13 +155,7 @@ export default function BlitzDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on blitz.name to avoid re-fires on any blitz field change
   }, [blitz?.name]);
 
-  // Sliding tab indicator
-  useEffect(() => {
-    const allTabs: TabKey[] = ['overview', 'participants', 'deals', ...(isAdmin ? ['costs' as TabKey, 'profitability' as TabKey] : [])];
-    const idx = allTabs.indexOf(tab);
-    const el = tabRefs.current[idx];
-    if (el) setTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab, isAdmin, blitz]);
+  // Sliding tab indicator owned by SegmentedPills.
 
   // Rep permissions (canRequestBlitz)
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
@@ -179,7 +189,7 @@ export default function BlitzDetailPage() {
     () => (blitz?.participants ?? []).find((p: any) => p.user?.id === effectiveRepId) ?? null,
     [blitz?.participants, effectiveRepId],
   );
-  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | null = viewerParticipant?.joinStatus ?? null;
+  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | 'waitlist' | null = viewerParticipant?.joinStatus ?? null;
   // Show FOMO banner only to reps + sub-dealers + trainers who are NOT
   // admin/PM and who don't already have an approved/pending record.
   // Owner/creator are inferred from canManage. Declined viewers also see
@@ -406,7 +416,14 @@ export default function BlitzDetailPage() {
           if (!pr.ok) { toast('Failed to approve new owner as participant', 'error'); setEditing(false); loadBlitz(true); return; }
         }
       }
-      const patchBody = isAdmin ? editForm : (({ ownerId: _o, status: _s, ...rest }) => rest)(editForm);
+      // Coerce RSVP fields. confirmDeadline: '' → null (clear); else send YYYY-MM-DD
+      // (API will new Date() it). maxParticipants: '' → null (no cap); else parse Int.
+      const normalizedEdit = {
+        ...editForm,
+        confirmDeadline: editForm.confirmDeadline === '' ? null : editForm.confirmDeadline,
+        maxParticipants: editForm.maxParticipants === '' ? null : Number(editForm.maxParticipants),
+      };
+      const patchBody = isAdmin ? normalizedEdit : (({ ownerId: _o, status: _s, ...rest }) => rest)(normalizedEdit);
       const r = await fetch(`/api/blitzes/${blitzId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -427,13 +444,16 @@ export default function BlitzDetailPage() {
     if (!selectedRepId) return;
     setAddingParticipant(true);
     try {
+      // Owner-initiated adds default to 'invited' — the rep must confirm
+      // before they count as approved. Admins can still force approved by
+      // changing the status in the roster after add.
       const r = await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
+        body: JSON.stringify({ userId: selectedRepId, joinStatus: 'invited' }),
       });
-      if (!r.ok) { const body = await r.json().catch(() => ({})); toast(body.error || 'Failed to add participant', 'error'); return; }
-      toast('Participant added');
+      if (!r.ok) { const body = await r.json().catch(() => ({})); toast(body.error || 'Failed to invite participant', 'error'); return; }
+      toast('Invitation sent — waiting on rep to confirm');
       setShowAddParticipant(false);
       setSelectedRepId('');
       loadBlitz();
@@ -642,6 +662,18 @@ export default function BlitzDetailPage() {
                 <input type="date" value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-[var(--text-muted)] mb-1">RSVP Deadline <span className="text-[var(--text-muted)]">(optional)</span></label>
+                <input type="date" value={editForm.confirmDeadline} onChange={(e) => setEditForm((f) => ({ ...f, confirmDeadline: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">After this date, new joins go to waitlist.</p>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-muted)] mb-1">Max Participants <span className="text-[var(--text-muted)]">(optional)</span></label>
+                <input type="number" min={1} placeholder="No cap" value={editForm.maxParticipants} onChange={(e) => setEditForm((f) => ({ ...f, maxParticipants: e.target.value }))} className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-emerald-solid)] focus:border-transparent outline-none" />
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">Overflow joins go to waitlist.</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {isAdmin && (
               <div>
@@ -668,7 +700,7 @@ export default function BlitzDetailPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50 transition-colors">Cancel</button>
+              <button onClick={() => { setEditing(false); if (blitz) setEditForm({ name: blitz.name, location: blitz.location, housing: blitz.housing, startDate: blitz.startDate, endDate: blitz.endDate, notes: blitz.notes, status: blitz.status, ownerId: blitz.owner?.id ?? '', confirmDeadline: blitz.confirmDeadline ? String(blitz.confirmDeadline).slice(0, 10) : '', maxParticipants: blitz.maxParticipants != null ? String(blitz.maxParticipants) : '' }); }} disabled={saving} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50 transition-colors">Cancel</button>
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -712,19 +744,62 @@ export default function BlitzDetailPage() {
                 </a>
               </div>
             </div>
+            {/* Refined utility row — premium text-link treatment matching
+                My Pay / dashboard. Hairline icons, subtle hover, no
+                chunky pill borders. Delete is muted-red and visually
+                last so it doesn't shout. */}
             {canManage ? (
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"><Pencil className="w-3.5 h-3.5" /> Edit</button>
-                {isAdmin && <button onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
-                {isOwner && canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && <button disabled={cancelRequesting} onClick={() => { setCancelReason(''); setShowCancelDialog(true); }} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors disabled:opacity-50"><XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}</button>}
+              <div className="flex items-center gap-3 shrink-0 text-[13px]">
+                <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-80" style={{ color: 'var(--text-secondary)' }}>
+                  <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} /> Edit
+                </button>
+                {(blitz.status === 'upcoming' || blitz.status === 'active') && (
+                  <>
+                    <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                    <button
+                      onClick={() => { setBroadcastMessage(''); setShowBroadcast(true); }}
+                      className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-80"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <Megaphone className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} /> Broadcast
+                    </button>
+                  </>
+                )}
+                {isOwner && canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && (
+                  <>
+                    <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                    <button
+                      disabled={cancelRequesting}
+                      onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
+                      className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-50"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting…' : 'Cancel'}
+                    </button>
+                  </>
+                )}
+                {isAdmin && (
+                  <>
+                    <span aria-hidden style={{ color: 'var(--border-subtle)' }}>·</span>
+                    <button
+                      onClick={() => setConfirmAction({ title: 'Delete this blitz?', message: `Permanently delete "${blitz.name}"? This will remove all participants, costs, and associated data. This cannot be undone.`, onConfirm: () => { handleDeleteBlitz(); setConfirmAction(null); }, confirmLabel: 'Delete' })}
+                      className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-100"
+                      style={{ color: 'var(--accent-red-text)', opacity: 0.78 }}
+                      aria-label="Delete blitz"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </>
+                )}
               </div>
             ) : canRequestBlitz && (blitz.status === 'upcoming' || blitz.status === 'active') && blitz.createdById === effectiveRepId && (
               <button
                 disabled={cancelRequesting}
                 onClick={() => { setCancelReason(''); setShowCancelDialog(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--accent-red-text)] border border-red-500/30 rounded-lg hover:bg-[var(--accent-red-soft)] transition-colors shrink-0 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 text-[13px] shrink-0 transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ color: 'var(--text-muted)' }}
               >
-                <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting...' : 'Request Cancellation'}
+                <XCircle className="w-3.5 h-3.5" /> {cancelRequesting ? 'Submitting…' : 'Request Cancellation'}
               </button>
             )}
           </div>
@@ -739,32 +814,32 @@ export default function BlitzDetailPage() {
           mind. Hidden for admin/PM/owner — they have full access. */}
       {canShowFomoBanner && (
         <div
-          className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 mt-1"
-          style={{
-            background: 'color-mix(in srgb, var(--accent-emerald-solid) 8%, var(--surface-card))',
-            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
-          }}
+          className="card-surface rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 mt-1 border-l-2"
+          style={{ borderLeftColor: 'color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}
         >
           <div className="min-w-0">
-            <p className="text-base font-semibold text-[var(--text-primary)]">
+            <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: 'var(--accent-emerald-text)' }}>
               {approvedParticipants.length > 0
-                ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going — join them?`
-                : 'Be the first to join this blitz'}
+                ? `${approvedParticipants.length} rep${approvedParticipants.length === 1 ? '' : 's'} going`
+                : 'Open spot'}
             </p>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
+            <p className="text-xl leading-tight text-[var(--text-primary)]" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              {approvedParticipants.length > 0 ? 'Join the crew?' : 'Be the first in.'}
+            </p>
+            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
               {viewerJoinStatus === 'declined'
-                ? 'You opted out earlier. Changed your mind? Send another request.'
-                : `${blitz?.owner?.firstName ?? 'The owner'} will approve your request to join.`}
+                ? 'You opted out earlier — send another request anytime.'
+                : `${blitz?.owner?.firstName ?? 'The owner'} approves the roster.`}
             </p>
           </div>
           <button
             onClick={handleJoinRequest}
             disabled={requestingJoin}
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: 'var(--accent-emerald-solid)',
-              color: 'var(--text-on-accent)',
-              border: '1px solid var(--accent-emerald-solid)',
+              background: 'transparent',
+              color: 'var(--accent-emerald-text)',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
             }}
           >
             {requestingJoin ? (
@@ -792,36 +867,55 @@ export default function BlitzDetailPage() {
           </p>
         </div>
       )}
+      {/* Waitlist state — viewer joined after the deadline OR after the
+          capacity hit. They're tracked but won't count toward headcount
+          unless owner promotes them. Phase 2e. */}
+      {!canManage && !isPM && viewerJoinStatus === 'waitlist' && (
+        <div
+          className="rounded-2xl p-4 flex items-center justify-between gap-3 mb-5 mt-1"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-cyan-solid) 6%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 24%, transparent)',
+          }}
+        >
+          <p className="text-sm font-medium text-[var(--accent-cyan-text)]">
+            You&apos;re on the waitlist. {blitz?.owner?.firstName ?? 'The owner'} will promote you if a spot opens.
+          </p>
+        </div>
+      )}
 
-      {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-[var(--border-subtle)]/50 overflow-x-auto tab-bar-container">
-        {tabIndicator && <div className="tab-indicator" style={tabIndicator} />}
-        {tabs.map((t, i) => (
-          <button key={t.key} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => { setTab(t.key); if (t.key === 'profitability') setProfAnimKey(k => k + 1); }} className={`relative z-10 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${tab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
-            {t.label}
-            {t.pendingBadge !== undefined && t.pendingBadge > 0 && (
-              <span
-                aria-label={`${t.pendingBadge} pending`}
-                className="inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 tabular-nums"
-                style={{
-                  background: 'color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)',
-                  color: 'var(--accent-amber-text)',
-                  border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)',
-                }}
-              >
-                {t.pendingBadge}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Tabs — shared SegmentedPills, underline variant matches the
+          existing border-bottom tab look on the blitz detail. */}
+      <SegmentedPills<TabKey>
+        options={tabs.map((t) => ({
+          value: t.key,
+          label: t.label,
+          badge: t.pendingBadge !== undefined && t.pendingBadge > 0 ? t.pendingBadge : undefined,
+        }))}
+        value={tab}
+        onChange={(next) => {
+          setTab(next);
+          if (next === 'profitability') setProfAnimKey((k) => k + 1);
+        }}
+        variant="underline"
+        scrollable
+        ariaLabel="Blitz detail tabs"
+      />
 
       {/* Overview */}
       {tab === 'overview' && (<div key="overview" className="animate-tab-enter">
         {/* Earnings forecast — visible to reps + sub-dealers only.
             Slider lets them project earnings at this blitz against
             their historical avg. Phase 2d. */}
-        <BlitzEarningsForecast variant="desktop" />
+        {(blitz.status === 'upcoming' || blitz.status === 'active') && (
+          <BlitzEarningsForecast
+            variant="desktop"
+            blitzId={viewerJoinStatus === 'approved' ? blitz.id : undefined}
+            viewerUserId={viewerJoinStatus === 'approved' ? effectiveRepId ?? undefined : undefined}
+            currentTarget={viewerParticipant?.targetDeals ?? null}
+            onTargetSaved={() => loadBlitz(true)}
+          />
+        )}
       {(() => {
         const startMs = new Date(blitz.startDate + 'T00:00:00').getTime();
         const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
@@ -1304,6 +1398,78 @@ export default function BlitzDetailPage() {
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[var(--text-primary)] bg-red-600 hover:bg-red-500 transition-colors"
               >
                 Submit Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 3c — Broadcast composer. Owner / admin types a short
+          message; server fans out to every approved participant via
+          notify() so per-user preferences apply. Rate-limited server-side. */}
+      {showBroadcast && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowBroadcast(false); }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+            <div className="flex items-center gap-2 mb-1">
+              <Megaphone className="w-4 h-4 text-[var(--accent-emerald-text)]" />
+              <h3 className="text-[var(--text-primary)] font-bold">Broadcast to participants</h3>
+            </div>
+            <p className="text-[var(--text-secondary)] text-sm mb-4">
+              Sends an email to every approved participant on &quot;{blitz.name}&quot;.
+              Reps with email notifications off won&apos;t receive it.
+            </p>
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Message</label>
+            <textarea
+              className="w-full bg-[var(--surface-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] resize-none focus:outline-none focus:border-[var(--text-dim)] mb-2"
+              rows={5}
+              maxLength={2000}
+              placeholder="Reminder: kickoff is 7am at the house. Hat day. Bring your A-game."
+              value={broadcastMessage}
+              onChange={(e) => setBroadcastMessage(e.target.value)}
+            />
+            <p className="text-[10px] text-[var(--text-dim)] mb-4 text-right tabular-nums">{broadcastMessage.length} / 2000</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBroadcast(false)}
+                disabled={broadcasting}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--text-dim)] transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!broadcastMessage.trim() || broadcasting) return;
+                  setBroadcasting(true);
+                  try {
+                    const r = await fetch(`/api/blitzes/${blitzId}/broadcast`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ message: broadcastMessage.trim() }),
+                    });
+                    if (!r.ok) {
+                      const data = await r.json().catch(() => ({}));
+                      toast(data.error ?? 'Broadcast failed', 'error');
+                      return;
+                    }
+                    const data = await r.json();
+                    toast(`Broadcast sent to ${data.recipientsOk} rep${data.recipientsOk === 1 ? '' : 's'}.`);
+                    setShowBroadcast(false);
+                  } catch {
+                    toast('Network error sending broadcast', 'error');
+                  } finally {
+                    setBroadcasting(false);
+                  }
+                }}
+                disabled={broadcasting || broadcastMessage.trim().length === 0}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[var(--text-on-accent)] disabled:opacity-50"
+                style={{ background: 'var(--accent-emerald-solid)' }}
+              >
+                {broadcasting ? 'Sending…' : 'Send broadcast'}
               </button>
             </div>
           </div>

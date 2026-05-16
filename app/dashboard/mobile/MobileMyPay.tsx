@@ -8,7 +8,7 @@ import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
 import { resolveTrainerRate } from '../../../lib/commission';
-import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp, Calendar } from 'lucide-react';
+import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import BaselinePanel from '../my-pay/BaselinePanel';
 import MobileSection from './shared/MobileSection';
@@ -21,8 +21,8 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';          // for accent strips / icons / labels
-const ACCENT_DISP = 'var(--accent-emerald-display)';   // ≥18pt secondary stat values
-const ACCENT2_DISP = 'var(--accent-cyan-display)';
+const _ACCENT_DISP = 'var(--accent-emerald-display)';   // ≥18pt secondary stat values
+const _ACCENT2_DISP = 'var(--accent-cyan-display)';
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
 const WARNING = 'var(--accent-amber-solid)';
@@ -449,7 +449,7 @@ export default function MobileMyPay() {
            without forcing the digits to do the contrast work. ── */}
       <MobileCard hero>
         {/* ─ Primary: Next Payout ─ */}
-        <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+        <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.22em' }}>Next Payout</p>
         <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.05 }}>{fmt$(displayNext)}</p>
         <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.4rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
@@ -466,7 +466,7 @@ export default function MobileMyPay() {
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pipeline</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2_DISP, lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: 'var(--accent-cyan-text)', lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
           </div>
         </div>
 
@@ -497,55 +497,84 @@ export default function MobileMyPay() {
         </MobileCard>
       )}
 
-      {/* ── Projected Pipeline ── */}
+      {/* ── Projected Pipeline ── Unified emerald accent across M1/M2/M3
+          rows (three different accents was visually jumbled). Rows are
+          hairline-separated, not boxed inside their own surface — keeps
+          density tight and stops the "card-in-card" look. */}
       {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
         <MobileCard>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar size={14} color={ACCENT} />
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Projected Pipeline</p>
-          </div>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
-          <div className="space-y-2">
+          <p
+            className="tracking-[0.22em] uppercase mb-1"
+            style={{
+              color: 'var(--accent-emerald-text)',
+              fontFamily: FONT_BODY,
+              fontSize: '10px',
+              fontWeight: 600,
+            }}
+          >Projected Pipeline</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.78rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
+          <div className="flex flex-col">
             {projectedM1 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' }}>
-                    <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M1</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Acceptance</p>
+              <div className="flex items-center justify-between py-2.5" style={{ borderBottom: (projectedM2 > 0 || projectedM3 > 0) ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M1</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M1</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Acceptance</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
               </div>
             )}
             {projectedM2 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' }}>
-                    <span style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M2</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Installation</p>
+              <div className="flex items-center justify-between py-2.5" style={{ borderBottom: projectedM3 > 0 ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M2</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M2</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Installation</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
               </div>
             )}
             {projectedM3 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-teal-solid) 12%, transparent)' }}>
-                    <span style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M3</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting PTO</p>
+              <div className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M3</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M3</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting PTO</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
               </div>
             )}
           </div>
@@ -676,16 +705,16 @@ export default function MobileMyPay() {
         style={{
           minHeight: '52px',
           padding: '14px 18px',
-          borderRadius: '16px',
-          background: 'var(--surface-inset-subtle)',
-          border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)',
+          borderRadius: '12px',
+          background: 'var(--surface-card)',
+          border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
           transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           fontFamily: FONT_BODY,
         }}
       >
         <div className="flex items-center gap-3">
-          <Receipt size={18} color={ACCENT} />
-          <span style={{ color: ACCENT, fontSize: '1rem', fontWeight: 500 }}>Request Reimbursement</span>
+          <Receipt size={16} color="var(--accent-emerald-text)" />
+          <span style={{ color: 'var(--accent-emerald-text)', fontSize: '0.9rem', fontWeight: 500 }}>Request Reimbursement</span>
         </div>
         <ChevronRight size={16} color={DIM} />
       </button>
@@ -696,7 +725,7 @@ export default function MobileMyPay() {
           <Search size={15} color={DIM} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input
             type="text"
-            placeholder="Search payments…"
+            placeholder="Search…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full outline-none"
@@ -734,22 +763,24 @@ export default function MobileMyPay() {
           </select>
         </div>
         <div className="flex gap-2">
-          <label className="flex-1 flex flex-col gap-1">
+          <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>From</span>
             <input
               type="date"
               value={payFilterFrom}
               onChange={(e) => setPayFilterFrom(e.target.value)}
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+              className="w-full min-w-0"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
             />
           </label>
-          <label className="flex-1 flex flex-col gap-1">
+          <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>To</span>
             <input
               type="date"
               value={payFilterTo}
               onChange={(e) => setPayFilterTo(e.target.value)}
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+              className="w-full min-w-0"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
             />
           </label>
         </div>

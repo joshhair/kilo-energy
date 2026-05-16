@@ -849,8 +849,8 @@ function MyPayPageInner() {
                 <p className="text-[var(--text-muted)] text-xs mb-4">Payroll entries will appear here as your deals hit milestones</p>
                 <Link
                   href="/dashboard/new-deal"
-                  className="btn-primary inline-flex items-center gap-2 text-black font-semibold px-5 py-2.5 rounded-xl text-sm"
-                  style={{ backgroundColor: 'var(--brand)' }}
+                  className="btn-primary inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-xl text-sm"
+                  style={{ backgroundColor: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
                 >
                   + New Deal
                 </Link>
@@ -976,9 +976,15 @@ function MyPayPageInner() {
               <button
                 key={page}
                 onClick={() => setPeriodPage(page)}
-                className={`min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  page === safePeriodPage ? 'filter-tab-active' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
-                }`}
+                className="min-w-[2rem] px-2 py-1 rounded-lg text-sm font-medium transition-colors"
+                style={page === safePeriodPage
+                  ? {
+                      background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)',
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                    }
+                  : undefined}
+                aria-current={page === safePeriodPage ? 'page' : undefined}
               >
                 {page}
               </button>

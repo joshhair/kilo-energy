@@ -613,7 +613,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 style={{
                   width: isCurrent ? 14 : 10,
                   height: isCurrent ? 14 : 10,
-                  background: isCompleted ? 'var(--accent-emerald-solid)' : isCurrent ? 'var(--accent-cyan-solid)' : 'var(--text-dim)',
+                  background: isCompleted ? 'var(--accent-emerald-text)' : isCurrent ? 'var(--accent-cyan-text)' : 'var(--text-dim)',
                   willChange: 'transform',
                   animation: `dotPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 40}ms both`,
                   transition: 'width 300ms cubic-bezier(0.34, 1.56, 0.64, 1), height 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -621,7 +621,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 title={step}
               />
               {index < PIPELINE_STEPS.length - 1 && (
-                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald-solid)' : 'var(--text-dim)', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                <div className="w-3 h-px" style={{ background: isCompleted ? 'var(--accent-emerald-text)' : 'var(--text-dim)', transition: 'background 350ms cubic-bezier(0.16, 1, 0.3, 1)' }} />
               )}
             </div>
           );
@@ -1162,7 +1162,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     className="absolute top-[18px] left-[14px] h-0.5 milestone-track-fill"
                     style={{
                       width: `calc(${Math.min(100, Math.max(0, fillPct))}% - 28px)`,
-                      background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                      background: 'var(--accent-emerald-solid)',
                       animation: 'trackFill 600ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both',
                     }}
                   />
@@ -1177,7 +1177,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     <div
                       className="milestone-node w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                       style={{
-                        background: stage.paid ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
+                        background: stage.paid ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
                         border: `2px solid ${stage.paid ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
                         color: stage.paid ? '#000' : 'var(--text-muted)',
                         animation: `nodePop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) ${150 + i * 120}ms both`,
@@ -1348,8 +1348,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             onClick={() => setPhaseSheetOpen(true)}
             className="flex-1 min-h-[48px] text-[var(--text-primary)] text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
+              background: 'var(--accent-emerald-solid)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -1492,10 +1491,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     style={
                       editDraft.leadSource === value
                         ? {
-                            background: 'var(--accent-emerald-solid)',
-                            border: '1px solid var(--accent-emerald-solid)',
-                            color: 'var(--surface-page)',
-                            boxShadow: '0 0 10px var(--accent-emerald-glow)',
+                            background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                            color: 'var(--accent-emerald-text)',
                           }
                         : {
                             background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)',
@@ -1616,7 +1614,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               type="button"
               onClick={saveEditSheet}
               className="flex-1 font-semibold"
-              style={{ background: 'linear-gradient(135deg, #1de9b6, #00b894)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
+              style={{ background: 'var(--accent-emerald-solid)', borderRadius: '14px', padding: '16px', fontSize: '1rem', color: 'var(--text-primary)' }}
             >
               Save
             </button>

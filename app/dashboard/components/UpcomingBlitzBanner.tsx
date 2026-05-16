@@ -8,27 +8,26 @@
  *  - Renders when there's an upcoming or active blitz starting within
  *    the next 7 days that the viewer can see (per the loosened blitz
  *    visibility from Phase 2b — all internal reps can discover blitzes).
+ *  - ALSO renders any blitz the viewer is INVITED to, regardless of how
+ *    far out — the rep needs to confirm so the leader can plan housing.
  *  - Auto-hides if no qualifying blitz exists.
  *
- * Progressive priority: visual weight ramps up as the blitz approaches:
- *  - 4-7 days out: subtle accent border, medium type
- *  - 1-3 days out: stronger accent, slightly bolder copy
- *  - Day-of / active: strongest accent + pulsing dot
- *
  * State branches:
- *  - Viewer is approved participant → "see you Friday" tone + View link
- *  - Viewer is pending → "request pending" amber tone
- *  - Viewer is not yet on it → FOMO "X reps going — join them?"
+ *  - Viewer is invited (owner added them, awaiting confirm)
+ *    → Accept / Decline buttons inline; no card-nav.
+ *  - Viewer is approved → "see you Friday" tone + View link
+ *  - Viewer is pending (self-request) → "request pending" copy
+ *  - Viewer is not on it → FOMO copy + Request CTA
  *
- * The banner is the discovery surface. Tapping any state navigates to
- * the blitz detail page where the per-page FOMO banner from Phase 2b
- * handles the Request flow.
+ * Premium visual: card-surface + left-edge emerald stripe instead of
+ * a saturated tinted background — matches My Pay / dashboard cards.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarPlus, Flame } from 'lucide-react';
+import { CalendarPlus, Flame, Check, X, Loader2 } from 'lucide-react';
 import { useApp } from '../../../lib/context';
+import { useToast } from '../../../lib/toast';
 
 interface UpcomingBlitzSummary {
   id: string;
@@ -61,12 +60,22 @@ function getPriority(blitz: UpcomingBlitzSummary, now: Date = new Date()): Prior
   return 'low';
 }
 
-/** Pick the single most-relevant blitz to surface — the soonest upcoming
- *  one starting within 7 days, OR an active blitz happening now. */
+/** Pick the single most-relevant blitz to surface — invited blitzes
+ *  always win (rep is blocking the leader's planning), otherwise the
+ *  soonest upcoming-within-7-days OR currently active blitz. */
 function pickBannerBlitz(
   blitzes: UpcomingBlitzSummary[],
+  viewerId: string | null,
   now: Date = new Date(),
 ): UpcomingBlitzSummary | null {
+  const invited = blitzes.filter((b) => {
+    if (b.status === 'cancelled' || b.status === 'completed') return false;
+    return b.participants.some((p) => p.user.id === viewerId && p.joinStatus === 'invited');
+  });
+  if (invited.length > 0) {
+    invited.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    return invited[0];
+  }
   const candidates = blitzes.filter((b) => {
     if (b.status === 'cancelled' || b.status === 'completed') return false;
     if (b.status === 'active') return true;
@@ -74,20 +83,27 @@ function pickBannerBlitz(
     return dleft >= 0 && dleft <= 7;
   });
   if (candidates.length === 0) return null;
-  // Sort by start date ascending — soonest first
   candidates.sort((a, b) => a.startDate.localeCompare(b.startDate));
   return candidates[0];
 }
 
 export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile' }) {
   const { effectiveRepId } = useApp();
+  const { toast } = useToast();
   const [blitzes, setBlitzes] = useState<UpcomingBlitzSummary[] | null>(null);
+  const [responding, setResponding] = useState<null | 'approved' | 'declined'>(null);
+
+  const reload = () => {
+    fetch('/api/blitzes')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setBlitzes(data as UpcomingBlitzSummary[]);
+        else setBlitzes([]);
+      })
+      .catch(() => setBlitzes([]));
+  };
 
   useEffect(() => {
-    // Lightweight fetch — re-uses the existing /api/blitzes endpoint
-    // which already scopes to the viewer. We only need name/dates/
-    // participants/status to render the banner; the per-blitz detail
-    // page loads the full payload on demand when they tap through.
     let cancelled = false;
     fetch('/api/blitzes')
       .then((r) => (r.ok ? r.json() : []))
@@ -99,15 +115,14 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
       .catch(() => {
         if (!cancelled) setBlitzes([]);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  const blitz = useMemo(() => (blitzes ? pickBannerBlitz(blitzes) : null), [blitzes]);
+  const blitz = useMemo(
+    () => (blitzes ? pickBannerBlitz(blitzes, effectiveRepId) : null),
+    [blitzes, effectiveRepId],
+  );
 
-  // Don't render anything while loading or if there's no qualifying blitz.
-  // Banner-as-empty-state is a worse UX than banner-not-there.
   if (!blitz) return null;
 
   const priority = getPriority(blitz);
@@ -117,87 +132,191 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
   const viewerParticipant = blitz.participants.find((p) => p.user.id === effectiveRepId);
   const viewerJoinStatus = viewerParticipant?.joinStatus ?? null;
   const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+  const isInvited = viewerJoinStatus === 'invited';
 
-  // Visual weight by priority. Accent intensity steps up as the blitz
-  // approaches; active / day-of gets a pulsing dot.
-  const accentMix = priority === 'active' ? 18 : priority === 'high' ? 14 : priority === 'medium' ? 10 : 8;
-  const borderMix = priority === 'active' ? 50 : priority === 'high' ? 40 : priority === 'medium' ? 30 : 22;
-  const bg = `color-mix(in srgb, var(--accent-emerald-solid) ${accentMix}%, var(--surface-card))`;
-  const border = `color-mix(in srgb, var(--accent-emerald-solid) ${borderMix}%, transparent)`;
+  // Left-edge emerald stripe instead of saturated background — matches the
+  // premium My Pay / dashboard pattern. Stripe intensity ramps up by
+  // priority so an active/imminent blitz still feels urgent without
+  // shouting.
+  const stripeMix = isInvited ? 55 : priority === 'active' ? 50 : priority === 'high' ? 40 : priority === 'medium' ? 32 : 24;
+  const stripe = `color-mix(in srgb, var(--accent-emerald-solid) ${stripeMix}%, transparent)`;
 
-  // Copy adapts to participation status.
+  const eyebrowCopy = isInvited
+    ? 'Blitz invitation'
+    : priority === 'active'
+      ? 'Active blitz'
+      : 'Upcoming blitz';
+
   const primaryCopy = (() => {
+    if (isInvited) {
+      const ownerName = blitz.owner?.firstName ?? 'A leader';
+      return `${ownerName} invited you to ${blitz.name}`;
+    }
     if (isActive) return `${blitz.name} is live`;
     if (dleft === 0) return `${blitz.name} starts today`;
     if (dleft === 1) return `${blitz.name} starts tomorrow`;
     return `${blitz.name} starts in ${dleft} days`;
   })();
+
   const secondaryCopy = (() => {
+    if (isInvited) {
+      const when = dleft === 0 ? 'today' : dleft === 1 ? 'tomorrow' : dleft > 0 ? `in ${dleft} days` : `${Math.abs(dleft)} days ago`;
+      return blitz.location ? `Starts ${when} · ${blitz.location}` : `Starts ${when}`;
+    }
     if (viewerJoinStatus === 'approved') {
       return blitz.location ? `You're in · ${blitz.location}` : `You're in`;
     }
     if (viewerJoinStatus === 'pending') {
       return `Your request is pending ${blitz.owner?.firstName ?? 'the owner'}'s approval`;
     }
-    // Not on it yet — FOMO copy
+    if (viewerJoinStatus === 'waitlist') {
+      return `You're on the waitlist`;
+    }
     if (approvedCount === 0) return 'Be the first to join';
     return `${approvedCount} rep${approvedCount === 1 ? '' : 's'} going — join them?`;
   })();
+
   const ctaCopy = viewerJoinStatus === 'approved'
     ? 'View blitz'
-    : viewerJoinStatus === 'pending'
+    : viewerJoinStatus === 'pending' || viewerJoinStatus === 'waitlist'
       ? 'View'
       : 'Request to join →';
 
   const isMobile = variant === 'mobile';
 
+  const handleRespond = async (joinStatus: 'approved' | 'declined') => {
+    if (!effectiveRepId || responding) return;
+    setResponding(joinStatus);
+    try {
+      const r = await fetch(`/api/blitzes/${blitz.id}/participants`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: effectiveRepId, joinStatus }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        toast(body.error || 'Could not save response', 'error');
+        return;
+      }
+      toast(joinStatus === 'approved' ? `You're in — see you at ${blitz.name}!` : 'Declined');
+      reload();
+    } catch {
+      toast('Network error', 'error');
+    } finally {
+      setResponding(null);
+    }
+  };
+
+  // ───── Invited branch — inline Accept / Decline, no card-link ─────
+  if (isInvited) {
+    return (
+      <div
+        className={`card-surface rounded-2xl border-l-2 ${isMobile ? 'p-4 mb-4' : 'p-5 mb-6'}`}
+        style={{ borderLeftColor: stripe }}
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          <CalendarPlus className="w-3.5 h-3.5" style={{ color: 'var(--accent-emerald-text)' }} />
+          <span
+            className="tracking-[0.22em] uppercase text-[10px] font-semibold"
+            style={{ color: 'var(--accent-emerald-text)' }}
+          >
+            {eyebrowCopy}
+          </span>
+        </div>
+        <p
+          className={`leading-tight text-[var(--text-primary)] ${isMobile ? 'text-lg' : 'text-xl'}`}
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
+          {primaryCopy}
+        </p>
+        <p
+          className="text-sm mt-1.5"
+          style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        >
+          {secondaryCopy}
+        </p>
+        <div className="flex items-center gap-2.5 mt-4">
+          <button
+            onClick={() => handleRespond('approved')}
+            disabled={responding !== null}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[13px] font-semibold tracking-wide transition-opacity active:opacity-80 disabled:opacity-50"
+            style={{
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {responding === 'approved' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            I&apos;m in
+          </button>
+          <button
+            onClick={() => handleRespond('declined')}
+            disabled={responding !== null}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium transition-opacity active:opacity-80 disabled:opacity-50"
+            style={{
+              color: 'var(--text-muted)',
+              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+            }}
+          >
+            {responding === 'declined' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+            Pass
+          </button>
+          <Link
+            href={`/dashboard/blitz/${blitz.id}`}
+            className="ml-auto text-[13px] transition-opacity hover:opacity-80"
+            style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            Details →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ───── Default branch — premium card-link variant ─────
   return (
     <Link
       href={`/dashboard/blitz/${blitz.id}`}
-      className={`block rounded-2xl transition-all active:scale-[0.98] ${isMobile ? 'p-4 mb-4' : 'p-5 mb-6'}`}
-      style={{
-        background: bg,
-        border: `1px solid ${border}`,
-        textDecoration: 'none',
-      }}
+      className={`card-surface block rounded-2xl border-l-2 transition-all active:scale-[0.99] ${isMobile ? 'p-4 mb-4' : 'p-5 mb-6'}`}
+      style={{ borderLeftColor: stripe, textDecoration: 'none' }}
       aria-label={`${primaryCopy} — ${secondaryCopy}`}
     >
       <div className={`flex items-start justify-between gap-3 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row sm:items-center'}`}>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1.5">
             {priority === 'active' ? (
               <span className="relative inline-flex items-center justify-center w-2 h-2">
                 <span className="absolute inset-0 rounded-full bg-[var(--accent-emerald-solid)] animate-ping opacity-75" />
                 <span className="relative inline-block w-2 h-2 rounded-full bg-[var(--accent-emerald-solid)]" />
               </span>
             ) : priority === 'high' ? (
-              <Flame className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
+              <Flame className="w-3.5 h-3.5" style={{ color: 'var(--accent-emerald-text)' }} />
             ) : (
-              <CalendarPlus className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" />
+              <CalendarPlus className="w-3.5 h-3.5" style={{ color: 'var(--accent-emerald-text)' }} />
             )}
             <span
-              className="tracking-widest uppercase text-[0.7rem] font-semibold"
-              style={{ color: 'var(--accent-emerald-text)', letterSpacing: '0.12em' }}
+              className="tracking-[0.22em] uppercase text-[10px] font-semibold"
+              style={{ color: 'var(--accent-emerald-text)' }}
             >
-              {priority === 'active' ? 'Active Blitz' : 'Upcoming Blitz'}
+              {eyebrowCopy}
             </span>
           </div>
           <p
-            className={`font-semibold text-[var(--text-primary)] ${isMobile ? 'text-base' : 'text-lg'}`}
-            style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            className={`leading-tight text-[var(--text-primary)] ${isMobile ? 'text-lg' : 'text-xl'}`}
+            style={{ fontFamily: "'DM Serif Display', serif" }}
           >
             {primaryCopy}
           </p>
           <p
-            className={`text-[var(--text-secondary)] mt-0.5 ${isMobile ? 'text-sm' : 'text-sm'}`}
-            style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+            className="text-sm mt-1.5"
+            style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
           >
             {secondaryCopy}
           </p>
         </div>
         <span
-          className={`shrink-0 inline-flex items-center gap-1 text-sm font-semibold whitespace-nowrap ${isMobile ? 'mt-1' : ''}`}
-          style={{ color: 'var(--accent-emerald-text)' }}
+          className={`shrink-0 inline-flex items-center gap-1 text-[13px] font-semibold whitespace-nowrap ${isMobile ? 'mt-2' : ''}`}
+          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
         >
           {ctaCopy}
         </span>

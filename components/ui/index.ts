@@ -10,3 +10,5 @@ export { TextInput } from './Input';
 export { FormField } from './FormField';
 export { SearchInput } from './SearchInput';
 export { Switch } from './Switch';
+export { SegmentedPills } from './SegmentedPills';
+export type { SegmentedOption, SegmentedPillsProps } from './SegmentedPills';

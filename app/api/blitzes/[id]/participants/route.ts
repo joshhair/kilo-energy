@@ -35,7 +35,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, status: true, startDate: true, endDate: true } });
+  const blitz = await prisma.blitz.findUnique({
+    where: { id: blitzId },
+    select: {
+      ownerId: true,
+      name: true,
+      status: true,
+      startDate: true,
+      endDate: true,
+      confirmDeadline: true,
+      maxParticipants: true,
+    },
+  });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   const effectiveStatus = deriveBlitzStatus(blitz);
   if (effectiveStatus === 'cancelled' || effectiveStatus === 'completed') {
@@ -45,7 +56,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const joinStatus = (caller.role !== 'admin' && caller.id !== blitz.ownerId) ? 'pending' : (body.joinStatus ?? 'pending');
+  // ─── Phase 2e RSVP routing ───
+  // For self-service rep joins (caller is the rep, not admin/owner), check
+  // deadline and capacity. If either is breached, route to 'waitlist'
+  // instead of 'pending'. Admin and owner can still force any joinStatus
+  // (including 'approved' to add reps directly).
+  const isSelfServiceJoin = caller.role !== 'admin' && caller.id !== blitz.ownerId;
+  let joinStatus: 'pending' | 'approved' | 'declined' | 'waitlist' | 'invited';
+  if (!isSelfServiceJoin) {
+    joinStatus = body.joinStatus ?? 'pending';
+  } else {
+    // Default for self-service is 'pending' unless gated to 'waitlist' by
+    // deadline or capacity.
+    let routedStatus: 'pending' | 'waitlist' = 'pending';
+    if (blitz.confirmDeadline && new Date() > blitz.confirmDeadline) {
+      routedStatus = 'waitlist';
+    } else if (blitz.maxParticipants != null) {
+      const approvedCount = await prisma.blitzParticipant.count({
+        where: { blitzId, joinStatus: 'approved' },
+      });
+      if (approvedCount >= blitz.maxParticipants) {
+        routedStatus = 'waitlist';
+      }
+    }
+    joinStatus = routedStatus;
+  }
   let participant;
   try {
     const existingParticipant = await prisma.blitzParticipant.findUnique({
@@ -203,6 +238,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })();
   }
 
+  // Phase 3d — Notify the rep when an owner/admin invites them. The
+  // rep then visits their dashboard and explicitly accepts or declines.
+  // Fire-and-forget; never block the response.
+  const isOwnerInvite =
+    joinStatus === 'invited' &&
+    body.userId !== caller.id &&
+    (caller.role === 'admin' || caller.id === blitz.ownerId);
+  if (isOwnerInvite) {
+    const newParticipant = participant;
+    void (async () => {
+      try {
+        const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
+        const reviewUrl = `${appUrl}/dashboard/blitz/${blitzId}`;
+        const ownerName =
+          `${caller.firstName ?? ''} ${caller.lastName ?? ''}`.trim() || caller.email;
+        await notify({
+          type: 'blitz_invitation',
+          userId: newParticipant.user.id,
+          subject: `${ownerName} invited you to ${blitz.name}`,
+          emailHtml: renderNotificationEmail({
+            heading: `You're invited to ${escapeHtml(blitz.name)}`,
+            bodyHtml: `
+              <p style="margin:0 0 12px 0;"><strong>${escapeHtml(ownerName)}</strong> added you to <strong>${escapeHtml(blitz.name)}</strong>. Confirm whether you're attending so the leader can plan housing and headcount.</p>
+            `,
+            cta: { label: 'Accept or decline', url: reviewUrl },
+            footerNote: 'Sent because a blitz leader invited you. Manage at /dashboard/preferences.',
+          }),
+        });
+      } catch (err) {
+        logger.warn('blitz_invitation_notify_failed', { blitzId, invitedUserId: body.userId, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+  }
+
   return NextResponse.json(participant, { status: 201 });
 }
 
@@ -225,12 +294,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const limited = await enforceRateLimit(`PATCH /api/blitzes/[id]/participants:${caller.id}`, 50, 60 * 60_000);
   if (limited) return limited;
 
-  // Only the blitz owner or an admin may approve/decline participants
+  // Owner / admin can change anyone's joinStatus. A rep may ALSO flip
+  // their own 'invited' record to 'approved' (accept) or 'declined'
+  // (pass) — this is the rep-confirmation arm of Phase 3d. They cannot
+  // touch anyone else's row.
   const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, startDate: true, endDate: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
-  if (caller.role !== 'admin' && caller.id !== blitz.ownerId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
   if (body.userId === blitz.ownerId && body.joinStatus !== undefined && body.joinStatus !== 'approved') {
     return NextResponse.json({ error: 'Cannot change the blitz owner\'s join status to non-approved' }, { status: 400 });
   }
@@ -240,9 +309,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
   if (!existing) return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
 
+  const isOwnerOrAdmin = caller.role === 'admin' || caller.id === blitz.ownerId;
+  const isSelfAcceptingInvite =
+    !isOwnerOrAdmin &&
+    caller.id === body.userId &&
+    existing.joinStatus === 'invited' &&
+    (body.joinStatus === 'approved' || body.joinStatus === 'declined') &&
+    body.attendanceStatus === undefined;
+  if (!isOwnerOrAdmin && !isSelfAcceptingInvite && body.targetDeals === undefined) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // targetDeals is participant-self OR admin editable. Owner-only patch
+  // surface (joinStatus / attendanceStatus changes) is gated above; for
+  // targetDeals specifically, the participant can edit their own goal.
+  if (body.targetDeals !== undefined && caller.id !== body.userId && caller.role !== 'admin') {
+    return NextResponse.json({ error: 'Can only edit your own blitz goal' }, { status: 403 });
+  }
+
   const data: Record<string, unknown> = {};
   if (body.joinStatus !== undefined) data.joinStatus = body.joinStatus;
   if (body.attendanceStatus !== undefined) data.attendanceStatus = body.attendanceStatus;
+  if (body.targetDeals !== undefined) data.targetDeals = body.targetDeals;
 
   const updated = await prisma.blitzParticipant.update({
     where: { id: existing.id },
