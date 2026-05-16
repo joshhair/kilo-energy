@@ -104,109 +104,118 @@ export function computePeriodProjection(inputs: PeriodProjectionInputs): number 
 // ─── Phase-weighted boost ───────────────────────────────────────────────
 
 /**
- * Phase multipliers per projection horizon. Each entry is the fraction
- * of that phase's upcoming-M2 (and upcoming-M1 for the New phase) that
- * is expected to land within the horizon. Calibrated against typical
- * solar-install cadence — adjust the values here if your installer mix
- * runs faster/slower than baseline.
+ * Per-milestone × per-horizon probability tables. Each value is the
+ * expected fraction of that milestone payment that fires within the
+ * projection window for a deal sitting at the given phase.
  *
- * Phases NOT in the table (Installed, PTO, Completed) contribute 0 to
- * the boost — those deals have already fired their M2 (which is captured
- * by the monthlyRate via actual paid history), so including them again
- * would double-count.
+ *  - M1 fires at Acceptance: only "New" deals have pending M1
+ *  - M2 fires at Install:    pre-Install phases have pending M2
+ *  - M3 fires at PTO:        every non-Completed phase has pending M3
+ *    (and the post-Install phases dominate the short-horizon M3 boost)
+ *
+ * Tables are step-wise (30 / 90 / 365 day buckets) rather than
+ * continuously interpolated for legibility. Each value is calibrated
+ * against typical residential-solar cadence — adjust if your installer
+ * mix runs faster/slower.
+ *
+ * No outer 0.15 multiplier — the per-phase probabilities ARE the credit
+ * fraction. Earlier formulas had both, double-discounting pipeline.
  */
-const PHASE_MULT_30: Record<string, number> = {
-  'New': 0.02,
-  'Acceptance': 0.05,
-  'Site Survey': 0.10,
-  'Design': 0.20,
-  'Permitting': 0.40,
-  'Pending Install': 0.80,
+const M1_MULT_30: Record<string, number>  = { 'New': 0.50 };
+const M1_MULT_90: Record<string, number>  = { 'New': 0.85 };
+const M1_MULT_365: Record<string, number> = { 'New': 1.00 };
+
+const M2_MULT_30: Record<string, number> = {
+  'New': 0.02, 'Acceptance': 0.05, 'Site Survey': 0.10,
+  'Design': 0.20, 'Permitting': 0.40, 'Pending Install': 0.80,
+};
+const M2_MULT_90: Record<string, number> = {
+  'New': 0.20, 'Acceptance': 0.30, 'Site Survey': 0.50,
+  'Design': 0.65, 'Permitting': 0.85, 'Pending Install': 1.00,
+};
+const M2_MULT_365: Record<string, number> = {
+  'New': 1.0, 'Acceptance': 1.0, 'Site Survey': 1.0,
+  'Design': 1.0, 'Permitting': 1.0, 'Pending Install': 1.0,
 };
 
-const PHASE_MULT_90: Record<string, number> = {
-  'New': 0.20,
-  'Acceptance': 0.30,
-  'Site Survey': 0.50,
-  'Design': 0.65,
-  'Permitting': 0.85,
-  'Pending Install': 1.0,
+// M3 fires later than M2 (PTO ≈ 3-6 months after install), so each
+// row of the M3 table is shifted right vs M2 — only post-install phases
+// contribute meaningfully at the 30-day horizon.
+const M3_MULT_30: Record<string, number> = {
+  'Pending Install': 0.02, 'Installed': 0.20, 'PTO': 0.50,
+};
+const M3_MULT_90: Record<string, number> = {
+  'Design': 0.02, 'Permitting': 0.05, 'Pending Install': 0.15,
+  'Installed': 0.50, 'PTO': 1.00,
+};
+const M3_MULT_365: Record<string, number> = {
+  'New': 0.40, 'Acceptance': 0.45, 'Site Survey': 0.55,
+  'Design': 0.65, 'Permitting': 0.75, 'Pending Install': 0.85,
+  'Installed': 1.00, 'PTO': 1.00,
 };
 
-const PHASE_MULT_365: Record<string, number> = {
-  'New': 1.0,
-  'Acceptance': 1.0,
-  'Site Survey': 1.0,
-  'Design': 1.0,
-  'Permitting': 1.0,
-  'Pending Install': 1.0,
-};
-
-/**
- * Pick the right phase-multiplier table for the given horizon. Step-
- * wise rather than continuously interpolated for legibility — the
- * three breakpoints (45d, 135d) split the period selector cleanly
- * into "month", "quarter", and "year" ranges.
- */
-function getPhaseMultiplierTable(daysRemaining: number | null): Record<string, number> {
-  if (daysRemaining === null) return PHASE_MULT_365;
-  if (daysRemaining <= 45) return PHASE_MULT_30;
-  if (daysRemaining <= 135) return PHASE_MULT_90;
-  return PHASE_MULT_365;
+function pickTables(daysRemaining: number | null) {
+  if (daysRemaining === null) return { m1: M1_MULT_365, m2: M2_MULT_365, m3: M3_MULT_365 };
+  if (daysRemaining <= 45)    return { m1: M1_MULT_30,  m2: M2_MULT_30,  m3: M3_MULT_30  };
+  if (daysRemaining <= 135)   return { m1: M1_MULT_90,  m2: M2_MULT_90,  m3: M3_MULT_90  };
+  return { m1: M1_MULT_365, m2: M2_MULT_365, m3: M3_MULT_365 };
 }
 
 /**
- * Phases where M1 is still upcoming (hasn't fired yet). At any phase
- * past 'New', the deal has been Accepted so M1 already paid out (and
- * is captured in monthlyRate via paid history). Only 'New' deals
- * contribute M1 to the boost.
- */
-const PRE_ACCEPTANCE_PHASES = new Set<string>(['New']);
-
-/**
- * Phases excluded from the boost entirely. Cancelled deals never close.
- * Installed/PTO/Completed deals have already fired M2 — including them
- * would double-count against the monthlyRate.
+ * Phases excluded from the boost entirely. Cancelled / On Hold deals
+ * never produce milestones. "Completed" deals have already fired every
+ * milestone including M3, so they contribute nothing forward-looking.
  */
 const EXCLUDED_FROM_BOOST_PHASES = new Set<string>([
   'Cancelled',
   'On Hold',
-  'Installed',
-  'PTO',
   'Completed',
 ]);
 
 /**
- * Resolve the viewer's role-aware M1 and M2 amount contribution on a
+ * Resolve the viewer's role-aware M1, M2, M3 amount contribution on a
  * given project. Mirrors the resolution used in the on-pace and
- * Expected Pay calculations elsewhere — primary closer takes M1+M2
- * fields, primary setter takes setter* fields, co-party takes their
- * row's amounts, not-on-deal contributes nothing.
+ * Expected Pay calculations elsewhere — primary closer takes M*Amount
+ * fields, primary setter takes setterM*Amount fields, co-party takes
+ * their row's amounts, not-on-deal contributes nothing.
  */
-function viewerM1M2(project: PipelineProject, repId: string): { m1: number; m2: number } {
+function viewerMilestones(project: PipelineProject, repId: string): { m1: number; m2: number; m3: number } {
   if (project.repId === repId) {
-    return { m1: project.m1Amount ?? 0, m2: project.m2Amount ?? 0 };
+    return {
+      m1: project.m1Amount ?? 0,
+      m2: project.m2Amount ?? 0,
+      m3: project.m3Amount ?? 0,
+    };
   }
   if (project.setterId === repId) {
-    return { m1: project.setterM1Amount ?? 0, m2: project.setterM2Amount ?? 0 };
+    return {
+      m1: project.setterM1Amount ?? 0,
+      m2: project.setterM2Amount ?? 0,
+      m3: project.setterM3Amount ?? 0,
+    };
   }
   const cc = project.additionalClosers?.find((c) => c.userId === repId);
-  if (cc) return { m1: cc.m1Amount, m2: cc.m2Amount };
+  if (cc) return { m1: cc.m1Amount, m2: cc.m2Amount, m3: cc.m3Amount ?? 0 };
   const cs = project.additionalSetters?.find((s) => s.userId === repId);
-  if (cs) return { m1: cs.m1Amount, m2: cs.m2Amount };
-  return { m1: 0, m2: 0 };
+  if (cs) return { m1: cs.m1Amount, m2: cs.m2Amount, m3: cs.m3Amount ?? 0 };
+  return { m1: 0, m2: 0, m3: 0 };
 }
 
 /**
  * Compute the phase-weighted pipeline boost for a viewer.
  *
- * Sum (across the viewer's in-flight deals) of:
- *   phaseMultiplier(phase, horizon) × (m1 [if pre-Acceptance] + m2)
- * then multiply by the 0.15 outer factor.
+ * Sum (across the viewer's in-flight deals) of per-milestone expected
+ * value within the horizon:
  *
- * At `daysRemaining = null` (all-time), every phase weight is 1.0 so
- * the result is `0.15 × fullPipeline` — bit-identical to the legacy
- * annual pipeline boost. So callers can use this helper uniformly.
+ *   Σ over projects of:
+ *     m1Mult[phase][horizon] × deal.m1
+ *   + m2Mult[phase][horizon] × deal.m2
+ *   + m3Mult[phase][horizon] × deal.m3
+ *
+ * No outer scaling factor — the per-phase probabilities are the credit
+ * fraction. At 365-day horizon, M1 and M2 multipliers are 1.0 (every
+ * in-flight deal closes within a year) and M3 multipliers reflect that
+ * earlier-pipeline deals' PTO may slip past year-end (0.40-0.85).
  *
  * Pure; no side effects.
  */
@@ -216,22 +225,14 @@ export function computePhaseWeightedBoost(
   daysRemaining: number | null,
 ): number {
   if (!repId) return 0;
-
-  const table = getPhaseMultiplierTable(daysRemaining);
-  let weightedSum = 0;
-
+  const { m1: m1Table, m2: m2Table, m3: m3Table } = pickTables(daysRemaining);
+  let total = 0;
   for (const project of projects) {
     if (EXCLUDED_FROM_BOOST_PHASES.has(project.phase)) continue;
-    const mult = table[project.phase] ?? 0;
-    if (mult === 0) continue;
-
-    const { m1, m2 } = viewerM1M2(project, repId);
-    const m1Contribution = PRE_ACCEPTANCE_PHASES.has(project.phase) ? m1 : 0;
-    weightedSum += mult * (m1Contribution + m2);
+    const { m1, m2, m3 } = viewerMilestones(project, repId);
+    total += (m1Table[project.phase] ?? 0) * m1;
+    total += (m2Table[project.phase] ?? 0) * m2;
+    total += (m3Table[project.phase] ?? 0) * m3;
   }
-
-  // 0.15 outer factor — empirical "fraction of upcoming pipeline value
-  // to credit beyond the rate-based projection". See module docstring
-  // for the rationale on why this stays constant across horizons.
-  return Math.round(0.15 * weightedSum);
+  return Math.round(total);
 }

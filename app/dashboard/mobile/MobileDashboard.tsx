@@ -6,8 +6,8 @@ import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
 import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
-import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
-import { computePeriodProjection, computePhaseWeightedBoost } from '../../../lib/period-projection';
+import { isHistoricalPeriod, getPeriodLabel } from '../../../lib/period';
+import { computePhaseWeightedBoost } from '../../../lib/period-projection';
 import { sumPaid, sumGrossPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
 import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -51,6 +51,13 @@ const DIM = 'var(--text-dim)';
 // Brand color frames the number via the small uppercase label, not the digit.
 const HERO_NUM = 'var(--text-primary)';
 const DANGER = 'var(--accent-red-solid)';
+
+// Forward-looking period config — used by the on-pace formula
+//   projection = monthlyRate × periodMonths + phaseWeightedBoost(horizon)
+// PERIOD_MONTHS feeds the rate component, PERIOD_HORIZON picks which
+// phase-multiplier table (30/90/365-day buckets) the boost uses.
+const PERIOD_MONTHS_MAP: Record<string, number> = { 'this-month': 1, 'this-quarter': 3, 'this-year': 12, 'all': 12 };
+const PERIOD_HORIZON_MAP: Record<string, number | null> = { 'this-month': 30, 'this-quarter': 90, 'this-year': 365, 'all': null };
 
 function relativeTime(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -400,16 +407,17 @@ export default function MobileDashboard() {
     [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs, myPayroll, todayStr],
   );
 
-  // On Pace ingredients — monthlyEarningRate, dealsPerMonth, and
-  // onPaceAnnual (rate × 12 + 0.15 × pipeline). onPaceAnnual is the
-  // forward-looking annualized projection used for All Time + This
-  // Year heroes. monthlyEarningRate feeds period-scoped projections.
-  const { onPaceAnnual, dealsPerMonth: paceDPM, monthlyEarningRate } = useMemo(() => {
+  // On Pace ingredients — monthlyEarningRate + dealsPerMonth + an
+  // annualPaceComponent (rate × 12, no pipeline). The pipeline boost is
+  // computed separately by computePhaseWeightedBoost so it scales by
+  // horizon and includes M1/M2/M3 milestones with phase-aware
+  // probabilities (no flat outer multiplier).
+  const { dealsPerMonth: paceDPM, monthlyEarningRate } = useMemo(() => {
     const now = new Date();
     const todayISO = localDateString(now);
     const allMyProjects = myProjects.filter((p) => p.phase !== 'Cancelled');
     const totalDeals = allMyProjects.length;
-    if (totalDeals === 0) return { onPaceAnnual: 0, dealsPerMonth: 0, monthlyEarningRate: 0 };
+    if (totalDeals === 0) return { dealsPerMonth: 0, monthlyEarningRate: 0 };
 
     // Average commission per deal (M1 + M2), role-aware
     const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
@@ -452,50 +460,16 @@ export default function MobileDashboard() {
     // a full payment cycle in the books, the actual paid rate is
     // meaningful and gets 15% weight as a reality check.
     let monthlyEarningRate: number;
-    let annualPaceComponent: number;
     if (daysSinceFirst >= 270 && totalPaidPositive > 0) {
       // Blended: 85% pace-based + 15% actual paid rate.
       const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
       monthlyEarningRate = Math.round(paceBasedAnnual / 12 * 0.85 + paidMonthlyRate * 0.15);
-      annualPaceComponent = monthlyEarningRate * 12;
     } else {
-      // Pure pace-based — preserve the existing `Math.round(paceBasedAnnual)`
-      // result exactly (avoids a $0-$11 drift from round(annual/12)*12
-      // vs round(annual)). The unrounded monthly rate goes to the
-      // period-projection helper, which rounds its own final output.
-      annualPaceComponent = Math.round(paceBasedAnnual);
+      // Pure pace-based for the first ~9 months.
       monthlyEarningRate = paceBasedAnnual / 12;
     }
 
-    // Pipeline boost: 15% of projected M1 + M2 (same as desktop My Pay).
-    // This is the FULL ANNUAL boost; computePeriodProjection scales it
-    // linearly by horizon length when projecting to shorter periods.
-    const preAcceptance = ['New'];
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    const projM1 = allMyProjects.filter((p) => preAcceptance.includes(p.phase)).reduce((s, p) => {
-      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-      const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-      let m1 = 0;
-      if (p.repId === effectiveRepId) m1 = p.m1Amount ?? 0;
-      else if (p.setterId === effectiveRepId) m1 = p.setterM1Amount ?? 0;
-      else if (coCloserParty) m1 = coCloserParty.m1Amount;
-      else if (coSetterParty) m1 = coSetterParty.m1Amount;
-      return s + m1;
-    }, 0);
-    const projM2 = allMyProjects.filter((p) => preInstalled.includes(p.phase)).reduce((s, p) => {
-      const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-      const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-      let m2 = 0;
-      if (p.repId === effectiveRepId) m2 = p.m2Amount ?? 0;
-      else if (p.setterId === effectiveRepId) m2 = p.setterM2Amount ?? 0;
-      else if (coCloserParty) m2 = coCloserParty.m2Amount;
-      else if (coSetterParty) m2 = coSetterParty.m2Amount;
-      return s + m2;
-    }, 0);
-    const pipelineBoostAnnual = Math.round((projM1 + projM2) * 0.15);
-    const annual = annualPaceComponent + pipelineBoostAnnual;
-
-    return { onPaceAnnual: annual, dealsPerMonth, monthlyEarningRate };
+    return { dealsPerMonth, monthlyEarningRate };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- activeProjects reports as unnecessary but it's a reference the memo must invalidate on
   }, [myProjects, myPayroll, activeProjects]);
 
@@ -507,33 +481,28 @@ export default function MobileDashboard() {
   // where phaseBoost is the phase-weighted pipeline contribution scaled
   // to the horizon (computePhaseWeightedBoost handles the weighting).
   //
-  // Year-to-date paid (used in the breakdown subtitle for All Time / This
-  // Year). The hero value itself is the forward-looking annualized run
-  // rate for those two periods — see onPacePeriod below.
+  // Year-to-date paid (informational only — shown in the breakdown line
+  // for year-like periods but doesn't drive the hero number).
   const yearToDatePaid = useMemo(
     () => sumPaid(myPayroll.filter((p) => isInPeriod(p.date, 'this-year'))),
     [myPayroll],
   );
-  // Hero on-pace value.
-  //   All Time + This Year → annualized run rate (rate × 12 + 0.15 ×
-  //     pipeline). Answers "if you keep this pace for 12 months, what's
-  //     your earning power?" — forward-looking, ignores what you've
-  //     already collected. Both share the "On Pace For YYYY" label and
-  //     therefore must produce the same number.
-  //   This Month / This Quarter → period-scoped (paidInPeriod + pace ×
-  //     remaining + phase-weighted boost). Answers "what will you finish
-  //     the current month/quarter with?".
+
+  // Hero on-pace value — unified across every forward-looking period:
+  //   projection = monthlyEarningRate × periodMonths
+  //              + computePhaseWeightedBoost(projects, repId, horizon)
+  // The boost helper sums per-milestone × per-phase × per-horizon
+  // probabilities including M3, with no outer flat multiplier. Each
+  // period uses its own horizon-bucket (30 / 90 / 365-day tables) so
+  // late-pipeline deals dominate short-horizon boosts and early-pipeline
+  // deals catch up at the year horizon.
   const onPacePeriod = useMemo(() => {
-    if (period === 'all' || period === 'this-year') return onPaceAnnual;
-    const daysRemaining = getPeriodDaysRemaining(period);
-    const phaseBoost = computePhaseWeightedBoost(myProjects, effectiveRepId, daysRemaining);
-    return computePeriodProjection({
-      paidInPeriodSoFar: periodPaid,
-      monthlyEarningRate,
-      pipelineBoostForHorizon: phaseBoost,
-      daysRemaining,
-    });
-  }, [period, onPaceAnnual, monthlyEarningRate, periodPaid, myProjects, effectiveRepId]);
+    const months = PERIOD_MONTHS_MAP[period];
+    if (months === undefined) return 0;
+    const horizon = PERIOD_HORIZON_MAP[period];
+    const boost = computePhaseWeightedBoost(myProjects, effectiveRepId, horizon);
+    return Math.round(monthlyEarningRate * months + boost);
+  }, [period, monthlyEarningRate, myProjects, effectiveRepId]);
 
   // Period category decides which hero variant + which stats render.
   // Historical = backward-looking ("what did I earn / produce?");
@@ -562,35 +531,21 @@ export default function MobileDashboard() {
   // "why is this number what it is?" question proactively.
   const heroOnPaceCopy = useMemo(() => {
     const isYearLike = period === 'all' || period === 'this-year';
-    if (isYearLike) {
-      // Annualized run rate decomposition. "Pace × 12" + pipeline boost
-      // — same components that drove onPaceAnnual upstream.
-      const paceAnnualized = Math.round(monthlyEarningRate * 12);
-      const fullPipelineBoost = Math.max(0, onPaceAnnual - paceAnnualized);
-      return {
-        label: `On Pace For ${new Date().getFullYear()}`,
-        subtitle: `${paceDPM.toFixed(1)} deals/mo · ${fmtCompact$(Math.round(monthlyEarningRate))}/mo earning pace`,
-        breakdown: {
-          paid: Math.round(yearToDatePaid),
-          pace: paceAnnualized,
-          boost: fullPipelineBoost,
-        },
-      };
-    }
-    const daysRemaining = getPeriodDaysRemaining(period) ?? 0;
-    const dayLabel = daysRemaining === 1 ? '1 day left' : `${daysRemaining} days left`;
-    const phaseBoost = computePhaseWeightedBoost(myProjects, effectiveRepId, daysRemaining);
-    const paceComponent = Math.round(monthlyEarningRate * (daysRemaining / 30.44));
+    const months = PERIOD_MONTHS_MAP[period] ?? 12;
+    const horizon = PERIOD_HORIZON_MAP[period] ?? null;
+    const paceComponent = Math.round(monthlyEarningRate * months);
+    const boost = computePhaseWeightedBoost(myProjects, effectiveRepId, horizon);
+    const paidContext = isYearLike ? Math.round(yearToDatePaid) : Math.round(periodPaid);
     return {
-      label: `On Pace · ${getPeriodLabel(period)}`,
-      subtitle: `${dayLabel} · ${paceDPM.toFixed(1)} deals/mo pace`,
+      label: isYearLike ? `On Pace For ${new Date().getFullYear()}` : `On Pace · ${getPeriodLabel(period)}`,
+      subtitle: `${paceDPM.toFixed(1)} deals/mo · ${fmtCompact$(Math.round(monthlyEarningRate))}/mo earning pace`,
       breakdown: {
-        paid: Math.round(periodPaid),
+        paid: paidContext,
         pace: paceComponent,
-        boost: phaseBoost,
+        boost,
       },
     };
-  }, [period, paceDPM, monthlyEarningRate, onPaceAnnual, periodPaid, yearToDatePaid, myProjects, effectiveRepId]);
+  }, [period, paceDPM, monthlyEarningRate, periodPaid, yearToDatePaid, myProjects, effectiveRepId]);
 
   // ── @mentions / My Tasks (fetched for rep + sub-dealer) ──────────────────
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
