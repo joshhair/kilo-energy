@@ -516,13 +516,10 @@ export default function MobileDashboard() {
     const paceComponent = Math.round(paceRate * monthsRemainingInPeriod);
     return {
       label: isYearLike ? `On Pace For ${new Date().getFullYear()}` : `On Pace · ${getPeriodLabel(period)}`,
-      subtitle: `${paceDPM.toFixed(1)} deals/mo · ${fmtCompact$(Math.round(paceRate))}/mo earning pace`,
+      dealsPerMonth: paceDPM.toFixed(1),
       breakdown: {
         paid: Math.round(inPeriodCommissionEarned),
         pace: paceComponent,
-        // Pipeline now embedded in `paid` (commission earned from period deals
-        // at face value); kept on the type for backwards compat with the JSX.
-        boost: 0,
       },
     };
   }, [period, paceDPM, paceRate, inPeriodCommissionEarned, monthsRemainingInPeriod]);
@@ -865,16 +862,10 @@ export default function MobileDashboard() {
           <div>
             <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>{heroOnPaceCopy.label}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
-            <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem', marginTop: '0.35rem' }}>
-              {heroOnPaceCopy.subtitle}
-            </p>
-            {/* Projection breakdown — two components matching the formula:
-                OnPace = commissionEarnedFromInPeriodDeals + paceRate ×
-                monthsRemainingInP. Compact mono row that lets a rep mentally
-                verify the headline without a tooltip. */}
+            {/* Single-line breakdown — formula components inline with pace */}
             {heroOnPaceCopy.breakdown && (
-              <p className="tabular-nums" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', marginTop: '0.4rem', letterSpacing: '0.01em' }}>
-                {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned · {fmtCompact$(heroOnPaceCopy.breakdown.pace)} forward pace
+              <p className="tabular-nums" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', marginTop: '0.45rem', letterSpacing: '0.01em' }}>
+                {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned + {fmtCompact$(heroOnPaceCopy.breakdown.pace)} pace · {heroOnPaceCopy.dealsPerMonth}/mo
               </p>
             )}
             {/* Next Payout — secondary */}
