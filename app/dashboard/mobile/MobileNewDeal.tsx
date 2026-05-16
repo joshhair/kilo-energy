@@ -190,9 +190,10 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
       <div className="success-up-4 space-y-2 pt-2">
         <button
           onClick={() => router.push('/dashboard/projects')}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 text-black font-semibold rounded-xl text-base active:scale-[0.97]"
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 font-semibold rounded-xl text-base active:scale-[0.97]"
           style={{
-            background: 'var(--accent-emerald-solid)',
+            background: 'var(--accent-emerald-text)',
+            color: '#fff',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -1254,11 +1255,11 @@ export default function MobileNewDeal() {
                 disabled={!!exitAnimClass}
                 className="w-full flex items-center justify-center gap-2 font-medium active:scale-[0.97]"
                 style={{
-                  background: 'var(--accent-emerald-solid)',
+                  background: 'var(--accent-emerald-text)',
                   borderRadius: 14,
                   padding: '14px 18px',
                   fontSize: 14,
-                  color: 'var(--text-on-accent)',
+                  color: '#fff',
                   fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   letterSpacing: '0.02em',
                 }}
@@ -1777,12 +1778,11 @@ export default function MobileNewDeal() {
                   disabled={!!exitAnimClass}
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97]"
                   style={{
-                    background: 'var(--accent-emerald-solid)',
-
+                    background: 'var(--accent-emerald-text)',
                     borderRadius: 16,
                     padding: 18,
                     fontSize: 16,
-                    color: 'var(--text-primary)',
+                    color: '#fff',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -2038,7 +2038,7 @@ export default function MobileNewDeal() {
                 ><ChevronLeft className="w-4 h-4" /> Back</button>
                 <button type="submit" disabled={submitting}
                   className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
-                  style={{ background: 'var(--accent-emerald-solid)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                  style={{ background: 'var(--accent-emerald-text)', borderRadius: 16, padding: 18, fontSize: 16, color: '#fff', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Check className="w-4 h-4" /> Submit Deal</>}</button>
               </div>
             </div>
