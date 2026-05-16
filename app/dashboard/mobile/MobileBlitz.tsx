@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
+import { formatDate, formatCompactKWParts, fmtCompact$ } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle, MapPin, Calendar, Users } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -583,36 +583,47 @@ export default function MobileBlitz() {
     <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
-      {/* Summary stat cards — unified premium treatment matching the
-          Revenue hero vocabulary: refined emerald eyebrow + text-primary
-          serif numerals. Color-coded numerals were creating a rainbow;
-          labels identify the stats, not color. */}
-      <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Active</p>
-          <p className="text-2xl tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
-        </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Upcoming</p>
-          <p className="text-2xl tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
-        </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Deals</p>
-          <p className="text-2xl tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>{summaryTotalDeals}</p>
-        </div>
-        {(() => { const t = formatCompactKWParts(summaryTotalKW); return (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Total {t.unit}</p>
-            <p className="text-2xl tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>{t.value}</p>
-          </div>
-        ); })()}
-        {isAdmin && (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Costs</p>
-            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(0.95rem, 4.2vw, 1.5rem)' }}>{formatCurrency(summaryTotalCosts)}</p>
-          </div>
-        )}
-      </div>
+      {/* Summary hero card — mirrors the admin Revenue card pattern:
+          one hero numeral (Upcoming, the most actionable stat for both
+          reps and admins) above a divider-separated sub-stat strip.
+          Compact-formatted Costs ($14.3K) keeps the strip width-balanced. */}
+      {(() => {
+        const kw = formatCompactKWParts(summaryTotalKW);
+        return (
+          <MobileCard hero style={{ border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', boxShadow: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Upcoming Blitzes</p>
+              <Tent className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
+            </div>
+            <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2.5rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{upcomingBlitzes}</p>
+            <div className="flex items-center gap-4 mt-4 [&>div:not(:first-child)]:pl-4">
+              <div className="min-w-0">
+                <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{activeBlitzes}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Active</p>
+              </div>
+              <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
+              <div className="min-w-0">
+                <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{summaryTotalDeals}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Deals</p>
+              </div>
+              <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
+              <div className="min-w-0">
+                <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{kw.value} {kw.unit}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Total</p>
+              </div>
+              {isAdmin && (
+                <>
+                  <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                  <div className="min-w-0">
+                    <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(summaryTotalCosts)}</p>
+                    <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Costs</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </MobileCard>
+        );
+      })()}
 
       {/* Status pills — shared SegmentedPills primitive */}
       <SegmentedPills
