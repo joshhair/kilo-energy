@@ -866,7 +866,7 @@ export default function MobileDashboard() {
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             {/* Single-line breakdown — formula components inline with pace */}
             {heroOnPaceCopy.breakdown && (
-              <p className="tabular-nums" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', marginTop: '0.45rem', letterSpacing: '0.01em' }}>
+              <p className="tabular-nums whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', marginTop: '0.45rem', letterSpacing: '0.01em' }}>
                 {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned + {fmtCompact$(heroOnPaceCopy.breakdown.pace)} pace · {heroOnPaceCopy.dealsPerMonth}/mo
               </p>
             )}
