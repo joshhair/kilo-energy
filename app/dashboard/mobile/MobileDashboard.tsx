@@ -864,11 +864,16 @@ export default function MobileDashboard() {
           <div>
             <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>{heroOnPaceCopy.label}</p>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
-            {/* Single-line breakdown — formula components inline with pace */}
+            {/* Two-line breakdown — formula on top, rate context below */}
             {heroOnPaceCopy.breakdown && (
-              <p className="tabular-nums whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', marginTop: '0.45rem', letterSpacing: '0.01em' }}>
-                {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned + {fmtCompact$(heroOnPaceCopy.breakdown.pace)} pace · {heroOnPaceCopy.dealsPerMonth}/mo
-              </p>
+              <div style={{ marginTop: '0.45rem' }}>
+                <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', letterSpacing: '0.01em' }}>
+                  {fmtCompact$(heroOnPaceCopy.breakdown.paid)} earned + {fmtCompact$(heroOnPaceCopy.breakdown.pace)} pace
+                </p>
+                <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', letterSpacing: '0.01em', marginTop: '0.15rem', opacity: 0.75 }}>
+                  {heroOnPaceCopy.dealsPerMonth} deals/mo pace
+                </p>
+              </div>
             )}
             {/* Next Payout — secondary. Hidden when nothing pending. */}
             {pendingPayrollTotal > 0 && (
