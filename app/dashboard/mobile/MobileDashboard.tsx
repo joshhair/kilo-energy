@@ -9,8 +9,9 @@ import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } 
 import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
 import { sumPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
 import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones } from '../../../lib/period-projection';
-import { CheckCircle, Target } from 'lucide-react';
+import { CheckCircle, Target, Info } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
+import MobileBottomSheet from './shared/MobileBottomSheet';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
@@ -113,6 +114,7 @@ export default function MobileDashboard() {
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
+  const [heroHelpOpen, setHeroHelpOpen] = useState(false);
   const [_statVersion, setStatVersion] = useState(0);
 
   // Sliding indicator + scroll-into-view now live inside the shared
@@ -863,9 +865,20 @@ export default function MobileDashboard() {
           //   - projected new sales at current pace
           //   - cash already paid YTD
           <div>
-            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>
-              {new Date().getFullYear()} Cash Forecast
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.12em' }}>
+                {new Date().getFullYear()} Cash Forecast
+              </p>
+              <button
+                type="button"
+                onClick={() => setHeroHelpOpen(true)}
+                aria-label="How is this number calculated?"
+                className="active:opacity-60 transition-opacity"
+                style={{ color: 'var(--text-dim)', lineHeight: 0 }}
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>
               {fmt$(cashForecast.total)}
             </p>
@@ -922,7 +935,18 @@ export default function MobileDashboard() {
           // The big number adapts too (heroOnPaceValue): annual for the
           // long horizons, period-scoped for this-month / this-quarter.
           <div>
-            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>{heroOnPaceCopy.label}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.12em' }}>{heroOnPaceCopy.label}</p>
+              <button
+                type="button"
+                onClick={() => setHeroHelpOpen(true)}
+                aria-label="How is this number calculated?"
+                className="active:opacity-60 transition-opacity"
+                style={{ color: 'var(--text-dim)', lineHeight: 0 }}
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(animatedOnPace)}</p>
             {/* Two-line breakdown — formula on top, rate context below */}
             {heroOnPaceCopy.breakdown && (
@@ -1130,6 +1154,34 @@ export default function MobileDashboard() {
           </div>
         </MobileSection>
       )}
+
+      {/* Hero help — tap-to-explain bottom sheet for the on-pace / cash forecast math. */}
+      <MobileBottomSheet open={heroHelpOpen} onClose={() => setHeroHelpOpen(false)} title="How this number is calculated">
+        <div className="px-5 pb-6 space-y-4" style={{ fontFamily: FONT_BODY, color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.55 }}>
+          {period === 'all' ? (
+            <>
+              <p><strong style={{ color: 'var(--text-primary)' }}>{new Date().getFullYear()} Cash Forecast</strong> estimates the actual cash that will hit your bank account between today and Dec 31.</p>
+              <p>It adds three buckets:</p>
+              <ul className="space-y-2" style={{ paddingLeft: '1.2rem', listStyleType: 'disc' }}>
+                <li><strong style={{ color: 'var(--text-primary)' }}>Pipeline</strong> — milestones (M1/M2/M3) on deals already sold that will fire within the year, using typical timing (M1 ~14d, M2 ~45d, M3 ~80d from sold).</li>
+                <li><strong style={{ color: 'var(--text-primary)' }}>New</strong> — milestones from deals you&apos;ll sell over the rest of the year at your current pace. Late-year sales contribute less because some milestones slip to next year.</li>
+                <li><strong style={{ color: 'var(--text-primary)' }}>Paid</strong> — cash already received in {new Date().getFullYear()} so far.</li>
+              </ul>
+              <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>For your earning rate or production credit (not tied to cash arrival timing), tap the <strong>This Year</strong> tab.</p>
+            </>
+          ) : (
+            <>
+              <p><strong style={{ color: 'var(--text-primary)' }}>{heroOnPaceCopy.label}</strong> estimates the commission value you&apos;ll earn (regardless of when it pays out) over this period at your current pace.</p>
+              <p>It adds two parts:</p>
+              <ul className="space-y-2" style={{ paddingLeft: '1.2rem', listStyleType: 'disc' }}>
+                <li><strong style={{ color: 'var(--text-primary)' }}>Earned</strong> — full M1+M2+M3 commission of deals you&apos;ve already sold within this period, credited at face value.</li>
+                <li><strong style={{ color: 'var(--text-primary)' }}>Pace</strong> — projected new sales at your current deals/month rate × commission per deal × months remaining.</li>
+              </ul>
+              <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>For actual cash hitting your bank by Dec 31 (which discounts late-year sales whose milestones slip), tap the <strong>{new Date().getFullYear()} Cash</strong> tab.</p>
+            </>
+          )}
+        </div>
+      </MobileBottomSheet>
     </div>
   );
 }
