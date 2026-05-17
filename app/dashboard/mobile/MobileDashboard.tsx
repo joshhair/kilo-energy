@@ -8,6 +8,7 @@ import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_I
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
 import { sumPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
+import { computeOnPace, viewerFullCommission as viewerFullCommissionPure } from '../../../lib/period-projection';
 import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -410,15 +411,10 @@ export default function MobileDashboard() {
   // value the moment the deal is sold, regardless of when each
   // milestone actually fires) and paceRate × monthsRemainingInP is
   // the forward-looking selling contribution.
-  const viewerFullCommission = useCallback((p: typeof myProjects[number]): number => {
-    if (p.repId === effectiveRepId) return (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0);
-    if (p.setterId === effectiveRepId) return (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
-    const cc = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-    if (cc) return (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0);
-    const cs = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-    if (cs) return (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0);
-    return 0;
-  }, [effectiveRepId]);
+  const viewerFullCommission = useCallback(
+    (p: typeof myProjects[number]) => viewerFullCommissionPure(p, effectiveRepId),
+    [effectiveRepId],
+  );
 
   const { dealsPerMonth: paceDPM, paceRate } = useMemo(() => {
     const now = new Date();
@@ -475,15 +471,16 @@ export default function MobileDashboard() {
       .reduce((s, p) => s + viewerFullCommission(p), 0);
   }, [myProjects, viewerFullCommission, period]);
 
-  const monthsRemainingInPeriod = useMemo(() => {
+  const daysRemainingInPeriod = useMemo(() => {
     const horizonPeriod = period === 'all' ? 'this-year' : period;
-    const days = getPeriodDaysRemaining(horizonPeriod);
-    return days != null ? days / 30.44 : 0;
+    return getPeriodDaysRemaining(horizonPeriod) ?? 0;
   }, [period]);
 
+  const monthsRemainingInPeriod = daysRemainingInPeriod / 30.44;
+
   const onPacePeriod = useMemo(
-    () => Math.round(inPeriodCommissionEarned + paceRate * monthsRemainingInPeriod),
-    [inPeriodCommissionEarned, paceRate, monthsRemainingInPeriod],
+    () => computeOnPace({ inPeriodCommissionEarned, paceRate, daysRemainingInPeriod }),
+    [inPeriodCommissionEarned, paceRate, daysRemainingInPeriod],
   );
 
   // Period category decides which hero variant + which stats render.

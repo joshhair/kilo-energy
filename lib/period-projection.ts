@@ -1,104 +1,84 @@
 /**
- * period-projection.ts — Period-scoped earnings projection.
+ * period-projection.ts — Phase-weighted pipeline boost helper.
  *
- * The mobile dashboard hero card shows an "on pace" projection that
- * adapts by period. The math reconciles across periods so a rep
- * switching between this-month, this-quarter, this-year tells a
- * coherent story (consistency was the central design requirement).
+ * The mobile dashboard's "On Pace For YYYY" hero uses the formula:
  *
- * # Two periods, two math shapes
+ *   OnPace(P) = commissionEarnedFromInPeriodDeals
+ *             + paceRate × monthsRemainingInP
  *
- * `all` ('lifetime trajectory hypothetical'):
- *   projection = monthlyRate × 12 + 0.15 × fullPipeline
- *   This is the legacy formula — kept unchanged. Answers
- *   "what's your annualized run rate?" not "what will you finish
- *   the calendar year with?".
+ * (See app/dashboard/mobile/MobileDashboard.tsx for the assembly.) The
+ * pipeline boost helper below is used in places where the hero needs to
+ * credit existing-pipeline milestone cash that lands within the window
+ * — currently exposed via computePhaseWeightedBoost for tests and any
+ * future surfaces that want to display "pipeline value firing in
+ * window" as a standalone stat.
  *
- * `this-month` / `this-quarter` / `this-year` (period-scoped):
- *   projection = paidInPeriodSoFar
- *              + monthlyRate × (daysRemaining / 30.44)
- *              + pipelineBoostForHorizon
- *   Where pipelineBoostForHorizon is computed via the phase-weighted
- *   helper below — different phases get different probabilities of
- *   converting to M2 within the horizon window. Answers "what will
- *   you actually end the period with?".
+ * Math summary (no outer constant multiplier — per-milestone tables
+ * ARE the probabilities):
  *
- * # Phase-weighted boost (the accuracy upgrade)
+ *   boost = Σ over in-flight deals of:
+ *             m1Mult[phase][horizon] × deal.m1
+ *           + m2Mult[phase][horizon] × deal.m2
+ *           + m3Mult[phase][horizon] × deal.m3
  *
- * Old design: boost = 0.15 × allPipeline × (daysRemaining / 365).
- * Linear scaling treats every phase equally — a "New" deal counts the
- * same as a "Pending Install" deal in the 30-day projection. That
- * over-projects for early-pipeline reps and under-projects for
- * late-pipeline reps.
- *
- * New design: boost = 0.15 × Σ(phaseMultiplier(phase, horizon) × m1m2).
- * Late-phase deals dominate the short-horizon boost; early-phase deals
- * dominate the long-horizon boost. At 365 days, every phase is 1.0 so
- * the calculation collapses back to 0.15 × fullPipeline — same as the
- * all-time annual number.
- *
- * # Why this is the consistent design
- *
- * Reconciliation: a rep switching this-month → this-quarter → this-year
- * sees numbers that build coherently — paid-so-far carries forward,
- * pace component scales with horizon, boost adapts to phase × horizon.
- * Tested in tests/unit/period-projection.test.ts.
+ * Calibrated to typical residential-solar cadence (M1 at Acceptance ~1mo
+ * after sold, M2 at Install ~4mo, M3 at PTO ~7mo). Adjust the table
+ * values below if your installer mix runs notably faster or slower.
  */
 
 import type { PipelineProject } from './aggregators';
 
-export interface PeriodProjectionInputs {
-  /** Earnings already collected in the period to date. Ignored for
-   *  the all-time path (daysRemaining=null) which uses annual run
-   *  rate directly. */
-  paidInPeriodSoFar: number;
-  /** Rep's blended monthly earning rate. Computed by the dashboard's
-   *  on-pace memo as 60% pace-based + 40% actual-paid for reps with
-   *  ≥60 days of history, pure pace-based otherwise. */
-  monthlyEarningRate: number;
-  /** Pipeline boost already scaled to the projection horizon. Caller
-   *  is responsible for phase-weighting via computePhaseWeightedBoost
-   *  before passing in. For the all-time path, pass `0.15 × fullPipeline`
-   *  (the annual boost figure). For period paths, pass the result of
-   *  computePhaseWeightedBoost(projects, repId, daysRemaining). */
-  pipelineBoostForHorizon: number;
-  /** Days remaining until period end. Null → no horizon (all-time);
-   *  use annual projection. ≤0 → period has already closed; treated
-   *  as 0 (projection collapses to paidInPeriodSoFar). */
-  daysRemaining: number | null;
+// ─── On-pace formula (pure, testable) ──────────────────────────────────
+
+/** Sum of M1 + M2 + M3 the viewer is owed on a single deal, regardless
+ *  of when each milestone fires. Role-aware: primary closer, primary
+ *  setter, additional closer/setter, or 0 if not on the deal. Mirrors
+ *  the resolver used inside computePhaseWeightedBoost; exposed here so
+ *  the dashboard's "commission earned from in-period deals" sum stays
+ *  in lockstep with the helper above. */
+export function viewerFullCommission(
+  project: Pick<
+    PipelineProject,
+    | 'repId' | 'setterId'
+    | 'm1Amount' | 'm2Amount' | 'm3Amount'
+    | 'setterM1Amount' | 'setterM2Amount' | 'setterM3Amount'
+    | 'additionalClosers' | 'additionalSetters'
+  >,
+  repId: string | null,
+): number {
+  if (!repId) return 0;
+  if (project.repId === repId) {
+    return (project.m1Amount ?? 0) + (project.m2Amount ?? 0) + (project.m3Amount ?? 0);
+  }
+  if (project.setterId === repId) {
+    return (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0);
+  }
+  const cc = project.additionalClosers?.find((c) => c.userId === repId);
+  if (cc) return (cc.m1Amount ?? 0) + (cc.m2Amount ?? 0) + (cc.m3Amount ?? 0);
+  const cs = project.additionalSetters?.find((c) => c.userId === repId);
+  if (cs) return (cs.m1Amount ?? 0) + (cs.m2Amount ?? 0) + (cs.m3Amount ?? 0);
+  return 0;
 }
 
-/**
- * Project earnings for a period given the rep's blended rate +
- * (already-scaled) pipeline boost. Pure; no side effects.
+/** The hero "On Pace" projection. Pure; no side effects.
  *
- * Returns 0 if all inputs zero; never negative.
- */
-export function computePeriodProjection(inputs: PeriodProjectionInputs): number {
-  const { paidInPeriodSoFar, monthlyEarningRate, pipelineBoostForHorizon, daysRemaining } = inputs;
-
-  // All-time horizon: classic annual = monthlyRate × 12 + full boost.
-  // Matches the existing onPaceAnnual semantics so the hero number is
-  // unchanged for the 'all' period (per user direction — this stays
-  // anchored to the "annualized rate" framing). Caller should pass the
-  // full annual boost (0.15 × fullPipeline) for this path.
-  if (daysRemaining === null) {
-    return Math.max(0, Math.round(monthlyEarningRate * 12 + pipelineBoostForHorizon));
-  }
-
-  // Closed period (daysRemaining ≤ 0) — no future projection, just
-  // the actual-paid total. Defensive: this branch shouldn't normally
-  // fire because historical periods use a different hero variant.
-  if (daysRemaining <= 0) {
-    return Math.max(0, Math.round(paidInPeriodSoFar));
-  }
-
-  // Open period: paid-to-date + pace × remaining days + scaled boost.
-  // 30.44 is the average days-per-month over a calendar year (365/12);
-  // dividing daysRemaining by it converts a "days" horizon into a
-  // "months at current rate" multiplier for the monthly rate.
-  const paceComponent = monthlyEarningRate * (daysRemaining / 30.44);
-  return Math.max(0, Math.round(paidInPeriodSoFar + paceComponent + pipelineBoostForHorizon));
+ *    OnPace = inPeriodCommissionEarned + paceRate × monthsRemainingInP
+ *
+ *  - inPeriodCommissionEarned: sum of viewerFullCommission across deals
+ *    SOLD inside the period (credited at face value the moment they're
+ *    sold, regardless of when milestones fire).
+ *  - paceRate: rep's per-month earning rate at current cadence
+ *    (= dealsPerMonth × avgFullCommissionPerDeal).
+ *  - daysRemainingInPeriod: calendar days left in the active period.
+ *    Converted to months via /30.44. Negative or zero clamps to 0 so
+ *    closed periods don't subtract from earnings. */
+export function computeOnPace(inputs: {
+  inPeriodCommissionEarned: number;
+  paceRate: number;
+  daysRemainingInPeriod: number;
+}): number {
+  const monthsRemaining = Math.max(0, inputs.daysRemainingInPeriod / 30.44);
+  return Math.max(0, Math.round(inputs.inPeriodCommissionEarned + inputs.paceRate * monthsRemaining));
 }
 
 // ─── Phase-weighted boost ───────────────────────────────────────────────
