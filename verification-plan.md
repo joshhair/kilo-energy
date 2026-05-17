@@ -216,14 +216,25 @@ Snapshots saved to `tmp/prod-snapshots/` so re-running is offline.
 
 ### 4.3 Run the four scenarios
 
-| Scenario | Expected This Year | Acceptable range |
-|---|---|---|
-| New rep, 1 × $14.9K at 30d | ~$127K | $100K – $150K |
-| Strong new, 5/mo × $8K at 60d | ~$380K | $320K – $440K |
-| Veteran, 6/mo × $5K, $350K pipeline | ~$360K | $300K – $420K |
-| October starter, 1 × $14.9K at end-of-Oct | ~$45K | $35K – $60K |
+| Scenario | Expected This Year | Acceptable range | Actual (2026-05-17) |
+|---|---|---|---|
+| New rep, 1 × $14.9K at 30d | ~$127K | $100K – $150K | unit test ✓ ($127K) |
+| Strong new, 5/mo × $8K at 60d | ~$380K | $320K – $440K | unit test ✓ |
+| Veteran, 6/mo × $5K, $350K pipeline | ~$360K | $300K – $420K | unit test ✓ |
+| October starter, 1 × $14.9K at end-of-Oct | ~$45K | $35K – $60K | unit test ✓ |
 
-**Risk gate**: if any scenario falls outside its acceptable range, STOP and re-examine the formula. The user has signed off on the formula's intent; numbers within these bounds are honest.
+### 4.4 Real prod data verification
+
+Ran `scripts/prod-read/verify-on-pace.mts` against real Turso (read-only, 9 logged queries). Results:
+
+| Rep | Tenure | dealsPerMonth | avg commission | This Year OnPace |
+|---|---|---|---|---|
+| Josh Hair (target) | 1131d (~3yr) | 3.90 | $7,870 | **$289,230** |
+| Alex Villanueva (mid) | 458d (~15mo) | 0.27 | $10,092 | $20,096 |
+
+Josh's number reconciles: $30,713/mo earning rate × 7.5mo remaining ≈ $230K forward + $59K earned in 2026 deals = $289K. All Time matches This Year identically (same formula, same calendar horizon). Pace × period scales linearly across This Month → Quarter → Year as designed. Alex's low number is honest — 4 deals total, all Completed, no recent activity → small projection. No formula bugs found.
+
+**Risk gate**: ✓ PASSED. Math reconciles with intent; ready to proceed to visual verification.
 
 ---
 

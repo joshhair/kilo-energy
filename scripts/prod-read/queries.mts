@@ -23,9 +23,12 @@ export async function smokeCheck() {
 // ─── Rep pipeline (Phase 3 math sanity, Phase 5 smoke) ──────────────────────
 
 /**
- * Active in-flight projects for a rep, role-aware. Returns the same shape
- * as lib/aggregators.ts PipelineProject (cents → dollars via the / 100 in
- * the consumer; here we return raw fields).
+ * All projects (any phase except Cancelled) attributed to the rep —
+ * matches MobileDashboard.tsx's `myProjects.filter(p => p.phase !==
+ * 'Cancelled')` scope. Includes Completed so veterans' historical pace
+ * is captured; the on-pace formula filters by phase when computing the
+ * pipeline-vs-earned components. Role-aware. Returns raw cents fields;
+ * caller converts to dollars.
  */
 export async function getRepPipeline(repId: string) {
   const projects = await readDb.project.findMany({
@@ -36,7 +39,7 @@ export async function getRepPipeline(repId: string) {
         { additionalClosers: { some: { userId: repId } } },
         { additionalSetters: { some: { userId: repId } } },
       ],
-      phase: { notIn: ['Cancelled', 'Completed'] },
+      phase: { not: 'Cancelled' },
     },
     select: {
       id: true,
