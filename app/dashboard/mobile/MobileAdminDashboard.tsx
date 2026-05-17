@@ -337,10 +337,14 @@ export default function MobileAdminDashboard() {
         )}
       </div>
 
-      {/* Period filter — shared SegmentedPills primitive */}
+      {/* Period filter — shared SegmentedPills primitive. The shared
+          PERIODS list labels 'all' as "<year> Cash" for rep dashboard
+          (where it shows a cash-forecast hero). For admin we want lifetime
+          aggregate semantics, so we override that pill's label back to
+          "All Time" without forking the type. */}
       <div className="-mx-5 px-5">
         <SegmentedPills
-          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+          options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
           value={period}
           onChange={setPeriod}
           scrollable

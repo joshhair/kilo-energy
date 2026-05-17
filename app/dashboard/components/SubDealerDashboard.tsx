@@ -91,7 +91,7 @@ export function SubDealerDashboard({
       {/* Period tabs — shared SegmentedPills primitive */}
       <div className="flex justify-end mb-6">
         <SegmentedPills
-          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+          options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
           value={period}
           onChange={setPeriod}
           size="sm"

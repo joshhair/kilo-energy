@@ -41,7 +41,7 @@ export function PMDashboard({
       </div>
       {/* Period filter — shared SegmentedPills primitive */}
       <SegmentedPills
-        options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+        options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
         value={period}
         onChange={setPeriod}
         size="sm"

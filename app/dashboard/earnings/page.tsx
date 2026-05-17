@@ -1316,7 +1316,7 @@ function AdminFinancialsView() {
                 aria-label="Period"
               >
                 {PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <option key={p.value} value={p.value}>{p.value === 'all' ? 'All Time' : p.label}</option>
                 ))}
               </select>
               <span className="text-xs text-[var(--text-muted)]">

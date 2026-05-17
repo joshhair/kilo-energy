@@ -869,11 +869,8 @@ export default function MobileDashboard() {
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>
               {fmt$(cashForecast.total)}
             </p>
-            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', letterSpacing: '0.01em', marginTop: '0.45rem' }}>
-              {fmtCompact$(cashForecast.pipeline)} pipeline + {fmtCompact$(cashForecast.futureSales)} new + {fmtCompact$(cashForecast.paid)} paid
-            </p>
-            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', letterSpacing: '0.01em', marginTop: '0.15rem', opacity: 0.75 }}>
-              Cash hitting your account by Dec 31
+            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', letterSpacing: '0.01em', marginTop: '0.45rem' }}>
+              {fmtCompact$(cashForecast.pipeline)} pipe + {fmtCompact$(cashForecast.futureSales)} new{cashForecast.paid > 0 ? ` + ${fmtCompact$(cashForecast.paid)} paid` : ''}
             </p>
             {/* Next Payout — secondary. Hidden when nothing pending. */}
             {pendingPayrollTotal > 0 && (
