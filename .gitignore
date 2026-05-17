@@ -28,6 +28,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# prod-read verification artifacts (snapshots + audit log; never commit prod data)
+/tmp/
+/scripts/prod-read/tmp/
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
