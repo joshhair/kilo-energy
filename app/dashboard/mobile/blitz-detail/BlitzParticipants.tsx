@@ -134,7 +134,9 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
             const stats = statsByUserId.get(p.user.id);
             const statusBadge = p.joinStatus === 'approved' ? 'Approved' : p.joinStatus === 'pending' ? 'Pending' : 'Denied';
             const isOwner = p.user.id === blitzOwnerId;
-            const showAttendance = canManage && p.joinStatus === 'approved';
+            // Attendance pills only render for non-owner approved
+            // participants — the leader marks others, not themselves.
+            const showAttendance = canManage && p.joinStatus === 'approved' && !isOwner;
             return (
               <div
                 key={p.id}
