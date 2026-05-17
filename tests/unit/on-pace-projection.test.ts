@@ -25,14 +25,14 @@ const REP = 'rep_A';
 
 describe('viewerFullCommission', () => {
   it('returns 0 for null repId', () => {
-    expect(viewerFullCommission({} as PipelineProject, null)).toBe(0);
+    expect(viewerFullCommission({} as unknown as PipelineProject, null)).toBe(0);
   });
 
   it('primary closer: M1 + M2 + M3', () => {
     const p = {
       repId: REP,
       m1Amount: 500, m2Amount: 4000, m3Amount: 10000,
-    } as PipelineProject;
+    } as unknown as PipelineProject;
     expect(viewerFullCommission(p, REP)).toBe(14500);
   });
 
@@ -40,7 +40,7 @@ describe('viewerFullCommission', () => {
     const p = {
       repId: 'other', setterId: REP,
       setterM1Amount: 200, setterM2Amount: 1500, setterM3Amount: 3000,
-    } as PipelineProject;
+    } as unknown as PipelineProject;
     expect(viewerFullCommission(p, REP)).toBe(4700);
   });
 
@@ -48,12 +48,12 @@ describe('viewerFullCommission', () => {
     const p = {
       repId: 'other', setterId: 'other2',
       additionalClosers: [{ userId: REP, m1Amount: 250, m2Amount: 2000, m3Amount: 5000 }],
-    } as PipelineProject;
+    } as unknown as PipelineProject;
     expect(viewerFullCommission(p, REP)).toBe(7250);
   });
 
   it('not on the deal: 0', () => {
-    const p = { repId: 'other', setterId: 'other2' } as PipelineProject;
+    const p = { repId: 'other', setterId: 'other2' } as unknown as PipelineProject;
     expect(viewerFullCommission(p, REP)).toBe(0);
   });
 
@@ -61,7 +61,7 @@ describe('viewerFullCommission', () => {
     const p = {
       repId: REP,
       m1Amount: 500, m2Amount: 4000, m3Amount: null,
-    } as PipelineProject;
+    } as unknown as PipelineProject;
     expect(viewerFullCommission(p, REP)).toBe(4500);
   });
 });

@@ -108,10 +108,12 @@ Halt prod reads and flag for review if:
 
 **Goal**: ensure the working tree is in a known state and the autonomous loop stays off.
 
-1. **Confirm agent loop is dead** — `tasklist | findstr start.sh` returns nothing.
-2. **Snapshot current branch head** — record SHA in this doc: `_____` (fill on execute).
-3. **Backup branch** — `git branch backup/pre-verify-<date>` so we can always recover the pre-cleanup state without relying on reflog.
-4. **Document divergence** — `git log --oneline origin/main..HEAD` saved to a file in case origin's view diverges before we push.
+1. **Confirm agent loop is dead** — ✓ 2026-05-16: no `start.sh` process running.
+2. **Snapshot current branch head** — `82f4d14e3ff786f013e9e95a1a048514c961ac78` (before verification-plan commit); `557c587` after committing this doc.
+3. **Backup branch** — ✓ `backup/pre-verify-2026-05-16` created from `82f4d14`.
+4. **Document divergence** — 25 commits ahead of `origin/main`: 5 pre-existing blitz Phase 2 commits (`7db76d1` → `24bae3b`), 17 polish + math commits from this session (`b99fdae` → `82f4d14`), plus the verification-plan commit (`557c587`).
+
+**Note on scope**: this PR is NOT just my polish — it ships the entire blitz engagement Phase 2 feature (RSVP+waitlist, T-7/3/1/0 reminders, broadcast, Web Push, earnings forecast slider) plus the polish + math overhaul on top. Both should be tested together since they're merging together.
 
 **Risk gate**: do not proceed if uncommitted changes exist; commit or stash first. Do not proceed if any process is currently running `npm run dev` against the branch in another shell (could cause weird HMR state).
 

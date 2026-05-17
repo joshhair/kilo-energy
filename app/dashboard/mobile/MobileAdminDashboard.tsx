@@ -24,14 +24,12 @@ const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';
 const ACCENT2 = 'var(--accent-cyan-solid)';
-const ACCENT_DISP = 'var(--accent-emerald-display)';
+// ACCENT_DISP removed — Revenue card uses var(--accent-emerald-text)/cyan-display inline.
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
 const DANGER = 'var(--accent-red-solid)';
 const WARNING = 'var(--accent-amber-solid)';
-// BIG hero numbers — near-black for max readability on white in light mode.
-// Brand color frames the number via the small uppercase label, not the digit.
-const HERO_NUM = 'var(--text-primary)';
+// HERO_NUM removed — hero card now uses var(--accent-cyan-display) inline for the Revenue numeral.
 
 function getGreeting(name: string): string {
   const h = new Date().getHours();

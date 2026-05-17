@@ -102,13 +102,13 @@ export async function getRepsOverview() {
     where: { active: { not: false } },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       role: true,
       repType: true,
       createdAt: true,
-      _count: { select: { projectsAsCloser: true } },
     },
-    orderBy: { name: 'asc' },
+    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
   });
   logQuery('getRepsOverview', {}, reps.length);
   return reps;

@@ -20,7 +20,7 @@
  */
 
 import 'dotenv/config';
-import { existsSync, mkdirSync, appendFileSync } from 'node:fs';
+import { existsSync, mkdirSync, appendFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -101,7 +101,7 @@ export const readDb = new Proxy(rawClient as unknown as Record<string, unknown>,
     }
     return value;
   },
-}) as ReturnType<typeof PrismaClient.prototype['$extends']> extends never ? typeof rawClient : typeof rawClient;
+}) as unknown as typeof rawClient;
 
 // ─── Guard 3: audit log ─────────────────────────────────────────────────────
 const TMP_DIR = path.join(repoRoot, 'tmp');
@@ -120,7 +120,6 @@ if (!existsSync(SNAPSHOT_DIR)) mkdirSync(SNAPSHOT_DIR, { recursive: true });
 export function writeSnapshot(name: string, data: unknown) {
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
   const file = path.join(SNAPSHOT_DIR, `${name}-${ts}.json`);
-  const { writeFileSync } = require('node:fs');
   writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
   return file;
 }

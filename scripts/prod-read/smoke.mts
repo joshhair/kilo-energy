@@ -21,8 +21,11 @@ console.log('=== prod-read smoke test ===\n');
 // Negative test: confirm a mutating call throws synchronously.
 console.log('1. Negative test: attempting forbidden write…');
 try {
-  // @ts-expect-error — intentionally calling a forbidden method
-  await readDb.user.create({ data: { name: 'should-not-happen', email: 'x@y.z' } });
+  // Cast to bypass the read-only type narrowing; the runtime check is the
+  // actual guard, and we're proving it works.
+  await (readDb.user as unknown as { create: (args: unknown) => Promise<unknown> }).create({
+    data: { firstName: 'should', lastName: 'not-happen', email: 'x@y.z' },
+  });
   console.error('   ✗ FAIL: write was allowed. ABORT.');
   process.exit(1);
 } catch (err) {
@@ -38,8 +41,9 @@ try {
 // Negative test 2: raw escape hatch blocked
 console.log('2. Negative test: $executeRawUnsafe blocked…');
 try {
-  // @ts-expect-error
-  await readDb.$executeRawUnsafe('SELECT 1');
+  // The proxy throws when this is called — type-safe to cast via unknown
+  // since the runtime check is what matters.
+  await (readDb as unknown as { $executeRawUnsafe: (sql: string) => Promise<unknown> }).$executeRawUnsafe('SELECT 1');
   console.error('   ✗ FAIL: raw escape hatch was allowed. ABORT.');
   process.exit(1);
 } catch (err) {
