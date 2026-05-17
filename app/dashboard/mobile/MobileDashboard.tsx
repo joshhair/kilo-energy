@@ -8,7 +8,7 @@ import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_I
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
 import { sumPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
-import { computeOnPace, viewerFullCommission as viewerFullCommissionPure } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones } from '../../../lib/period-projection';
 import { CheckCircle, Target } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -483,6 +483,41 @@ export default function MobileDashboard() {
     [inPeriodCommissionEarned, paceRate, daysRemainingInPeriod],
   );
 
+  // 2026 Cash Forecast — rendered when `period === 'all'`. Dates each
+  // pending milestone by phase ETA + lag, sums those landing by Dec 31,
+  // plus future-sales milestones at current pace, plus paidYTD.
+  const yearToDatePaid = useMemo(
+    () => sumPaid(myPayroll.filter((p) => isInPeriod(p.date, 'this-year'))),
+    [myPayroll],
+  );
+  const avgMilestones = useMemo(() => {
+    const allMy = myProjects.filter((p) => p.phase !== 'Cancelled');
+    if (allMy.length === 0) return { avgM1: 0, avgM2: 0, avgM3: 0 };
+    let m1Sum = 0, m2Sum = 0, m3Sum = 0;
+    for (const p of allMy) {
+      const m = viewerMilestones(p, effectiveRepId);
+      m1Sum += m.m1; m2Sum += m.m2; m3Sum += m.m3;
+    }
+    return { avgM1: m1Sum / allMy.length, avgM2: m2Sum / allMy.length, avgM3: m3Sum / allMy.length };
+  }, [myProjects, effectiveRepId]);
+
+  const dealsPerMonth = paceRate && avgMilestones.avgM1 + avgMilestones.avgM2 + avgMilestones.avgM3 > 0
+    ? paceRate / (avgMilestones.avgM1 + avgMilestones.avgM2 + avgMilestones.avgM3)
+    : 0;
+
+  const cashForecast = useMemo(
+    () => computeCashForecast({
+      projects: myProjects,
+      repId: effectiveRepId,
+      dealsPerMonth,
+      avgM1: avgMilestones.avgM1,
+      avgM2: avgMilestones.avgM2,
+      avgM3: avgMilestones.avgM3,
+      paidYTD: yearToDatePaid,
+    }),
+    [myProjects, effectiveRepId, dealsPerMonth, avgMilestones, yearToDatePaid],
+  );
+
   // Period category decides which hero variant + which stats render.
   // Historical = backward-looking ("what did I earn / produce?");
   // current/all = forward-looking ("on pace for?"). This is the user-
@@ -820,7 +855,38 @@ export default function MobileDashboard() {
           provide smooth value transitions on period change, so the
           fade is redundant anyway. */}
       <MobileCard hero>
-        {isHistorical ? (
+        {period === 'all' && cashForecast.total > 0 ? (
+          // ─── 2026 Cash Forecast variant ───────────────────────────────
+          // Default landing view. Sums milestones that will actually fire
+          // by Dec 31 (M1=+14d, M2=+45d, M3=+80d from sold) across:
+          //   - existing in-flight deals
+          //   - projected new sales at current pace
+          //   - cash already paid YTD
+          <div>
+            <p className="tracking-widest uppercase" style={{ color: ACCENT2_DISP, fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>
+              {new Date().getFullYear()} Cash Forecast
+            </p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.1 }}>
+              {fmt$(cashForecast.total)}
+            </p>
+            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.78rem', letterSpacing: '0.01em', marginTop: '0.45rem' }}>
+              {fmtCompact$(cashForecast.pipeline)} pipeline + {fmtCompact$(cashForecast.futureSales)} new + {fmtCompact$(cashForecast.paid)} paid
+            </p>
+            <p className="tabular-nums whitespace-nowrap" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.72rem', letterSpacing: '0.01em', marginTop: '0.15rem', opacity: 0.75 }}>
+              Cash hitting your account by Dec 31
+            </p>
+            {/* Next Payout — secondary. Hidden when nothing pending. */}
+            {pendingPayrollTotal > 0 && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-baseline justify-between">
+                  <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Next Payout</p>
+                  <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.95rem' }}>{daysUntilPayday === 0 ? <span style={{ color: 'var(--text-primary)' }}>Today</span> : <>{nextFridayLabel} &middot; <span style={{ color: 'var(--text-primary)' }}>{daysUntilPayday}d</span></>}</p>
+                </div>
+                <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.75rem, 8vw, 2.25rem)', color: HERO_NUM, lineHeight: 1.3 }}>{fmt$(animatedPayout)}</p>
+              </div>
+            )}
+          </div>
+        ) : isHistorical ? (
           // ─── Historical period variant ────────────────────────────────
           // Backward-looking: "what did I earn in that window?" rather than
           // "what am I on pace for?". Subtitle adds the production context

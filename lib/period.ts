@@ -34,12 +34,16 @@ export type Period =
   | 'this-year'
   | 'last-year';
 
+/** The `'all'` Period value now powers the **2026 Cash Forecast** hero,
+ *  not a lifetime view. Internal name kept as 'all' to minimize call-site
+ *  churn; user-facing label and dashboard render is cash-forecast.
+ *  Lifetime stats moved to the My Pay page. */
 export const PERIODS: { value: Period; label: string }[] = [
-  { value: 'all', label: 'All Time' },
+  { value: 'all', label: '2026 Cash' },
   { value: 'this-month', label: 'This Month' },
-  { value: 'last-month', label: 'Last Month' },
   { value: 'this-quarter', label: 'This Quarter' },
   { value: 'this-year', label: 'This Year' },
+  { value: 'last-month', label: 'Last Month' },
   { value: 'last-year', label: 'Last Year' },
 ];
 
@@ -202,6 +206,9 @@ export function getPeriodDaysRemaining(period: Period, now: Date = new Date()): 
  * downstream cards.
  */
 export function getPeriodLabel(period: Period): string {
+  // The 'all' period now renders the cash-forecast hero; label is the
+  // current calendar year + "Cash" so it stays accurate year-over-year.
+  if (period === 'all') return `${new Date().getFullYear()} Cash`;
   const entry = PERIODS.find((p) => p.value === period);
   return entry?.label ?? period;
 }

@@ -211,7 +211,8 @@ describe('getPeriodDaysRemaining', () => {
 
 describe('getPeriodLabel', () => {
   it('returns the label from PERIODS', () => {
-    expect(getPeriodLabel('all')).toBe('All Time');
+    // 'all' renders the cash-forecast hero; label is dynamic by year.
+    expect(getPeriodLabel('all')).toBe(`${new Date().getFullYear()} Cash`);
     expect(getPeriodLabel('this-month')).toBe('This Month');
     expect(getPeriodLabel('last-month')).toBe('Last Month');
     expect(getPeriodLabel('this-quarter')).toBe('This Quarter');

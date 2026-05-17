@@ -143,6 +143,22 @@ export default function MobileMyPay() {
     [payrollEntries, effectiveRepId, todayStr],
   );
 
+  // ── Lifetime stats (moved from dashboard 'all' tab) ──
+  // Aggregated career totals for the rep. Surfaced as a dedicated
+  // section near the bottom of My Pay so reps can see their career
+  // arc without crowding the actionable "next payout" hero.
+  const lifetimeStats = useMemo(() => {
+    const myProjects = projects.filter((p) => {
+      if (p.phase === 'Cancelled') return false;
+      const cc = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const cs = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+      return p.repId === effectiveRepId || p.setterId === effectiveRepId || cc || cs;
+    });
+    const totalDeals = myProjects.length;
+    const totalKW = myProjects.reduce((s, p) => s + (p.kWSize ?? 0), 0);
+    return { totalDeals, totalKW };
+  }, [projects, effectiveRepId]);
+
   const pendingTotal = useMemo(
     () =>
       payrollEntries
@@ -858,6 +874,25 @@ export default function MobileMyPay() {
           </div>
         )}
       </MobileSection>
+
+      {/* ── Lifetime stats (moved here from dashboard 'all' tab) ── */}
+      <MobileCard>
+        <p className="tracking-widest uppercase mb-3" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Lifetime</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{fmt$(lifetimeEarned)}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Earned</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{lifetimeStats.totalDeals}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Deals</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{lifetimeStats.totalKW.toFixed(1)}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>kW Sold</p>
+          </div>
+        </div>
+      </MobileCard>
 
       {/* ── Reimbursement bottom sheet ── */}
       <MobileBottomSheet open={showReimbSheet} onClose={() => setShowReimbSheet(false)} title="Request Reimbursement">

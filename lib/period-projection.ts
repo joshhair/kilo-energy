@@ -60,6 +60,122 @@ export function viewerFullCommission(
   return 0;
 }
 
+// ─── Per-milestone resolver (exported for the cash-forecast helper) ────
+
+/** Per-milestone amounts the viewer is owed on a single deal, role-aware.
+ *  Returns each milestone separately so callers can date them
+ *  individually (e.g. cash-forecast helper). */
+export function viewerMilestones(
+  project: Pick<
+    PipelineProject,
+    | 'repId' | 'setterId'
+    | 'm1Amount' | 'm2Amount' | 'm3Amount'
+    | 'setterM1Amount' | 'setterM2Amount' | 'setterM3Amount'
+    | 'additionalClosers' | 'additionalSetters'
+  >,
+  repId: string | null,
+): { m1: number; m2: number; m3: number } {
+  if (!repId) return { m1: 0, m2: 0, m3: 0 };
+  if (project.repId === repId) {
+    return { m1: project.m1Amount ?? 0, m2: project.m2Amount ?? 0, m3: project.m3Amount ?? 0 };
+  }
+  if (project.setterId === repId) {
+    return { m1: project.setterM1Amount ?? 0, m2: project.setterM2Amount ?? 0, m3: project.setterM3Amount ?? 0 };
+  }
+  const cc = project.additionalClosers?.find((c) => c.userId === repId);
+  if (cc) return { m1: cc.m1Amount ?? 0, m2: cc.m2Amount ?? 0, m3: cc.m3Amount ?? 0 };
+  const cs = project.additionalSetters?.find((c) => c.userId === repId);
+  if (cs) return { m1: cs.m1Amount ?? 0, m2: cs.m2Amount ?? 0, m3: cs.m3Amount ?? 0 };
+  return { m1: 0, m2: 0, m3: 0 };
+}
+
+// ─── Cash Forecast (2026 hero) ──────────────────────────────────────────
+
+/** Milestone lag in days from soldDate. Calibrated to typical residential-
+ *  solar cadence — adjust if your installer mix runs notably faster/slower.
+ *  M1 fires at Acceptance, M2 at Install, M3 at PTO. */
+export const MILESTONE_LAG_DAYS = { m1: 14, m2: 45, m3: 80 } as const;
+
+/** For each phase, which milestones have ALREADY fired (so we shouldn't
+ *  re-credit them in the forecast — they're either already paid or
+ *  already counted in paid history). */
+const MILESTONES_FIRED_BY_PHASE: Record<string, { m1: boolean; m2: boolean; m3: boolean }> = {
+  'New':             { m1: false, m2: false, m3: false },
+  'Acceptance':      { m1: true,  m2: false, m3: false },
+  'Site Survey':     { m1: true,  m2: false, m3: false },
+  'Design':          { m1: true,  m2: false, m3: false },
+  'Permitting':      { m1: true,  m2: false, m3: false },
+  'Pending Install': { m1: true,  m2: false, m3: false },
+  'Installed':       { m1: true,  m2: true,  m3: false },
+  'PTO':             { m1: true,  m2: true,  m3: false }, // M3 fires AT PTO — imminent
+  'Completed':       { m1: true,  m2: true,  m3: true  },
+};
+
+/** Cash forecast for the current calendar year. Sums:
+ *   - Pending milestones on in-flight deals whose ETA (soldDate + lag) lands by Dec 31
+ *   - Projected new-sales' milestones firing by Dec 31 (at current pace, with deal value derived from rep's actual avg M1/M2/M3 split)
+ *   - Cash already paid YTD
+ *
+ *  Returns the total + a breakdown for the hero subtitle. */
+export function computeCashForecast(inputs: {
+  projects: ReadonlyArray<PipelineProject>;
+  repId: string | null;
+  dealsPerMonth: number;
+  avgM1: number;
+  avgM2: number;
+  avgM3: number;
+  paidYTD: number;
+  today?: Date;
+}): { total: number; pipeline: number; futureSales: number; paid: number } {
+  const { projects, repId, dealsPerMonth, avgM1, avgM2, avgM3, paidYTD } = inputs;
+  const today = inputs.today ?? new Date();
+  if (!repId) return { total: Math.round(paidYTD), pipeline: 0, futureSales: 0, paid: Math.round(paidYTD) };
+
+  const yearEnd = new Date(today.getFullYear(), 11, 31, 23, 59, 59).getTime();
+  const dayMs = 86_400_000;
+
+  // ── Pipeline cash: existing deals' pending milestones with ETAs in window
+  let pipelineCash = 0;
+  for (const p of projects) {
+    if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
+    const fired = MILESTONES_FIRED_BY_PHASE[p.phase] ?? MILESTONES_FIRED_BY_PHASE['New'];
+    const { m1, m2, m3 } = viewerMilestones(p, repId);
+    const soldMs = new Date(p.soldDate + 'T12:00:00Z').getTime();
+    if (!fired.m1 && soldMs + MILESTONE_LAG_DAYS.m1 * dayMs <= yearEnd) pipelineCash += m1;
+    if (!fired.m2 && soldMs + MILESTONE_LAG_DAYS.m2 * dayMs <= yearEnd) pipelineCash += m2;
+    if (!fired.m3 && soldMs + MILESTONE_LAG_DAYS.m3 * dayMs <= yearEnd) pipelineCash += m3;
+  }
+
+  // ── Future-sales cash: deals projected at current pace, milestones firing in window
+  // Simulate one sale at the midpoint of each remaining month at rate=dealsPerMonth.
+  let futureCash = 0;
+  if (dealsPerMonth > 0 && (avgM1 > 0 || avgM2 > 0 || avgM3 > 0)) {
+    const todayMs = today.getTime();
+    const currentMonth = today.getMonth();
+    for (let m = currentMonth; m <= 11; m++) {
+      // Mid-month sale date (Day 15 of each month)
+      const saleDate = new Date(today.getFullYear(), m, 15, 12).getTime();
+      // Only count sales in the future (today or later)
+      if (saleDate < todayMs) continue;
+      // For the current month, only the rest of the month counts (avoid
+      // double-counting deals already sold this month — those are in
+      // pipelineCash).
+      const monthFraction = m === currentMonth
+        ? Math.max(0, (new Date(today.getFullYear(), m + 1, 1).getTime() - todayMs) / (30.44 * dayMs))
+        : 1;
+      const dealsThisMonth = dealsPerMonth * monthFraction;
+      if (saleDate + MILESTONE_LAG_DAYS.m1 * dayMs <= yearEnd) futureCash += avgM1 * dealsThisMonth;
+      if (saleDate + MILESTONE_LAG_DAYS.m2 * dayMs <= yearEnd) futureCash += avgM2 * dealsThisMonth;
+      if (saleDate + MILESTONE_LAG_DAYS.m3 * dayMs <= yearEnd) futureCash += avgM3 * dealsThisMonth;
+    }
+  }
+
+  const pipeline = Math.round(pipelineCash);
+  const futureSales = Math.round(futureCash);
+  const paid = Math.round(paidYTD);
+  return { total: Math.max(0, pipeline + futureSales + paid), pipeline, futureSales, paid };
+}
+
 /** The hero "On Pace" projection. Pure; no side effects.
  *
  *    OnPace = inPeriodCommissionEarned + paceRate × monthsRemainingInP
@@ -151,35 +267,6 @@ const EXCLUDED_FROM_BOOST_PHASES = new Set<string>([
   'On Hold',
   'Completed',
 ]);
-
-/**
- * Resolve the viewer's role-aware M1, M2, M3 amount contribution on a
- * given project. Mirrors the resolution used in the on-pace and
- * Expected Pay calculations elsewhere — primary closer takes M*Amount
- * fields, primary setter takes setterM*Amount fields, co-party takes
- * their row's amounts, not-on-deal contributes nothing.
- */
-function viewerMilestones(project: PipelineProject, repId: string): { m1: number; m2: number; m3: number } {
-  if (project.repId === repId) {
-    return {
-      m1: project.m1Amount ?? 0,
-      m2: project.m2Amount ?? 0,
-      m3: project.m3Amount ?? 0,
-    };
-  }
-  if (project.setterId === repId) {
-    return {
-      m1: project.setterM1Amount ?? 0,
-      m2: project.setterM2Amount ?? 0,
-      m3: project.setterM3Amount ?? 0,
-    };
-  }
-  const cc = project.additionalClosers?.find((c) => c.userId === repId);
-  if (cc) return { m1: cc.m1Amount, m2: cc.m2Amount, m3: cc.m3Amount ?? 0 };
-  const cs = project.additionalSetters?.find((s) => s.userId === repId);
-  if (cs) return { m1: cs.m1Amount, m2: cs.m2Amount, m3: cs.m3Amount ?? 0 };
-  return { m1: 0, m2: 0, m3: 0 };
-}
 
 /**
  * Compute the phase-weighted pipeline boost for a viewer.

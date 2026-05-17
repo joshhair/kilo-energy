@@ -498,7 +498,7 @@ export function AdminDashboard({
             </div>
             <h2 className="text-[var(--text-primary)] font-bold text-base tracking-tight flex-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>Top Reps</h2>
             <span className="text-xs text-[var(--text-muted)] mr-2">
-              {period === 'all' ? 'All time' : PERIODS.find((p) => p.value === period)?.label}
+              {period === 'all' ? `${new Date().getFullYear()} Cash` : PERIODS.find((p) => p.value === period)?.label}
             </span>
             {topRepsExpanded
               ? <ChevronUp className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
