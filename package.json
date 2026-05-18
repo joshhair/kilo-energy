@@ -42,7 +42,7 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.3.5",
+    "@clerk/nextjs": "^7.3.7",
     "@clerk/themes": "^2.4.57",
     "@libsql/client": "^0.17.2",
     "@prisma/adapter-better-sqlite3": "^7.8.0",
@@ -52,7 +52,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/blob": "^2.3.3",
+    "@vercel/blob": "^2.4.0",
     "@vercel/speed-insights": "^2.0.0",
     "better-sqlite3": "^12.10.0",
     "html-to-image": "^1.11.13",
@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
-    "@clerk/testing": "^2.0.29",
+    "@clerk/testing": "^2.0.31",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
@@ -85,7 +85,7 @@
     "lint-staged": "^16.4.0",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
-    "tsx": "^4.22.1",
+    "tsx": "^4.22.2",
     "typescript": "^5",
     "vitest": "^4.1.2"
   }
