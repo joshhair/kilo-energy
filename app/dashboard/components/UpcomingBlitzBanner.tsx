@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { CalendarPlus, Flame, Check, X, Loader2 } from 'lucide-react';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
+import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 
 interface UpcomingBlitzSummary {
   id: string;
@@ -68,8 +69,17 @@ function pickBannerBlitz(
   viewerId: string | null,
   now: Date = new Date(),
 ): UpcomingBlitzSummary | null {
+  // Always derive status from dates rather than trusting the DB field —
+  // /api/blitzes returns the raw stored status, which can lag if a blitz
+  // ended without a manual status update (e.g. endDate in the past but
+  // status still says 'active'). deriveBlitzStatus computes the truthful
+  // state from startDate/endDate.
+  const isExcluded = (b: UpcomingBlitzSummary): boolean => {
+    const derived = deriveBlitzStatus(b);
+    return derived === 'cancelled' || derived === 'completed';
+  };
   const invited = blitzes.filter((b) => {
-    if (b.status === 'cancelled' || b.status === 'completed') return false;
+    if (isExcluded(b)) return false;
     return b.participants.some((p) => p.user.id === viewerId && p.joinStatus === 'invited');
   });
   if (invited.length > 0) {
@@ -77,8 +87,9 @@ function pickBannerBlitz(
     return invited[0];
   }
   const candidates = blitzes.filter((b) => {
-    if (b.status === 'cancelled' || b.status === 'completed') return false;
-    if (b.status === 'active') return true;
+    if (isExcluded(b)) return false;
+    const derived = deriveBlitzStatus(b);
+    if (derived === 'active') return true;
     const dleft = daysUntil(b.startDate, now);
     return dleft >= 0 && dleft <= 7;
   });
