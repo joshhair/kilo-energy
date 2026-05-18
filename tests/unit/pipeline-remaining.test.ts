@@ -19,7 +19,6 @@ type P = Parameters<typeof viewerPipelineRemaining>[0][number];
 
 function project(overrides: Partial<P> & { id: string }): P {
   return {
-    id: overrides.id,
     repId: 'r1',
     setterId: null,
     m1Amount: 500,

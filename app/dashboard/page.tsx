@@ -14,6 +14,7 @@ import {
 } from '../../lib/data';
 import { fmt$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
+import { viewerPipelineRemaining } from '../../lib/period-projection';
 import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
@@ -938,36 +939,17 @@ export default function DashboardPage() {
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-  const paidPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage !== 'Trainer').reduce((map, p) => {
-    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
-    return map;
-  }, new Map<string, number>());
   const paidTrainerPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
 
-  // "In Pipeline" = expected commission from active projects minus what's actually been disbursed
-  const inPipeline = activeProjects.reduce((sum, p) => {
-    const closerM1 = payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
-    // Use net payroll amounts when entries exist (they are net of trainer deductions).
-    // Fall back to gross project amounts only for stages not yet triggered.
-    const closerM2Net = payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0);
-    const closerM3Net = payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0);
-    const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-    const coSetterParty = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
-    const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + closerM2Net + closerM3Net
-      : p.setterId === effectiveRepId
-        ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : coCloserParty
-          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserParty.m3Amount ?? 0))
-          : coSetterParty
-            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterParty.m3Amount ?? 0))
-            : 0;
-    const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
-    return sum + Math.max(0, totalExpected - alreadyPaid);
-  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+  // "In Pipeline" = expected commission from active projects minus what's actually been disbursed.
+  // Base math shared with Mobile Dashboard + My Pay via viewerPipelineRemaining so all
+  // three surfaces show the same number. Trainer override (per-kW on trainee deals) is
+  // a separate income stream the desktop dashboard adds on top.
+  const inPipeline = viewerPipelineRemaining(activeProjects, effectiveRepId, allMyPayroll, todayStr).total
+    + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
     const isTraineeParty = (p: typeof projects[number]) =>
       p.repId === assignment.traineeId ||
       p.setterId === assignment.traineeId ||
@@ -1059,30 +1041,8 @@ export default function DashboardPage() {
     if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;
   }, new Map<string, number>());
-  // Net milestone amounts per project from prev-period payroll entries (mirrors payrollNetByProjectStage).
-  const prevPayrollNetByProjectStage = myPrevPayroll.reduce((map, e) => {
-    if (e.projectId && (e.paymentStage === 'M1' || e.paymentStage === 'M2' || e.paymentStage === 'M3')) {
-      const key = `${e.projectId}:${e.paymentStage}`;
-      map.set(key, (map.get(key) ?? 0) + e.amount);
-    }
-    return map;
-  }, new Map<string, number>());
-  const prevInPipeline = prevActiveProjects.reduce((sum, p) => {
-    const closerM1 = prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0);
-    const coCloserPartyPrev = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-    const coSetterPartyPrev = p.additionalSetters?.find((s) => s.userId === effectiveRepId);
-    const totalExpected = p.repId === effectiveRepId
-      ? closerM1 + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
-      : p.setterId === effectiveRepId
-        ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-        : coCloserPartyPrev
-          ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserPartyPrev.m1Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserPartyPrev.m2Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserPartyPrev.m3Amount ?? 0))
-          : coSetterPartyPrev
-            ? (prevPayrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterPartyPrev.m1Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterPartyPrev.m2Amount) + (prevPayrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterPartyPrev.m3Amount ?? 0))
-            : 0;
-    const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
-    return sum + Math.max(0, totalExpected - alreadyPaid);
-  }, 0) + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
+  const prevInPipeline = viewerPipelineRemaining(prevActiveProjects, effectiveRepId, myPrevPayroll, todayStr).total
+    + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
     const isPrevTraineeParty = (p: typeof projects[number]) =>
       p.repId === assignment.traineeId ||
       p.setterId === assignment.traineeId ||

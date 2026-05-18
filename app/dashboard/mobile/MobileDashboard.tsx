@@ -629,9 +629,18 @@ export default function MobileDashboard() {
           </div>
         </MobileCard>
 
-        {/* Stat grid — 2x2, +1 conditional chargeback tile when owed */}
+        {/* Stat grid — 2x2, +1 conditional chargeback tile when owed.
+            When period === 'all' the page is the 2026 Cash Forecast view —
+            the Paid tile shows YTD (matches the forecast's framing). For
+            historical periods the period-Earned hero already shows
+            period-paid, so this tile stays on lifetime as supplementary
+            context. */}
         <div className="grid grid-cols-2 gap-3">
-          <MobileStatCard label="Paid" value={fmt$(totalPaid)} color={ACCENT} />
+          <MobileStatCard
+            label={period === 'all' ? `Paid in ${new Date().getFullYear()}` : 'Paid'}
+            value={fmt$(period === 'all' ? yearToDatePaid : totalPaid)}
+            color={ACCENT}
+          />
           <MobileStatCard label="In Pipeline" value={fmt$(pipelineValue)} color={ACCENT2} />
           {(() => {
             const sold = formatCompactKWParts(totalKW);
