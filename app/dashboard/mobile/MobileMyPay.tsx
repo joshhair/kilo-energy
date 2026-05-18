@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { computeOnPace, viewerFullCommission } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission, viewerPipelineRemaining } from '../../../lib/period-projection';
 import { getPeriodDaysRemaining } from '../../../lib/period';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -212,55 +212,22 @@ export default function MobileMyPay() {
     [projects, effectiveRepId],
   );
 
-  const projectedM1 = useMemo(() => {
-    const preAcceptance = ['New'];
-    return myProjects
-      .filter((p) => preAcceptance.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m1 = 0;
-        if (p.repId === effectiveRepId) m1 = p.m1Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m1 = p.setterM1Amount ?? 0;
-        else if (coCloserParty) m1 = coCloserParty.m1Amount;
-        else if (coSetterParty) m1 = coSetterParty.m1Amount;
-        return s + m1;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
-
-  const projectedM2 = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    return myProjects
-      .filter((p) => preInstalled.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m2 = 0;
-        if (p.repId === effectiveRepId) m2 = p.m2Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m2 = p.setterM2Amount ?? 0;
-        else if (coCloserParty) m2 = coCloserParty.m2Amount;
-        else if (coSetterParty) m2 = coSetterParty.m2Amount;
-        return s + m2;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
-
-  const projectedM3 = useMemo(() => {
-    const prePTO = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'];
-    return myProjects
-      .filter((p) => prePTO.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m3 = 0;
-        if (p.repId === effectiveRepId) m3 = p.m3Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m3 = p.setterM3Amount ?? 0;
-        else if (coCloserParty) m3 = coCloserParty.m3Amount ?? 0;
-        else if (coSetterParty) m3 = coSetterParty.m3Amount ?? 0;
-        return s + m3;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
-
-  const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
+  // Pipeline math is shared with MobileDashboard via viewerPipelineRemaining:
+  //   per-stage remaining = max(0, expected - paid)
+  // where `expected` honors chargebacks via the payroll-net map. The
+  // breakdown's M1/M2/M3 add up to `pipelineTotal` by construction.
+  const myPayrollForPipeline = useMemo(
+    () => payrollEntries.filter((p) => p.repId === effectiveRepId),
+    [payrollEntries, effectiveRepId],
+  );
+  const pipelineBreakdown = useMemo(
+    () => viewerPipelineRemaining(myProjects, effectiveRepId, myPayrollForPipeline, todayStr),
+    [myProjects, effectiveRepId, myPayrollForPipeline, todayStr],
+  );
+  const projectedM1 = pipelineBreakdown.m1;
+  const projectedM2 = pipelineBreakdown.m2;
+  const projectedM3 = pipelineBreakdown.m3;
+  const pipelineTotal = pipelineBreakdown.total;
 
   // ── Annual Projection ──
   // Uses the same computeOnPace formula as MobileDashboard so the
@@ -522,7 +489,7 @@ export default function MobileMyPay() {
               fontWeight: 600,
             }}
           >Projected Pipeline</p>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.78rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.78rem', marginBottom: '0.75rem' }}>Unpaid commission across your active deals</p>
           <div className="flex flex-col">
             {projectedM1 > 0 && (
               <div className="flex items-center justify-between py-2.5" style={{ borderBottom: (projectedM2 > 0 || projectedM3 > 0) ? '1px solid var(--border-subtle)' : 'none' }}>
@@ -538,8 +505,8 @@ export default function MobileMyPay() {
                     }}
                   >M1</span>
                   <div className="min-w-0">
-                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M1</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Acceptance</p>
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Unpaid M1</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Fires at Acceptance</p>
                   </div>
                 </div>
                 <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
@@ -559,8 +526,8 @@ export default function MobileMyPay() {
                     }}
                   >M2</span>
                   <div className="min-w-0">
-                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M2</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Installation</p>
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Unpaid M2</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Fires at Installation</p>
                   </div>
                 </div>
                 <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
@@ -580,8 +547,8 @@ export default function MobileMyPay() {
                     }}
                   >M3</span>
                   <div className="min-w-0">
-                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M3</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting PTO</p>
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Unpaid M3</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Fires at PTO</p>
                   </div>
                 </div>
                 <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
