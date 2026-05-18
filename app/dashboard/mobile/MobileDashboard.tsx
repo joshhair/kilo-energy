@@ -1165,7 +1165,7 @@ export default function MobileDashboard() {
               <ul className="space-y-2" style={{ paddingLeft: '1.2rem', listStyleType: 'disc' }}>
                 <li><strong style={{ color: 'var(--text-primary)' }}>Pipeline</strong> — milestones (M1/M2/M3) on deals already sold that will fire within the year, using typical timing (M1 ~14d, M2 ~45d, M3 ~80d from sold).</li>
                 <li><strong style={{ color: 'var(--text-primary)' }}>New</strong> — milestones from deals you&apos;ll sell over the rest of the year at your current pace. Late-year sales contribute less because some milestones slip to next year.</li>
-                <li><strong style={{ color: 'var(--text-primary)' }}>Paid</strong> — cash already received in {new Date().getFullYear()} so far.</li>
+                <li><strong style={{ color: 'var(--text-primary)' }}>Paid</strong> — payroll entries marked Paid with a milestone date in {new Date().getFullYear()}. Reflects what&apos;s landed on your milestone calendar this year; the exact cash-arrival date may differ slightly for legacy entries.</li>
               </ul>
               <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>For your earning rate or production credit (not tied to cash arrival timing), tap the <strong>This Year</strong> tab.</p>
             </>
