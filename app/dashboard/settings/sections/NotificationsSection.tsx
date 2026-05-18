@@ -25,7 +25,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2 } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2, ChevronDown } from 'lucide-react';
 import { Switch } from '../../../../components/ui/Switch';
 import { SelectMenu } from '../../../../components/ui/SelectMenu';
 import { useToast } from '../../../../lib/toast';
@@ -86,6 +86,18 @@ export default function NotificationsSection() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingType, setSavingType] = useState<string | null>(null);
+  // Per-category expand state. Default: all collapsed — reduces the
+  // page's vertical footprint on mobile (the section was double-screen
+  // height with everything expanded). Users tap a category header to
+  // reveal its events.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggleCategory = (cat: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -185,28 +197,40 @@ export default function NotificationsSection() {
 
       <DevicePushToggle />
 
-      {/* Per-category preference cards */}
-      {grouped.map(({ category, events }) => (
+      {/* Per-category preference cards — collapsed by default, tap header to expand. */}
+      {grouped.map(({ category, events }) => {
+        const isOpen = expanded.has(category);
+        return (
         <div
           key={category}
           className="rounded-xl overflow-hidden"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
         >
-          <div className="px-5 md:px-6 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-              {CATEGORY_LABEL[category]}
-            </h3>
-            {/* Hide the category hint when the group contains a single event
-                — the event's own description below would just restate it
-                (see Mentions and Security). Multi-event groups keep the hint
-                so the user gets a feel for the category before scanning rows. */}
-            {events.length > 1 && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {CATEGORY_HINT[category]}
-              </p>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleCategory(category)}
+            aria-expanded={isOpen}
+            className="w-full flex items-center justify-between gap-3 px-5 md:px-6 pt-4 pb-3 text-left active:opacity-70 transition-opacity"
+            style={{ borderBottom: isOpen ? '1px solid var(--border-default)' : undefined }}
+          >
+            <div className="min-w-0">
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+                {CATEGORY_LABEL[category]}
+              </h3>
+              {events.length > 1 && (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {CATEGORY_HINT[category]}
+                </p>
+              )}
+            </div>
+            <ChevronDown
+              className="w-4 h-4 flex-shrink-0 transition-transform"
+              style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
 
+          {isOpen && (
+          <>
           {/* Channel header (desktop only — mobile uses per-channel rows).
               Each header cell stretches to the full grid-column width so
               its centered content aligns with the toggle/dropdown below
@@ -331,8 +355,11 @@ export default function NotificationsSection() {
               </li>
             ))}
           </ul>
+          </>
+          )}
         </div>
-      ))}
+        );
+      })}
 
       {/* Phone + quiet hours card */}
       <div
