@@ -21,6 +21,7 @@
  */
 
 import { db } from '@/lib/db-gated';
+import { dbAdmin } from '@/lib/db';
 import { logChange } from '@/lib/audit';
 import { logger, errorContext } from '@/lib/logger';
 import { sendEmail, buildHandoffReplyTo } from '@/lib/email-helpers';
@@ -133,11 +134,29 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
     return { ok: false, status: 500, error: 'PDF generation failed' };
   }
 
-  // Fetch utility bill (best-effort)
+  // Fetch utility bill (best-effort).
+  //
+  // System-on-behalf-of-rep elevation: the privacy gate denies reps access
+  // to ProjectFile by design (installer-handoff files aren't UI data for
+  // reps). But here the handoff service is a system operation running on
+  // the rep's behalf — authorization was already verified upstream (the
+  // route checks the actor is on the deal or admin). The file's bytes go
+  // into an outbound email the rep never reads. Using `db` (gated) here
+  // returns null for any rep-initiated send, silently dropping the
+  // attachment. Use `dbAdmin` to bypass the gate for this specific read.
   let utilityBillAttachment: { filename: string; content: Buffer; contentType: string } | null = null;
+  let utilityBillUrl: string | null = null;
+  let utilityBillFilename: string | null = null;
   if (project.utilityBillFileId) {
-    const file = await db.projectFile.findUnique({ where: { id: project.utilityBillFileId } });
+    const file = await dbAdmin.projectFile.findUnique({ where: { id: project.utilityBillFileId } });
+    if (!file) {
+      logger.warn('handoff_utility_bill_row_missing', {
+        projectId, utilityBillFileId: project.utilityBillFileId,
+      });
+    }
     if (file) {
+      utilityBillUrl = file.blobUrl;
+      utilityBillFilename = file.originalName || null;
       try {
         const blobRes = await fetch(file.blobUrl);
         if (blobRes.ok) {
@@ -173,6 +192,8 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
     repEmail: project.closer.email,
     customNotes: project.installer.customNotes,
     projectUrl: `${process.env.APP_URL || 'https://app.kiloenergies.com'}/dashboard/projects/${project.id}`,
+    utilityBillUrl,
+    utilityBillFilename,
   });
 
   const replyTo = buildHandoffReplyTo(project.closer.email);

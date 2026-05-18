@@ -39,6 +39,16 @@ export interface HandoffEmailBodyInput {
   customNotes: string;
   /** Absolute URL to the project page in our CRM. */
   projectUrl: string;
+  /**
+   * Optional Vercel Blob public URL of the homeowner utility bill.
+   * Rendered as a "Utility bill:" link below the project summary so
+   * BVI ops can fetch it even when the email's binary attachment was
+   * dropped (size cap, client filtering). Belt + suspenders alongside
+   * the actual attachment.
+   */
+  utilityBillUrl?: string | null;
+  /** Original filename for the bill link label. Falls back to a generic label. */
+  utilityBillFilename?: string | null;
 }
 
 /**
@@ -77,6 +87,21 @@ export function renderHandoffEmailHtml(input: HandoffEmailBodyInput): string {
     )
     .join('');
 
+  // Utility bill link block. Always include when a URL is present —
+  // mirrors the attachment so BVI ops has a fallback download path
+  // regardless of whether their client renders the attachment. URL
+  // is HTML-escaped though we control its shape (Vercel Blob output).
+  const utilityBillBlock = input.utilityBillUrl
+    ? `
+      <p style="margin:16px 0 0 0;font-size:13px;color:#0f1322;">
+        <strong>Utility bill:</strong>
+        <a href="${esc(input.utilityBillUrl)}" style="color:#00a85a;text-decoration:underline;">
+          ${esc(input.utilityBillFilename || 'Download (PDF/image)')}
+        </a>
+      </p>
+    `
+    : '';
+
   const customNotesBlock = input.customNotes.trim()
     ? `
       <p style="margin:18px 0 8px 0;font-size:13px;color:#5b6477;">From ${esc(input.installerDisplayName)}:</p>
@@ -103,6 +128,8 @@ export function renderHandoffEmailHtml(input: HandoffEmailBodyInput): string {
     <table style="border-collapse:collapse;width:100%;">
       ${rowsHtml}
     </table>
+
+    ${utilityBillBlock}
 
     ${customNotesBlock}
 
