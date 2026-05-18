@@ -31,5 +31,5 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}'
         env:
-          APP_URL: ${{ vars.APP_URL || 'https://app.kiloenergies.com' }}
+          APP_URL: ${{ vars.APP_URL || 'https://kilo-energy.vercel.app' }}
           TOKEN: ${{ secrets.BLITZ_REMINDERS_TOKEN }}

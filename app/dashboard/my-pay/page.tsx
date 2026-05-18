@@ -12,7 +12,8 @@ import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { resolveTrainerRate } from '../../../lib/commission';
+import { computeOnPace, viewerFullCommission } from '../../../lib/period-projection';
+import { getPeriodDaysRemaining } from '../../../lib/period';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
   Wallet as PayIcon, DollarSign, Clock, TrendingUp, ChevronDown, ChevronRight,
@@ -121,7 +122,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady, trainerAssignments } = useApp();
+  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -334,99 +335,58 @@ function MyPayPageInner() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
-  // Forward-looking trainer pipeline. Trainer entries fire alongside M2,
-  // so this counts un-paid trainer totals on deals still in pre-Install
-  // phases. Uses resolveTrainerRate so the per-project override path AND
-  // the rep-level assignment-chain path are both included.
-  const projectedTrainer = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    return projects.reduce((s, p) => {
-      if (!preInstalled.includes(p.phase)) return s;
-      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      if (res.trainerId !== effectiveRepId) return s;
-      return s + res.rate * (p.kWSize ?? 0) * 1000;
-    }, 0);
-  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
-
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
   const annualProjection = useMemo(() => {
     const now = new Date();
     const allMyProjects = projects.filter((p) =>
-      (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled'
+      (p.repId === effectiveRepId || p.setterId === effectiveRepId
+        || p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+        || p.additionalSetters?.some((c) => c.userId === effectiveRepId))
+      && p.phase !== 'Cancelled'
     );
-
-    // --- Signal 1: Deal closing pace ---
-    // How many deals has the rep closed, and over what time span?
-    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
-    const totalDeals = sortedByDate.length;
-
+    const totalDeals = allMyProjects.length;
     if (totalDeals === 0) {
       return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
     }
 
-    // Average commission per deal (M1 + M2 + trainer override).
-    // Reps who are also trainers earn a per-kW override on top of their
-    // closer/setter share. resolveTrainerRate handles both the per-deal
-    // override path and the rep-level assignment-chain path. A rep who's
-    // both closer and trainer on the same deal contributes m1+m2+trainer
-    // — exactly what they actually earn from that deal.
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
-      const isSetterRole = p.setterId === effectiveRepId;
-      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
-      const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      const trainerEarn = trainerRes.trainerId === effectiveRepId
-        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
-        : 0;
-      return s + m1 + m2 + trainerEarn;
-    }, 0) / totalDeals;
+    // Same formula as MobileDashboard so "On Pace For YYYY" reconciles
+    // across screens:
+    //   annual = inPeriodCommissionEarned + paceRate × monthsRemainingInYear
+    // Trainer override is deliberately excluded here — handled separately
+    // in the Trainer Override card. Including it would diverge from the
+    // dashboard headline for the subset of reps who are trainers.
+    const avgFullCommission = allMyProjects.reduce(
+      (s, p) => s + viewerFullCommission(p, effectiveRepId),
+      0,
+    ) / totalDeals;
 
-    // --- Signal 2: Deals per month pace ---
+    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
-    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / (1000 * 60 * 60 * 24), 1);
-    // If rep started very recently (< 30 days), project based on their actual pace but min 30 day window
+    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / 86_400_000, 1);
     const effectiveDays = Math.max(daysSinceFirst, 30);
     const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
+    const paceRate = dealsPerMonth * avgFullCommission;
 
-    // --- Signal 3: Actual paid history ---
-    const totalPaidPositive = payrollEntries
-      .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
-      .reduce((s, p) => s + p.amount, 0);
+    const yearStart = `${now.getFullYear()}-01-01`;
+    const inPeriodEarned = allMyProjects
+      .filter((p) => p.soldDate >= yearStart)
+      .reduce((s, p) => s + viewerFullCommission(p, effectiveRepId), 0);
 
-    // --- Calculate projection ---
-    // Pace-based: deals/month × avg commission × 12 months
-    const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
-
-    // If we have meaningful paid history (at least 60 days), blend with actual earnings rate
-    let annual: number;
-    let monthlyAvg: number;
-    let basis: 'pace' | 'blended' | 'none';
-    let details: string;
-
-    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
-      // Blended: 60% pace-based + 40% actual paid rate
-      const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
-      monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
-      annual = Math.round(monthlyAvg * 12);
-      basis = 'blended';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    } else {
-      // Pure pace-based (new rep or no paid history yet)
-      monthlyAvg = Math.round(paceBasedAnnual / 12);
-      annual = Math.round(paceBasedAnnual);
-      basis = 'pace';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    }
-
-    // Add pipeline boost: active deals not yet at milestones add to the
-    // projection. Trainer pipeline rolls in here too so trainers see
-    // their forward-looking override pay reflected in the on-pace number.
-    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15); // conservative 15%
-    annual += pipelineBoost;
-
-    return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
+    const daysRemaining = getPeriodDaysRemaining('this-year') ?? 0;
+    const annual = computeOnPace({
+      inPeriodCommissionEarned: inPeriodEarned,
+      paceRate,
+      daysRemainingInPeriod: daysRemaining,
+    });
+    const monthlyAvg = Math.round(paceRate);
+    return {
+      annual,
+      monthlyAvg,
+      basis: 'pace' as const,
+      details: `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgFullCommission))} avg`,
+    };
+  }, [projects, effectiveRepId]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -627,9 +587,7 @@ function MyPayPageInner() {
             {annualProjection.annual > 0 ? fmt$(annualProjection.annual) : '—'}
           </p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1.5">
-            {annualProjection.basis === 'blended'
-              ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
-              : annualProjection.basis === 'pace'
+            {annualProjection.basis === 'pace'
               ? `${new Date().getFullYear()} · ${annualProjection.details}`
               : 'Close deals to see projection'}
           </p>

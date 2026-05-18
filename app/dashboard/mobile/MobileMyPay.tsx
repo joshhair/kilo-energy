@@ -7,7 +7,8 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { resolveTrainerRate } from '../../../lib/commission';
+import { computeOnPace, viewerFullCommission } from '../../../lib/period-projection';
+import { getPeriodDaysRemaining } from '../../../lib/period';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import BaselinePanel from '../my-pay/BaselinePanel';
@@ -96,7 +97,7 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements, trainerAssignments } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
@@ -252,75 +253,63 @@ export default function MobileMyPay() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
-  // Forward-looking trainer pipeline. Trainer entries fire alongside M2
-  // milestones, so we count un-paid trainer totals on deals still in
-  // pre-Install phases. Uses the canonical resolveTrainerRate so both
-  // per-project overrides and rep-level assignment-chain trainers are
-  // included — same source of truth as the payroll math.
-  const projectedTrainer = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    return projects.reduce((s, p) => {
-      if (!preInstalled.includes(p.phase)) return s;
-      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      if (res.trainerId !== effectiveRepId) return s;
-      return s + res.rate * (p.kWSize ?? 0) * 1000;
-    }, 0);
-  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
-
   const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
 
   // ── Annual Projection ──
+  // Uses the same computeOnPace formula as MobileDashboard so the
+  // "On Pace For YYYY" headline reconciles across screens. Math is:
+  //   annual = commissionEarnedFromInPeriodDeals
+  //          + paceRate × monthsRemainingInYear
+  //   paceRate = dealsPerMonth × avgFullCommissionPerDeal (M1+M2+M3, role-aware)
+  //   inPeriodEarned = sum of full M1+M2+M3 across 2026-sold non-cancelled deals
+  // (Trainer override is deliberately NOT folded into paceRate here —
+  // it's a separate income stream documented in the Trainer Override
+  // card. Including it would diverge from Dashboard's number for the
+  // subset of reps who are trainers. Follow-up: surface trainer
+  // override on the dashboard too, or as a side stat here.)
   const annualProjection = useMemo(() => {
     const now = new Date();
     const allMyProjects = projects.filter((p) =>
-      (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled'
+      (p.repId === effectiveRepId || p.setterId === effectiveRepId
+        || p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+        || p.additionalSetters?.some((c) => c.userId === effectiveRepId))
+      && p.phase !== 'Cancelled'
     );
-    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
-    const totalDeals = sortedByDate.length;
+    const totalDeals = allMyProjects.length;
     if (totalDeals === 0) return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
-      const isSetterRole = p.setterId === effectiveRepId;
-      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
-      const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      // Add trainer override when this rep resolves as the trainer
-      // for the deal. resolveTrainerRate handles both the per-project
-      // override path and the rep-level assignment-chain path, so a
-      // rep who's both closer and trainer (or both setter and trainer)
-      // gets credited for both income streams on the same deal.
-      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      const trainerEarn = trainerRes.trainerId === effectiveRepId
-        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
-        : 0;
-      return s + m1 + m2 + trainerEarn;
-    }, 0) / totalDeals;
+
+    const avgFullCommission = allMyProjects.reduce(
+      (s, p) => s + viewerFullCommission(p, effectiveRepId),
+      0,
+    ) / totalDeals;
+
+    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
-    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / (1000 * 60 * 60 * 24), 1);
+    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / 86_400_000, 1);
     const effectiveDays = Math.max(daysSinceFirst, 30);
     const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
-    const totalPaidPositive = payrollEntries
-      .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
-      .reduce((s, p) => s + p.amount, 0);
-    const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
-    let annual: number;
-    let monthlyAvg: number;
-    let basis: 'pace' | 'blended' | 'none';
-    let details: string;
-    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
-      const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
-      monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
-      annual = Math.round(monthlyAvg * 12);
-      basis = 'blended';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    } else {
-      monthlyAvg = Math.round(paceBasedAnnual / 12);
-      annual = Math.round(paceBasedAnnual);
-      basis = 'pace';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    }
-    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15);
-    annual += pipelineBoost;
-    return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
+    const paceRate = dealsPerMonth * avgFullCommission;
+
+    // commissionEarnedFromInPeriodDeals: 2026-sold deals × full commission.
+    const yearStart = `${now.getFullYear()}-01-01`;
+    const inPeriodEarned = allMyProjects
+      .filter((p) => p.soldDate >= yearStart)
+      .reduce((s, p) => s + viewerFullCommission(p, effectiveRepId), 0);
+
+    const daysRemaining = getPeriodDaysRemaining('this-year') ?? 0;
+    const annual = computeOnPace({
+      inPeriodCommissionEarned: inPeriodEarned,
+      paceRate,
+      daysRemainingInPeriod: daysRemaining,
+    });
+    const monthlyAvg = Math.round(paceRate);
+    return {
+      annual,
+      monthlyAvg,
+      basis: 'pace' as const,
+      details: `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgFullCommission))} avg`,
+    };
+  }, [projects, effectiveRepId]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -504,9 +493,7 @@ export default function MobileMyPay() {
           </div>
           <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(annualProjection.annual)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginTop: '0.25rem' }}>
-            {annualProjection.basis === 'blended'
-              ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
-              : annualProjection.basis === 'pace'
+            {annualProjection.basis === 'pace'
               ? `${new Date().getFullYear()} · ${annualProjection.details}`
               : 'Close deals to see projection'}
           </p>
