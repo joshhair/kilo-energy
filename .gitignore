@@ -97,6 +97,8 @@ scripts/find-timothy.mts
 state/glide-*.txt
 state/glide-*.html
 state/glide-*.json
+# Commission recompute debug logs — contain customer names + amounts.
+state/recompute-stale-commissions-*
 scripts/analyze-glide-*.mts
 scripts/glide-review-report.mts
 scripts/debug-glide-*.mts
