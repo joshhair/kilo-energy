@@ -282,8 +282,19 @@ function MyPayPageInner() {
   );
 
   // ── Projected outlook: deals in pipeline not yet at milestones ──
+  // Role-aware filter matching MobileDashboard's myProjects: include
+  // additional closers / setters / trainer attribution so Josh's pipeline
+  // here reconciles with what shows on the Dashboard hero. Previously
+  // missing these role inclusions caused My Pay to silently undercount
+  // pipeline by ~$260K when a rep is on many deals as co-party.
   const myProjects = useMemo(() =>
-    projects.filter((p) => (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled' && p.phase !== 'On Hold'),
+    projects.filter((p) =>
+      (p.repId === effectiveRepId
+        || p.setterId === effectiveRepId
+        || p.trainerId === effectiveRepId
+        || p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+        || p.additionalSetters?.some((s) => s.userId === effectiveRepId))
+      && p.phase !== 'Cancelled' && p.phase !== 'On Hold'),
     [projects, effectiveRepId]
   );
 

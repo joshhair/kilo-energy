@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { CalendarPlus, Flame, Check, X, Loader2 } from 'lucide-react';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
+import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 
 interface UpcomingBlitzSummary {
   id: string;
@@ -68,8 +69,17 @@ function pickBannerBlitz(
   viewerId: string | null,
   now: Date = new Date(),
 ): UpcomingBlitzSummary | null {
+  // Always derive status from dates rather than trusting the DB field —
+  // /api/blitzes returns the raw stored status, which can lag if a blitz
+  // ended without a manual status update (e.g. endDate in the past but
+  // status still says 'active'). deriveBlitzStatus computes the truthful
+  // state from startDate/endDate.
+  const isExcluded = (b: UpcomingBlitzSummary): boolean => {
+    const derived = deriveBlitzStatus(b);
+    return derived === 'cancelled' || derived === 'completed';
+  };
   const invited = blitzes.filter((b) => {
-    if (b.status === 'cancelled' || b.status === 'completed') return false;
+    if (isExcluded(b)) return false;
     return b.participants.some((p) => p.user.id === viewerId && p.joinStatus === 'invited');
   });
   if (invited.length > 0) {
@@ -77,8 +87,9 @@ function pickBannerBlitz(
     return invited[0];
   }
   const candidates = blitzes.filter((b) => {
-    if (b.status === 'cancelled' || b.status === 'completed') return false;
-    if (b.status === 'active') return true;
+    if (isExcluded(b)) return false;
+    const derived = deriveBlitzStatus(b);
+    if (derived === 'active') return true;
     const dleft = daysUntil(b.startDate, now);
     return dleft >= 0 && dleft <= 7;
   });
@@ -92,6 +103,15 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
   const { toast } = useToast();
   const [blitzes, setBlitzes] = useState<UpcomingBlitzSummary[] | null>(null);
   const [responding, setResponding] = useState<null | 'approved' | 'declined'>(null);
+  // Per-blitz dismissal persisted to localStorage so reps can clear the
+  // banner from their dashboard. Auto-resets when a NEW blitz takes the
+  // banner slot (only the dismissed blitz's id is stored). Cleared if
+  // the user is in 'invited' state — they need to confirm.
+  const DISMISS_KEY = 'kilo-blitz-banner-dismissed';
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
+  useEffect(() => {
+    try { setDismissedId(localStorage.getItem(DISMISS_KEY)); } catch { /* SSR / private mode */ }
+  }, []);
 
   const reload = () => {
     fetch('/api/blitzes')
@@ -131,6 +151,15 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
 
   const viewerParticipant = blitz.participants.find((p) => p.user.id === effectiveRepId);
   const viewerJoinStatus = viewerParticipant?.joinStatus ?? null;
+
+  // Honor dismissal — unless the rep is INVITED (they need to confirm,
+  // so we don't let them dismiss away the call-to-action).
+  if (dismissedId === blitz.id && viewerJoinStatus !== 'invited') return null;
+
+  const dismiss = () => {
+    try { localStorage.setItem(DISMISS_KEY, blitz.id); } catch { /* SSR / private mode */ }
+    setDismissedId(blitz.id);
+  };
   const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
   const isInvited = viewerJoinStatus === 'invited';
 
@@ -275,9 +304,10 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
 
   // ───── Default branch — premium card-link variant ─────
   return (
-    <Link
+    <div className={`relative ${isMobile ? 'mb-4' : 'mb-6'}`}>
+      <Link
       href={`/dashboard/blitz/${blitz.id}`}
-      className={`card-surface block rounded-2xl border-l-2 transition-all active:scale-[0.99] ${isMobile ? 'p-4 mb-4' : 'p-5 mb-6'}`}
+      className={`card-surface block rounded-2xl border-l-2 transition-all active:scale-[0.99] ${isMobile ? 'p-4' : 'p-5'}`}
       style={{ borderLeftColor: stripe, textDecoration: 'none' }}
       aria-label={`${primaryCopy} — ${secondaryCopy}`}
     >
@@ -322,5 +352,15 @@ export function UpcomingBlitzBanner({ variant = 'desktop' }: { variant?: 'deskto
         </span>
       </div>
     </Link>
+    <button
+      type="button"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismiss(); }}
+      aria-label="Dismiss this blitz notification"
+      className="absolute top-2 right-2 w-7 h-7 inline-flex items-center justify-center rounded-full active:opacity-60 transition-opacity"
+      style={{ color: 'var(--text-dim)', background: 'transparent' }}
+    >
+      <X className="w-3.5 h-3.5" />
+    </button>
+    </div>
   );
 }
