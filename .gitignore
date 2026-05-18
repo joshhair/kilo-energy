@@ -99,6 +99,11 @@ state/glide-*.html
 state/glide-*.json
 # Commission recompute debug logs — contain customer names + amounts.
 state/recompute-stale-commissions-*
+
+# Business / legal documents — belong in a contract management system,
+# not the app source tree. Local copies still allowed; just not tracked.
+/*.docx
+/*.pdf
 scripts/analyze-glide-*.mts
 scripts/glide-review-report.mts
 scripts/debug-glide-*.mts
