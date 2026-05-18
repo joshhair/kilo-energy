@@ -122,7 +122,7 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
   {
     type: 'deal_submitted_rep',
     label: 'Deal submitted (you\'re on it)',
-    description: 'A new deal you\'re attributed on (closer / setter / co-party / trainer) was submitted. Shows only your slice.',
+    description: 'A new deal you\'re attributed on (closer / setter / co-party / trainer) was submitted.',
     category: 'projects',
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
   },
