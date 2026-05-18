@@ -238,24 +238,23 @@ Josh's number reconciles: $30,713/mo earning rate × 7.5mo remaining ≈ $230K f
 
 ---
 
-## 5. Visual Regression (Phase 4)
+## 5. Visual Regression (Phase 4) — DEFERRED
 
-**Goal**: catch any unintended visual regressions across the 100+ modified surfaces.
+**Finding at execution time (2026-05-17)**: Visual regression coverage in the repo is intentionally narrow and provides no useful signal for our changes.
 
-### 5.1 Re-baseline Playwright snapshots
+- `tests/e2e/visual.test.ts` defines 4 desktop screenshot tests (admin dashboard, projects, users, payroll) but **no `visual.test.ts-snapshots/` directory exists** — they've never been baselined.
+- `tests/e2e/mobile.test.ts-snapshots/` has 2 PNGs (homepage, sign-in) but the tests that assert them are all `test.skip`'d.
+- We didn't modify homepage or sign-in surfaces, so even those orphan baselines aren't relevant.
 
-The existing baselines (committed in `18d3e00`) predate our polish work — every screenshot will diff. That's expected. Process:
+**Risks of running `--update-snapshots` against prod**:
 
-1. Delete the existing baseline directory (snapshots are stored under `tests/visual/__snapshots__/` or similar — confirm path).
-2. Run the suite in update mode: `npx playwright test --update-snapshots tests/visual/`.
-3. Commit the new baselines on a separate "re-baseline" commit so reviewers can see all visual changes at once.
-4. Run the suite again WITHOUT update mode to confirm zero diff.
+- New baselines would bake real prod data (rep names, deal customer names, dollar amounts) into committed PNGs — PII leak into git.
+- The snapshots are uploadable artifacts; we don't have masking/scrubbing infra.
+- Running fresh baselines without per-snapshot human review risks normalizing existing bugs into the baseline.
 
-### 5.2 Cross-browser / cross-theme
+**Decision**: skip automated visual re-baseline. Defer to Phase 5 (manual smoke matrix) which IS the visual review gate. Add follow-up ticket: "Re-baseline visual.test.ts against a fresh seeded local DB (not prod) so future regressions are caught automatically."
 
-If the Playwright config covers light + dark + multiple viewports, ensure every combination is regenerated. If it only covers one theme, add a second pass.
-
-**Risk gate**: review each re-baselined screenshot visually before committing. Any screenshot that looks WRONG (overflow, missing element, weird color) is a defect — don't normalize bugs into baselines.
+**Risk gate**: ✓ — explicitly deferred with rationale recorded; not a blocker for Phase 5/6.
 
 ---
 
