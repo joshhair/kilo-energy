@@ -12,7 +12,7 @@ import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { computeOnPace, viewerFullCommission, viewerPipelineRemaining } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission, viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../../lib/period-projection';
 import { getPeriodDaysRemaining } from '../../../lib/period';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
@@ -122,7 +122,7 @@ export default function MyPayPage() {
 function MyPayPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady } = useApp();
+  const { effectiveRole, currentUserRepType, effectiveRepId, effectiveRepName, payrollEntries, projects, reimbursements, setReimbursements, dbReady, trainerAssignments, installerPayConfigs } = useApp();
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
   useEffect(() => { document.title = 'My Pay | Kilo Energy'; }, []);
@@ -298,11 +298,12 @@ function MyPayPageInner() {
     [projects, effectiveRepId]
   );
 
-  // Pipeline math is shared with MobileDashboard via viewerPipelineRemaining:
-  //   per-stage remaining = max(0, expected - paid)
-  // where `expected` honors chargebacks via the payroll-net map. The
-  // M1/M2/M3 breakdown sums to the same headline number as the Dashboard's
-  // "In Pipeline" stat, so the two surfaces stay reconciled.
+  // Pipeline math shared with Dashboard via viewerPipelineRemaining (base
+  // M1+M2+M3) + computeTrainerOverridePipeline (per-kW on trainee deals).
+  // Both fold into the Pipeline headline so reps see one number across
+  // surfaces; per-trainee override detail surfaces on the Trainer tab.
+  // The M1/M2/M3 breakdown rows reflect base only (override has no
+  // milestone — it's a flat per-kW commission).
   const myPayrollForPipeline = useMemo(
     () => payrollEntries.filter((p) => p.repId === effectiveRepId),
     [payrollEntries, effectiveRepId],
@@ -310,6 +311,17 @@ function MyPayPageInner() {
   const pipelineBreakdown = useMemo(
     () => viewerPipelineRemaining(myProjects, effectiveRepId, myPayrollForPipeline, todayStr),
     [myProjects, effectiveRepId, myPayrollForPipeline, todayStr],
+  );
+  const trainerOverridePipeline = useMemo(
+    () => computeTrainerOverridePipeline({
+      trainerAssignments,
+      projects,
+      payroll: myPayrollForPipeline,
+      installerPayConfigs,
+      repId: effectiveRepId,
+      today: todayStr,
+    }),
+    [trainerAssignments, projects, myPayrollForPipeline, installerPayConfigs, effectiveRepId, todayStr],
   );
   const projectedM1 = pipelineBreakdown.m1;
   const projectedM2 = pipelineBreakdown.m2;
@@ -580,7 +592,7 @@ function MyPayPageInner() {
             <TrendingUp className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />
           </div>
           <p className="font-black tabular-nums text-[var(--accent-emerald-display)] stat-value break-words"
-             style={{ textShadow: '0 0 16px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3)}</p>
+             style={{ textShadow: '0 0 16px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)', fontSize: 'clamp(1.25rem, 5.5vw, 1.5rem)', lineHeight: 1.1 }}>{fmt$(projectedM1 + projectedM2 + projectedM3 + trainerOverridePipeline)}</p>
           <p className="text-[var(--text-dim)] text-[10px] mt-1">Projected from {myProjects.length} deals</p>
         </div>
       </div>

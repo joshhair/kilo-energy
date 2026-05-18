@@ -8,13 +8,11 @@ import MobileDashboard from './mobile/MobileDashboard';
 import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
-  getTrainerOverrideRate,
   ACTIVE_PHASES,
-  DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
 } from '../../lib/data';
 import { fmt$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
-import { viewerPipelineRemaining } from '../../lib/period-projection';
+import { viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../lib/period-projection';
 import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
@@ -939,35 +937,20 @@ export default function DashboardPage() {
 
   // ── Financial stats (project-based to account for milestone-triggered payroll) ──
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; })();
-  const paidTrainerPayrollByProject = allMyPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
-    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
-    return map;
-  }, new Map<string, number>());
 
-  // "In Pipeline" = expected commission from active projects minus what's actually been disbursed.
-  // Base math shared with Mobile Dashboard + My Pay via viewerPipelineRemaining so all
-  // three surfaces show the same number. Trainer override (per-kW on trainee deals) is
-  // a separate income stream the desktop dashboard adds on top.
+  // "In Pipeline" = unpaid M1+M2+M3 on active projects PLUS trainer-override
+  // pipeline. Shared helpers in lib/period-projection keep this in lockstep
+  // with Mobile Dashboard + both My Pay surfaces. Per-trainee override
+  // detail surfaces on the dedicated Trainer tab.
   const inPipeline = viewerPipelineRemaining(activeProjects, effectiveRepId, allMyPayroll, todayStr).total
-    + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
-    const isTraineeParty = (p: typeof projects[number]) =>
-      p.repId === assignment.traineeId ||
-      p.setterId === assignment.traineeId ||
-      p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
-      p.additionalSetters?.some(s => s.userId === assignment.traineeId);
-    const completedDeals = projects.filter(p =>
-      isTraineeParty(p) &&
-      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-    ).length;
-    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-    return sum + projects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
-      .reduce((pSum, p) => {
-        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
-        const alreadyPaid = paidTrainerPayrollByProject.get(p.id) ?? 0;
-        return pSum + Math.max(0, expected - alreadyPaid);
-      }, 0);
-  }, 0);
+    + computeTrainerOverridePipeline({
+        trainerAssignments,
+        projects,
+        payroll: allMyPayroll,
+        installerPayConfigs,
+        repId: effectiveRepId,
+        today: todayStr,
+      });
 
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
   const unpaidPayroll = allMyPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
@@ -1036,31 +1019,20 @@ export default function DashboardPage() {
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
+  // Mirrors the current-period inPipeline shape so the delta is comparing
+  // apples to apples. Uses prevPeriodProjects for the trainer-override
+  // scope (only deals sold in the prior window count), with myPrevPayroll
+  // supplying the paid-trainer subtraction.
   const prevActiveProjects = myPrevProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
-  const prevPaidByProject = myPrevPayroll.filter((p) => p.status === 'Paid').reduce((map, p) => {
-    if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
-    return map;
-  }, new Map<string, number>());
   const prevInPipeline = viewerPipelineRemaining(prevActiveProjects, effectiveRepId, myPrevPayroll, todayStr).total
-    + trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
-    const isPrevTraineeParty = (p: typeof projects[number]) =>
-      p.repId === assignment.traineeId ||
-      p.setterId === assignment.traineeId ||
-      p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
-      p.additionalSetters?.some(s => s.userId === assignment.traineeId);
-    const completedDeals = projects.filter(p =>
-      isPrevTraineeParty(p) &&
-      ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-    ).length;
-    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-    return sum + prevPeriodProjects
-      .filter(p => ACTIVE_PHASES.includes(p.phase) && isPrevTraineeParty(p))
-      .reduce((pSum, p) => {
-        const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
-        const alreadyPaid = prevPaidByProject.get(p.id) ?? 0;
-        return pSum + Math.max(0, expected - alreadyPaid);
-      }, 0);
-  }, 0);
+    + computeTrainerOverridePipeline({
+        trainerAssignments,
+        projects: prevPeriodProjects,
+        payroll: myPrevPayroll,
+        installerPayConfigs,
+        repId: effectiveRepId,
+        today: todayStr,
+      });
   const prevAllPayrollByProject = myPrevPayroll.reduce((map, p) => {
     if (p.projectId && p.paymentStage !== 'M3') map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
     return map;

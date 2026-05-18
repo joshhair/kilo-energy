@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts, localDateString } from '../../../lib/utils';
-import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
+import { ACTIVE_PHASES, computeIncentiveProgress, formatIncentiveMetric } from '../../../lib/data';
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
 import { sumPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
-import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones, viewerPipelineRemaining } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones, viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../../lib/period-projection';
 import { CheckCircle, Target, Info } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -345,37 +345,23 @@ export default function MobileDashboard() {
     [periodProjects],
   );
 
-  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware.
-  // Base math is shared with My Pay via viewerPipelineRemaining so the two
-  // surfaces show the same "In Pipeline" number. Trainer override (paid on
-  // trainee deals at per-kW rate) is a separate income stream Dashboard
-  // adds on top — My Pay doesn't surface this yet (open follow-up).
+  // Pipeline: base (unpaid M1+M2+M3 on active projects, role-aware) plus
+  // trainer-override pipeline. Both come from shared helpers in
+  // lib/period-projection so Dashboard and My Pay surfaces stay in lockstep.
+  // The breakdown rows (M1/M2/M3) shown on My Pay sum to `base` only — the
+  // override sits on the headline as a single fold-in (per-trainee detail
+  // lives on the dedicated Trainer tab).
   const pipelineValue = useMemo(
     () => {
       const base = viewerPipelineRemaining(activeProjects, effectiveRepId, myPayroll, todayStr).total;
-      const paidTrainerPayrollByProject = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
-        if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
-        return map;
-      }, new Map<string, number>());
-      const trainerOverride = trainerAssignments.filter(a => a.trainerId === effectiveRepId).reduce((sum, assignment) => {
-        const isTraineeParty = (p: typeof projects[number]) =>
-          p.repId === assignment.traineeId ||
-          p.setterId === assignment.traineeId ||
-          p.additionalClosers?.some(c => c.userId === assignment.traineeId) ||
-          p.additionalSetters?.some(s => s.userId === assignment.traineeId);
-        const completedDeals = projects.filter(p =>
-          isTraineeParty(p) &&
-          ((installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT) < 100 ? p.m3Paid === true : p.m2Paid === true)
-        ).length;
-        const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
-        return sum + projects
-          .filter(p => ACTIVE_PHASES.includes(p.phase) && isTraineeParty(p))
-          .reduce((pSum, p) => {
-            const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
-            const alreadyPaid = paidTrainerPayrollByProject.get(p.id) ?? 0;
-            return pSum + Math.max(0, expected - alreadyPaid);
-          }, 0);
-      }, 0);
+      const trainerOverride = computeTrainerOverridePipeline({
+        trainerAssignments,
+        projects,
+        payroll: myPayroll,
+        installerPayConfigs,
+        repId: effectiveRepId,
+        today: todayStr,
+      });
       return base + trainerOverride;
     },
     [activeProjects, effectiveRepId, trainerAssignments, projects, installerPayConfigs, myPayroll, todayStr],

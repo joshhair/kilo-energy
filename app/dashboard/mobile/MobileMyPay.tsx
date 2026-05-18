@@ -7,7 +7,7 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { computeOnPace, viewerFullCommission, viewerPipelineRemaining } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission, viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../../lib/period-projection';
 import { getPeriodDaysRemaining } from '../../../lib/period';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
@@ -97,7 +97,7 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements, trainerAssignments, installerPayConfigs } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
@@ -224,10 +224,26 @@ export default function MobileMyPay() {
     () => viewerPipelineRemaining(myProjects, effectiveRepId, myPayrollForPipeline, todayStr),
     [myProjects, effectiveRepId, myPayrollForPipeline, todayStr],
   );
+  // Trainer override (per-kW on trainee deals) folds into the Pipeline
+  // headline so My Pay matches Dashboard exactly. Per-trainee breakdown
+  // surfaces on the dedicated Trainer tab — not duplicated here. M1/M2/M3
+  // breakdown rows still reflect base pipeline only (override has no
+  // milestone — it's a flat per-kW commission).
+  const trainerOverridePipeline = useMemo(
+    () => computeTrainerOverridePipeline({
+      trainerAssignments,
+      projects,
+      payroll: myPayrollForPipeline,
+      installerPayConfigs,
+      repId: effectiveRepId,
+      today: todayStr,
+    }),
+    [trainerAssignments, projects, myPayrollForPipeline, installerPayConfigs, effectiveRepId, todayStr],
+  );
   const projectedM1 = pipelineBreakdown.m1;
   const projectedM2 = pipelineBreakdown.m2;
   const projectedM3 = pipelineBreakdown.m3;
-  const pipelineTotal = pipelineBreakdown.total;
+  const pipelineTotal = pipelineBreakdown.total + trainerOverridePipeline;
 
   // ── Annual Projection ──
   // Uses the same computeOnPace formula as MobileDashboard so the

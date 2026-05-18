@@ -27,6 +27,13 @@
  */
 
 import type { PipelineProject } from './aggregators';
+import {
+  ACTIVE_PHASES,
+  INSTALLER_PAY_CONFIGS,
+  DEFAULT_INSTALL_PAY_PCT,
+  getTrainerOverrideRate,
+  type TrainerAssignment,
+} from './data';
 
 // ─── On-pace formula (pure, testable) ──────────────────────────────────
 
@@ -280,6 +287,92 @@ export function viewerPipelineRemaining<P extends Pick<
     m1 += r.m1; m2 += r.m2; m3 += r.m3;
   }
   return { total: m1 + m2 + m3, m1, m2, m3 };
+}
+
+// ─── Trainer override pipeline ─────────────────────────────────────────
+
+/** Shape of a project the trainer-override math needs. Loose superset of
+ *  PipelineProject + a few trainer-relevant fields. */
+type TrainerOverrideProject = {
+  id: string;
+  phase: string;
+  kWSize: number;
+  installer: string;
+  repId?: string | null;
+  setterId?: string | null;
+  m1Paid?: boolean | null;
+  m2Paid?: boolean | null;
+  m3Paid?: boolean | null;
+  additionalClosers?: ReadonlyArray<{ userId: string }>;
+  additionalSetters?: ReadonlyArray<{ userId: string }>;
+};
+
+/** Trainer-override pipeline remaining for one rep across all their
+ *  trainer assignments. Per-kW rate from `getTrainerOverrideRate` (tier
+ *  based on completed-deal count), per project = `rate × kW × 1000`,
+ *  minus already-paid Trainer-stage entries.
+ *
+ *  Returns the dollar amount the trainer is still owed across all active
+ *  trainee deals. Zero when the rep has no trainer assignments.
+ *
+ *  Shared by both Dashboard surfaces and (post-bake-in) both My Pay
+ *  surfaces so the "In Pipeline" headline reconciles end-to-end. */
+export function computeTrainerOverridePipeline(inputs: {
+  trainerAssignments: ReadonlyArray<TrainerAssignment>;
+  projects: ReadonlyArray<TrainerOverrideProject>;
+  payroll: ReadonlyArray<PayrollForPipeline>;
+  installerPayConfigs: Record<string, { installPayPct: number }>;
+  repId: string | null;
+  today: string;
+}): number {
+  const { trainerAssignments, projects, payroll, installerPayConfigs, repId, today } = inputs;
+  if (!repId) return 0;
+  const myAssignments = trainerAssignments.filter((a) => a.trainerId === repId);
+  if (myAssignments.length === 0) return 0;
+
+  // Pre-build the paid-trainer-stage map once. Same trainer-stage entry
+  // can apply to any of this rep's trainee assignments (the rep owns it,
+  // not the assignment), so a project-id keyed map is sufficient.
+  const paidTrainerByProject = new Map<string, number>();
+  for (const e of payroll) {
+    if (!e.projectId) continue;
+    if (e.paymentStage !== 'Trainer') continue;
+    if (e.status !== 'Paid') continue;
+    if (e.date > today) continue;
+    paidTrainerByProject.set(e.projectId, (paidTrainerByProject.get(e.projectId) ?? 0) + e.amount);
+  }
+
+  return myAssignments.reduce((sum, assignment) => {
+    const isTraineeParty = (p: TrainerOverrideProject) =>
+      p.repId === assignment.traineeId ||
+      p.setterId === assignment.traineeId ||
+      p.additionalClosers?.some((c) => c.userId === assignment.traineeId) ||
+      p.additionalSetters?.some((s) => s.userId === assignment.traineeId);
+
+    // Tier progression: count trainee's "fully paid out" deals. The
+    // milestone that signals "fully paid out" depends on the installer's
+    // pay split — < 100% means M3 is the final payout, otherwise M2 is.
+    const completedDeals = projects.filter((p) => {
+      if (!isTraineeParty(p)) return false;
+      const installPct = installerPayConfigs[p.installer]?.installPayPct
+        ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct
+        ?? DEFAULT_INSTALL_PAY_PCT;
+      return installPct < 100 ? p.m3Paid === true : p.m2Paid === true;
+    }).length;
+
+    const overrideRate = getTrainerOverrideRate(assignment, completedDeals);
+    if (overrideRate <= 0) return sum;
+
+    const traineeActive = projects.filter(
+      (p) => (ACTIVE_PHASES as readonly string[]).includes(p.phase) && isTraineeParty(p),
+    );
+
+    return sum + traineeActive.reduce((pSum, p) => {
+      const expected = Math.round(overrideRate * p.kWSize * 1000 * 100) / 100;
+      const alreadyPaid = paidTrainerByProject.get(p.id) ?? 0;
+      return pSum + Math.max(0, expected - alreadyPaid);
+    }, 0);
+  }, 0);
 }
 
 /** The hero "On Pace" projection. Pure; no side effects.
