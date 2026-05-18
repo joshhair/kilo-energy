@@ -176,6 +176,112 @@ export function computeCashForecast(inputs: {
   return { total: Math.max(0, pipeline + futureSales + paid), pipeline, futureSales, paid };
 }
 
+// ─── Viewer pipeline remaining (Dashboard ↔ My Pay reconciliation) ─────
+
+/** Shape of a payroll entry we need for pipeline accounting. Loose so it
+ *  works against the Project page's full PayrollEntry type AND the slimmer
+ *  shape used by the mobile dashboard. */
+type PayrollForPipeline = {
+  projectId?: string | null;
+  paymentStage?: string | null;
+  status: string;
+  date: string;
+  amount: number;
+};
+
+/** Build the two maps needed to compute viewer pipeline-remaining numbers
+ *  across a set of payroll entries. Returns:
+ *   - netByProjectStage: project+stage → net of ALL entries (any status)
+ *     for that stage. Used as the "expected" amount when payroll exists
+ *     (captures chargebacks). Falls back to project.mXAmount when missing.
+ *   - paidByProjectStage: project+stage → sum of Paid entries (excluding
+ *     Trainer stage) with date ≤ today. Used as the "already paid"
+ *     subtraction per stage so per-milestone remaining values sum to the
+ *     pipeline total exactly.
+ */
+export function buildPipelineMaps(
+  payrollEntries: ReadonlyArray<PayrollForPipeline>,
+  today: string,
+): {
+  netByProjectStage: Map<string, number>;
+  paidByProjectStage: Map<string, number>;
+} {
+  const netByProjectStage = new Map<string, number>();
+  const paidByProjectStage = new Map<string, number>();
+  for (const e of payrollEntries) {
+    if (!e.projectId) continue;
+    if (e.paymentStage !== 'M1' && e.paymentStage !== 'M2' && e.paymentStage !== 'M3') continue;
+    const key = `${e.projectId}:${e.paymentStage}`;
+    netByProjectStage.set(key, (netByProjectStage.get(key) ?? 0) + e.amount);
+    if (e.status === 'Paid' && e.date <= today) {
+      paidByProjectStage.set(key, (paidByProjectStage.get(key) ?? 0) + e.amount);
+    }
+  }
+  return { netByProjectStage, paidByProjectStage };
+}
+
+/** Per-milestone *remaining* commission the viewer is owed on a single
+ *  deal, role-aware. For each stage:
+ *
+ *    expected = payroll-net-for-stage (if any) ?? project.mXAmount (role-aware)
+ *    paid     = Σ Paid entries for that project+stage with date ≤ today
+ *    remaining = max(0, expected - paid)
+ *
+ *  Clamping per-stage (rather than project-total) means an overpayment on
+ *  one milestone doesn't silently subtract from another. Edge-cases with
+ *  chargebacks rare in practice; this keeps the breakdown additive. */
+export function viewerRemainingByMilestone(
+  project: Pick<
+    PipelineProject,
+    | 'repId' | 'setterId'
+    | 'm1Amount' | 'm2Amount' | 'm3Amount'
+    | 'setterM1Amount' | 'setterM2Amount' | 'setterM3Amount'
+    | 'additionalClosers' | 'additionalSetters'
+  > & { id: string },
+  repId: string | null,
+  netByProjectStage: Map<string, number>,
+  paidByProjectStage: Map<string, number>,
+): { m1: number; m2: number; m3: number } {
+  const expected = viewerMilestones(project, repId);
+  const get = (stage: 'M1' | 'M2' | 'M3') => `${project.id}:${stage}`;
+  const m1Expected = netByProjectStage.get(get('M1')) ?? expected.m1;
+  const m2Expected = netByProjectStage.get(get('M2')) ?? expected.m2;
+  const m3Expected = netByProjectStage.get(get('M3')) ?? expected.m3;
+  const m1Paid = paidByProjectStage.get(get('M1')) ?? 0;
+  const m2Paid = paidByProjectStage.get(get('M2')) ?? 0;
+  const m3Paid = paidByProjectStage.get(get('M3')) ?? 0;
+  return {
+    m1: Math.max(0, m1Expected - m1Paid),
+    m2: Math.max(0, m2Expected - m2Paid),
+    m3: Math.max(0, m3Expected - m3Paid),
+  };
+}
+
+/** Active-projects pipeline total + per-milestone breakdown. The total
+ *  reconciles across Dashboard and My Pay so both surfaces show the same
+ *  "Pipeline" headline. Excludes trainer override (handled separately
+ *  where applicable). */
+export function viewerPipelineRemaining<P extends Pick<
+  PipelineProject,
+  | 'repId' | 'setterId'
+  | 'm1Amount' | 'm2Amount' | 'm3Amount'
+  | 'setterM1Amount' | 'setterM2Amount' | 'setterM3Amount'
+  | 'additionalClosers' | 'additionalSetters'
+> & { id: string }>(
+  activeProjects: ReadonlyArray<P>,
+  repId: string | null,
+  payrollEntries: ReadonlyArray<PayrollForPipeline>,
+  today: string,
+): { total: number; m1: number; m2: number; m3: number } {
+  const { netByProjectStage, paidByProjectStage } = buildPipelineMaps(payrollEntries, today);
+  let m1 = 0, m2 = 0, m3 = 0;
+  for (const p of activeProjects) {
+    const r = viewerRemainingByMilestone(p, repId, netByProjectStage, paidByProjectStage);
+    m1 += r.m1; m2 += r.m2; m3 += r.m3;
+  }
+  return { total: m1 + m2 + m3, m1, m2, m3 };
+}
+
 /** The hero "On Pace" projection. Pure; no side effects.
  *
  *    OnPace = inPeriodCommissionEarned + paceRate × monthsRemainingInP

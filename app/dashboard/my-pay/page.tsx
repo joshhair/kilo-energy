@@ -12,7 +12,7 @@ import { fmt$, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { computeOnPace, viewerFullCommission } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission, viewerPipelineRemaining } from '../../../lib/period-projection';
 import { getPeriodDaysRemaining } from '../../../lib/period';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import {
@@ -298,53 +298,22 @@ function MyPayPageInner() {
     [projects, effectiveRepId]
   );
 
-  const projectedM1 = useMemo(() => {
-    const preAcceptance = ['New'];
-    return myProjects
-      .filter((p) => preAcceptance.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m1 = 0;
-        if (p.repId === effectiveRepId) m1 = p.m1Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m1 = p.setterM1Amount ?? 0;
-        else if (coCloserParty) m1 = coCloserParty.m1Amount;
-        else if (coSetterParty) m1 = coSetterParty.m1Amount;
-        return s + m1;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
-
-  const projectedM2 = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    return myProjects
-      .filter((p) => preInstalled.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m2 = 0;
-        if (p.repId === effectiveRepId) m2 = p.m2Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m2 = p.setterM2Amount ?? 0;
-        else if (coCloserParty) m2 = coCloserParty.m2Amount;
-        else if (coSetterParty) m2 = coSetterParty.m2Amount;
-        return s + m2;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
-
-  const projectedM3 = useMemo(() => {
-    const prePTO = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed'];
-    return myProjects
-      .filter((p) => prePTO.includes(p.phase))
-      .reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        let m3 = 0;
-        if (p.repId === effectiveRepId) m3 = p.m3Amount ?? 0;
-        else if (p.setterId === effectiveRepId) m3 = p.setterM3Amount ?? 0;
-        else if (coCloserParty) m3 = coCloserParty.m3Amount ?? 0;
-        else if (coSetterParty) m3 = coSetterParty.m3Amount ?? 0;
-        return s + m3;
-      }, 0);
-  }, [myProjects, effectiveRepId]);
+  // Pipeline math is shared with MobileDashboard via viewerPipelineRemaining:
+  //   per-stage remaining = max(0, expected - paid)
+  // where `expected` honors chargebacks via the payroll-net map. The
+  // M1/M2/M3 breakdown sums to the same headline number as the Dashboard's
+  // "In Pipeline" stat, so the two surfaces stay reconciled.
+  const myPayrollForPipeline = useMemo(
+    () => payrollEntries.filter((p) => p.repId === effectiveRepId),
+    [payrollEntries, effectiveRepId],
+  );
+  const pipelineBreakdown = useMemo(
+    () => viewerPipelineRemaining(myProjects, effectiveRepId, myPayrollForPipeline, todayStr),
+    [myProjects, effectiveRepId, myPayrollForPipeline, todayStr],
+  );
+  const projectedM1 = pipelineBreakdown.m1;
+  const projectedM2 = pipelineBreakdown.m2;
+  const projectedM3 = pipelineBreakdown.m3;
 
   // ── Annual Projection ──
   // Uses multiple signals: deal closing pace, average commission per deal, paid history, and pipeline.
@@ -625,7 +594,7 @@ function MyPayPageInner() {
               <Calendar className="w-4 h-4 text-[var(--accent-emerald-text)]" />
               <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Projected Pipeline</p>
             </div>
-            <p className="text-[var(--text-muted)] text-xs mb-4">Expected if deals progress through milestones</p>
+            <p className="text-[var(--text-muted)] text-xs mb-4">Unpaid commission across your active deals</p>
             <div className="space-y-3">
               {projectedM1 > 0 && (
                 <div className="card-surface rounded-xl p-4 flex items-center justify-between">
@@ -634,8 +603,8 @@ function MyPayPageInner() {
                       <span className="text-[var(--accent-emerald-text)] text-xs font-bold">M1</span>
                     </div>
                     <div>
-                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M1</p>
-                      <p className="text-[var(--text-dim)] text-[10px]">Awaiting Acceptance</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Unpaid M1</p>
+                      <p className="text-[var(--text-dim)] text-[10px]">Fires at Acceptance</p>
                     </div>
                   </div>
                   <p className="text-[var(--accent-emerald-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)' }}>
@@ -650,8 +619,8 @@ function MyPayPageInner() {
                       <span className="text-[var(--accent-purple-text)] text-xs font-bold">M2</span>
                     </div>
                     <div>
-                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M2</p>
-                      <p className="text-[var(--text-dim)] text-[10px]">Awaiting Installation</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Unpaid M2</p>
+                      <p className="text-[var(--text-dim)] text-[10px]">Fires at Installation</p>
                     </div>
                   </div>
                   <p className="text-[var(--accent-purple-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}>
@@ -666,8 +635,8 @@ function MyPayPageInner() {
                       <span className="text-[var(--accent-teal-text)] text-xs font-bold">M3</span>
                     </div>
                     <div>
-                      <p className="text-[var(--text-primary)] text-sm font-semibold">Pending M3</p>
-                      <p className="text-[var(--text-dim)] text-[10px]">Awaiting PTO</p>
+                      <p className="text-[var(--text-primary)] text-sm font-semibold">Unpaid M3</p>
+                      <p className="text-[var(--text-dim)] text-[10px]">Fires at PTO</p>
                     </div>
                   </div>
                   <p className="text-[var(--accent-teal-text)] font-bold tabular-nums break-words text-right shrink-0 ml-3" style={{ textShadow: '0 0 12px color-mix(in srgb, var(--accent-teal-solid) 30%, transparent)' }}>

@@ -8,7 +8,7 @@ import { ACTIVE_PHASES, getTrainerOverrideRate, INSTALLER_PAY_CONFIGS, DEFAULT_I
 import { getPhaseStuckThresholds, PERIODS, isInPeriod, isOverdue, type Period } from '../components/dashboard-utils';
 import { isHistoricalPeriod, getPeriodLabel, getPeriodDaysRemaining } from '../../../lib/period';
 import { sumPaid, sumPendingChargebacks, sumAddedToPipeline } from '../../../lib/aggregators';
-import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones } from '../../../lib/period-projection';
+import { computeOnPace, viewerFullCommission as viewerFullCommissionPure, computeCashForecast, viewerMilestones, viewerPipelineRemaining } from '../../../lib/period-projection';
 import { CheckCircle, Target, Info } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBottomSheet from './shared/MobileBottomSheet';
@@ -345,35 +345,14 @@ export default function MobileDashboard() {
     [periodProjects],
   );
 
-  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware
+  // Pipeline: sum of unpaid M1 + M2 + M3 on active projects, role-aware.
+  // Base math is shared with My Pay via viewerPipelineRemaining so the two
+  // surfaces show the same "In Pipeline" number. Trainer override (paid on
+  // trainee deals at per-kW rate) is a separate income stream Dashboard
+  // adds on top — My Pay doesn't surface this yet (open follow-up).
   const pipelineValue = useMemo(
     () => {
-      const payrollNetByProjectStage = myPayroll.reduce((map, e) => {
-        if (e.projectId && (e.paymentStage === 'M1' || e.paymentStage === 'M2' || e.paymentStage === 'M3')) {
-          const key = `${e.projectId}:${e.paymentStage}`;
-          map.set(key, (map.get(key) ?? 0) + e.amount);
-        }
-        return map;
-      }, new Map<string, number>());
-      const paidPayrollByProject = myPayroll.filter((e) => e.status === 'Paid' && e.date <= todayStr && e.paymentStage !== 'Trainer').reduce((map, e) => {
-        if (e.projectId) map.set(e.projectId, (map.get(e.projectId) ?? 0) + e.amount);
-        return map;
-      }, new Map<string, number>());
-      const base = activeProjects.reduce((s, p) => {
-        const coCloserParty = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
-        const coSetterParty = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
-        const totalExpected = p.repId === effectiveRepId
-          ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.m1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.m2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.m3Amount ?? 0))
-          : p.setterId === effectiveRepId
-            ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? (p.setterM1Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? (p.setterM2Amount ?? 0)) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (p.setterM3Amount ?? 0))
-            : coCloserParty
-              ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coCloserParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coCloserParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coCloserParty.m3Amount ?? 0))
-              : coSetterParty
-                ? (payrollNetByProjectStage.get(`${p.id}:M1`) ?? coSetterParty.m1Amount) + (payrollNetByProjectStage.get(`${p.id}:M2`) ?? coSetterParty.m2Amount) + (payrollNetByProjectStage.get(`${p.id}:M3`) ?? (coSetterParty.m3Amount ?? 0))
-                : 0;
-        const alreadyPaid = paidPayrollByProject.get(p.id) ?? 0;
-        return s + Math.max(0, totalExpected - alreadyPaid);
-      }, 0);
+      const base = viewerPipelineRemaining(activeProjects, effectiveRepId, myPayroll, todayStr).total;
       const paidTrainerPayrollByProject = myPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr && p.paymentStage === 'Trainer').reduce((map, p) => {
         if (p.projectId) map.set(p.projectId, (map.get(p.projectId) ?? 0) + p.amount);
         return map;
