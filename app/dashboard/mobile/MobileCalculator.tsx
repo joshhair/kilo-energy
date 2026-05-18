@@ -23,6 +23,7 @@ import MobileCard from './shared/MobileCard';
 import { RotateCcw, Zap, ClipboardCopy, Share2, Link2 } from 'lucide-react';
 import CalcHistoryPanel from './shared/CalcHistoryPanel';
 import MobileCalculatorSkeleton from './shared/MobileCalculatorSkeleton';
+import { SegmentedPills } from '../../../components/ui';
 
 // ── Calc History ──────────────────────────────────────────────────────────────
 const CALC_HISTORY_KEY = 'kilo-calc-history';
@@ -658,31 +659,19 @@ export default function MobileCalculator() {
             routes the full commission to the closer with M1 flat. */}
         <div>
           <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={labelStyle}>Deal Type</label>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { value: true,  label: 'Paired' },
-              { value: false, label: 'Self-gen' },
-            ].map((opt) => {
-              const active = isPaired === opt.value;
-              return (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  onClick={() => { setIsPaired(opt.value); if (!opt.value) setSelectedSetterId(''); }}
-                  className="min-h-[44px] rounded-xl text-sm font-semibold transition-[transform,color] duration-75 ease-out active:scale-[0.97]"
-                  style={{
-                    background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
-                    color: active ? 'var(--surface-page)' : 'var(--text-muted)',
-                    border: active ? 'none' : '1px solid var(--border-subtle)',
-                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                    transition: 'background 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedPills<'paired' | 'selfgen'>
+            options={[
+              { value: 'paired', label: 'Paired' },
+              { value: 'selfgen', label: 'Self-gen' },
+            ]}
+            value={isPaired ? 'paired' : 'selfgen'}
+            onChange={(next) => {
+              const paired = next === 'paired';
+              setIsPaired(paired);
+              if (!paired) setSelectedSetterId('');
+            }}
+            ariaLabel="Deal type"
+          />
         </div>
 
         {/* Setter rep selector — auto-derives trainer rate from assignment. */}
@@ -802,8 +791,8 @@ export default function MobileCalculator() {
       {resultMounted && (
         <div ref={resultRef}>
         <MobileCard key="result" hero className={resultExiting ? 'result-exit' : 'result-enter'}>
-          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission</p>
-          <p className="font-black tabular-nums break-words" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
+          <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>Commission</p>
+          <p className="tabular-nums break-words" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: 'clamp(2.25rem, 11vw, 3rem)', lineHeight: 1.05 }}>
             {fmt$(displayTotal)}
           </p>
 

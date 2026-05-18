@@ -1062,11 +1062,16 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                         key={v}
                         type="button"
                         onClick={() => setRepTypeValue(v)}
-                        className="min-h-[44px] rounded-xl text-sm font-semibold"
+                        className="min-h-[40px] rounded-full text-sm transition-all duration-200"
                         style={{
-                          background: active ? 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' : 'var(--surface-card)',
-                          color: active ? 'var(--surface-page)' : 'var(--text-muted)',
-                          border: active ? 'none' : '1px solid var(--border-subtle)',
+                          background: active
+                            ? 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)'
+                            : 'transparent',
+                          color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                          border: active
+                            ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
+                            : '1px solid var(--border-subtle)',
+                          fontWeight: active ? 600 : 500,
                           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                         }}
                       >
@@ -1190,7 +1195,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                 disabled={saving}
                 className="flex-1 min-h-[48px] rounded-xl text-sm font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+                  background: 'var(--accent-emerald-solid)',
                   color: 'var(--text-on-accent)',
                   opacity: saving ? 0.6 : 1,
                 }}

@@ -7,8 +7,9 @@ import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
-import { resolveTrainerRate } from '../../../lib/commission';
-import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp, Calendar } from 'lucide-react';
+import { computeOnPace, viewerFullCommission } from '../../../lib/period-projection';
+import { getPeriodDaysRemaining } from '../../../lib/period';
+import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import BaselinePanel from '../my-pay/BaselinePanel';
 import MobileSection from './shared/MobileSection';
@@ -21,8 +22,8 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';          // for accent strips / icons / labels
-const ACCENT_DISP = 'var(--accent-emerald-display)';   // ≥18pt secondary stat values
-const ACCENT2_DISP = 'var(--accent-cyan-display)';
+const _ACCENT_DISP = 'var(--accent-emerald-display)';   // ≥18pt secondary stat values
+const _ACCENT2_DISP = 'var(--accent-cyan-display)';
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
 const WARNING = 'var(--accent-amber-solid)';
@@ -96,7 +97,7 @@ interface PayPeriod {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function MobileMyPay() {
-  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements, trainerAssignments } = useApp();
+  const { effectiveRole, effectiveRepId, effectiveRepName, currentUserRepType, payrollEntries, projects, reimbursements, setReimbursements } = useApp();
   const { toast } = useToast();
   const [showReimbSheet, setShowReimbSheet] = useState(false);
   const [reimbForm, setReimbForm] = useState({ amount: '', description: '', date: '' });
@@ -142,6 +143,22 @@ export default function MobileMyPay() {
     () => sumPaid(payrollEntries, { asOf: todayStr, repId: effectiveRepId ?? undefined }),
     [payrollEntries, effectiveRepId, todayStr],
   );
+
+  // ── Lifetime stats (moved from dashboard 'all' tab) ──
+  // Aggregated career totals for the rep. Surfaced as a dedicated
+  // section near the bottom of My Pay so reps can see their career
+  // arc without crowding the actionable "next payout" hero.
+  const lifetimeStats = useMemo(() => {
+    const myProjects = projects.filter((p) => {
+      if (p.phase === 'Cancelled') return false;
+      const cc = p.additionalClosers?.find((c) => c.userId === effectiveRepId);
+      const cs = p.additionalSetters?.find((c) => c.userId === effectiveRepId);
+      return p.repId === effectiveRepId || p.setterId === effectiveRepId || cc || cs;
+    });
+    const totalDeals = myProjects.length;
+    const totalKW = myProjects.reduce((s, p) => s + (p.kWSize ?? 0), 0);
+    return { totalDeals, totalKW };
+  }, [projects, effectiveRepId]);
 
   const pendingTotal = useMemo(
     () =>
@@ -236,75 +253,63 @@ export default function MobileMyPay() {
       }, 0);
   }, [myProjects, effectiveRepId]);
 
-  // Forward-looking trainer pipeline. Trainer entries fire alongside M2
-  // milestones, so we count un-paid trainer totals on deals still in
-  // pre-Install phases. Uses the canonical resolveTrainerRate so both
-  // per-project overrides and rep-level assignment-chain trainers are
-  // included — same source of truth as the payroll math.
-  const projectedTrainer = useMemo(() => {
-    const preInstalled = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install'];
-    return projects.reduce((s, p) => {
-      if (!preInstalled.includes(p.phase)) return s;
-      const res = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      if (res.trainerId !== effectiveRepId) return s;
-      return s + res.rate * (p.kWSize ?? 0) * 1000;
-    }, 0);
-  }, [projects, trainerAssignments, payrollEntries, effectiveRepId]);
-
   const pipelineTotal = projectedM1 + projectedM2 + projectedM3;
 
   // ── Annual Projection ──
+  // Uses the same computeOnPace formula as MobileDashboard so the
+  // "On Pace For YYYY" headline reconciles across screens. Math is:
+  //   annual = commissionEarnedFromInPeriodDeals
+  //          + paceRate × monthsRemainingInYear
+  //   paceRate = dealsPerMonth × avgFullCommissionPerDeal (M1+M2+M3, role-aware)
+  //   inPeriodEarned = sum of full M1+M2+M3 across 2026-sold non-cancelled deals
+  // (Trainer override is deliberately NOT folded into paceRate here —
+  // it's a separate income stream documented in the Trainer Override
+  // card. Including it would diverge from Dashboard's number for the
+  // subset of reps who are trainers. Follow-up: surface trainer
+  // override on the dashboard too, or as a side stat here.)
   const annualProjection = useMemo(() => {
     const now = new Date();
     const allMyProjects = projects.filter((p) =>
-      (p.repId === effectiveRepId || p.setterId === effectiveRepId) && p.phase !== 'Cancelled'
+      (p.repId === effectiveRepId || p.setterId === effectiveRepId
+        || p.additionalClosers?.some((c) => c.userId === effectiveRepId)
+        || p.additionalSetters?.some((c) => c.userId === effectiveRepId))
+      && p.phase !== 'Cancelled'
     );
-    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
-    const totalDeals = sortedByDate.length;
+    const totalDeals = allMyProjects.length;
     if (totalDeals === 0) return { annual: 0, monthlyAvg: 0, basis: 'none' as const, details: '' };
-    const avgCommissionPerDeal = allMyProjects.reduce((s, p) => {
-      const isSetterRole = p.setterId === effectiveRepId;
-      const m1 = isSetterRole ? (p.setterM1Amount ?? 0) : (p.m1Amount ?? 0);
-      const m2 = isSetterRole ? (p.setterM2Amount ?? 0) : (p.m2Amount ?? 0);
-      // Add trainer override when this rep resolves as the trainer
-      // for the deal. resolveTrainerRate handles both the per-project
-      // override path and the rep-level assignment-chain path, so a
-      // rep who's both closer and trainer (or both setter and trainer)
-      // gets credited for both income streams on the same deal.
-      const trainerRes = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
-      const trainerEarn = trainerRes.trainerId === effectiveRepId
-        ? trainerRes.rate * (p.kWSize ?? 0) * 1000
-        : 0;
-      return s + m1 + m2 + trainerEarn;
-    }, 0) / totalDeals;
+
+    const avgFullCommission = allMyProjects.reduce(
+      (s, p) => s + viewerFullCommission(p, effectiveRepId),
+      0,
+    ) / totalDeals;
+
+    const sortedByDate = [...allMyProjects].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
     const firstDealDate = new Date(sortedByDate[0].soldDate + 'T12:00:00');
-    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / (1000 * 60 * 60 * 24), 1);
+    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / 86_400_000, 1);
     const effectiveDays = Math.max(daysSinceFirst, 30);
     const dealsPerMonth = (totalDeals / effectiveDays) * 30.44;
-    const totalPaidPositive = payrollEntries
-      .filter((p) => p.repId === effectiveRepId && p.status === 'Paid' && p.amount > 0 && p.date <= todayStr)
-      .reduce((s, p) => s + p.amount, 0);
-    const paceBasedAnnual = dealsPerMonth * avgCommissionPerDeal * 12;
-    let annual: number;
-    let monthlyAvg: number;
-    let basis: 'pace' | 'blended' | 'none';
-    let details: string;
-    if (daysSinceFirst >= 60 && totalPaidPositive > 0) {
-      const paidMonthlyRate = (totalPaidPositive / daysSinceFirst) * 30.44;
-      monthlyAvg = Math.round(paceBasedAnnual / 12 * 0.6 + paidMonthlyRate * 0.4);
-      annual = Math.round(monthlyAvg * 12);
-      basis = 'blended';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    } else {
-      monthlyAvg = Math.round(paceBasedAnnual / 12);
-      annual = Math.round(paceBasedAnnual);
-      basis = 'pace';
-      details = `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgCommissionPerDeal))} avg`;
-    }
-    const pipelineBoost = Math.round((projectedM1 + projectedM2 + projectedTrainer) * 0.15);
-    annual += pipelineBoost;
-    return { annual, monthlyAvg, basis, details };
-  }, [projects, payrollEntries, effectiveRepId, todayStr, projectedM1, projectedM2, projectedTrainer, trainerAssignments]);
+    const paceRate = dealsPerMonth * avgFullCommission;
+
+    // commissionEarnedFromInPeriodDeals: 2026-sold deals × full commission.
+    const yearStart = `${now.getFullYear()}-01-01`;
+    const inPeriodEarned = allMyProjects
+      .filter((p) => p.soldDate >= yearStart)
+      .reduce((s, p) => s + viewerFullCommission(p, effectiveRepId), 0);
+
+    const daysRemaining = getPeriodDaysRemaining('this-year') ?? 0;
+    const annual = computeOnPace({
+      inPeriodCommissionEarned: inPeriodEarned,
+      paceRate,
+      daysRemainingInPeriod: daysRemaining,
+    });
+    const monthlyAvg = Math.round(paceRate);
+    return {
+      annual,
+      monthlyAvg,
+      basis: 'pace' as const,
+      details: `${dealsPerMonth.toFixed(1)} deals/mo × ${fmt$(Math.round(avgFullCommission))} avg`,
+    };
+  }, [projects, effectiveRepId]);
 
   const daysUntilFriday = (() => {
     const today = new Date();
@@ -449,7 +454,7 @@ export default function MobileMyPay() {
            without forcing the digits to do the contrast work. ── */}
       <MobileCard hero>
         {/* ─ Primary: Next Payout ─ */}
-        <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.12em' }}>Next Payout</p>
+        <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem', letterSpacing: '0.22em' }}>Next Payout</p>
         <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.75rem, 14vw, 4rem)', color: HERO_NUM, lineHeight: 1.05 }}>{fmt$(displayNext)}</p>
         <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem', marginTop: '0.4rem' }}>
           {formatFridayLabel(nextFridayStr)} &middot; {daysLabel}
@@ -466,7 +471,7 @@ export default function MobileMyPay() {
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="tracking-widest uppercase shrink-0" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Pipeline</span>
-            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: ACCENT2_DISP, lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
+            <span className="tabular-nums break-words text-right" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: 'var(--accent-cyan-text)', lineHeight: 1.1 }}>{fmt$(displayPipeline)}</span>
           </div>
         </div>
 
@@ -488,64 +493,91 @@ export default function MobileMyPay() {
           </div>
           <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.5rem, 7vw, 1.875rem)', color: HERO_NUM, lineHeight: 1.1 }}>{fmt$(annualProjection.annual)}</p>
           <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginTop: '0.25rem' }}>
-            {annualProjection.basis === 'blended'
-              ? `${new Date().getFullYear()} · ${fmt$(annualProjection.monthlyAvg)}/mo avg`
-              : annualProjection.basis === 'pace'
+            {annualProjection.basis === 'pace'
               ? `${new Date().getFullYear()} · ${annualProjection.details}`
               : 'Close deals to see projection'}
           </p>
         </MobileCard>
       )}
 
-      {/* ── Projected Pipeline ── */}
+      {/* ── Projected Pipeline ── Unified emerald accent across M1/M2/M3
+          rows (three different accents was visually jumbled). Rows are
+          hairline-separated, not boxed inside their own surface — keeps
+          density tight and stops the "card-in-card" look. */}
       {(projectedM1 > 0 || projectedM2 > 0 || projectedM3 > 0) && (
         <MobileCard>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar size={14} color={ACCENT} />
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 500 }}>Projected Pipeline</p>
-          </div>
-          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.75rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
-          <div className="space-y-2">
+          <p
+            className="tracking-[0.22em] uppercase mb-1"
+            style={{
+              color: 'var(--accent-emerald-text)',
+              fontFamily: FONT_BODY,
+              fontSize: '10px',
+              fontWeight: 600,
+            }}
+          >Projected Pipeline</p>
+          <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.78rem', marginBottom: '0.75rem' }}>Expected if deals progress through milestones</p>
+          <div className="flex flex-col">
             {projectedM1 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' }}>
-                    <span style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M1</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M1</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Acceptance</p>
+              <div className="flex items-center justify-between py-2.5" style={{ borderBottom: (projectedM2 > 0 || projectedM3 > 0) ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M1</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M1</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Acceptance</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM1)}</p>
               </div>
             )}
             {projectedM2 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 12%, transparent)' }}>
-                    <span style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M2</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M2</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting Installation</p>
+              <div className="flex items-center justify-between py-2.5" style={{ borderBottom: projectedM3 > 0 ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M2</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M2</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting Installation</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-purple-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM2)}</p>
               </div>
             )}
             {projectedM3 > 0 && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-xl" style={{ background: 'var(--surface-inset-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent-teal-solid) 12%, transparent)' }}>
-                    <span style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 700 }}>M3</span>
-                  </div>
-                  <div>
-                    <p style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '0.9rem', fontWeight: 600 }}>Pending M3</p>
-                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Awaiting PTO</p>
+              <div className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md shrink-0 tabular-nums"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: FONT_BODY,
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >M3</span>
+                  <div className="min-w-0">
+                    <p className="truncate" style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px', fontWeight: 500 }}>Pending M3</p>
+                    <p style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '11px' }}>Awaiting PTO</p>
                   </div>
                 </div>
-                <p className="tabular-nums font-bold" style={{ color: 'var(--accent-teal-text)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
+                <p className="tabular-nums shrink-0" style={{ color: 'var(--text-primary)', fontFamily: FONT_DISPLAY, fontSize: '1.05rem' }}>{fmt$(projectedM3)}</p>
               </div>
             )}
           </div>
@@ -676,16 +708,16 @@ export default function MobileMyPay() {
         style={{
           minHeight: '52px',
           padding: '14px 18px',
-          borderRadius: '16px',
-          background: 'var(--surface-inset-subtle)',
-          border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)',
+          borderRadius: '12px',
+          background: 'var(--surface-card)',
+          border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
           transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           fontFamily: FONT_BODY,
         }}
       >
         <div className="flex items-center gap-3">
-          <Receipt size={18} color={ACCENT} />
-          <span style={{ color: ACCENT, fontSize: '1rem', fontWeight: 500 }}>Request Reimbursement</span>
+          <Receipt size={16} color="var(--accent-emerald-text)" />
+          <span style={{ color: 'var(--accent-emerald-text)', fontSize: '0.9rem', fontWeight: 500 }}>Request Reimbursement</span>
         </div>
         <ChevronRight size={16} color={DIM} />
       </button>
@@ -696,7 +728,7 @@ export default function MobileMyPay() {
           <Search size={15} color={DIM} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input
             type="text"
-            placeholder="Search payments…"
+            placeholder="Search…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full outline-none"
@@ -734,22 +766,24 @@ export default function MobileMyPay() {
           </select>
         </div>
         <div className="flex gap-2">
-          <label className="flex-1 flex flex-col gap-1">
+          <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>From</span>
             <input
               type="date"
               value={payFilterFrom}
               onChange={(e) => setPayFilterFrom(e.target.value)}
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+              className="w-full min-w-0"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '10px 12px', color: payFilterFrom ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
             />
           </label>
-          <label className="flex-1 flex flex-col gap-1">
+          <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>To</span>
             <input
               type="date"
               value={payFilterTo}
               onChange={(e) => setPayFilterTo(e.target.value)}
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
+              className="w-full min-w-0"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '10px 12px', color: payFilterTo ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px', outline: 'none' }}
             />
           </label>
         </div>
@@ -827,6 +861,25 @@ export default function MobileMyPay() {
           </div>
         )}
       </MobileSection>
+
+      {/* ── Lifetime stats (moved here from dashboard 'all' tab) ── */}
+      <MobileCard>
+        <p className="tracking-widest uppercase mb-3" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.22em' }}>Lifetime</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{fmt$(lifetimeEarned)}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Earned</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{lifetimeStats.totalDeals}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>Deals</p>
+          </div>
+          <div>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.25rem, 6vw, 1.5rem)', color: 'var(--text-primary)' }}>{lifetimeStats.totalKW.toFixed(1)}</p>
+            <p className="tracking-wide uppercase" style={{ color: 'var(--text-dim)', fontFamily: FONT_BODY, fontSize: '0.65rem' }}>kW Sold</p>
+          </div>
+        </div>
+      </MobileCard>
 
       {/* ── Reimbursement bottom sheet ── */}
       <MobileBottomSheet open={showReimbSheet} onClose={() => setShowReimbSheet(false)} title="Request Reimbursement">

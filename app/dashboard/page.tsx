@@ -28,6 +28,8 @@ import { PMDashboard } from './components/PMDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SubDealerDashboard } from './components/SubDealerDashboard';
 import { DashboardSkeleton } from './components/DashboardSkeleton';
+import { UpcomingBlitzBanner } from './components/UpcomingBlitzBanner';
+import { SegmentedPills } from '../../components/ui';
 
 // ── Re-export Period type for extracted components ───────────────────────────
 export type { Period } from './components/dashboard-utils';
@@ -672,8 +674,7 @@ export default function DashboardPage() {
   const { currentRepName, projects, payrollEntries, incentives, reps, trainerAssignments, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, solarTechProducts, effectiveRole, effectiveRepId, effectiveRepName, installerPayConfigs, dbReady } = useApp();
   useEffect(() => { document.title = 'Dashboard | Kilo Energy'; }, []);
   const [period, setPeriod] = useState<Period>('all');
-  const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
+  // periodTabRefs + indicator now live inside SegmentedPills.
   const isHydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -752,12 +753,7 @@ export default function DashboardPage() {
 
   const PERIODS = SHARED_PERIODS;
 
-  // Measure the active period tab so the sliding pill can follow it
-  useEffect(() => {
-    const idx = PERIODS.findIndex(p => p.value === period);
-    const el = periodTabRefs.current[idx];
-    if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [period]);
+  // Active-pill measurement is owned by SegmentedPills.
 
   // Hoist MTD derivations above the isHydrated guard so that
   // useCountUp (a React hook) is always called unconditionally — hooks rules require
@@ -1300,6 +1296,11 @@ export default function DashboardPage() {
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 animate-fade-in-up">
 
+      {/* Upcoming blitz banner — surfaces the soonest upcoming or active
+          blitz the rep can see (within 7 days). Auto-hides when nothing
+          qualifies. Visual weight scales with proximity. Phase 2c. */}
+      <UpcomingBlitzBanner variant="desktop" />
+
       {/* ── Welcome Banner with Glow CTA ─────────────────────────────────── */}
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -1329,25 +1330,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Period tabs — compact row, flush right */}
-      <div className="flex justify-end mb-6 overflow-x-auto">
-        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
-          {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
-          {PERIODS.map((p, i) => (
-            <button
-              key={p.value}
-              ref={(el) => { periodTabRefs.current[i] = el; }}
-              onClick={() => setPeriod(p.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
-                period === p.value
-                  ? 'text-[var(--text-primary)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+      {/* Period tabs — shared SegmentedPills primitive */}
+      <div className="flex justify-end mb-6">
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          ariaLabel="Filter dashboard by period"
+        />
       </div>
 
       {/* Next Payout shown in welcome banner above — no duplicate needed */}

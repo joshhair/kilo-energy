@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
+import { formatDate, formatCompactKWParts, fmtCompact$ } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle, MapPin, Calendar, Users } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
@@ -12,6 +12,7 @@ import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
+import { SegmentedPills } from '../../../components/ui';
 
 type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 type SortKey = 'newest' | 'oldest' | 'deals' | 'kw' | 'name';
@@ -382,13 +383,40 @@ export default function MobileBlitz() {
   };
 
   const headerRight = canCreate ? (
+    // Card-surface FAB pattern (matches BottomNav New Deal button).
+    // Serif "+" + hairline emerald ring + faint emerald spark dot.
     <button
       onClick={() => setShowCreate(true)}
-      className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
-      style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
+      className="card-surface flex items-center justify-center w-10 h-10 rounded-2xl relative active:scale-95 transition-transform"
+      style={{
+        border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
+      }}
       aria-label="Create blitz"
     >
-      <Plus className="w-5 h-5" />
+      <span
+        aria-hidden
+        className="absolute"
+        style={{
+          top: 6,
+          right: 6,
+          width: 3,
+          height: 3,
+          borderRadius: '50%',
+          background: 'var(--accent-emerald-solid)',
+          boxShadow: '0 0 4px color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)',
+        }}
+      />
+      <span
+        className="leading-none"
+        style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: 22,
+          color: 'var(--accent-emerald-text)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+          transform: 'translateY(-1px)',
+        }}
+      >+</span>
     </button>
   ) : canRequest ? (
     <button
@@ -407,6 +435,7 @@ export default function MobileBlitz() {
 
   const renderBlitzCard = (blitz: BlitzData, index: number) => {
     const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+    const pendingJoinCount = blitz.participants.filter((p) => p.joinStatus === 'pending').length;
     const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
     const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
       .filter(Boolean)
@@ -456,8 +485,15 @@ export default function MobileBlitz() {
         <MobileCard onTap={() => router.push(`/dashboard/blitz/${blitz.id}`)}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.name}</p>
-              <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
+              <p
+                className="line-clamp-2 break-words leading-tight"
+                style={{
+                  fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                  fontSize: '1.25rem',
+                  color: 'var(--text-primary)',
+                }}
+              >{blitz.name}</p>
+              <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{details}</p>
               {isAdmin && totalCosts > 0 && (
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   Cost/Deal: ${totalDeals > 0 ? (totalCosts / totalDeals).toFixed(0) : '--'}
@@ -488,16 +524,37 @@ export default function MobileBlitz() {
               {isBlitzOwner && (
                 <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
               )}
+              {(isAdmin || isBlitzOwner) && pendingJoinCount > 0 && (
+                <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-amber-text)', background: 'var(--accent-amber-soft)' }}>
+                  {pendingJoinCount} Pending
+                </span>
+              )}
               {canJoin && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleJoinBlitz(blitz.id); }}
-                  disabled={joining}
-                  className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-40"
-                  style={{ color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                /* role=button (not a real <button>) — MobileCard wraps each row in
+                   a <button>, and HTML disallows nested buttons (hydration error). */
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-disabled={joining}
+                  onClick={(e) => { e.stopPropagation(); if (!joining) handleJoinBlitz(blitz.id); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (!joining) handleJoinBlitz(blitz.id);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold rounded-full transition-opacity active:opacity-70 cursor-pointer"
+                  style={{
+                    color: 'var(--accent-emerald-text)',
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
+                    fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    opacity: joining ? 0.4 : 1,
+                  }}
                 >
                   {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
-                  {joining ? 'Joining...' : 'Join'}
-                </button>
+                  {joining ? 'Joining…' : 'Join'}
+                </span>
               )}
               {participationLabel && !canJoin && !isBlitzOwner && (
                 <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded" style={{
@@ -532,53 +589,52 @@ export default function MobileBlitz() {
     <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Blitz" right={headerRight} />
 
-      {/* Summary stat cards */}
-      <div className={`grid gap-3 [&>*]:min-w-0 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Active</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>{activeBlitzes}</p>
-        </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Upcoming</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--accent-cyan-display)', fontFamily: "'DM Serif Display', serif" }}>{upcomingBlitzes}</p>
-        </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Deals</p>
-          <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{summaryTotalDeals}</p>
-        </div>
-        {(() => { const t = formatCompactKWParts(summaryTotalKW); return (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Total {t.unit}</p>
-            <p className="text-2xl font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary, #fff)', fontFamily: "'DM Serif Display', serif" }}>{t.value}</p>
-          </div>
-        ); })()}
-        {isAdmin && (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Costs</p>
-            <p className="font-black tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-amber-display)', fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(0.95rem, 4.2vw, 1.5rem)' }}>{formatCurrency(summaryTotalCosts)}</p>
-          </div>
-        )}
-      </div>
+      {/* Summary hero card — mirrors the admin Revenue card pattern:
+          one hero numeral (Upcoming, the most actionable stat for both
+          reps and admins) above a divider-separated sub-stat strip.
+          Compact-formatted Costs ($14.3K) keeps the strip width-balanced. */}
+      {(() => {
+        const kw = formatCompactKWParts(summaryTotalKW);
+        return (
+          <MobileCard hero style={{ border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', boxShadow: 'none' }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Upcoming Blitzes</p>
+              <Tent className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
+            </div>
+            <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2.5rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{upcomingBlitzes}</p>
+            <div className={`grid gap-x-4 gap-y-3 mt-4 pt-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="min-w-0">
+                <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{activeBlitzes}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Active</p>
+              </div>
+              <div className="min-w-0">
+                <p className="tabular-nums" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{summaryTotalDeals}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Deals</p>
+              </div>
+              <div className="min-w-0">
+                <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{kw.value} {kw.unit}</p>
+                <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Total</p>
+              </div>
+              {isAdmin && (
+                <div className="min-w-0">
+                  <p className="tabular-nums whitespace-nowrap" style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(summaryTotalCosts)}</p>
+                  <p className="tracking-widest uppercase" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)", fontSize: '0.75rem' }}>Costs</p>
+                </div>
+              )}
+            </div>
+          </MobileCard>
+        );
+      })()}
 
-      {/* Status pills */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {STATUS_PILLS.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => setStatusFilter(s.value)}
-            className="min-h-[48px] px-4 py-2 text-base font-semibold rounded-full whitespace-nowrap active:scale-[0.91]"
-            style={{
-              background: statusFilter === s.value ? 'var(--accent-emerald-solid)' : 'transparent',
-              color: statusFilter === s.value ? '#000' : 'var(--text-muted)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              transform: statusFilter === s.value ? 'scale(1.05)' : 'scale(1)',
-              transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms ease, color 150ms ease',
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      {/* Status pills — shared SegmentedPills primitive */}
+      <SegmentedPills
+        options={STATUS_PILLS}
+        value={statusFilter}
+        onChange={setStatusFilter}
+        scrollable
+        ariaLabel="Filter blitzes by status"
+      />
+
 
       {/* Search + Sort */}
       <div className="flex gap-2">
@@ -587,7 +643,7 @@ export default function MobileBlitz() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search blitzes…"
+            placeholder="Search…"
             className="w-full min-h-[44px] rounded-xl pl-9 pr-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
             style={{
               background: 'var(--surface-card)',
@@ -616,36 +672,15 @@ export default function MobileBlitz() {
 
       {/* Admin tabs: Blitzes / Requests */}
       {(isAdmin || userPerms.canRequestBlitz) && (
-        <div className="relative flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <div
-            className="blitz-tab-indicator absolute top-1 bottom-1 rounded-xl pointer-events-none"
-            style={{
-              left: 4,
-              width: 'calc(50% - 6px)',
-              background: 'var(--accent-emerald-solid)',
-              transform: tab === 'requests' ? 'translateX(calc(100% + 4px))' : 'translateX(0)',
-            }}
-          />
-          <button
-            onClick={() => setTab('blitzes')}
-            className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
-            style={{ background: 'transparent', color: tab === 'blitzes' ? '#000' : 'var(--text-muted)', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-          >
-            Blitzes
-          </button>
-          <button
-            onClick={() => setTab('requests')}
-            className="relative flex-1 min-h-[48px] text-base font-semibold rounded-xl z-10"
-            style={{ background: 'transparent', color: tab === 'requests' ? '#000' : 'var(--text-muted)', transition: 'color 180ms ease', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-          >
-            Requests
-            {isAdmin && pendingRequests.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold text-[var(--text-primary)] rounded-full" style={{ background: 'var(--accent-red-solid)' }}>
-                {pendingRequests.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <SegmentedPills
+          options={[
+            { value: 'blitzes', label: 'Blitzes' },
+            { value: 'requests', label: 'Requests', badge: isAdmin && pendingRequests.length > 0 ? pendingRequests.length : undefined },
+          ]}
+          value={tab}
+          onChange={setTab}
+          ariaLabel="Switch between blitzes and requests"
+        />
       )}
 
       {/* Blitz cards */}
@@ -736,7 +771,7 @@ export default function MobileBlitz() {
                           onClick={() => handleApproveRequest(req.id)}
                           disabled={processingRequest.has(req.id)}
                           className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                          style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                         >
                           {processingRequest.has(req.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
                         </button>
@@ -930,8 +965,7 @@ export default function MobileBlitz() {
             disabled={submittingCreate || !createForm.name.trim() || !createForm.startDate || !createForm.endDate}
             className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 0 20px var(--accent-emerald-glow)',
+              background: 'var(--accent-emerald-solid)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

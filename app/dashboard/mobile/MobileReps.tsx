@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { Search, Plus, Users, ChevronRight, Mail, Clock, UserCog, Trash2, Check } from 'lucide-react';
+import { Search, Users, ChevronRight, Mail, Clock, UserCog, Trash2, Check } from 'lucide-react';
 import { formatCompactKW } from '../../../lib/utils';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -13,6 +13,7 @@ import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { TopPerformersPodium } from '../users/components/TopPerformersPodium';
+import { SegmentedPills } from '../../../components/ui';
 
 const REP_TYPE_LABELS: Record<string, string> = { closer: 'Closer', setter: 'Setter', both: 'Both' };
 const REP_TYPE_FILTERS = [
@@ -342,63 +343,63 @@ export default function MobileReps() {
           isAdmin ? (
             <button
               onClick={() => setShowAddRep(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-2xl text-black active:opacity-80 transition-colors"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', boxShadow: '0 0 20px var(--accent-emerald-glow)' }}
+              className="card-surface flex items-center justify-center w-10 h-10 rounded-2xl relative active:scale-95 transition-transform"
+              style={{
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
+              }}
               aria-label="Add rep"
             >
-              <Plus className="w-5 h-5" />
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  background: 'var(--accent-emerald-solid)',
+                  boxShadow: '0 0 4px color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)',
+                }}
+              />
+              <span
+                className="leading-none"
+                style={{
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: 22,
+                  color: 'var(--accent-emerald-text)',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                  transform: 'translateY(-1px)',
+                }}
+              >+</span>
             </button>
           ) : null
         }
       />
 
-      {/* Role filter pills — horizontal scroll for small screens */}
-      <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
-        {ROLE_FILTERS.map((rf) => {
-          const active = roleFilter === rf.value;
-          return (
-            <button
-              key={rf.value}
-              onClick={() => { setRoleFilter(rf.value); setRepTypeFilter('all'); }}
-              className="shrink-0 min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.94]"
-              style={{
-                background: active ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
-                color: active ? '#000' : 'var(--text-muted)',
-                border: active ? 'none' : '1px solid var(--border-subtle)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
-                transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
-              {rf.label}
-            </button>
-          );
-        })}
+      {/* Role filter pills — shared SegmentedPills primitive */}
+      <div className="-mx-5 px-5">
+        <SegmentedPills<RoleFilter>
+          options={ROLE_FILTERS.map((rf) => ({ value: rf.value, label: rf.label }))}
+          value={roleFilter}
+          onChange={(v) => { setRoleFilter(v); setRepTypeFilter('all'); }}
+          scrollable
+          ariaLabel="Filter users by role"
+        />
       </div>
 
       {/* Rep-type sub-filter — only shown when viewing reps */}
       {roleFilter === 'rep' && (
-        <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
-          {REP_TYPE_FILTERS.map((rt) => {
-            const active = repTypeFilter === rt.value;
-            return (
-              <button
-                key={rt.value}
-                onClick={() => setRepTypeFilter(rt.value)}
-                className="shrink-0 min-h-[36px] px-3 rounded-xl text-xs font-semibold active:scale-[0.94]"
-                style={{
-                  background: active ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-card)',
-                  color: active ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
-                  border: active ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
-                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                  boxShadow: active ? '0 0 14px color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)' : 'none',
-                  transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-                }}
-              >
-                {rt.label}
-              </button>
-            );
-          })}
+        <div className="-mx-5 px-5">
+          <SegmentedPills
+            options={REP_TYPE_FILTERS.map((rt) => ({ value: rt.value, label: rt.label }))}
+            value={repTypeFilter}
+            onChange={setRepTypeFilter}
+            scrollable
+            size="sm"
+            ariaLabel="Filter reps by type"
+          />
         </div>
       )}
 
@@ -426,12 +427,13 @@ export default function MobileReps() {
             onClick={() => { setCompareMode((v) => !v); if (compareMode) setCompareIds(new Set()); }}
             className="min-h-[40px] px-4 rounded-xl text-sm font-semibold active:scale-[0.95]"
             style={{
-              background: compareMode ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
-              color: compareMode ? '#000' : 'var(--text-muted)',
-              border: compareMode ? 'none' : '1px solid var(--border-subtle)',
+              background: compareMode ? 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)' : 'transparent',
+              color: compareMode ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+              border: compareMode
+                ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
+                : '1px solid var(--border-subtle)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              boxShadow: compareMode ? '0 0 14px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : 'none',
-              transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transition: 'background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
             {compareMode ? `Comparing (${compareIds.size}/3) — Tap to exit` : 'Compare Reps'}
@@ -669,8 +671,15 @@ export default function MobileReps() {
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
                 return (
                   <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-black text-xs font-bold mx-auto mb-1.5"
-                      style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}>
+                    <div
+                      className="card-surface w-8 h-8 rounded-full flex items-center justify-center text-xs mx-auto mb-1.5"
+                      style={{
+                        border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
+                        color: 'var(--accent-emerald-text)',
+                        fontFamily: "'DM Serif Display', serif",
+                        fontWeight: 400,
+                      }}
+                    >
                       {getInitials(rep.name)}
                     </div>
                     <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words mb-0.5" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
@@ -735,8 +744,13 @@ export default function MobileReps() {
                     </div>
                   )}
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-black text-base font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-cyan-solid), var(--accent-emerald-solid))' }}
+                    className="card-surface w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0"
+                    style={{
+                      border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
+                      color: 'var(--accent-emerald-text)',
+                      fontFamily: "'DM Serif Display', serif",
+                      fontWeight: 400,
+                    }}
                   >
                     {getInitials(rep.name)}
                   </div>
@@ -1098,27 +1112,19 @@ export default function MobileReps() {
         >
           <div>
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Role</label>
-            <div className="flex gap-2 flex-wrap">
-              {(['rep', 'admin', 'sub-dealer', 'project_manager'] as const).map((role) => {
-                const labels: Record<string, string> = { rep: 'Rep', admin: 'Admin', 'sub-dealer': 'Sub-Dealer', project_manager: 'PM' };
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setAddForm((f) => ({ ...f, userRole: role, sendInvite: false }))}
-                    className="flex-1 min-h-[40px] rounded-2xl text-sm font-semibold transition-colors"
-                    style={{
-                      background: addForm.userRole === role ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
-                      color: addForm.userRole === role ? '#000' : 'var(--text-muted)',
-                      border: addForm.userRole === role ? '1px solid var(--accent-emerald-solid)' : '1px solid var(--border-subtle)',
-                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                    }}
-                  >
-                    {labels[role]}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedPills<'rep' | 'admin' | 'sub-dealer' | 'project_manager'>
+              options={[
+                { value: 'rep', label: 'Rep' },
+                { value: 'admin', label: 'Admin' },
+                { value: 'sub-dealer', label: 'Sub-Dealer' },
+                { value: 'project_manager', label: 'PM' },
+              ]}
+              value={addForm.userRole}
+              onChange={(role) => setAddForm((f) => ({ ...f, userRole: role, sendInvite: false }))}
+              size="sm"
+              scrollable
+              ariaLabel="User role"
+            />
           </div>
           {addForm.userRole === 'project_manager' && (
             <div>
@@ -1216,24 +1222,16 @@ export default function MobileReps() {
           {addForm.userRole === 'rep' && (
             <div>
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Type</label>
-              <div className="flex gap-2">
-                {(['closer', 'setter', 'both'] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setAddForm((f) => ({ ...f, repType: type }))}
-                    className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold transition-colors"
-                    style={{
-                      background: addForm.repType === type ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
-                      color: addForm.repType === type ? '#000' : 'var(--text-muted)',
-                      border: addForm.repType === type ? '1px solid var(--accent-emerald-solid)' : '1px solid var(--border-subtle)',
-                      fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                    }}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <SegmentedPills<'closer' | 'setter' | 'both'>
+                options={[
+                  { value: 'closer', label: 'Closer' },
+                  { value: 'setter', label: 'Setter' },
+                  { value: 'both', label: 'Both' },
+                ]}
+                value={addForm.repType}
+                onChange={(type) => setAddForm((f) => ({ ...f, repType: type }))}
+                ariaLabel="Rep type"
+              />
             </div>
           )}
           {addForm.userRole === 'rep' && (
@@ -1272,10 +1270,10 @@ export default function MobileReps() {
           <button
             type="submit"
             disabled={isAddingUser}
-            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors disabled:opacity-50"
+            className="w-full min-h-[52px] rounded-2xl text-base font-semibold active:opacity-80 transition-colors disabled:opacity-50"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 0 20px var(--accent-emerald-glow)',
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

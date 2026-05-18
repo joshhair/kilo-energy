@@ -15,6 +15,7 @@ import {
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { SectionHeader } from '../components/SectionHeader';
 import { validateName } from '../../../../lib/validation';
+import { SegmentedPills } from '../../../../components/ui';
 
 export interface BaselinesSectionProps {
   editingInstaller: string | null;
@@ -222,43 +223,11 @@ export function BaselinesSection({
 
   // SolarTech family sub-tab
   const [stFamily, setStFamily] = useState<SolarTechFamily>('Goodleap');
-  const stFamilyRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [stFamilyIndicator, setStFamilyIndicator] = useState<{ left: number; width: number } | null>(null);
 
-  // PC family sub-tab
-  const pcFamilyTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pcFamilyIndicator, setPcFamilyIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  // Baseline tab indicator
-  const baselineTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [baselineIndicator, setBaselineIndicator] = useState<{ left: number; width: number } | null>(null);
+  // Sliding-indicator measurements are owned by SegmentedPills.
 
   // Confirm action dialog
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-
-  // ── Effects ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const pcInstallerNames = Object.keys(productCatalogInstallerConfigs).filter((n) => n !== 'SolarTech');
-    const allTabs = ['standard', 'solartech', ...pcInstallerNames];
-    const idx = allTabs.indexOf(baselineTab);
-    const el = baselineTabRefs.current[idx >= 0 ? idx : 0];
-    if (el) setBaselineIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [baselineTab, productCatalogInstallerConfigs]);
-
-  useEffect(() => {
-    const idx = SOLARTECH_FAMILIES.indexOf(stFamily);
-    const el = stFamilyRefs.current[idx];
-    if (el) setStFamilyIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [stFamily]);
-
-  useEffect(() => {
-    const config = productCatalogInstallerConfigs[baselineTab];
-    if (!config) return;
-    const fam = pcFamily[baselineTab] ?? config.families[0] ?? '';
-    const idx = config.families.indexOf(fam);
-    const el = pcFamilyTabRefs.current[idx >= 0 ? idx : 0];
-    if (el) setPcFamilyIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [baselineTab, pcFamily, productCatalogInstallerConfigs]);
 
   // Snapshot original tier values for delta badges
   useEffect(() => {
@@ -358,25 +327,23 @@ export function BaselinesSection({
     <div key="baselines" className="animate-tab-enter">
       <SectionHeader title="Baselines" subtitle="Standard installer rates and SolarTech product pricing" />
 
-      {/* Sub-tabs */}
+      {/* Sub-tabs — shared SegmentedPills */}
       {(() => {
         const pcInstallerNames = Object.keys(productCatalogInstallerConfigs).filter((n) => n !== 'SolarTech');
         const allTabs = ['standard', 'solartech', ...pcInstallerNames];
         return (
-          <div className="flex gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container flex-wrap">
-            {baselineIndicator && <div className="tab-indicator" style={baselineIndicator} />}
-            {allTabs.map((t, i) => (
-              <button
-                key={t}
-                ref={(el) => { baselineTabRefs.current[i] = el; }}
-                onClick={() => setBaselineTab(t)}
-                className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-[0.97] ${
-                  baselineTab === t ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {t === 'standard' ? 'Standard' : t === 'solartech' ? 'SolarTech' : t}
-              </button>
-            ))}
+          <div className="mb-5">
+            <SegmentedPills
+              options={allTabs.map((t) => ({
+                value: t,
+                label: t === 'standard' ? 'Standard' : t === 'solartech' ? 'SolarTech' : t,
+              }))}
+              value={baselineTab}
+              onChange={setBaselineTab}
+              size="sm"
+              scrollable
+              ariaLabel="Baseline tabs"
+            />
           </div>
         );
       })()}
@@ -740,25 +707,21 @@ export function BaselinesSection({
         const filteredProducts = productCatalogProducts.filter((p) => p.installer === installerName && p.family === currentFamily);
         return (
           <div>
-            {/* Family sub-tabs */}
+            {/* Family sub-tabs — shared SegmentedPills with per-family counts */}
             {config.families.length > 0 && (
-              <div className="flex gap-1 mb-4 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
-                {pcFamilyIndicator && <div className="tab-indicator" style={pcFamilyIndicator} />}
-                {config.families.map((fam, i) => {
-                  const pcFamCount = productCatalogProducts.filter((p) => p.installer === installerName && p.family === fam).length;
-                  return (
-                  <button
-                    key={fam}
-                    ref={(el) => { pcFamilyTabRefs.current[i] = el; }}
-                    onClick={() => setPcFamily((prev) => ({ ...prev, [installerName]: fam }))}
-                    className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] ${
-                      currentFamily === fam ? 'text-[var(--text-primary)]' : pcFamCount === 0 ? 'text-[var(--text-dim)] hover:text-[var(--text-secondary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {fam} <span className={`ml-0.5 ${currentFamily === fam ? 'text-[var(--text-secondary)]' : 'text-[var(--text-dim)]'}`}>({pcFamCount})</span>
-                  </button>
-                  );
-                })}
+              <div className="mb-4">
+                <SegmentedPills
+                  options={config.families.map((fam) => ({
+                    value: fam,
+                    label: fam,
+                    badge: productCatalogProducts.filter((p) => p.installer === installerName && p.family === fam).length,
+                  }))}
+                  value={currentFamily}
+                  onChange={(fam) => setPcFamily((prev) => ({ ...prev, [installerName]: fam }))}
+                  size="sm"
+                  scrollable
+                  ariaLabel={`${installerName} families`}
+                />
               </div>
             )}
 
@@ -1487,9 +1450,19 @@ export function BaselinesSection({
       {/* SolarTech — product family sub-tabs + tier table */}
       {baselineTab === 'solartech' && (
         <div>
-          <div className="flex gap-1 mb-4 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
-            {stFamilyIndicator && <div className="tab-indicator" style={stFamilyIndicator} />}
-            {SOLARTECH_FAMILIES.map((fam, i) => { const famCount = solarTechProducts.filter((p) => p.family === fam).length; return (<button key={fam} ref={(el) => { stFamilyRefs.current[i] = el; }} onClick={() => setStFamily(fam)} className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] ${stFamily === fam ? 'text-[var(--text-primary)]' : famCount === 0 ? 'text-[var(--text-dim)] hover:text-[var(--text-secondary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>{fam} <span className={`ml-0.5 ${stFamily === fam ? 'text-[var(--text-secondary)]' : 'text-[var(--text-dim)]'}`}>({famCount})</span></button>); })}
+          <div className="mb-4">
+            <SegmentedPills<SolarTechFamily>
+              options={SOLARTECH_FAMILIES.map((fam) => ({
+                value: fam,
+                label: fam,
+                badge: solarTechProducts.filter((p) => p.family === fam).length,
+              }))}
+              value={stFamily}
+              onChange={setStFamily}
+              size="sm"
+              scrollable
+              ariaLabel="SolarTech families"
+            />
           </div>
 
           {/* SolarTech Action bar */}

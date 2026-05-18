@@ -51,8 +51,12 @@ function sizeClasses(size: 'sm' | 'md'): string {
   return size === 'sm' ? 'px-2.5 py-1.5 text-xs rounded-lg' : 'px-3 py-2 text-sm rounded-xl';
 }
 
-/** Brand-gradient action button. The "primary" affordance on every
- *  Settings panel — Save / Add / Apply / Submit. */
+/** Primary action button — the single most important affordance on a
+ *  screen (Save / Add / Apply / Submit). Premium spec calls for a solid
+ *  accent fill, NOT a gradient — the gradient + cyan splash read as
+ *  promo CTA rather than premium product. The cascade across ~100
+ *  consumers is intentional: one fix here lifts every Settings panel,
+ *  modal footer, and form submit at once. */
 export function PrimaryButton({
   type = 'button',
   loading = false,
@@ -69,7 +73,7 @@ export function PrimaryButton({
       disabled={disabled || loading}
       className={`${BUTTON_BASE} ${sizeClasses(size)} ${className}`}
       style={{
-        background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
+        background: 'var(--accent-emerald-solid)',
         color: 'var(--text-on-accent)',
       }}
     >

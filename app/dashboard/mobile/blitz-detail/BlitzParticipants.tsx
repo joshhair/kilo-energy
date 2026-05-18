@@ -48,17 +48,19 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
     if (!selectedRepId) return;
     setAdding(true);
     try {
+      // Owner-initiated adds default to 'invited' — rep must confirm
+      // attendance before they count as approved.
       const response = await fetch(`/api/blitzes/${blitzId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedRepId, joinStatus: 'approved' }),
+        body: JSON.stringify({ userId: selectedRepId, joinStatus: 'invited' }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        toast(err?.error || 'Failed to add participant', 'error');
+        toast(err?.error || 'Failed to invite participant', 'error');
         return;
       }
-      toast('Participant added');
+      toast('Invitation sent');
       setShowAdd(false);
       setSelectedRepId('');
       onRefresh();
@@ -111,10 +113,15 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
       {canManage && (
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 text-base font-semibold min-h-[48px]"
-          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[40px] rounded-full text-[13px] font-medium tracking-wide active:scale-[0.98] transition-all"
+          style={{
+            color: 'var(--accent-emerald-text)',
+            background: 'transparent',
+            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)',
+            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+          }}
         >
-          <Plus className="w-4 h-4" /> Add Participant
+          <Plus className="w-3.5 h-3.5" /> Add participant
         </button>
       )}
 
@@ -127,7 +134,9 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
             const stats = statsByUserId.get(p.user.id);
             const statusBadge = p.joinStatus === 'approved' ? 'Approved' : p.joinStatus === 'pending' ? 'Pending' : 'Denied';
             const isOwner = p.user.id === blitzOwnerId;
-            const showAttendance = canManage && p.joinStatus === 'approved';
+            // Attendance pills only render for non-owner approved
+            // participants — the leader marks others, not themselves.
+            const showAttendance = canManage && p.joinStatus === 'approved' && !isOwner;
             return (
               <div
                 key={p.id}
@@ -172,38 +181,51 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                   </div>
                 )}
 
-                {showAttendance && (
-                  <div className="flex items-center gap-2 mt-3">
-                    {(['attended', 'partial', 'no-show'] as const).map((s) => {
-                      const active = (p.attendanceStatus ?? '') === s;
-                      return (
-                        <button
-                          key={s}
-                          disabled={updatingAttendance.has(p.user.id)}
-                          onClick={() => handleAttendance(p.user.id, active ? null : s)}
-                          className="flex-1 min-h-[36px] text-xs font-semibold rounded-lg transition-colors disabled:opacity-40 px-2"
-                          style={{
-                            color: active ? '#000' : 'var(--text-muted)',
-                            background: active ? 'var(--accent-emerald-solid)' : 'transparent',
-                            border: `1px solid ${active ? 'var(--accent-emerald-solid)' : 'var(--border-subtle)'}`,
-                            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                          }}
-                        >
-                          {s === 'no-show' ? 'No-show' : s.charAt(0).toUpperCase() + s.slice(1)}
-                        </button>
-                      );
-                    })}
+                {/* Attendance pills + Remove on one row — compact, no
+                    equal-width flex (label-driven width), single-line.
+                    Active pill uses emerald soft-tint to read as a
+                    selection without the chunky filled-button look. */}
+                {(showAttendance || (canManage && !isOwner && p.joinStatus !== 'pending')) && (
+                  <div className="flex items-center justify-between gap-2 mt-3">
+                    {showAttendance ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {(['attended', 'partial', 'no-show'] as const).map((s) => {
+                          const active = (p.attendanceStatus ?? '') === s;
+                          return (
+                            <button
+                              key={s}
+                              disabled={updatingAttendance.has(p.user.id)}
+                              onClick={() => handleAttendance(p.user.id, active ? null : s)}
+                              className="whitespace-nowrap text-xs font-semibold rounded-full transition-colors disabled:opacity-40"
+                              style={{
+                                padding: '6px 12px',
+                                color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                                background: active ? 'var(--accent-emerald-soft)' : 'transparent',
+                                border: `1px solid ${active ? 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)' : 'var(--border-subtle)'}`,
+                                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                              }}
+                            >
+                              {s === 'no-show' ? 'No-show' : s.charAt(0).toUpperCase() + s.slice(1)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : <span />}
+                    {canManage && !isOwner && p.joinStatus !== 'pending' && (
+                      <button
+                        onClick={() => setRemoveTarget({ id: p.user.id, name })}
+                        aria-label={`Remove ${name}`}
+                        className="shrink-0 flex items-center justify-center active:opacity-60 transition-opacity"
+                        style={{
+                          width: 32, height: 32, borderRadius: 8,
+                          color: 'var(--text-dim)',
+                          background: 'transparent',
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                )}
-
-                {canManage && !isOwner && p.joinStatus !== 'pending' && (
-                  <button
-                    onClick={() => setRemoveTarget({ id: p.user.id, name })}
-                    className="mt-3 text-xs font-semibold flex items-center gap-1 min-h-[32px]"
-                    style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    <Trash2 className="w-3 h-3" /> Remove
-                  </button>
                 )}
               </div>
             );
@@ -234,8 +256,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
             disabled={!selectedRepId || adding}
             className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 0 20px var(--accent-emerald-glow)',
+              background: 'var(--accent-emerald-solid)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >

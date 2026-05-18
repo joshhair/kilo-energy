@@ -17,20 +17,19 @@ import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, Pause
 import MobileBadge from './shared/MobileBadge';
 import MobileCard from './shared/MobileCard';
 import MobileStatCard from './shared/MobileStatCard';
+import { SegmentedPills } from '../../../components/ui';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const FONT_DISPLAY = "var(--m-font-display, 'DM Serif Display', serif)";
 const FONT_BODY = "var(--m-font-body, 'DM Sans', sans-serif)";
 const ACCENT = 'var(--accent-emerald-solid)';
 const ACCENT2 = 'var(--accent-cyan-solid)';
-const ACCENT_DISP = 'var(--accent-emerald-display)';
+// ACCENT_DISP removed — Revenue card uses var(--accent-emerald-text)/cyan-display inline.
 const MUTED = 'var(--text-muted)';
 const DIM = 'var(--text-dim)';
 const DANGER = 'var(--accent-red-solid)';
 const WARNING = 'var(--accent-amber-solid)';
-// BIG hero numbers — near-black for max readability on white in light mode.
-// Brand color frames the number via the small uppercase label, not the digit.
-const HERO_NUM = 'var(--text-primary)';
+// HERO_NUM removed — hero card now uses var(--accent-cyan-display) inline for the Revenue numeral.
 
 function getGreeting(name: string): string {
   const h = new Date().getHours();
@@ -84,9 +83,6 @@ export default function MobileAdminDashboard() {
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
-  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
-  const [pillReady, setPillReady] = useState(false);
   const [recentSearch, setRecentSearch] = useState('');
   const [recentPage, setRecentPage] = useState(1);
   const RECENT_PER_PAGE = 10;
@@ -133,16 +129,7 @@ export default function MobileAdminDashboard() {
   }, [effectiveRepId]);
   useEffect(() => { fetchMentions(); }, [fetchMentions]);
 
-  useEffect(() => {
-    const idx = PERIODS.findIndex(p => p.value === period);
-    const el = pillRefs.current[idx];
-    if (!el) return;
-    const parent = el.parentElement!;
-    const parentRect = parent.getBoundingClientRect();
-    const rect = el.getBoundingClientRect();
-    setPillStyle({ left: rect.left - parentRect.left + parent.scrollLeft, width: rect.width });
-    setPillReady(true);
-  }, [period]);
+  // Sliding indicator + scroll-into-view are now owned by SegmentedPills.
 
   useEffect(() => { setRecentPage(1); setRecentSearch(''); }, [period]);
 
@@ -343,160 +330,164 @@ export default function MobileAdminDashboard() {
           <button
             onClick={() => setViewAsUser({ id: currentRepId, name: currentRepName, role: 'rep' })}
             className="text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap"
-            style={{ background: 'var(--accent-emerald-soft)', borderColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald-text)' }}
+            style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', color: 'var(--accent-emerald-text)' }}
           >
             My Rep View
           </button>
         )}
       </div>
 
-      {/* Period filter — sliding pill (matches rep dashboard) */}
-      <div className="-mx-5" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)', maskImage: 'linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)' }}>
-        <div className="relative flex gap-2 overflow-x-auto no-scrollbar px-5">
-          {pillReady && (
-            <span
-              className="absolute top-0 h-full rounded-full pointer-events-none"
-              style={{
-                left: pillStyle.left,
-                width: pillStyle.width,
-                background: ACCENT,
-                transition: 'left 200ms cubic-bezier(0.34, 1.56, 0.64, 1), width 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            />
-          )}
-          {PERIODS.map((p, idx) => (
-            <button
-              key={p.value}
-              ref={(el) => { pillRefs.current[idx] = el; }}
-              onClick={() => { setPeriod(p.value); requestAnimationFrame(() => { pillRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }); }}
-              className="shrink-0 rounded-full px-4 py-2 text-base font-medium transition-colors duration-200 min-h-[44px] touch-manipulation"
-              style={{
-                fontFamily: FONT_BODY,
-                color: period === p.value ? '#000' : MUTED,
-                fontWeight: period === p.value ? 700 : undefined,
-                border: period === p.value ? 'none' : '1px solid var(--border-subtle)',
-                position: 'relative',
-                zIndex: 1,
-                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+      {/* Period filter — shared SegmentedPills primitive. The shared
+          PERIODS list labels 'all' as "<year> Cash" for rep dashboard
+          (where it shows a cash-forecast hero). For admin we want lifetime
+          aggregate semantics, so we override that pill's label back to
+          "All Time" without forking the type. */}
+      <div className="-mx-5 px-5">
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
+          value={period}
+          onChange={setPeriod}
+          scrollable
+          ariaLabel="Filter admin dashboard by period"
+        />
       </div>
 
-      {/* ── Hero: Revenue with Profit / Paid to Reps ── */}
-      <MobileCard hero>
+      {/* ── Hero: Revenue with Profit / Paid Out ── */}
+      <MobileCard hero style={{ border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)', boxShadow: 'none' }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="tracking-widest uppercase" style={{ color: ACCENT_DISP, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.12em' }}>Revenue</p>
-          <TrendingUp className="w-5 h-5" style={{ color: ACCENT_DISP }} />
+          <p className="tracking-widest uppercase" style={{ color: 'var(--accent-emerald-text)', fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.22em' }}>Revenue</p>
+          <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
         </div>
-        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: HERO_NUM, lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
+        <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '2.5rem', color: 'var(--accent-cyan-display)', lineHeight: 1.1 }}>{fmtCompact$(animatedRevenue)}</p>
         <div key={period} className="flex items-center gap-4 mt-4" style={{ animation: 'statCellFade 280ms cubic-bezier(0.16, 1, 0.3, 1) both' }}>
           <div>
-            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedProfit)}</p>
+            <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--accent-emerald-text)' }}>{fmtCompact$(animatedProfit)}</p>
             <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Profit</p>
           </div>
           <div className="h-8" style={{ width: '1px', background: 'var(--border-subtle)' }} />
           <div>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{fmtCompact$(animatedPaid)}</p>
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid to Reps</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem' }}>Paid Out</p>
           </div>
         </div>
       </MobileCard>
 
-      {/* ── Quick stats row ── */}
+      {/* ── Quick stats row ──
+          Premium-congruent vocabulary: every tile uses the Revenue hero
+          card's eyebrow style (emerald-text 10px uppercase 0.22em) above
+          a `var(--text-primary)` serif numeral. The label tells you which
+          stat — no rainbow numerals. See premium-spec.md rule 4 (typography)
+          and rule 6 (color palette: emerald-text accent, never a splash). */}
       <div className="grid grid-cols-2 gap-3">
-        <MobileStatCard label="Active" value={active.length} color={ACCENT} />
-        <MobileStatCard label="Reps" value={reps.filter(r => r.active !== false).length} color={ACCENT2} />
+        <MobileStatCard eyebrow label="Active" value={active.length} />
+        <MobileStatCard eyebrow label="Reps" value={reps.filter(r => r.active !== false).length} />
         {(() => {
           const sold = formatCompactKWParts(totalKW);
           const installed = formatCompactKWParts(totalKWInstalled);
           return (
             <>
-              <MobileStatCard label={`${sold.unit} Sold`} value={sold.value} color={WARNING} />
-              <MobileStatCard label={`${installed.unit} Installed`} value={installed.value} color={DANGER} />
+              <MobileStatCard eyebrow label={`${sold.unit} Sold`} value={sold.value} />
+              <MobileStatCard eyebrow label={`${installed.unit} Installed`} value={installed.value} />
             </>
           );
         })()}
       </div>
 
-      {/* ── Needs Attention (action-oriented) ── */}
+      {/* ── Needs Attention (action-oriented) — refined card. Eyebrow
+          label + serif headline + slim hairline count badge. Row text
+          dropped to 13px with 14px icons for the premium scale. */}
       {needsAttention > 0 ? (
         <MobileCard>
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5" style={{ color: WARNING }} />
-            <p className="font-semibold text-[var(--text-primary)]" style={{ fontFamily: FONT_BODY, fontSize: '1rem' }}>Needs Attention</p>
-            <span className="ml-auto font-bold" style={{ color: ACCENT, fontFamily: FONT_DISPLAY, fontSize: '1.1rem' }}>{needsAttention}</span>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: WARNING }} />
+              <p
+                className="leading-tight"
+                style={{
+                  fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                  fontSize: '1.05rem',
+                  color: 'var(--text-primary)',
+                }}
+              >Needs Attention</p>
+            </div>
+            <span
+              className="inline-flex items-center justify-center px-2 py-0.5 rounded-full tabular-nums"
+              style={{
+                fontFamily: FONT_BODY,
+                fontSize: '11px',
+                fontWeight: 600,
+                color: 'var(--accent-emerald-text)',
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
+              }}
+            >{needsAttention}</span>
           </div>
 
           {draftCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
               style={pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-4 h-4" style={{ color: MUTED }} />
-                <span style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '1rem' }}>{draftCount} payroll drafts</span>
+              <div className="flex items-center gap-2.5">
+                <CreditCard className="w-3.5 h-3.5" style={{ color: MUTED }} />
+                <span style={{ color: 'var(--text-primary)', fontFamily: FONT_BODY, fontSize: '13px' }}>{draftCount} payroll drafts</span>
               </div>
-              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
             </button>
           )}
 
           {pendingCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
               style={flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-4 h-4" style={{ color: WARNING }} />
-                <span style={{ color: WARNING, fontFamily: FONT_BODY, fontSize: '1rem' }}>{pendingCount} pending &middot; {fmtCompact$(pendingTotal)}</span>
+              <div className="flex items-center gap-2.5">
+                <CreditCard className="w-3.5 h-3.5" style={{ color: 'var(--accent-amber-text)' }} />
+                <span style={{ color: 'var(--accent-amber-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{pendingCount} pending &middot; {fmtCompact$(pendingTotal)}</span>
               </div>
-              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
             </button>
           )}
 
           {flaggedCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
               style={stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
-              <div className="flex items-center gap-3">
-                <Flag className="w-4 h-4" style={{ color: DANGER }} />
-                <span style={{ color: DANGER, fontFamily: FONT_BODY, fontSize: '1rem' }}>{flaggedCount} flagged projects</span>
+              <div className="flex items-center gap-2.5">
+                <Flag className="w-3.5 h-3.5" style={{ color: 'var(--accent-red-text)' }} />
+                <span style={{ color: 'var(--accent-red-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{flaggedCount} flagged projects</span>
               </div>
-              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
             </button>
           )}
 
           {stalledProjects.length > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className={`w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity${onHoldCount > 0 ? ' border-b' : ''}`}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${onHoldCount > 0 ? ' border-b' : ''}`}
               style={onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
-              <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4" style={{ color: MUTED }} />
-                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{stalledProjects.length} stalled projects</span>
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-3.5 h-3.5" style={{ color: MUTED }} />
+                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{stalledProjects.length} stalled projects</span>
               </div>
-              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
             </button>
           )}
 
           {onHoldCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[48px] py-2 text-left active:opacity-70 transition-opacity"
+              className="w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity"
             >
-              <div className="flex items-center gap-3">
-                <PauseCircle className="w-4 h-4" style={{ color: MUTED }} />
-                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '1rem' }}>{onHoldCount} on hold</span>
+              <div className="flex items-center gap-2.5">
+                <PauseCircle className="w-3.5 h-3.5" style={{ color: MUTED }} />
+                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{onHoldCount} on hold</span>
               </div>
-              <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
+              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
             </button>
           )}
         </MobileCard>
@@ -516,7 +507,7 @@ export default function MobileAdminDashboard() {
 
       {/* ── Pipeline snapshot ── */}
       <MobileCard>
-        <p className="tracking-widest uppercase mb-4" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Pipeline</p>
+        <p className="tracking-widest uppercase mb-4" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.22em' }}>Pipeline</p>
         <div className="space-y-2">
           {ACTIVE_PHASES.filter((phase) => (phaseCounts[phase] || 0) > 0).map((phase) => {
             const count = phaseCounts[phase] || 0;
@@ -538,7 +529,7 @@ export default function MobileAdminDashboard() {
       {topReps.length > 0 && (
         <MobileCard onTap={() => router.push('/dashboard/users')}>
           <div className="flex items-center justify-between mb-4">
-            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Top Reps</p>
+            <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.22em' }}>Top Reps</p>
             <ChevronRight className="w-4 h-4" style={{ color: DIM }} />
           </div>
           <div className="space-y-3">
@@ -547,7 +538,7 @@ export default function MobileAdminDashboard() {
                 <span
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
-                    background: r.rank === 1 ? 'var(--accent-emerald-soft)' : r.rank === 2 ? 'var(--accent-cyan-soft)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
+                    background: r.rank === 1 ? 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)' : r.rank === 2 ? 'color-mix(in srgb, var(--accent-cyan-solid) 14%, transparent)' : 'color-mix(in srgb, var(--text-muted) 12%, transparent)',
                     color: r.rank === 1 ? ACCENT : r.rank === 2 ? ACCENT2 : MUTED,
                     fontFamily: FONT_DISPLAY,
                   }}
@@ -597,7 +588,7 @@ export default function MobileAdminDashboard() {
           </div>
           <div className="space-y-2">
             {cancellationReasons.map(([reason, count]) => (
-              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'var(--surface-inset-subtle)' }}>
+              <div key={reason} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>{reason}</span>
                 <span className="font-semibold tabular-nums text-sm" style={{ color: DANGER }}>{count}</span>
               </div>
@@ -630,7 +621,7 @@ export default function MobileAdminDashboard() {
       {/* ── Recent Deals ── */}
       <MobileCard>
         <div className="flex items-center justify-between mb-3">
-          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500 }}>Recent Deals</p>
+          <p className="tracking-widest uppercase" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.22em' }}>Recent Deals</p>
           <button onClick={() => router.push('/dashboard/projects')} className="active:opacity-70 transition-opacity" style={{ color: ACCENT, fontFamily: FONT_BODY, fontSize: '0.875rem' }}>View all</button>
         </div>
         <input
@@ -638,7 +629,7 @@ export default function MobileAdminDashboard() {
           placeholder="Search customer or rep..."
           value={recentSearch}
           onChange={(e) => { setRecentSearch(e.target.value); setRecentPage(1); }}
-          className="w-full mb-3 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none"
+          className="w-full mb-3 rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
           style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '1px solid var(--border-subtle)' }}
         />
         {(() => {

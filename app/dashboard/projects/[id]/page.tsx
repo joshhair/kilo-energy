@@ -898,6 +898,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Commission — rep view shows their own payroll entries */}
       {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (() => {
+        // isTrainerOnDeal flags the trainer-ONLY case (drives the
+        // "My Commission (Trainer)" heading + dedicated trainer entries
+        // list below). When the viewer is also the closer/setter/co-party,
+        // their projected trainer pay folds into the role hero card via
+        // `viewerTrainerPay` below — the trainer-only heading would be
+        // misleading. So we keep the exclusion guards here.
         const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
         const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
         return (

@@ -19,6 +19,7 @@ import {
   DEFAULT_INSTALL_PAY_PCT,
 } from '../../../lib/data';
 import { MAX_TRAINER_RATE_PER_W } from '../../../lib/schemas/trainer-assignment';
+import { SegmentedPills } from '../../../components/ui';
 import { sortForSelection } from '../../../lib/sorting';
 import { isPaidAndEffective, formatDate } from '../../../lib/utils';
 import { PHASE_PILL } from '../projects/components/shared';
@@ -221,14 +222,7 @@ function TrainingPageInner() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  // Tab indicator (rep view)
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
-  useEffect(() => {
-    const idx = REP_TABS.findIndex((t) => t.key === activeTab);
-    const el = tabRefs.current[idx];
-    if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [activeTab, isHydrated]);
+  // Tab indicator (rep view) is owned by SegmentedPills.
 
   // ── Admin filters (URL-synced — survives back-nav like Projects page) ──────
   const [adminStatusFilter, setAdminStatusFilter] = useState<AdminStatus | 'all'>(() => {
@@ -1434,27 +1428,23 @@ function TrainingPageInner() {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 mb-6 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
-        {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
-        {REP_TABS.map((t, i) => (
-          <button
-            key={t.key}
-            ref={(el) => { tabRefs.current[i] = el; }}
-            onClick={() => setActiveTab(t.key)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-              activeTab === t.key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {t.label}
-            {t.key === 'active' && activeTrainees.length > 0 && (
-              <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">({activeTrainees.length})</span>
-            )}
-            {t.key === 'residuals' && residualTrainees.length > 0 && (
-              <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">({residualTrainees.length})</span>
-            )}
-          </button>
-        ))}
+      {/* Tab bar — shared SegmentedPills, amber accent for trainer surfaces. */}
+      <div className="mb-6">
+        <SegmentedPills<RepTab>
+          options={REP_TABS.map((t) => ({
+            value: t.key,
+            label: t.label,
+            badge:
+              t.key === 'active' && activeTrainees.length > 0 ? activeTrainees.length
+              : t.key === 'residuals' && residualTrainees.length > 0 ? residualTrainees.length
+              : undefined,
+          }))}
+          value={activeTab}
+          onChange={setActiveTab}
+          accent="amber"
+          size="sm"
+          ariaLabel="Trainer hub tabs"
+        />
       </div>
 
       {/* OVERVIEW */}
@@ -3033,26 +3023,22 @@ function BackfillWizard({
                 Select which of {traineeName}&apos;s historical deals should receive retroactive trainer entries for {trainerName}.
               </p>
 
-              {/* Filter chips */}
-              <div className="flex flex-wrap gap-1.5">
-                {([
-                  ['all', 'All'],
-                  ['paidM2', 'Paid M2'],
-                  ['paidM3', 'Paid M3'],
-                  ['completed', 'Completed'],
-                  ['hasTrainer', 'Has trainer'],
-                ] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setStatusFilter(key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      statusFilter === key ? 'bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/30' : 'text-[var(--text-secondary)] bg-[var(--surface-card)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {/* Filter chips — shared SegmentedPills, amber accent
+                  matches the trainer-assignment workflow's accent. */}
+              <SegmentedPills
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'paidM2', label: 'Paid M2' },
+                  { value: 'paidM3', label: 'Paid M3' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'hasTrainer', label: 'Has trainer' },
+                ]}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                accent="amber"
+                size="sm"
+                ariaLabel="Filter historical deals"
+              />
 
               {/* Deal table */}
               <div className="card-surface rounded-xl overflow-hidden">

@@ -289,19 +289,54 @@ export async function notify(input: NotifyInput): Promise<NotifyResult> {
         }
         result = await sendSmsChannel({ to: addr, body: input.smsBody });
       } else {
-        // push
-        if (!input.pushBody) {
-          attempts.push({ channel: 'push', ok: false, error: 'No pushBody provided' });
+        // push — Phase 4. Fan out across every PushSubscription on file
+        // for this user. Each subscription gets its own delivery row.
+        // pushBody falls back to an email-derived plain-text snippet when
+        // callers (cron, broadcast) don't pass one explicitly.
+        const body = input.pushBody
+          ?? (input.subject ? input.subject : 'Open Kilo for the latest update.');
+        if (!input.userId) {
+          attempts.push({ channel: 'push', ok: false, error: 'Push requires a known userId' });
           allOk = false;
           continue;
         }
-        // Phase 2 stub — Phase 5 will look up the actual subscription record.
-        result = await sendPushChannel({
-          endpoint: addr,
-          provider: 'web_push',
-          title: input.subject,
-          body: input.pushBody,
-        });
+        const subs = await prisma.pushSubscription.findMany({ where: { userId: input.userId } });
+        if (subs.length === 0) {
+          attempts.push({ channel: 'push', ok: false, error: 'No push subscriptions on file' });
+          allOk = false;
+          continue;
+        }
+        let pushAnyOk = false;
+        for (const s of subs) {
+          const r = await sendPushChannel({
+            endpoint: s.endpoint,
+            provider: (s.provider === 'apns' || s.provider === 'fcm') ? s.provider : 'web_push',
+            p256dh: s.p256dh,
+            auth: s.auth,
+            nativeToken: s.nativeToken,
+            title: input.subject,
+            body,
+          });
+          const deliveryId = await persistDelivery({
+            userId: input.userId,
+            eventType: input.type,
+            channel: 'push',
+            toAddress: s.endpoint,
+            status: r.status,
+            providerMessageId: r.providerMessageId,
+            errorReason: r.errorReason,
+            projectId: input.projectId,
+          });
+          attempts.push({ channel: 'push', ok: r.ok, deliveryId, error: r.errorReason });
+          if (r.ok) pushAnyOk = true;
+          // Garbage-collect dead subscriptions so we stop wasting cycles
+          // on browsers that have revoked permission or uninstalled the SW.
+          if (!r.ok && r.errorReason === 'GONE') {
+            try { await prisma.pushSubscription.delete({ where: { endpoint: s.endpoint } }); } catch { /* concurrent delete */ }
+          }
+        }
+        if (!pushAnyOk) allOk = false;
+        continue;
       }
 
       const deliveryId = await persistDelivery({

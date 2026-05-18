@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
@@ -20,6 +20,7 @@ import {
 import { PaginationBar } from '../components/PaginationBar';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { EarningsSkeleton } from './components/EarningsSkeleton';
+import { SegmentedPills } from '../../../components/ui';
 import { SubDealerEarningsView } from './components/SubDealerEarningsView';
 import { MonthlyEarningsBarChart, computeMonthlyBarData, MONTH_LABELS } from './components/MonthlyEarningsBarChart';
 import { sumPaid } from '../../../lib/aggregators';
@@ -234,15 +235,7 @@ function RepEarningsView() {
   const reimbEnd        = Math.min(reimbStart + reimbPageSize, reimbTotal);
   const pagedReimbs     = filteredReimbs.slice(reimbStart, reimbEnd);
 
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const TABS = ['deal', 'bonus', 'reimbursements'] as const;
-    const idx = TABS.indexOf(tab);
-    const el = tabRefs.current[idx];
-    if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab, isHydrated]);
+  // Sliding tab indicator owned by SegmentedPills.
 
   useEffect(() => { setDealPage(1); setBonusPage(1); setDealRoleFilter(null); }, [monthFilter]);
   useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
@@ -492,15 +485,19 @@ function RepEarningsView() {
         onMonthClick={(key) => setMonthFilter((prev) => prev === key ? null : key)}
       />
 
-      {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
-        {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
-        {(['deal', 'bonus', 'reimbursements'] as const).map((t, i) => (
-          <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] min-w-0 overflow-hidden ${tab === t ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
-            <span className="block truncate">{t === 'deal' ? `Payroll Report (${sortedDealsBase.length})` : t === 'bonus' ? `Bonuses (${sortedBonuses.length})` : `Reimb. History (${filteredReimbs.length})`}</span>
-          </button>
-        ))}
+      {/* Tab bar — shared SegmentedPills with per-tab count badges */}
+      <div className="mb-5">
+        <SegmentedPills<'deal' | 'bonus' | 'reimbursements'>
+          options={[
+            { value: 'deal', label: 'Payroll Report', badge: sortedDealsBase.length },
+            { value: 'bonus', label: 'Bonuses', badge: sortedBonuses.length },
+            { value: 'reimbursements', label: 'Reimb. History', badge: filteredReimbs.length },
+          ]}
+          value={tab}
+          onChange={setTab}
+          size="sm"
+          ariaLabel="Earnings tabs"
+        />
       </div>
 
       {/* Active month filter chip */}
@@ -802,7 +799,6 @@ function AdminFinancialsView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { payrollEntries, setPayrollEntries, reimbursements, setReimbursements, reps } = useApp();
-  const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
   type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
@@ -1008,14 +1004,7 @@ function AdminFinancialsView() {
     }).sort((a, b) => b.total - a.total);
   }, [reps, payrollEntries, reimbursements, todayStr, byRepPeriod]);
 
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
-  useEffect(() => {
-    const TABS = ['payroll', 'reimbursements', 'by-rep'] as const;
-    const idx = TABS.indexOf(tab);
-    const el = tabRefs.current[idx];
-    if (el) setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [tab, isHydrated]);
+  // Sliding tab indicator owned by SegmentedPills.
 
   const pendingPayrollCount = repFilteredPayroll.filter((e) => e.status === 'Pending').length;
   const pendingReimbCount   = repFilteredReimbs.filter((r) => r.status === 'Pending').length;
@@ -1080,15 +1069,19 @@ function AdminFinancialsView() {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 mb-5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 w-fit tab-bar-container">
-        {indicatorStyle && <div className="tab-indicator" style={indicatorStyle} />}
-        {(['payroll', 'reimbursements', 'by-rep'] as const).map((t, i) => (
-          <button key={t} ref={(el) => { tabRefs.current[i] = el; }} onClick={() => setTab(t)}
-            className={`relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${tab === t ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
-            {t === 'payroll' ? `Payroll (${filteredPayroll.length})` : t === 'reimbursements' ? `Reimbursements (${filteredReimbs.length})` : 'By Rep'}
-          </button>
-        ))}
+      {/* Admin Earnings tab bar — shared SegmentedPills with badges */}
+      <div className="mb-5">
+        <SegmentedPills<'payroll' | 'reimbursements' | 'by-rep'>
+          options={[
+            { value: 'payroll', label: 'Payroll', badge: filteredPayroll.length },
+            { value: 'reimbursements', label: 'Reimbursements', badge: filteredReimbs.length },
+            { value: 'by-rep', label: 'By Rep' },
+          ]}
+          value={tab}
+          onChange={setTab}
+          size="sm"
+          ariaLabel="Admin earnings tabs"
+        />
       </div>
 
       {/* Tab content */}
@@ -1323,7 +1316,7 @@ function AdminFinancialsView() {
                 aria-label="Period"
               >
                 {PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <option key={p.value} value={p.value}>{p.value === 'all' ? 'All Time' : p.label}</option>
                 ))}
               </select>
               <span className="text-xs text-[var(--text-muted)]">

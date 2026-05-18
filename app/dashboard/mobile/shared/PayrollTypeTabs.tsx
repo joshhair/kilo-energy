@@ -1,18 +1,30 @@
 'use client';
-type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
-const TABS: TypeTab[] = ['Deal', 'Bonus', 'Trainer'];
-export default function PayrollTypeTabs({ value, onChange }: { value: TypeTab; onChange: (t: TypeTab) => void }) {
-  const idx = TABS.indexOf(value);
+
+/**
+ * Thin wrapper around the shared SegmentedPills primitive — kept as a
+ * named component so the payroll page can mount it at the existing
+ * import path without restructuring. Type union here is the source of
+ * truth for the three payroll-entry types.
+ */
+
+import { SegmentedPills } from '../../../../components/ui';
+
+export type PayrollTypeTab = 'Deal' | 'Bonus' | 'Trainer';
+const TABS: PayrollTypeTab[] = ['Deal', 'Bonus', 'Trainer'];
+
+export default function PayrollTypeTabs({
+  value,
+  onChange,
+}: {
+  value: PayrollTypeTab;
+  onChange: (t: PayrollTypeTab) => void;
+}) {
   return (
-    <div className="relative flex rounded-xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-      <span aria-hidden className="absolute inset-y-0 rounded-xl pointer-events-none" style={{ width: 'calc(100% / 3)', background: 'var(--accent-emerald-solid)', transform: `translateX(calc(${idx} * 100%))`, transition: 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)', willChange: 'transform' }} />
-      {TABS.map((t) => (
-        <button key={t} type="button" onClick={() => onChange(t)}
-          className="relative flex-1 z-10 min-h-[44px] text-sm font-semibold touch-manipulation"
-          style={{ color: value === t ? 'var(--text-on-accent)' : 'var(--text-muted)', transition: 'color 200ms ease', background: 'transparent', border: 'none', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-          {t}
-        </button>
-      ))}
-    </div>
+    <SegmentedPills<PayrollTypeTab>
+      options={TABS.map((t) => ({ value: t, label: t }))}
+      value={value}
+      onChange={onChange}
+      ariaLabel="Payroll type"
+    />
   );
 }

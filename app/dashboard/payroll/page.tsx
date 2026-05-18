@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
+import { SegmentedPills } from '../../../components/ui';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
@@ -261,35 +262,7 @@ function PayrollPageInner() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  // Page view tab indicators
-  const pageViewRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pageViewIndicator, setPageViewIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const idx = pageView === 'payroll' ? 0 : 1;
-    const el = pageViewRefs.current[idx];
-    if (el) setPageViewIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [pageView, isHydrated]);
-
-  // Sliding tab indicators
-  const statusTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [statusIndicator, setStatusIndicator] = useState<{ left: number; width: number } | null>(null);
-  const typeTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [typeIndicator, setTypeIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const STATUS_TABS: StatusTab[] = ['Draft', 'Pending', 'Paid'];
-    const idx = STATUS_TABS.indexOf(statusTab);
-    const el = statusTabRefs.current[idx];
-    if (el) setStatusIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [statusTab, isHydrated]);
-
-  useEffect(() => {
-    const TYPE_TABS: TypeTab[] = ['Deal', 'Bonus', 'Trainer'];
-    const idx = TYPE_TABS.indexOf(typeTab);
-    const el = typeTabRefs.current[idx];
-    if (el) setTypeIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [typeTab, isHydrated]);
+  // Sliding tab indicators are owned by SegmentedPills.
 
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -997,8 +970,8 @@ function PayrollPageInner() {
             <button
               onClick={() => setShowPublishConfirm(true)}
               disabled={pendingCount === 0}
-              className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
+              className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
             >
               Publish {typeTab} Payroll
             </button>
@@ -1087,37 +1060,18 @@ function PayrollPageInner() {
         )}
       </div>
 
-      {/* Top-level page view switcher */}
-      <div className="flex gap-1 mb-8 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-        {pageViewIndicator && <div className="tab-indicator" style={pageViewIndicator} />}
-        {(['payroll', 'reimbursements'] as PageView[]).map((v, i) => (
-          <button
-            key={v}
-            ref={(el) => { pageViewRefs.current[i] = el; }}
-            onClick={() => setPageView(v)}
-            className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={pageView === v
-              ? {
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                }
-              : { color: 'var(--text-secondary)' }
-            }
-          >
-            {v === 'payroll' ? (
-              <><CreditCard className="w-3.5 h-3.5" /> Payroll</>
-            ) : (
-              <><Receipt className="w-3.5 h-3.5" /> Reimbursements
-                {pendingReimCount > 0 && (
-                  <span className="ml-1 text-xs bg-yellow-500/20 text-[var(--accent-amber-text)] px-1.5 py-0.5 rounded-full font-semibold">{pendingReimCount}</span>
-                )}
-              </>
-            )}
-          </button>
-        ))}
+      {/* Top-level page view switcher — shared SegmentedPills */}
+      <div className="mb-8">
+        <SegmentedPills<PageView>
+          options={[
+            { value: 'payroll', label: 'Payroll' },
+            { value: 'reimbursements', label: 'Reimbursements', badge: pendingReimCount > 0 ? pendingReimCount : undefined },
+          ]}
+          value={pageView}
+          onChange={setPageView}
+          size="sm"
+          ariaLabel="Payroll page view"
+        />
       </div>
 
       {/* ── Reimbursements view ──────────────────────────────────────────────── */}
@@ -1315,57 +1269,32 @@ function PayrollPageInner() {
         </div>
       </div>
 
-      {/* Status tabs */}
-      <div className="flex gap-1 mb-4 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-        {statusIndicator && <div className="tab-indicator" style={statusIndicator} />}
-        {(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s, i) => (
-          <button
-            key={s}
-            ref={(el) => { statusTabRefs.current[i] = el; }}
-            onClick={() => changeStatusTab(s)}
-            className="relative z-10 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={statusTab === s
-              ? {
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                }
-              : { color: 'var(--text-secondary)' }
-            }
-          >
-            {s}
-            <span className="ml-1.5 text-xs opacity-70">
-              ({filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s !== 'Paid' || p.date <= today)).length})
-            </span>
-          </button>
-        ))}
+      {/* Status + Type tabs — shared SegmentedPills with per-tab counts */}
+      <div className="mb-4">
+        <SegmentedPills<StatusTab>
+          options={(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s) => ({
+            value: s,
+            label: s,
+            badge: filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s !== 'Paid' || p.date <= today)).length,
+          }))}
+          value={statusTab}
+          onChange={changeStatusTab}
+          size="sm"
+          ariaLabel="Payroll status"
+        />
       </div>
-
-      {/* Type tabs */}
-      <div className="flex gap-1 mb-6 rounded-xl p-1 w-fit tab-bar-container" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-        {typeIndicator && <div className="tab-indicator" style={typeIndicator} />}
-        {(['Deal', 'Bonus', 'Trainer'] as TypeTab[]).map((t, i) => (
-          <button
-            key={t}
-            ref={(el) => { typeTabRefs.current[i] = el; }}
-            onClick={() => changeTypeTab(t)}
-            className="relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-            style={typeTab === t
-              ? {
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent), color-mix(in srgb, var(--accent-cyan-solid) 18%, transparent))',
-                  border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
-                  boxShadow: '0 0 12px color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 600,
-                }
-              : { color: 'var(--text-muted)' }
-            }
-          >
-            {t} Payments
-          </button>
-        ))}
+      <div className="mb-6">
+        <SegmentedPills<TypeTab>
+          options={[
+            { value: 'Deal', label: 'Deal Payments' },
+            { value: 'Bonus', label: 'Bonus Payments' },
+            { value: 'Trainer', label: 'Trainer Payments' },
+          ]}
+          value={typeTab}
+          onChange={changeTypeTab}
+          size="sm"
+          ariaLabel="Payroll type"
+        />
       </div>
 
       {/* ── Filter bar — top of table card ── */}
@@ -1430,7 +1359,7 @@ function PayrollPageInner() {
                   setShowPaymentModal(true);
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
+                style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
               >
                 <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
               </button>
@@ -1696,8 +1625,8 @@ function PayrollPageInner() {
                 <button
                   onClick={handlePublish}
                   disabled={publishingPayroll}
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: 'var(--brand)' }}
+                  className="btn-primary flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
                 >
                   {publishingPayroll ? 'Publishing…' : 'Publish Payroll'}
                 </button>
@@ -1937,8 +1866,8 @@ function PayrollPageInner() {
               <button
                 onClick={handleMarkForPayroll}
                 disabled={markingForPayroll}
-                className="btn-primary text-black font-semibold px-4 py-1.5 rounded-xl text-sm shadow-lg shadow-blue-500/20 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: 'var(--brand)' }}
+                className="btn-primary font-semibold px-4 py-1.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
               >
                 Mark for Payroll →
               </button>

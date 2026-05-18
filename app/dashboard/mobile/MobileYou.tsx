@@ -172,15 +172,16 @@ export default function MobileYou() {
           </button>
         )}
 
+        {/* Premium avatar — card-surface fill + hairline emerald ring,
+            no saturated gradient or halo glow. Initials in display serif
+            to echo the My Pay headline treatment. */}
         <div
-          className="w-20 h-20 rounded-full flex items-center justify-center"
+          className="w-20 h-20 rounded-full flex items-center justify-center card-surface"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)',
-            boxShadow: '0 0 32px color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)',
-            fontFamily: FONT_BODY,
+            border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 28%, transparent)',
+            fontFamily: "'DM Serif Display', serif",
             fontSize: '1.75rem',
-            fontWeight: 700,
-            color: 'var(--text-on-accent)',
+            color: 'var(--accent-emerald-text)',
           }}
         >
           {initials}
@@ -188,15 +189,17 @@ export default function MobileYou() {
 
         <div className="flex flex-col items-center gap-1.5">
           <p
-            className="text-xl font-bold text-[var(--text-primary)]"
-            style={{ fontFamily: FONT_BODY }}
+            className="text-xl"
+            style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)' }}
           >
             {userName}
           </p>
+          {/* Role chip — slim outlined, not a soft-fill blob */}
           <span
-            className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+            className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide"
             style={{
-              background: 'color-mix(in srgb, var(--accent-emerald-solid) 15%, transparent)',
+              background: 'transparent',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
               color: 'var(--accent-emerald-text)',
               fontFamily: FONT_BODY,
             }}

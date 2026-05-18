@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Zap, DollarSign, FolderKanban, PlusCircle } from 'lucide-react';
 import { formatCompactKW, fmt$, todayLocalDateStr } from '../../../lib/utils';
@@ -8,6 +8,7 @@ import { Project, ACTIVE_PHASES } from '../../../lib/data';
 import type { useApp } from '../../../lib/context';
 import { type Period, getGreeting } from './dashboard-utils';
 import { MyTasksSection, PipelineOverview, PhaseBadge, MilestoneDot, type MentionItem, ACCENT_COLOR_MAP } from '../page';
+import { SegmentedPills } from '../../../components/ui';
 
 export function SubDealerDashboard({
   projects,
@@ -32,14 +33,7 @@ export function SubDealerDashboard({
   currentRepId: string | null;
   currentRepName: string | null;
 }) {
-  const periodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [periodIndicator, setPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const idx = PERIODS.findIndex((p) => p.value === period);
-    const el = periodTabRefs.current[idx];
-    if (el) setPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [period, PERIODS]);
+  // Sliding pill measurement is owned by SegmentedPills.
 
   // Filter to sub-dealer's own deals
   const myProjects = projects.filter((p) => p.subDealerId === currentRepId || p.repId === currentRepId);
@@ -94,23 +88,15 @@ export function SubDealerDashboard({
         </div>
       </div>
 
-      {/* Period tabs */}
+      {/* Period tabs — shared SegmentedPills primitive */}
       <div className="flex justify-end mb-6">
-        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
-          {periodIndicator && <div className="tab-indicator" style={periodIndicator} />}
-          {PERIODS.map((p, i) => (
-            <button
-              key={p.value}
-              ref={(el) => { periodTabRefs.current[i] = el; }}
-              onClick={() => setPeriod(p.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors active:scale-[0.97] ${
-                period === p.value ? 'text-black font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          ariaLabel="Filter sub-dealer dashboard by period"
+        />
       </div>
 
       {/* Stat cards */}

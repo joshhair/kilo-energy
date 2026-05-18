@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import {
@@ -14,6 +14,7 @@ import { PaginationBar } from './PaginationBar';
 import { InlineBar } from './InlineBar';
 import { type Period, getGreeting, getPhaseStuckThresholds, AnimatedStatValue } from './dashboard-utils';
 import { NeedsAttentionSection, MyTasksSection, type MentionItem, PhaseBadge, StatusDot } from '../page';
+import { SegmentedPills } from '../../../components/ui';
 
 export function AdminDashboard({
   projects,
@@ -115,15 +116,7 @@ export function AdminDashboard({
       : <ChevronDown className="w-3 h-3 text-[var(--accent-emerald-text)] inline ml-1" />;
   };
 
-  // Sliding pill for admin period tabs
-  const adminPeriodTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [adminPeriodIndicator, setAdminPeriodIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  useEffect(() => {
-    const idx = PERIODS.map(p => p.value).indexOf(period);
-    const el = adminPeriodTabRefs.current[idx];
-    if (el) setAdminPeriodIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-  }, [period]);
+  // Sliding pill behaviour owned by SegmentedPills.
 
   /** Returns { closerPerW, kiloPerW } for any project type, respecting overrides. */
   function getProjectBaselines(p: Project): { closerPerW: number; kiloPerW: number } {
@@ -340,23 +333,13 @@ export function AdminDashboard({
             )}
           </div>
         </div>
-        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl p-1 tab-bar-container">
-          {adminPeriodIndicator && <div className="tab-indicator" style={adminPeriodIndicator} />}
-          {PERIODS.map((p, i) => (
-            <button
-              key={p.value}
-              ref={(el) => { adminPeriodTabRefs.current[i] = el; }}
-              onClick={() => setPeriod(p.value)}
-              className={`relative z-10 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors active:scale-[0.97] ${
-                period === p.value
-                  ? 'text-[var(--text-primary)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.value === 'all' ? 'All Time' : p.label }))}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          ariaLabel="Filter admin dashboard by period"
+        />
       </div>
 
       {/* Quick-action toolbar — accent-tinted surface via color-mix so

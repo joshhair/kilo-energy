@@ -105,16 +105,32 @@ export default function BottomNav({
           return (
             <span
               aria-hidden
-              className="nav-pill absolute top-0 h-[2px] rounded-full pointer-events-none"
+              className="nav-pill absolute top-0 h-[2px] pointer-events-none"
               style={{
+                // Full tab-slot width, centered hairline (40% × slot)
+                // via inline padding-style trick: width = slot, the
+                // visible bar inside is a child element. Keeps math
+                // simple: translateX(idx * 100%) moves by exactly one
+                // slot, which is the indicator's full width. No
+                // box-shadow halo (was the bleed cause on the feedback
+                // bubble).
                 width: `${100 / navItems.length}%`,
                 left: 0,
-                background: 'linear-gradient(90deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
                 transform: `translateX(${activeIdx * 100}%)`,
                 transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-                boxShadow: '0 0 8px color-mix(in srgb, var(--accent-emerald-solid) 60%, transparent)',
+                display: 'flex',
+                justifyContent: 'center',
               }}
-            />
+            >
+              <span
+                style={{
+                  width: '40%',
+                  height: '2px',
+                  borderRadius: '999px',
+                  background: 'var(--accent-emerald-text)',
+                }}
+              />
+            </span>
           );
         })()}
         <div className="flex items-end justify-around px-2 pt-3 pb-6">
@@ -122,20 +138,59 @@ export default function BottomNav({
           const Icon = item.icon;
           const active = isActive(item.href);
 
-          // Primary / "New Deal" button — gradient FAB
+          // Primary / "New Deal" button — Option A "card-proud":
+          // rounded-square card-surface tile with hairline emerald border,
+          // a serif-weight plus glyph, and a single tiny spark dot in the
+          // upper-right corner. Reads as "compose a premium card" rather
+          // than "tap a green disc," matching the My Pay / dashboard
+          // visual vocabulary. No halo, no gradient.
           if (item.primary) {
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center justify-center -mt-4 min-w-[56px]"
+                className="flex flex-col items-center justify-center -mt-2.5 min-w-[56px]"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <div className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)', boxShadow: '0 0 24px color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}>
-                  <span className="text-2xl font-light text-black leading-none">+</span>
+                <div
+                  className="card-surface w-12 h-12 rounded-2xl flex items-center justify-center relative active:scale-95 transition-transform"
+                  style={{
+                    border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
+                  }}
+                >
+                  {/* Inner spark — single dot, upper-right. Premium tell
+                      that this is a CTA, not just a frame. */}
+                  <span
+                    aria-hidden
+                    className="absolute"
+                    style={{
+                      top: 8,
+                      right: 8,
+                      width: 3,
+                      height: 3,
+                      borderRadius: '50%',
+                      background: 'var(--accent-emerald-solid)',
+                      boxShadow: '0 0 4px color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)',
+                    }}
+                  />
+                  {/* Serif plus glyph — DM Serif Display matches the
+                      "Taylor Brooks" name + My Pay numerals so the CTA
+                      visually belongs in the same family. */}
+                  <span
+                    className="leading-none"
+                    style={{
+                      fontFamily: "'DM Serif Display', serif",
+                      fontSize: 26,
+                      color: 'var(--accent-emerald-text)',
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1,
+                      transform: 'translateY(-1px)',
+                    }}
+                  >
+                    +
+                  </span>
                 </div>
-                <span className="text-[10px] font-medium mt-1" style={{ color: 'var(--accent-emerald-text)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                <span className="text-[10px] font-medium mt-1.5 tracking-wide" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
               </Link>
             );
           }
@@ -153,14 +208,14 @@ export default function BottomNav({
                 aria-label="You"
               >
                 <span
-                  className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full font-bold leading-none"
+                  className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full font-semibold leading-none"
                   style={{
                     fontSize: '9px',
-                    background: active
-                      ? 'linear-gradient(135deg, var(--accent-emerald-solid) 0%, var(--accent-cyan-solid) 100%)'
-                      : 'transparent',
-                    border: active ? 'none' : '1.25px solid var(--text-muted)',
-                    color: active ? '#000' : 'var(--text-muted)',
+                    background: 'transparent',
+                    border: active
+                      ? '1.25px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)'
+                      : '1.25px solid var(--text-muted)',
+                    color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                     fontFamily: "'DM Sans', sans-serif",
                     transition: 'background 200ms ease, border-color 200ms ease, color 200ms ease',
                   }}
@@ -168,7 +223,7 @@ export default function BottomNav({
                   {avatarInitials}
                 </span>
                 <span className="text-[10px] tracking-wide" style={{
-                  color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                  color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                   fontFamily: "'DM Sans', sans-serif",
                   transform: active ? 'translateY(0px)' : 'translateY(2px)',
                   transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -190,7 +245,7 @@ export default function BottomNav({
                 key={active ? 'on' : 'off'}
                 className="nav-icon-pop inline-block"
                 style={{
-                  color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                  color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                   animation: active ? 'navIconPop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
                   transform: active ? undefined : 'scale(1)',
                   transition: active ? 'none' : 'color 200ms ease, transform 200ms ease',
@@ -199,7 +254,7 @@ export default function BottomNav({
                 <Icon className="w-[18px] h-[18px]" />
               </span>
               <span className="text-[10px] tracking-wide" style={{
-                color: active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                 fontFamily: "'DM Sans', sans-serif",
                 transform: active ? 'translateY(0px)' : 'translateY(2px)',
                 transition: 'color 200ms ease, transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',

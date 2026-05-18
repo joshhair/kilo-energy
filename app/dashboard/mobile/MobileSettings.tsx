@@ -15,7 +15,7 @@ import MobileCard from './shared/MobileCard';
 import MobileListItem from './shared/MobileListItem';
 import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
-import MobilePillTabs from './shared/MobilePillTabs';
+import { SegmentedPills, Switch } from '../../../components/ui';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AppearanceSection from '../settings/sections/AppearanceSection';
 import NotificationsSection from '../settings/sections/NotificationsSection';
@@ -268,30 +268,6 @@ function SettingsSkeleton({ rows = 3 }: { rows?: number }) {
   );
 }
 
-// ─── Toggle Switch ──────────────────────────────────────────────────────────
-
-function Toggle({ value, onChange, color }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      className="w-11 h-6 rounded-full relative active:scale-[0.88] transition-transform duration-100 ease-out p-1 -m-1"
-      style={{
-        background: value ? (color ?? 'var(--accent-emerald-solid)') : 'var(--border-subtle)',
-        transition: 'background-color 200ms ease',
-      }}
-    >
-      <div
-        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full ${value ? 'translate-x-5' : 'translate-x-0.5'}`}
-        style={{
-          transition: typeof window !== 'undefined' && window?.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-            ? 'transform 150ms ease'
-            : 'transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      />
-    </button>
-  );
-}
-
 // ─── Installers Section ─────────────────────────────────────────────────────
 
 function InstallersSection() {
@@ -362,18 +338,21 @@ function InstallersSection() {
                   <span
                     className="text-base font-medium px-2 py-0.5 rounded-lg"
                     style={{
-                      background: inst.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
-                      color: inst.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                      background: inst.active ? 'transparent' : 'var(--surface-card)',
+                      border: inst.active
+                        ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
+                        : '1px solid var(--border-subtle)',
+                      color: inst.active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
                     {inst.active ? 'Active' : 'Inactive'}
                   </span>
                   {!selectMode && (
-                    <Toggle
-                      value={inst.active}
+                    <Switch
+                      checked={inst.active}
                       onChange={() => setInstallerActive(inst.name, !inst.active)}
-                      color="var(--accent-emerald-solid)"
+                      ariaLabel={`Toggle ${inst.name} active`}
                     />
                   )}
                 </div>
@@ -474,18 +453,21 @@ function FinancersSection() {
                   <span
                     className="text-base font-medium px-2 py-0.5 rounded-lg"
                     style={{
-                      background: fin.active ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
-                      color: fin.active ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                      background: fin.active ? 'transparent' : 'var(--surface-card)',
+                      border: fin.active
+                        ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
+                        : '1px solid var(--border-subtle)',
+                      color: fin.active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
                   >
                     {fin.active ? 'Active' : 'Inactive'}
                   </span>
                   {!selectMode && (
-                    <Toggle
-                      value={fin.active}
+                    <Switch
+                      checked={fin.active}
                       onChange={() => setFinancerActive(fin.name, !fin.active)}
-                      color="var(--accent-emerald-solid)"
+                      ariaLabel={`Toggle ${fin.name} active`}
                     />
                   )}
                 </div>
@@ -615,10 +597,10 @@ function AdminUsersSection() {
           <button
             onClick={handleAdd}
             disabled={!newName.trim() || !newEmail.trim()}
-            className="w-full min-h-[48px] rounded-2xl text-black text-base font-semibold disabled:opacity-40 active:opacity-80 transition-colors"
+            className="w-full min-h-[48px] rounded-2xl text-base font-semibold disabled:opacity-40 active:opacity-80 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 0 20px var(--accent-emerald-glow)',
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -745,9 +727,11 @@ function ProjectManagersSection() {
                   onClick={() => togglePerm(pm.id, field, pm[field])}
                   className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
                   style={{
-                    background: pm[field] ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
-                    color: pm[field] ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
-                    borderColor: pm[field] ? 'var(--accent-emerald-glow)' : 'var(--border-subtle)',
+                    background: pm[field] ? 'transparent' : 'var(--surface-card)',
+                    color: pm[field] ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                    borderColor: pm[field]
+                      ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
+                      : 'var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
@@ -818,18 +802,18 @@ function BlitzPermissionsSection() {
               <p className="text-base mb-3" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.repType || 'Rep'}</p>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <Toggle
-                    value={perms.canRequestBlitz}
+                  <Switch
+                    checked={perms.canRequestBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canRequestBlitz', v)}
-                    color="var(--accent-cyan-solid)"
+                    ariaLabel={`Toggle blitz request permission for ${rep.name}`}
                   />
                   <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Request</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Toggle
-                    value={perms.canCreateBlitz}
+                  <Switch
+                    checked={perms.canCreateBlitz}
                     onChange={(v) => togglePermission(rep.id, 'canCreateBlitz', v)}
-                    color="var(--accent-emerald-solid)"
+                    ariaLabel={`Toggle blitz create permission for ${rep.name}`}
                   />
                   <span className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Create</span>
                 </div>
@@ -912,9 +896,9 @@ function ExportSection() {
           disabled={getStatus(type) === 'loading'}
           className="w-full min-h-[56px] rounded-2xl px-5 text-left flex items-center gap-3 relative overflow-hidden active:scale-[0.97] transition-transform duration-100 ease-out"
           style={{
-            background: getStatus(type) === 'done' ? 'var(--accent-emerald-soft)' : 'var(--surface-card)',
+            background: getStatus(type) === 'done' ? 'transparent' : 'var(--surface-card)',
             border: `1px solid ${
-              getStatus(type) === 'done' ? 'color-mix(in srgb, var(--accent-emerald-solid) 40%, transparent)'
+              getStatus(type) === 'done' ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
               : getStatus(type) === 'loading' ? 'color-mix(in srgb, var(--text-primary) 8%, transparent)'
               : 'var(--border-subtle)'
             }`,
@@ -934,7 +918,7 @@ function ExportSection() {
           <Download
             className="w-5 h-5 shrink-0"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+              color: getStatus(type) === 'done' ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
               transition: 'color 300ms ease',
               animation: getStatus(type) === 'loading' ? 'exportSpin 600ms linear infinite' : 'none',
             }}
@@ -942,7 +926,7 @@ function ExportSection() {
           <span
             className="text-base font-semibold capitalize"
             style={{
-              color: getStatus(type) === 'done' ? 'var(--accent-emerald-solid)' : 'var(--text-primary)',
+              color: getStatus(type) === 'done' ? 'var(--accent-emerald-text)' : 'var(--text-primary)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               transition: 'color 300ms ease',
             }}
@@ -1014,10 +998,10 @@ function CustomizationSection() {
       <div className="flex gap-3">
         <button
           onClick={handleSave}
-          className="flex-1 min-h-[48px] rounded-2xl text-black text-base font-semibold active:opacity-80 transition-colors"
+          className="flex-1 min-h-[48px] rounded-2xl text-base font-semibold active:opacity-80 transition-colors"
           style={{
-            background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-            boxShadow: '0 0 20px var(--accent-emerald-glow)',
+            background: 'var(--accent-emerald-solid)',
+            color: 'var(--text-on-accent)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
           }}
         >
@@ -1055,10 +1039,12 @@ function MobileBaselinesSection({ onUnsavedChange }: { onUnsavedChange: (v: bool
 
   return (
     <div className="space-y-4">
-      <MobilePillTabs
-        items={tabs.map(([id, label]) => ({ id, label }))}
-        activeId={activeTab}
-        onChange={(id) => setActiveTab(id as 'standard' | 'solartech' | 'productcatalog')}
+      <SegmentedPills<'standard' | 'solartech' | 'productcatalog'>
+        options={tabs.map(([value, label]) => ({ value, label }))}
+        value={activeTab}
+        onChange={setActiveTab}
+        scrollable
+        ariaLabel="Baseline tabs"
       />
       {activeTab === 'standard' && <StandardBaselines onUnsavedChange={onUnsavedChange} />}
       {activeTab === 'solartech' && <SolarTechBaselines />}
@@ -1206,8 +1192,8 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={saveEdit}
-                    className="flex-1 min-h-[44px] rounded-2xl text-black text-base font-semibold active:opacity-80"
-                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    className="flex-1 min-h-[44px] rounded-2xl text-base font-semibold active:opacity-80"
+                    style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                   >
                     Save
                   </button>
@@ -1284,8 +1270,8 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={saveNewVersion}
-                className="flex-1 min-h-[48px] rounded-2xl text-black font-semibold active:opacity-80"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                className="flex-1 min-h-[48px] rounded-2xl font-semibold active:opacity-80"
+                style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Create Version
               </button>
@@ -1315,10 +1301,12 @@ function SolarTechBaselines() {
       <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         Current rates by family. Full editing available on desktop.
       </p>
-      <MobilePillTabs
-        items={SOLARTECH_FAMILIES.map(f => ({ id: f, label: f }))}
-        activeId={activeFamily}
+      <SegmentedPills
+        options={SOLARTECH_FAMILIES.map((f) => ({ value: f, label: f }))}
+        value={activeFamily}
         onChange={setActiveFamily}
+        scrollable
+        ariaLabel="SolarTech families"
       />
       {familyProducts.length === 0 ? (
         <MobileEmptyState icon={BookOpen} title="No products in this family" />
@@ -1368,17 +1356,21 @@ function ProductCatalogBaselines() {
         Current rates by installer and family. Full editing available on desktop.
       </p>
       {installerNames.length > 1 && (
-        <MobilePillTabs
-          items={installerNames.map(n => ({ id: n, label: n }))}
-          activeId={activeInstaller}
+        <SegmentedPills
+          options={installerNames.map((n) => ({ value: n, label: n }))}
+          value={activeInstaller}
           onChange={(id) => { setActiveInstaller(id); setActiveFamily(productCatalogInstallerConfigs[id]?.families[0] ?? ''); }}
+          scrollable
+          ariaLabel="Installers"
         />
       )}
       {config?.families && config.families.length > 1 && (
-        <MobilePillTabs
-          items={config.families.map(f => ({ id: f, label: f }))}
-          activeId={activeFamily}
+        <SegmentedPills
+          options={config.families.map((f) => ({ value: f, label: f }))}
+          value={activeFamily}
           onChange={setActiveFamily}
+          scrollable
+          ariaLabel="Families"
         />
       )}
       {familyProducts.length === 0 ? (

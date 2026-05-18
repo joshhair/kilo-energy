@@ -28,6 +28,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# prod-read verification artifacts (snapshots + audit log; never commit prod data)
+/tmp/
+/scripts/prod-read/tmp/
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
@@ -93,6 +97,13 @@ scripts/find-timothy.mts
 state/glide-*.txt
 state/glide-*.html
 state/glide-*.json
+# Commission recompute debug logs — contain customer names + amounts.
+state/recompute-stale-commissions-*
+
+# Business / legal documents — belong in a contract management system,
+# not the app source tree. Local copies still allowed; just not tracked.
+/*.docx
+/*.pdf
 scripts/analyze-glide-*.mts
 scripts/glide-review-report.mts
 scripts/debug-glide-*.mts

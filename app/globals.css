@@ -172,23 +172,34 @@
   --border-subtle: #e3e7ef;
   --border-strong: #7c8696;  /* darkened from #98a2b3 to clear 3:1 on white (was 2.58:1) */
 
-  /* Accent solids stay identical across themes — emerald is emerald.
-     Only the soft / glow alpha forms shift to compensate for the
-     higher-contrast light bg. */
-  --accent-emerald-soft: rgba(0, 229, 160, 0.14);
-  --accent-emerald-glow: rgba(0, 229, 160, 0.20);
-  --accent-cyan-soft: rgba(0, 180, 216, 0.14);
-  --accent-cyan-glow: rgba(0, 180, 216, 0.20);
-  --accent-blue-soft: rgba(77, 159, 255, 0.14);
-  --accent-blue-glow: rgba(77, 159, 255, 0.20);
+  /* Light-mode accent solids — DOWNSHIFTED from the dark-mode neon
+     (#00e5a0 etc.) to the refined display tones (#009868 etc.) so
+     filled CTAs, sliding tab indicators, FAB borders, badges, dots
+     etc. read as part of the same premium family as the Revenue
+     hero card's eyebrow + numerals. The old "emerald is emerald"
+     philosophy made every solid fill look neon on white; the
+     downshift uses the same hex as `--accent-X-display` so the
+     entire accent family is internally consistent at this theme. */
+  --accent-emerald-solid: #009868;
+  --accent-cyan-solid: #008599;
+  --accent-blue-solid: #3a82e0;
+  --accent-amber-solid: #b06800;
+  --accent-purple-solid: #9560e0;
+  --accent-teal-solid: #019188;
+  --accent-emerald-soft: rgba(0, 152, 104, 0.14);
+  --accent-emerald-glow: rgba(0, 152, 104, 0.20);
+  --accent-cyan-soft: rgba(0, 133, 153, 0.14);
+  --accent-cyan-glow: rgba(0, 133, 153, 0.20);
+  --accent-blue-soft: rgba(58, 130, 224, 0.14);
+  --accent-blue-glow: rgba(58, 130, 224, 0.20);
   --accent-red-soft: rgba(239, 68, 68, 0.10);
   --accent-red-glow: rgba(239, 68, 68, 0.20);
-  --accent-amber-soft: rgba(245, 166, 35, 0.14);
-  --accent-amber-glow: rgba(245, 166, 35, 0.20);
-  --accent-purple-soft: rgba(180, 125, 255, 0.14);
-  --accent-purple-glow: rgba(180, 125, 255, 0.20);
-  --accent-teal-soft: rgba(0, 212, 200, 0.14);
-  --accent-teal-glow: rgba(0, 212, 200, 0.20);
+  --accent-amber-soft: rgba(176, 104, 0, 0.14);
+  --accent-amber-glow: rgba(176, 104, 0, 0.20);
+  --accent-purple-soft: rgba(149, 96, 224, 0.14);
+  --accent-purple-glow: rgba(149, 96, 224, 0.20);
+  --accent-teal-soft: rgba(1, 145, 136, 0.14);
+  --accent-teal-glow: rgba(1, 145, 136, 0.20);
 
   /* Light-mode text variants — darker, more saturated so they read on
      light backgrounds. All tuned to ≥4.5:1 against surface-card AND
@@ -252,8 +263,13 @@
   --border-strong: #334155;
   --accent-emerald-soft: rgba(0, 229, 160, 0.10);
   --accent-emerald-glow: rgba(0, 229, 160, 0.30);
-  --accent-emerald-text: #00e5a0;
-  --accent-emerald-display: #00e5a0;
+  /* Dark-mode emerald downshifted from #00e5a0 neon to #10b981 (Tailwind
+     emerald-500) so primary CTAs and active states feel premium — same
+     refinement philosophy applied to light mode (revenue-green family).
+     Black text on #10b981 = 10:1 contrast (passes AAA). */
+  --accent-emerald-solid: #10b981;
+  --accent-emerald-text: #10b981;
+  --accent-emerald-display: #10b981;
   --accent-cyan-soft: rgba(0, 180, 216, 0.10);
   --accent-cyan-glow: rgba(0, 180, 216, 0.30);
   --accent-cyan-text: #00b4d8;
@@ -886,8 +902,7 @@ select {
 }
 
 .btn-primary:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 20px rgba(0, 224, 122, 0.25);
+  filter: brightness(1.06);
 }
 
 .btn-primary:active::after {
@@ -937,6 +952,24 @@ select {
   transform: scale(0.97);
   box-shadow: none;
   filter: brightness(0.95);
+}
+
+/* Slide in from the right on mount */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-toast-in {
+  animation: toastIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast-in { animation: none; }
 }
 
 /* Slide back out to the right on dismiss */
@@ -990,43 +1023,12 @@ select {
   border-color: rgba(59,130,246,0.5);
 }
 
-/* ── Animated tab indicator — sliding pill ──────────────────────────────────── */
-
-/* Wrapper that the absolutely-positioned indicator is measured against */
-.tab-bar-container {
-  position: relative;
-}
-
-/* Shared "active filter" pill style. Use for segmented controls,
-   tabs, pagination, toggles — anywhere the button indicates "current
-   view" rather than "click to do something". For primary CTAs (Save,
-   Submit, Add), keep the solid bright fill with text-black. */
-.filter-tab-active {
-  background: linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18));
-  border: 1px solid rgba(0, 224, 122, 0.45);
-  box-shadow: 0 0 12px rgba(0, 224, 122, 0.12);
-  color: #fff;
-  font-weight: 600;
-}
-
-/* The sliding pill that animates behind the active tab button.
-   Deliberately dark so the white button label overlaid by it stays
-   readable — a solid bright-green fill here produced white-on-bright
-   contrast issues (Josh flagged 2026-04-15). Brand identity is kept
-   via the colored border + subtle glow. */
-.tab-indicator {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  background: linear-gradient(135deg, rgba(0, 224, 122, 0.18), rgba(0, 196, 240, 0.18));
-  border: 1px solid rgba(0, 224, 122, 0.45);
-  box-shadow: 0 0 12px rgba(0, 224, 122, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              width 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  z-index: 0;
-}
+/* Legacy `tab-bar-container`, `filter-tab-active`, `tab-indicator`,
+   `blitz-detail-tab-indicator`, `mobile-pill-tab-indicator`, and
+   `blitz-tab-indicator` classes were deleted 2026-05-15 after the
+   `SegmentedPills` primitive consolidation. The print stylesheet's
+   reference to `.tab-bar-container` becomes a no-op selector but the
+   rule still works for its other sibling selectors. */
 
 /* Per-row enter animation. Each row fades up + slides in from a few
    pixels below; the --row-index custom property (set by .row-stagger-N)
@@ -1649,25 +1651,10 @@ select {
     to   { opacity: 1; transform: translateY(0); }
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .blitz-tab-indicator {
-    transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-}
-.blitz-detail-tab-indicator {
-  transition: left 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              width 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .blitz-detail-tab-indicator { transition: none; }
-}
-.mobile-pill-tab-indicator {
-  transition: left 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              width 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .mobile-pill-tab-indicator { transition: none; }
-}
+/* `.blitz-tab-indicator`, `.blitz-detail-tab-indicator`, and
+   `.mobile-pill-tab-indicator` were deleted 2026-05-15 after the
+   `SegmentedPills` primitive consolidation. Their motion behaviour is
+   now owned by the primitive's inline-style cubic-bezier transitions. */
 @keyframes viewAsExpand {
   from { opacity: 0; transform: scaleY(0.82); }
   to { opacity: 1; transform: scaleY(1); }

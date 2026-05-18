@@ -7,12 +7,13 @@ import { fmt$, todayLocalDateStr, formatDate, downloadCSV } from '../../../lib/u
 import { breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { Check, Trash2, Plus, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
+import { Check, Trash2, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import PayrollTypeTabs from './shared/PayrollTypeTabs';
 import PayrollStatusTabs from './shared/PayrollStatusTabs';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { SegmentedPills } from '../../../components/ui';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
@@ -426,47 +427,52 @@ export default function MobilePayroll() {
           effectiveRole === 'admin' && pageView === 'payroll' ? (
             <button
               onClick={() => setShowAddPayment(true)}
-              className="flex items-center gap-1 min-h-[48px] px-3 py-2 rounded-2xl text-black text-base font-medium active:opacity-90"
+              className="card-surface flex items-center justify-center w-10 h-10 rounded-2xl relative active:scale-95 transition-transform"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
               }}
+              aria-label="Add payment"
             >
-              <Plus className="w-4 h-4" />
-              Payment
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  background: 'var(--accent-emerald-solid)',
+                  boxShadow: '0 0 4px color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)',
+                }}
+              />
+              <span
+                className="leading-none"
+                style={{
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: 22,
+                  color: 'var(--accent-emerald-text)',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                  transform: 'translateY(-1px)',
+                }}
+              >+</span>
             </button>
           ) : null
         }
       />
 
-      {/* ── Page view tabs (admin only) ── */}
+      {/* ── Page view tabs (admin only) — shared SegmentedPills */}
       {effectiveRole === 'admin' && (
-        <div className="flex gap-2">
-          {(['payroll', 'reimbursements'] as PageView[]).map((v) => (
-            <button
-              key={v}
-              onClick={() => setPageView(v)}
-              className="flex-1 min-h-[44px] rounded-xl text-sm font-semibold capitalize transition-colors relative"
-              style={{
-                background: pageView === v ? 'var(--accent-emerald-solid)' : 'var(--surface-card)',
-                color: pageView === v ? '#000' : 'var(--text-muted)',
-                border: pageView === v ? 'none' : '1px solid var(--border-subtle)',
-                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-              }}
-            >
-              {v}
-              {v === 'reimbursements' && pendingReimCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ background: 'var(--accent-amber-solid)', color: 'var(--text-on-accent)' }}
-                >
-                  {pendingReimCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <SegmentedPills<PageView>
+          options={[
+            { value: 'payroll', label: 'Payroll' },
+            { value: 'reimbursements', label: 'Reimbursements', badge: pendingReimCount > 0 ? pendingReimCount : undefined },
+          ]}
+          value={pageView}
+          onChange={setPageView}
+          ariaLabel="Payroll page view"
+        />
       )}
 
       {/* ── Reimbursements view ── */}
@@ -615,9 +621,13 @@ export default function MobilePayroll() {
           so admins see everything owed at a glance. Sub-lines break
           down by type. Mirrors the desktop payroll tab (2026-04-23). */}
       <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
-        <SummaryCard label="Draft" total={draftBreakdown.total} tone="var(--accent-blue-solid)" breakdown={draftBreakdown} pending />
-        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="var(--accent-amber-solid)" breakdown={pendingBreakdown} pending />
-        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-solid)" breakdown={paidBreakdown} />
+        {/* Draft = working/unfinished → muted. Pending = in-flight →
+            amber (semantic). Paid = completed → refined Next-Payout
+            green. The DRAFT bright-blue was reading as info/primary
+            which the status doesn't warrant. */}
+        <SummaryCard label="Draft" total={draftBreakdown.total} tone="var(--text-secondary)" breakdown={draftBreakdown} pending />
+        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="var(--accent-amber-text)" breakdown={pendingBreakdown} pending />
+        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-text)" breakdown={paidBreakdown} />
       </div>
       {pendingTotal > 0 && (
         <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -661,14 +671,14 @@ export default function MobilePayroll() {
               type="date"
               value={filterFrom}
               onChange={(e) => setFilterFrom(e.target.value)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterFrom ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             <input
               type="date"
               value={filterTo}
               onChange={(e) => setFilterTo(e.target.value)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+              className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: filterTo ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
             />
             {(filterFrom || filterTo) && (
@@ -797,18 +807,28 @@ export default function MobilePayroll() {
         </div>
       )}
 
-      {/* ── Sticky bottom action (admin only) ── */}
+      {/* ── Sticky bottom action (admin only) — premium glass bar with
+          an outlined emerald CTA. The action stays prominent (sticky +
+          centered + full-width) but the chrome no longer screams. */}
       {effectiveRole === 'admin' && ctaMounted && (
         <div
-          className={`fixed bottom-0 left-0 right-0 p-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          className={`fixed bottom-0 left-0 right-0 px-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
+          style={{
+            paddingTop: '12px',
+            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+            background: 'color-mix(in srgb, var(--surface-page) 88%, transparent)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderTop: '1px solid var(--border-subtle)',
+          }}
         >
           <button
             onClick={() => statusTab === 'Pending' ? setShowPublishConfirm(true) : setShowApproveAllConfirm(true)}
-            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+            className="w-full min-h-[44px] rounded-full text-[13px] font-semibold tracking-wide active:scale-[0.98] transition-all duration-150"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 20px var(--accent-emerald-glow)',
+              background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)',
+              color: 'var(--accent-emerald-text)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -1023,10 +1043,10 @@ export default function MobilePayroll() {
           </div>
           <button
             type="submit"
-            className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl text-base font-semibold active:opacity-90 transition-colors"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
+              background: 'var(--accent-emerald-solid)',
+              color: 'var(--text-on-accent)',
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
@@ -1082,10 +1102,10 @@ export default function MobilePayroll() {
             </div>
             <button
               type="submit"
-              className="w-full min-h-[52px] rounded-2xl text-black text-base font-semibold active:opacity-90 transition-colors"
+              className="w-full min-h-[52px] rounded-2xl text-base font-semibold active:opacity-90 transition-colors"
               style={{
-                background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-                boxShadow: '0 4px 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
+                background: 'var(--accent-emerald-solid)',
+                color: 'var(--text-on-accent)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
               }}
             >
@@ -1142,20 +1162,24 @@ function SummaryCard({ label, total, tone, breakdown, pending = false }: {
   breakdown: StatusBreakdown;
   pending?: boolean;
 }) {
-  // Round to whole dollars in the breakdown lines — cents are noise at
-  // this density and they push values past the 80px column width.
-  const fmtWhole = (n: number) => Math.round(Math.abs(n)).toLocaleString();
+  // Use compact currency ($65.6K) for breakdown lines so multi-figure
+  // totals like "$65,556" don't get truncated at the 3-card grid width.
+  // Cents would be noise here regardless of formatting.
+  const fmtBreakdown = (n: number) => {
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '−' : '';
+    return `${sign}${compactCurrency(abs)}`;
+  };
   const lines: string[] = [];
   if (breakdown.deal !== 0) {
-    const dealAmt = breakdown.deal < 0 ? `−$${fmtWhole(breakdown.deal)}` : `$${fmtWhole(breakdown.deal)}`;
-    let line = `Deals ${dealAmt}`;
+    let line = `Deals ${fmtBreakdown(breakdown.deal)}`;
     if (breakdown.chargebacks !== 0) {
-      line += ` (−$${fmtWhole(breakdown.chargebacks)} ${pending ? 'pending cb' : 'cb'})`;
+      line += ` (−${compactCurrency(Math.abs(breakdown.chargebacks))} ${pending ? 'pending cb' : 'cb'})`;
     }
     lines.push(line);
   }
-  if (breakdown.bonus !== 0) lines.push(`Bonus $${fmtWhole(breakdown.bonus)}`);
-  if (breakdown.trainer !== 0) lines.push(`Trainer $${fmtWhole(breakdown.trainer)}`);
+  if (breakdown.bonus !== 0) lines.push(`Bonus ${fmtBreakdown(breakdown.bonus)}`);
+  if (breakdown.trainer !== 0) lines.push(`Trainer ${fmtBreakdown(breakdown.trainer)}`);
 
   return (
     <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>

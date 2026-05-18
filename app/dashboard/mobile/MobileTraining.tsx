@@ -429,16 +429,16 @@ export default function MobileTraining({
         {adminStats && (
           <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
             {[
-              { label: 'Lifetime Paid', value: fmt$(adminStats.lifetimeTrainerPaid), accent: true },
-              { label: 'Active / Total', value: `${adminStats.activeTrainingCount}/${adminStats.totalAssignments}`, accent: false },
-              { label: 'Trainers', value: String(adminStats.uniqueTrainerCount), accent: false },
-              { label: 'Avg Rate', value: `$${adminStats.avgRate.toFixed(2)}/W`, accent: true },
+              { label: 'Lifetime Paid', value: fmt$(adminStats.lifetimeTrainerPaid) },
+              { label: 'Active / Total', value: `${adminStats.activeTrainingCount}/${adminStats.totalAssignments}` },
+              { label: 'Trainers', value: String(adminStats.uniqueTrainerCount) },
+              { label: 'Avg Rate', value: `$${adminStats.avgRate.toFixed(2)}/W` },
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-                <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
+                <p className="uppercase mb-1" style={{ color: 'var(--accent-emerald-text)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em' }}>{stat.label}</p>
                 <p
-                  className="text-2xl font-bold tabular-nums leading-none"
-                  style={{ color: stat.accent ? 'var(--accent-emerald-solid)' : 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                  className="text-2xl tabular-nums leading-none"
+                  style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
                 >
                   {stat.value}
                 </p>

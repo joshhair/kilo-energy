@@ -19,6 +19,7 @@ import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import IncentiveCard from './shared/IncentiveCard';
+import { SegmentedPills } from '../../../components/ui';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -323,11 +324,11 @@ export default function MobileIncentives() {
             aria-label="Add incentive"
             className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
             style={{
-              background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))',
-              boxShadow: '0 4px 14px var(--accent-emerald-glow)',
+              background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, var(--surface-card))',
+              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
             }}
           >
-            <Plus className="w-5 h-5 text-[var(--text-primary)]" />
+            <Plus className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
           </button>
         ) : undefined}
       />
@@ -706,18 +707,16 @@ function CreateIncentiveSheet({
         {/* Type */}
         <div>
           <label className={labelCls}>Type</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['company', 'personal'] as IncentiveType[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setType(t)}
-                className={`py-2.5 rounded-lg text-sm transition-colors ${type === t ? 'filter-tab-active' : ''}`}
-                style={type !== t ? inputStyle : undefined}
-              >
-                {t === 'company' ? 'Company-wide' : 'Personal'}
-              </button>
-            ))}
-          </div>
+          <SegmentedPills<IncentiveType>
+            options={[
+              { value: 'company', label: 'Company-wide' },
+              { value: 'personal', label: 'Personal' },
+            ]}
+            value={type}
+            onChange={setType}
+            size="sm"
+            ariaLabel="Incentive type"
+          />
         </div>
 
         {/* Target rep (only for personal) */}
@@ -819,7 +818,7 @@ function CreateIncentiveSheet({
           onClick={handleSubmit}
           disabled={!canSubmit || submitting}
           className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-[var(--text-primary)] active:scale-[0.97] transition-transform disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
+          style={{ background: 'var(--accent-emerald-solid)' }}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           {submitting ? 'Creating…' : 'Create Incentive'}
@@ -922,18 +921,16 @@ function EditIncentiveSheet({
         {/* Type */}
         <div>
           <label className={labelCls}>Type</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['company', 'personal'] as IncentiveType[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setType(t)}
-                className={`py-2.5 rounded-lg text-sm transition-colors ${type === t ? 'filter-tab-active' : ''}`}
-                style={type !== t ? inputStyle : undefined}
-              >
-                {t === 'company' ? 'Company-wide' : 'Personal'}
-              </button>
-            ))}
-          </div>
+          <SegmentedPills<IncentiveType>
+            options={[
+              { value: 'company', label: 'Company-wide' },
+              { value: 'personal', label: 'Personal' },
+            ]}
+            value={type}
+            onChange={setType}
+            size="sm"
+            ariaLabel="Incentive type"
+          />
         </div>
 
         {/* Target rep (only for personal) */}
@@ -1031,7 +1028,7 @@ function EditIncentiveSheet({
           onClick={handleSave}
           disabled={!canSubmit || submitting}
           className="w-full mt-2 min-h-[48px] flex items-center justify-center gap-2 text-base font-semibold rounded-xl text-[var(--text-primary)] active:scale-[0.97] transition-transform disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))' }}
+          style={{ background: 'var(--accent-emerald-solid)' }}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           {submitting ? 'Saving…' : 'Save Changes'}

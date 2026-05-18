@@ -25,7 +25,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2 } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2, ChevronDown } from 'lucide-react';
 import { Switch } from '../../../../components/ui/Switch';
 import { SelectMenu } from '../../../../components/ui/SelectMenu';
 import { useToast } from '../../../../lib/toast';
@@ -86,6 +86,18 @@ export default function NotificationsSection() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingType, setSavingType] = useState<string | null>(null);
+  // Per-category expand state. Default: all collapsed — reduces the
+  // page's vertical footprint on mobile (the section was double-screen
+  // height with everything expanded). Users tap a category header to
+  // reveal its events.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggleCategory = (cat: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +115,48 @@ export default function NotificationsSection() {
   }, [toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Bulk-toggle: if any non-mandatory event in the category has any
+  // channel enabled, the switch reads as ON. Toggling OFF disables every
+  // non-mandatory channel; toggling ON enables email on every event
+  // (email is the default channel). Mandatory events are skipped — the
+  // server clamps them back regardless.
+  const categoryEnabled = useCallback(
+    (events: EventRow[]) => events.some((e) => !e.mandatory && (e.emailEnabled || e.smsEnabled || e.pushEnabled)),
+    [],
+  );
+  const bulkSetCategory = useCallback(
+    async (events: EventRow[], next: boolean) => {
+      const targets = events.filter((e) => !e.mandatory);
+      // Optimistic local update
+      setData((cur) => cur ? {
+        ...cur,
+        events: cur.events.map((e) => {
+          if (targets.some((t) => t.type === e.type)) {
+            return next
+              ? { ...e, emailEnabled: true }
+              : { ...e, emailEnabled: false, smsEnabled: false, pushEnabled: false };
+          }
+          return e;
+        }),
+      } : cur);
+      // Fire patches in parallel; failures fall back to refetch via load()
+      try {
+        await Promise.all(targets.map((e) => fetch('/api/notifications/preferences', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(next
+            ? { eventType: e.type, emailEnabled: true }
+            : { eventType: e.type, emailEnabled: false, smsEnabled: false, pushEnabled: false }),
+        })));
+      } catch (err) {
+        console.error('[NotificationsSection] bulk save failed:', err);
+        toast('Failed to save preferences', 'error');
+        load();
+      }
+    },
+    [toast, load],
+  );
 
   const updateRow = useCallback(
     async (type: string, patch: Partial<Omit<EventRow, 'type' | 'label' | 'description' | 'category' | 'mandatory'>>) => {
@@ -178,33 +232,71 @@ export default function NotificationsSection() {
             Notifications
           </h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Choose how Kilo reaches you. SMS and Push are coming soon.
+            Choose how Kilo reaches you. SMS is coming soon.
           </p>
         </div>
       </div>
 
-      {/* Per-category preference cards */}
-      {grouped.map(({ category, events }) => (
+      <DevicePushToggle />
+
+      {/* Per-category preference cards — collapsed by default, tap header
+          to expand. The bulk-enable Switch lives in the header so users
+          can disable a whole category without expanding. Description is
+          always visible (even for single-event categories like Mentions)
+          for cross-card consistency. */}
+      {grouped.map(({ category, events }) => {
+        const isOpen = expanded.has(category);
+        const bulkOn = categoryEnabled(events);
+        const hasNonMandatory = events.some((e) => !e.mandatory);
+        return (
         <div
           key={category}
           className="rounded-xl overflow-hidden"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
         >
-          <div className="px-5 md:px-6 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-              {CATEGORY_LABEL[category]}
-            </h3>
-            {/* Hide the category hint when the group contains a single event
-                — the event's own description below would just restate it
-                (see Mentions and Security). Multi-event groups keep the hint
-                so the user gets a feel for the category before scanning rows. */}
-            {events.length > 1 && (
+          <button
+            type="button"
+            onClick={() => toggleCategory(category)}
+            aria-expanded={isOpen}
+            className="w-full flex items-center justify-between gap-3 px-5 md:px-6 py-4 text-left active:opacity-70 transition-opacity"
+          >
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+                {CATEGORY_LABEL[category]}
+              </h3>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {CATEGORY_HINT[category]}
               </p>
-            )}
-          </div>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {hasNonMandatory && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Switch
+                    checked={bulkOn}
+                    onChange={(next) => bulkSetCategory(events, next)}
+                    ariaLabel={`Enable all ${CATEGORY_LABEL[category]} notifications`}
+                    size="sm"
+                  />
+                </div>
+              )}
+              <ChevronDown
+                className="w-4 h-4 transition-transform"
+                style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            </div>
+          </button>
 
+          {/* Smooth height animation via grid-rows trick — no JS height
+              measurement needed, works across content sizes. */}
+          <div
+            className="grid transition-[grid-template-rows] duration-300 ease-out"
+            style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+          >
+          <div className="overflow-hidden">
+          <div style={{ borderTop: '1px solid var(--border-default)' }}>
           {/* Channel header (desktop only — mobile uses per-channel rows).
               Each header cell stretches to the full grid-column width so
               its centered content aligns with the toggle/dropdown below
@@ -329,22 +421,56 @@ export default function NotificationsSection() {
               </li>
             ))}
           </ul>
+          </div>
+          </div>
+          </div>
         </div>
-      ))}
+        );
+      })}
 
-      {/* Phone + quiet hours card */}
-      <div
-        className="rounded-xl p-6 space-y-4"
-        style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
+      {/* Phone + quiet hours card — collapsed by default */}
+      <PhoneQuietHoursCard data={data} />
+    </div>
+  );
+}
+
+function PhoneQuietHoursCard({ data }: { data: ApiResponse }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const phoneStatus = data.user.notificationPhone
+    ? (data.user.phoneVerified ? 'Verified' : 'Unverified')
+    : 'Not set';
+  const quietStatus = data.user.quietHoursStartUtc != null && data.user.quietHoursEndUtc != null
+    ? `${pad(data.user.quietHoursStartUtc)}:00–${pad(data.user.quietHoursEndUtc)}:00 UTC`
+    : 'Not set';
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between gap-3 px-5 md:px-6 py-4 text-left active:opacity-70 transition-opacity"
       >
-        <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-          Phone & quiet hours
-        </h3>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Verified phone needed for SMS. Quiet hours pause SMS and push (email always lands immediately).
-        </p>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+            Phone & quiet hours
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Phone: {phoneStatus} · Quiet: {quietStatus}
+          </p>
+        </div>
+        <ChevronDown
+          className="w-4 h-4 flex-shrink-0 transition-transform"
+          style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
+        <div className="overflow-hidden">
+          <div className="px-5 md:px-6 pb-5 pt-3 space-y-4" style={{ borderTop: '1px solid var(--border-default)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Verified phone needed for SMS. Quiet hours pause SMS and push (email always lands immediately).
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs uppercase tracking-wider block mb-1" style={{ color: 'var(--text-dim)' }}>
               Phone (E.164)
@@ -389,6 +515,8 @@ export default function NotificationsSection() {
               Editable when SMS / Push channels go live.
             </p>
           </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -397,6 +525,104 @@ export default function NotificationsSection() {
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+/** Device-level Web Push enable toggle. Phase 4. Independent from the
+ *  per-event "push" preference column — both need to be on for a push
+ *  notification to physically arrive. This toggle owns the service
+ *  worker registration + PushSubscription lifecycle. */
+function DevicePushToggle() {
+  const { toast } = useToast();
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const mod = await import('../../../../lib/web-push-client');
+      if (cancelled) return;
+      setSupported(mod.isWebPushSupported());
+      if (mod.isWebPushSupported()) {
+        setEnabled(await mod.isPushEnabled());
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const onToggle = async (next: boolean) => {
+    setBusy(true);
+    try {
+      const mod = await import('../../../../lib/web-push-client');
+      if (next) {
+        const res = await mod.enableWebPush();
+        if (!res.ok) { toast(res.reason ?? 'Could not enable push', 'error'); return; }
+        setEnabled(true);
+        toast('Push enabled on this device');
+      } else {
+        await mod.disableWebPush();
+        setEnabled(false);
+        toast('Push disabled on this device');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (supported === null) return null;
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)' }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left active:opacity-70 transition-opacity"
+      >
+        <Smartphone className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent-emerald-text)' }} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Push on this device
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {supported ? (enabled ? 'Enabled' : 'Tap to learn more') : 'Not supported on this browser'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {supported && (
+            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+              <Switch
+                checked={enabled}
+                onChange={(next) => { if (!busy) onToggle(next); }}
+                ariaLabel="Enable push on this device"
+                size="sm"
+              />
+            </div>
+          )}
+          <ChevronDown
+            className="w-4 h-4 transition-transform"
+            style={{ color: 'var(--text-muted)', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </div>
+      </button>
+
+      <div className="grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
+        <div className="overflow-hidden">
+          <div className="px-5 pb-4 pt-1" style={{ borderTop: '1px solid var(--border-default)' }}>
+            <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+              {supported
+                ? 'Enable to get instant push when you\'re away from your inbox. Per-event push toggles below must also be on for each event type.'
+                : 'Your browser doesn\'t support push. Try Chrome, Edge, or install Kilo to your home screen.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Mobile per-channel row: icon + label on the left, switch on the right.

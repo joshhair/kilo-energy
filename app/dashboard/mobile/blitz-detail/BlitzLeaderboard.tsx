@@ -6,9 +6,9 @@ import { formatCurrency } from '../../../../lib/utils';
 import type { LeaderboardEntry } from '../../../../lib/blitzComputed';
 
 const RANK_GRAD = [
-  'linear-gradient(135deg, #fbbf24, #d97706)',
-  'linear-gradient(135deg, #cbd5e1, #64748b)',
-  'linear-gradient(135deg, #d97706, #92400e)',
+  'var(--accent-amber-solid)',
+  'color-mix(in srgb, var(--text-muted) 60%, var(--surface-card))',
+  'color-mix(in srgb, var(--accent-amber-solid) 70%, var(--accent-red-solid))',
 ];
 
 interface Props {
@@ -65,7 +65,8 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
                 {rep.name}
               </span>
               <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                {rep.deals}d · {rep.kW.toFixed(1)}kW
+                {rep.deals}{rep.targetDeals ? `/${rep.targetDeals}` : ''}d · {rep.kW.toFixed(1)}kW
+                {rep.targetDeals != null && rep.deals >= rep.targetDeals && <span className="ml-1">✓</span>}
               </span>
               {showPayout && rep.payout > 0 && (
                 <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>

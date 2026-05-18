@@ -49,19 +49,36 @@ export default function MobileBadge({
   const colors = variant === 'phase' ? PHASE_COLORS : STATUS_COLORS;
   // `bg` field is reused as the border color in the new outlined treatment.
   const c = colors[value] ?? { bg: 'var(--text-muted)', text: 'var(--text-muted)' };
-  const sizing = size === 'sm'
-    ? 'px-2 py-0.5 text-xs font-semibold'
-    : 'px-3 py-1 text-sm font-semibold';
+  // Premium spec: slim eyebrow-style chip with a leading dot. Status
+  // badges were dominating card titles at 1.5px borders + sm/md font;
+  // tighten to a uniform compact chip with 10px tracked uppercase so it
+  // reads as a quiet meta-label, not a competing CTA.
+  const sizing = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-0.5';
   return (
     <span
-      className={`inline-flex items-center ${sizing} rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
+      className={`inline-flex items-center gap-1.5 ${sizing} rounded-full whitespace-nowrap${value === 'Active' ? ' badge-active-pulse' : ''}`}
       style={{
         background: 'transparent',
-        border: '1.5px solid ' + c.bg,
+        border: `1px solid color-mix(in srgb, ${c.bg} 55%, transparent)`,
         color: c.text,
         fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+        fontSize: '10px',
+        fontWeight: 600,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        lineHeight: 1.6,
       }}
     >
+      <span
+        aria-hidden
+        style={{
+          width: 4,
+          height: 4,
+          borderRadius: '50%',
+          background: c.bg,
+          display: 'inline-block',
+        }}
+      />
       {value}
     </span>
   );
