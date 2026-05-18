@@ -36,6 +36,7 @@
     "prisma/seed.mts",
     "scripts/find-timothy.mts",
     "scripts/.local/**",
-    "scripts/*.mts.bak"
+    "scripts/*.mts.bak",
+    "scripts/prod-read/**"
   ]
 }

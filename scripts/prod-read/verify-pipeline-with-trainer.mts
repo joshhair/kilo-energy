@@ -74,7 +74,7 @@ async function main() {
       additionalClosers: { select: { userId: true, m1AmountCents: true, m2AmountCents: true, m3AmountCents: true } },
       additionalSetters: { select: { userId: true, m1AmountCents: true, m2AmountCents: true, m3AmountCents: true } },
     },
-  })) as Project[];
+  })) as unknown as Project[];
 
   // ─── Trainer assignments + ALL projects (trainee attribution) ───
   const trainerAssignments = (await readDb.trainerAssignment.findMany({
@@ -83,7 +83,7 @@ async function main() {
   })).map((a) => ({
     id: a.id, trainerId: a.trainerId, traineeId: a.traineeId,
     tiers: a.tiers.map((t) => ({ upToDeal: t.upToDeal, ratePerW: t.ratePerW })),
-  })) as TrainerAssignment[];
+  })) as unknown as TrainerAssignment[];
 
   // All projects involving any trainee (for trainer override compute)
   const traineeIds = trainerAssignments.map((a) => a.traineeId);

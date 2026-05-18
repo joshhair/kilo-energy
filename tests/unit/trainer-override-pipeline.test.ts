@@ -32,7 +32,6 @@ function assignment(overrides: Partial<TrainerAssignment> = {}): TrainerAssignme
 
 function traineeProject(overrides: Partial<Project> & { id: string }): Project {
   return {
-    id: overrides.id,
     phase: 'Installed',
     kWSize: 10,
     installer: 'EXO', // installPayPct 80 → fully-paid signal is m3Paid
