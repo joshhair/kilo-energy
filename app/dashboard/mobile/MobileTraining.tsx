@@ -362,7 +362,7 @@ export default function MobileTraining({
   if (!isHydrated) {
     return (
       <div className="px-5 pt-4 pb-28 space-y-4">
-        <MobilePageHeader title="Training" />
+        <MobilePageHeader title="Overrides" />
 
         {/* Section header skeleton */}
         <div className="h-4 w-28 rounded-full animate-pulse" style={{ background: 'var(--border-subtle)' }} />
@@ -411,7 +411,7 @@ export default function MobileTraining({
   if (effectiveRole === 'project_manager') {
     return (
       <div className="px-5 pt-4 pb-28">
-        <MobilePageHeader title="Training" />
+        <MobilePageHeader title="Overrides" />
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>You don&apos;t have permission to view this page.</p>
         </div>
@@ -423,7 +423,7 @@ export default function MobileTraining({
   if (effectiveRole === 'admin') {
     return (
       <div className="px-5 pt-4 pb-28 space-y-4">
-        <MobilePageHeader title="Trainer Hub" />
+        <MobilePageHeader title="Overrides" />
 
         {/* Stats strip */}
         {adminStats && (
@@ -704,7 +704,7 @@ export default function MobileTraining({
   if (!isTrainer) {
     return (
       <div className="px-5 pt-4 pb-28 space-y-4">
-        <MobilePageHeader title="Training" />
+        <MobilePageHeader title="Overrides" />
         <div className="motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both]">
           <MobileCard>
             <MobileEmptyState
@@ -720,7 +720,7 @@ export default function MobileTraining({
 
   return (
     <div className="px-5 pt-4 pb-28 space-y-4">
-      <MobilePageHeader title="Training" />
+      <MobilePageHeader title="Overrides" />
 
       {/* ── Hero stat strip ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">

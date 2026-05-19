@@ -205,7 +205,7 @@ function TrainingPageInner() {
   const { toast } = useToast();
 
   useEffect(() => {
-    document.title = 'Trainer Hub | Kilo Energy';
+    document.title = 'Overrides | Kilo Energy';
   }, []);
 
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -499,6 +499,27 @@ function TrainingPageInner() {
       const earningsFromTrainee = trainerEntries
         .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && isPaidAndEffective(e))
         .reduce((s, e) => s + e.amount, 0);
+
+      // Override pipeline remaining (matches the dollar amount baked into
+      // the rep's "Pipeline" headline via computeTrainerOverridePipeline).
+      // Per project: max(0, currentRate × kW × 1000 − already-paid Trainer
+      // stage on that project for this trainer). `traineeDeals` is already
+      // filtered to active phases (excludes Cancelled + On Hold).
+      const paidByProject = new Map<string, number>();
+      for (const e of trainerEntries) {
+        if (!e.projectId) continue;
+        if (e.repId !== assignment.trainerId) continue;
+        if (!isPaidAndEffective(e)) continue;
+        paidByProject.set(e.projectId, (paidByProject.get(e.projectId) ?? 0) + e.amount);
+      }
+      const overrideRemaining = currentRate > 0
+        ? traineeDeals.reduce((sum, p) => {
+            const expected = Math.round(currentRate * p.kWSize * 1000 * 100) / 100;
+            const paid = paidByProject.get(p.id) ?? 0;
+            return sum + Math.max(0, expected - paid);
+          }, 0)
+        : 0;
+
       const status = getAssignmentStatus(assignment, trainee, consumedDeals);
 
       return {
@@ -513,6 +534,7 @@ function TrainingPageInner() {
         activeTierIndex,
         nextThreshold,
         earningsFromTrainee,
+        overrideRemaining,
         status,
         projects: traineeDeals,
       };
@@ -602,6 +624,10 @@ function TrainingPageInner() {
     return m;
   }, new Map<string, typeof traineeData[number]>()).values()];
   const totalTraineeDeals = uniqueTraineeData.reduce((s, t) => s + t.dealCount, 0);
+  // Total override remaining across all the rep's active assignments — this is
+  // the same dollar amount that gets folded into the rep's "Pipeline" headline
+  // on Dashboard + My Pay (via computeTrainerOverridePipeline).
+  const totalOverrideRemaining = traineeData.reduce((s, t) => s + t.overrideRemaining, 0);
   const avgOverrideRate = useMemo(() => {
     const unique = [...traineeData.reduce((m, t) => {
       const prev = m.get(t.traineeId);
@@ -855,7 +881,7 @@ function TrainingPageInner() {
   if (!isTrainer && effectiveRole !== 'admin') {
     return (
       <div className="p-4 md:p-8 max-w-5xl animate-fade-in-up">
-        <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
+        <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Overrides' }]} />
         <div className="card-surface rounded-2xl p-8 text-center">
           <div className="inline-flex p-3 rounded-2xl mb-4" style={{ backgroundColor: 'var(--accent-amber-soft)' }}>
             <GraduationCap className="w-8 h-8 text-[var(--accent-amber-text)]" />
@@ -890,7 +916,7 @@ function TrainingPageInner() {
   if (effectiveRole === 'admin') {
     return (
       <div className="p-4 md:p-8 max-w-6xl animate-fade-in-up">
-        <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
+        <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Overrides' }]} />
         {/* Header */}
         <div className="mb-6">
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
@@ -899,11 +925,11 @@ function TrainingPageInner() {
               <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-              Trainer Hub
+              Overrides
             </h1>
           </div>
           <p className="text-[var(--text-muted)] text-sm mt-2 ml-[52px]">
-            All trainer-trainee assignments across the org. Use filters to scope.
+            All trainer + manager override assignments across the org. Use filters to scope.
           </p>
           {/* At-a-glance stats — ported from the old Settings > Trainer
               Overrides header. Keeps admins from having to open a tab to
@@ -1414,7 +1440,7 @@ function TrainingPageInner() {
   // ── REP-TRAINER VIEW ─────────────────────────────────────────────────────
   return (
     <div className="p-4 md:p-8 max-w-5xl animate-fade-in-up">
-      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Training' }]} />
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Overrides' }]} />
       {/* Header */}
       <div className="mb-6">
         <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 mb-3" />
@@ -1423,7 +1449,7 @@ function TrainingPageInner() {
             <GraduationCap className="w-5 h-5 text-[var(--accent-amber-text)]" />
           </div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            Trainer Hub
+            Overrides
           </h1>
         </div>
       </div>
@@ -1450,11 +1476,18 @@ function TrainingPageInner() {
       {/* OVERVIEW */}
       {activeTab === 'overview' && (
         <div key="overview" className="animate-tab-enter space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Stat grid — 5 tiles. Pipeline Override added so reps can see
+              the exact dollar amount that gets folded into their headline
+              "Pipeline" number on Dashboard + My Pay. Rendered only when
+              > 0 to avoid clutter for reps with no active trainees. */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${totalOverrideRemaining > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4`}>
             <StatCard label="Total Earned" value={fmt$(totalEarned)} color="text-[var(--accent-amber-text)]" border="border-l-amber-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={1} icon={<DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={2} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={3} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
-            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)" stagger={4} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
+            {totalOverrideRemaining > 0 && (
+              <StatCard label="Pipeline Override" value={fmt$(totalOverrideRemaining)} color="text-[var(--accent-cyan-text)]" border="border-l-cyan-500/40" accent="color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)" stagger={2} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-cyan-text)]/50" />} />
+            )}
+            <StatCard label="Active Trainees" value={String(activeTraineeCount)} color="text-[var(--accent-amber-text)]" border="border-l-orange-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={3} icon={<Users className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Avg Override Rate" value={`$${avgOverrideRate.toFixed(2)}/W`} color="text-[var(--accent-amber-text)]" border="border-l-yellow-500/40" accent="color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)" stagger={4} icon={<TrendingUp className="w-4 h-4 text-[var(--accent-amber-text)]/50" />} />
+            <StatCard label="Trainee Deals" value={String(totalTraineeDeals)} color="text-[var(--accent-emerald-text)]" border="border-l-emerald-500/40" accent="color-mix(in srgb, var(--accent-emerald-solid) 8%, transparent)" glow="color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)" stagger={5} icon={<BarChart2 className="w-4 h-4 text-[var(--accent-emerald-text)]/50" />} />
           </div>
 
           <div className="card-surface rounded-2xl p-6">
@@ -1819,14 +1852,14 @@ function ActiveTraineeCard({
   data: {
     assignment: TrainerAssignment; traineeId: string; traineeName: string; traineeRole: string;
     dealCount: number; consumedDeals: number; currentRate: number; activeTierIndex: number; nextThreshold: number | null;
-    earningsFromTrainee: number; status: AdminStatus; projects: Project[];
+    earningsFromTrainee: number; overrideRemaining: number; status: AdminStatus; projects: Project[];
   };
   idx: number;
   onGraduate: () => void;
   onOpenProject: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { assignment: t, traineeName, traineeRole, dealCount, consumedDeals, currentRate, activeTierIndex, nextThreshold, projects, status } = data;
+  const { assignment: t, traineeName, traineeRole, dealCount, consumedDeals, currentRate, activeTierIndex, nextThreshold, projects, status, overrideRemaining } = data;
 
   const prevThreshold = activeTierIndex > 0 ? t.tiers[activeTierIndex - 1].upToDeal ?? 0 : 0;
   const progressMax = nextThreshold ? nextThreshold - prevThreshold : 1;
@@ -1861,6 +1894,11 @@ function ActiveTraineeCard({
           <p className="text-[var(--text-muted)] text-xs mt-0.5">
             {dealCount} deal{dealCount !== 1 ? 's' : ''} · {activeProjects.length} active in pipeline
           </p>
+          {overrideRemaining > 0 && (
+            <p className="text-[var(--accent-amber-text)] text-xs font-semibold mt-1 tabular-nums">
+              ${Math.round(overrideRemaining).toLocaleString()} override remaining
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button

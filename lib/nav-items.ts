@@ -44,7 +44,7 @@ export const REP_NAV: AnyNavItem[] = [
   { href: '/dashboard/projects',   label: 'Projects',   icon: FolderKanban },
   { href: '/dashboard/my-pay',     label: 'My Pay',     icon: Wallet },
   { href: '/dashboard/blitz',     label: 'Blitz',      icon: Tent },
-  { href: '/dashboard/training',   label: 'Training',    icon: GraduationCap },
+  { href: '/dashboard/training',   label: 'Overrides',   icon: GraduationCap },
   { href: '/dashboard/calculator', label: 'Calculator',  icon: Calculator },
 ];
 
