@@ -1,0 +1,55 @@
+name: Vercel production deploy safety net
+
+# Belt-and-suspenders for Vercel's native GitHub App integration. The native
+# integration auto-deploys on push to main, but in rare cases the webhook
+# delivery fails silently (no built-in retry). This workflow calls a Vercel
+# deploy hook on every push to main so deploys never get stranded.
+#
+# Vercel dedups identical-commit deploys, so on the happy path this is a
+# no-op — the native integration's faster webhook wins, this fires after,
+# Vercel sees the commit is already deployed and skips. Only triggers a
+# new build when the native integration missed.
+#
+# Setup (one-time): create a Production deploy hook in Vercel dashboard
+# (Project Settings → Git → Deploy Hooks → Branch=main), copy the URL,
+# add it as a repo secret named VERCEL_DEPLOY_HOOK_URL.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you manually triggering a deploy?'
+        required: false
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    # Skip on push if the deploy hook secret isn't set yet (lets the workflow
+    # exist before the user has completed the one-time secret setup).
+    if: ${{ vars.VERCEL_DEPLOY_HOOK_CONFIGURED == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Wait for native integration window
+        # Give Vercel's native GitHub App integration ~45s to fire its own
+        # webhook first. On the happy path it builds, and our deploy-hook
+        # call below becomes a dedup no-op.
+        if: ${{ github.event_name == 'push' }}
+        run: sleep 45
+
+      - name: Trigger Vercel deploy hook
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_URL secret not set. See workflow header for setup."
+            exit 1
+          fi
+          response=$(curl -fsSL -X POST "$DEPLOY_HOOK" -w "\n%{http_code}")
+          status=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "Vercel response (HTTP $status): $body"
+          if [ "$status" -ne 201 ] && [ "$status" -ne 200 ]; then
+            exit 1
+          fi
