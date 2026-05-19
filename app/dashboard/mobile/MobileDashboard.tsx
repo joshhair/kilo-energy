@@ -501,6 +501,7 @@ export default function MobileDashboard() {
   const animatedOnPace = useCountUp(heroOnPaceValue, 350);
   const animatedPayout = useCountUp(pendingPayrollTotal, 300);
   const animatedPaid = useCountUp(periodPaid, 300);
+  const animatedYearToDatePaid = useCountUp(yearToDatePaid, 300);
   const animatedPipeline = useCountUp(pipelineValue, 300);
   const animatedAddedToPipeline = useCountUp(periodAddedToPipeline, 300);
   const animatedDealsClosed = useCountUp(periodDealsClosed, 300);
@@ -957,11 +958,19 @@ export default function MobileDashboard() {
           </div>
         )}
 
-        {/* Stats inside hero card */}
+        {/* Stats inside hero card. Paid cell semantics:
+            - period === 'all' (2026 Cash Forecast hero): YTD paid only, label
+              clarifies the year so the digit reads as cash received in this
+              forecast window — not lifetime, which mismatches the hero's framing.
+            - Other periods: periodPaid (already period-filtered by animatedPaid).
+            Bug history: this used `animatedPaid` (= periodPaid, which collapses
+            to lifetime when period='all') for the 'all' case, causing Hunter's
+            tile to read $275K and Josh's to read $394K while the hero's
+            'paid' breakdown correctly showed YTD. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <div className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
-            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-emerald-text)', lineHeight: 1.15 }}>{fmtCompact$(animatedPaid)}</p>
-            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>Paid</p>
+            <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-emerald-text)', lineHeight: 1.15 }}>{fmtCompact$(period === 'all' ? animatedYearToDatePaid : animatedPaid)}</p>
+            <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>{period === 'all' ? `Paid in ${new Date().getFullYear()}` : 'Paid'}</p>
           </div>
           {/* Pipeline cell — period-adaptive. Refined cyan-text accent
               differentiates "in-flight" pipeline value from the locked-
