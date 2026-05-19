@@ -15,6 +15,7 @@ import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileEmptyState from './shared/MobileEmptyState';
+import { SegmentedPills } from '../../../components/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -81,9 +82,13 @@ export default function MobileTraining({
   const isHydrated = useIsHydrated();
   const { toast } = useToast();
 
-  useEffect(() => { document.title = 'Training | Kilo Energy'; }, []);
+  useEffect(() => { document.title = 'Overrides | Kilo Energy'; }, []);
 
   const [expandedAssignment, setExpandedAssignment] = useState<string | null>(null);
+  // Rep view tab — mirrors desktop's Active / Residuals split. Defaults to
+  // Active because the override-remaining number the rep wants to verify
+  // (the one baked into their Pipeline headline) comes from active trainees.
+  const [repView, setRepView] = useState<'active' | 'residuals'>('active');
 
   // ── Admin state (unconditional — rules of hooks) ──────────────────────────
   const [adminSearch, setAdminSearch] = useState('');
@@ -343,6 +348,29 @@ export default function MobileTraining({
         .filter((e) => e.projectId && traineeProjectIds.has(e.projectId) && e.repId === assignment.trainerId && isPaidAndEffective(e))
         .reduce((s, e) => s + e.amount, 0);
 
+      // Override pipeline remaining for this assignment — matches the dollar
+      // amount baked into the rep's "Pipeline" headline via
+      // computeTrainerOverridePipeline. Per project: max(0, currentRate × kW
+      // × 1000 − already-paid Trainer-stage entries for this trainer).
+      const paidByProject = new Map<string, number>();
+      for (const e of trainerEntries) {
+        if (!e.projectId) continue;
+        if (e.repId !== assignment.trainerId) continue;
+        if (!isPaidAndEffective(e)) continue;
+        paidByProject.set(e.projectId, (paidByProject.get(e.projectId) ?? 0) + e.amount);
+      }
+      const overrideRemaining = currentRate > 0
+        ? traineeDeals.reduce((sum, p) => {
+            const expected = Math.round(currentRate * p.kWSize * 1000 * 100) / 100;
+            const paid = paidByProject.get(p.id) ?? 0;
+            return sum + Math.max(0, expected - paid);
+          }, 0)
+        : 0;
+
+      // Mirror desktop status derivation so the Active/Residuals tab split
+      // honors the same rule (graduated assignments live in Residuals).
+      const status = getAdminAssignmentStatus(assignment, trainee, consumedDeals);
+
       return {
         assignment,
         traineeId: assignment.traineeId,
@@ -353,11 +381,34 @@ export default function MobileTraining({
         currentRate,
         activeTierIndex,
         earningsFromTrainee,
+        overrideRemaining,
+        status,
       };
     });
   }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, trainerEntries, effectiveRepId]);
 
   const sortedOverrides = [...trainerEntries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+
+  // Active / Residuals split (rep view). Matches desktop's filter rule: any
+  // assignment with isActiveTraining === false belongs to Residuals; the rest
+  // (training / maxed / paused) are Active.
+  const activeTrainees = useMemo(
+    () => traineeData.filter((t) => t.assignment.isActiveTraining !== false),
+    [traineeData],
+  );
+  const residualTrainees = useMemo(
+    () => traineeData.filter((t) => t.assignment.isActiveTraining === false),
+    [traineeData],
+  );
+  const visibleTrainees = repView === 'active' ? activeTrainees : residualTrainees;
+
+  // Sum of override remaining across all the rep's assignments — the dollar
+  // amount that gets folded into the rep's Pipeline headline. Surfaced as a
+  // stat tile so the rep can reconcile against the Dashboard / My Pay number.
+  const totalOverrideRemaining = useMemo(
+    () => traineeData.reduce((s, t) => s + t.overrideRemaining, 0),
+    [traineeData],
+  );
 
   if (!isHydrated) {
     return (
@@ -722,13 +773,23 @@ export default function MobileTraining({
     <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Overrides" />
 
-      {/* ── Hero stat strip ──────────────────────────────────────────────── */}
+      {/* ── Hero stat strip ────────────────────────────────────────────────
+          Pipeline Override slots in as the second tile when > 0, mirroring
+          the desktop Overrides → Overview tab. This is the dollar amount
+          baked into the rep's Pipeline headline — reps can verify the math
+          here against what shows on Dashboard / My Pay. Hidden for reps
+          with no active override accrual so the layout stays clean. */}
       <div className="grid grid-cols-2 gap-3 motion-safe:animate-[fadeUpIn_300ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:[animation-delay:60ms]">
         {[
-          { label: 'Active Trainees', value: String(new Set(traineeData.filter((t) => t.assignment.isActiveTraining !== false).map((t) => t.traineeId)).size), color: 'var(--text-primary)' },
+          { label: 'Active Trainees', value: String(new Set(activeTrainees.map((t) => t.traineeId)).size), color: 'var(--text-primary)' },
+          ...(totalOverrideRemaining > 0
+            ? [{ label: 'Pipeline Override', value: fmt$(totalOverrideRemaining), color: 'var(--accent-cyan-text)' }]
+            : []),
           { label: 'Override Earnings', value: fmt$(displayTotal), color: 'var(--accent-emerald-solid)' },
           { label: 'Pending', value: fmt$(pendingAmount), color: 'var(--accent-amber-text)' },
-          { label: 'Draft', value: fmt$(draftAmount), color: 'var(--text-secondary)' },
+          ...(totalOverrideRemaining > 0
+            ? []
+            : [{ label: 'Draft', value: fmt$(draftAmount), color: 'var(--text-secondary)' }]),
         ].map((stat) => (
           <div key={stat.label} className="rounded-2xl px-4 py-3" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{stat.label}</p>
@@ -739,13 +800,37 @@ export default function MobileTraining({
         ))}
       </div>
 
-      {/* ── My Trainees ─────────────────────────────────────────────────── */}
-      <MobileSection title="My Trainees" count={traineeData.length}>
+      {/* ── Active / Residuals tab split ────────────────────────────────
+          Matches the desktop /dashboard/training tabs so reps see the same
+          mental model on either device. Active = isActiveTraining true
+          (training, maxed, paused all live here); Residuals = graduated. */}
+      <SegmentedPills<'active' | 'residuals'>
+        options={[
+          { value: 'active', label: 'Active', badge: activeTrainees.length || undefined },
+          { value: 'residuals', label: 'Residuals', badge: residualTrainees.length || undefined },
+        ]}
+        value={repView}
+        onChange={setRepView}
+        ariaLabel="Filter trainees by status"
+      />
+
+      {/* ── Trainees list (filtered by tab) ─────────────────────────────── */}
+      {visibleTrainees.length === 0 ? (
+        <MobileCard>
+          <MobileEmptyState
+            icon={GraduationCap}
+            title={repView === 'active' ? 'No active trainees' : 'No residuals yet'}
+            subtitle={repView === 'active'
+              ? 'Mark a trainee as graduated to move them to Residuals'
+              : 'Graduated trainees will appear here'}
+          />
+        </MobileCard>
+      ) : (
         <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          {traineeData.map((td, idx) => {
+          {visibleTrainees.map((td, idx) => {
             const isOpen = expandedAssignment === td.assignment.id;
             return (
-              <div key={td.assignment.id} style={{ borderBottom: idx < traineeData.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+              <div key={td.assignment.id} style={{ borderBottom: idx < visibleTrainees.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
                 <button
                   onClick={() => setExpandedAssignment(isOpen ? null : td.assignment.id)}
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px]
@@ -760,6 +845,11 @@ export default function MobileTraining({
                     <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                       <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{td.dealCount}</span> deals &middot; <span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${td.currentRate.toFixed(2)}/W</span> &middot; {td.traineeRole === 'both' ? 'Closer/Setter' : td.traineeRole.charAt(0).toUpperCase() + td.traineeRole.slice(1)}
                     </p>
+                    {td.overrideRemaining > 0 && (
+                      <p className="mt-1 text-[11px] font-semibold tabular-nums" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                        {fmt$(td.overrideRemaining)} override remaining
+                      </p>
+                    )}
                   </div>
                   <ChevronDown
                     className={`w-4 h-4 flex-shrink-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
@@ -837,7 +927,7 @@ export default function MobileTraining({
             );
           })}
         </div>
-      </MobileSection>
+      )}
 
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
