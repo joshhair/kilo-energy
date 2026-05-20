@@ -564,7 +564,7 @@ export function createMilestonePayroll(
       const closerTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
         (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(closerTraineeNotesPrefix) && e.repId === closerRes.trainerId
       );
-      if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists) {
+      if (m2TrainerAmount > 0 && !closerTrainerAlreadyExists && closerRes.trainerId) {
         newEntries.push({
           id: `pay_${ts}_m2_trainer_c`,
           repId: closerRes.trainerId,
@@ -869,7 +869,7 @@ export function createM3Payroll(
     const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
     const overrideRate = !isNaN(m2CloserParsed) ? m2CloserParsed : closerResM3Entry.rate;
     const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
-    if (m3TrainerAmount > 0) {
+    if (m3TrainerAmount > 0 && closerResM3Entry.trainerId) {
       const closerTraineeName = closerRep?.name ?? old.repName ?? '';
       const traineeLabel = sameTrainerBothLegsM3 && m3SetterTraineeName
         ? `${closerTraineeName} + ${m3SetterTraineeName}`
