@@ -12,13 +12,13 @@ import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   splitCloserSetterPay, resolveTrainerRate,
-  DEFAULT_INSTALL_PAY_PCT,
+  DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
   SOLARTECH_FAMILIES,
 } from '../../../../lib/data';
 import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-deduction';
 import { computeProjectedTrainerLegs } from '../../../../lib/trainer-projection';
 import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Pencil, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
+import { Flag, FlagOff, AlertTriangle, X, Pencil, Plus, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
@@ -36,6 +36,7 @@ import { HandoffStatusCard } from '../components/detail/HandoffStatusCard';
 import { CollapsibleSection } from '../components/detail/CollapsibleSection';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
+import RecordTrainerPaymentModal from '../components/RecordTrainerPaymentModal';
 import PaidCorrectionModal from '../../components/PaidCorrectionModal';
 import type { PayrollEntry } from '../../../../lib/data';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
@@ -77,6 +78,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // here (the project page is for data fixes, not money movement — admins
   // record chargebacks from the Payroll page).
   const [paidCorrectionEntryId, setPaidCorrectionEntryId] = useState<string | null>(null);
+  // Admin-only: open the Record Trainer Payment modal. Used for Glide
+  // cleanup where the trainer is attached to a project but no Trainer-
+  // stage payroll entries were ever auto-generated.
+  const [showRecordTrainerPayment, setShowRecordTrainerPayment] = useState(false);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
@@ -1280,6 +1285,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     )}
                   </div>
+                  {/* Admin-only: record a backdated Trainer-stage entry. Used
+                      for Glide-cleanup where the trainer is attached but the
+                      Trainer payroll wasn't auto-generated. Blocked on
+                      Cancelled / On-Hold deals (the modal won't open if the
+                      project isn't active). */}
+                  {effectiveRole === 'admin' && project.phase !== 'Cancelled' && project.phase !== 'On Hold' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRecordTrainerPayment(true)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors text-[var(--accent-amber-text)] hover:bg-[var(--accent-amber-soft)]"
+                      style={{ border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)' }}
+                      title="Record a backdated trainer-stage payroll entry (admin)"
+                    >
+                      <Plus className="w-3 h-3" /> Record Payment
+                    </button>
+                  )}
                 </div>
                 {trainerEntries.length > 0 ? (
                   <div className="space-y-1.5">
@@ -2210,6 +2231,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         onCorrected={(updated: PayrollEntry) => {
           setPayrollEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
         }}
+      />
+
+      {/* Record Trainer Payment modal (admin-only). Creates a Trainer-stage
+          payroll entry on this project — used for Glide-imported deals where
+          the trainer is attached but no Trainer payroll was auto-generated.
+          installPayPct drives the M2/M3 split fraction. */}
+      <RecordTrainerPaymentModal
+        open={showRecordTrainerPayment}
+        onClose={() => setShowRecordTrainerPayment(false)}
+        onSaved={(entry: PayrollEntry) => {
+          setPayrollEntries((prev) => [entry, ...prev]);
+        }}
+        projectId={project.id}
+        projectCustomerName={project.customerName}
+        projectKWSize={project.kWSize}
+        defaultTrainerId={project.trainerId ?? effTrainerId ?? null}
+        defaultTrainerRate={project.trainerRate ?? effectiveTrainerRate ?? null}
+        installPayPct={installerPayConfigs[project.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT}
+        reps={reps}
       />
 
       {/* Cancel Confirm Modal */}
