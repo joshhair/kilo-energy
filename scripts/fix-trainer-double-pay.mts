@@ -38,6 +38,7 @@
  * stand-alone, source .env first).
  */
 
+import 'dotenv/config';
 import readline from 'readline';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 
