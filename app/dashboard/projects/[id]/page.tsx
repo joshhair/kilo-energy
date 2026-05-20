@@ -36,12 +36,14 @@ import { HandoffStatusCard } from '../components/detail/HandoffStatusCard';
 import { CollapsibleSection } from '../components/detail/CollapsibleSection';
 // AdminNotesEditor removed 2026-04-23 — admin notes now render via ProjectNotes kind='admin'.
 import RecordChargebackModal from '../components/RecordChargebackModal';
+import PaidCorrectionModal from '../../components/PaidCorrectionModal';
+import type { PayrollEntry } from '../../../../lib/data';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, setPayrollEntries, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
   const isPM = effectiveRole === 'project_manager';
   // Internal-only gate: admin OR an internal PM (no installer scope on
   // either the signed-in user or the View-As target). Vendor PMs are
@@ -69,6 +71,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
+  // PaidCorrectionModal state — admin-only inline edit of a Paid payroll
+  // entry's recorded amount. Opened by the pencil affordance on closer /
+  // setter / co-party / trainer entry rows. Chargeback branch is suppressed
+  // here (the project page is for data fixes, not money movement — admins
+  // record chargebacks from the Payroll page).
+  const [paidCorrectionEntryId, setPaidCorrectionEntryId] = useState<string | null>(null);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
@@ -1124,6 +1132,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 ...((project.m3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.m3Amount ?? 0 }] : []),
               ]}
               entries={closerEntries}
+              onEditPaid={effectiveRole === 'admin' ? setPaidCorrectionEntryId : undefined}
             />
 
             {/* ── Setter ── */}
@@ -1138,6 +1147,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   ...((project.setterM3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.setterM3Amount ?? 0 }] : []),
                 ]}
                 entries={setterEntries}
+                onEditPaid={effectiveRole === 'admin' ? setPaidCorrectionEntryId : undefined}
               />
             ) : (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
@@ -1183,6 +1193,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
                             <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            {effectiveRole === 'admin' && entry.status === 'Paid' && (
+                              <button
+                                type="button"
+                                onClick={() => setPaidCorrectionEntryId(entry.id)}
+                                aria-label={`Edit ${entry.paymentStage} paid amount`}
+                                title="Edit recorded amount (admin)"
+                                className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1224,6 +1245,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               'bg-[var(--border)] text-[var(--text-secondary)]'
                             }`}>{entry.status}</span>
                             <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                            {effectiveRole === 'admin' && entry.status === 'Paid' && (
+                              <button
+                                type="button"
+                                onClick={() => setPaidCorrectionEntryId(entry.id)}
+                                aria-label={`Edit ${entry.paymentStage} paid amount`}
+                                title="Edit recorded amount (admin)"
+                                className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1265,6 +1297,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                             'bg-[var(--border)] text-[var(--text-secondary)]'
                           }`}>{entry.status}</span>
                           <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
+                          {effectiveRole === 'admin' && entry.status === 'Paid' && (
+                            <button
+                              type="button"
+                              onClick={() => setPaidCorrectionEntryId(entry.id)}
+                              aria-label={`Edit ${entry.paymentStage} paid amount`}
+                              title="Edit recorded amount (admin)"
+                              className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2153,6 +2196,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             amount: e.amount,
             date: e.date,
           }))}
+      />
+
+      {/* Paid-amount correction modal (admin-only inline edit). Opened from
+          the pencil affordance on Paid commission entries. onOpenChargeback
+          intentionally omitted so the modal opens directly into fix-amount
+          mode — chargeback recording lives on the Payroll page. */}
+      <PaidCorrectionModal
+        entry={paidCorrectionEntryId
+          ? payrollEntries.find((e) => e.id === paidCorrectionEntryId) ?? null
+          : null}
+        onClose={() => setPaidCorrectionEntryId(null)}
+        onCorrected={(updated: PayrollEntry) => {
+          setPayrollEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        }}
       />
 
       {/* Cancel Confirm Modal */}

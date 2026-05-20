@@ -45,15 +45,22 @@ interface PaidCorrectionModalProps {
   onCorrected: (updated: PayrollEntry) => void;
   /** Called when the admin picks the "money was wrong" branch. The parent
    *  should close this modal and open its existing Add Chargeback flow
-   *  pre-filled with the entry's rep + project. */
-  onOpenChargeback: (entry: PayrollEntry) => void;
+   *  pre-filled with the entry's rep + project. Optional — when omitted,
+   *  the chargeback branch is suppressed entirely and the modal opens
+   *  directly into fix-amount mode. */
+  onOpenChargeback?: (entry: PayrollEntry) => void;
 }
 
 type Branch = 'choose' | 'fix-amount';
 
 export default function PaidCorrectionModal({ entry, onClose, onCorrected, onOpenChargeback }: PaidCorrectionModalProps) {
   const { toast } = useToast();
-  const [branch, setBranch] = useState<Branch>('choose');
+  // When onOpenChargeback isn't provided (e.g., launched from the project
+  // detail page where the chargeback flow lives on the Payroll page only),
+  // skip the choose step entirely and open straight into fix-amount mode.
+  const chargebackBranchEnabled = typeof onOpenChargeback === 'function';
+  const initialBranch: Branch = chargebackBranchEnabled ? 'choose' : 'fix-amount';
+  const [branch, setBranch] = useState<Branch>(initialBranch);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,11 +69,11 @@ export default function PaidCorrectionModal({ entry, onClose, onCorrected, onOpe
   // Reset every time a new entry opens.
   useEffect(() => {
     if (!entry) return;
-    setBranch('choose');
+    setBranch(initialBranch);
     setAmount(entry.amount.toFixed(2));
     setReason('');
     setSubmitting(false);
-  }, [entry]);
+  }, [entry, initialBranch]);
 
   // Focus the amount input when entering fix-amount branch.
   useEffect(() => {
@@ -128,6 +135,7 @@ export default function PaidCorrectionModal({ entry, onClose, onCorrected, onOpe
   };
 
   const handleChargebackBranch = () => {
+    if (!onOpenChargeback) return;
     onOpenChargeback(entry);
     onClose();
   };
@@ -403,7 +411,7 @@ export default function PaidCorrectionModal({ entry, onClose, onCorrected, onOpe
           className="flex items-center justify-between gap-2 px-5 py-3"
           style={{ borderTop: '1px solid var(--border-subtle)' }}
         >
-          {branch === 'fix-amount' ? (
+          {branch === 'fix-amount' && chargebackBranchEnabled ? (
             <button
               type="button"
               onClick={() => setBranch('choose')}

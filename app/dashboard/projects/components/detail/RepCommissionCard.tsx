@@ -1,5 +1,6 @@
 'use client';
 
+import { Pencil } from 'lucide-react';
 import { formatDate } from '../../../../../lib/utils';
 
 export interface RepCommissionEntry {
@@ -22,12 +23,17 @@ export function RepCommissionCard({
   totalExpected,
   expectedAmounts,
   entries,
+  onEditPaid,
 }: {
   name: string;
   role: string;
   totalExpected: number;
   expectedAmounts: RepCommissionExpected[];
   entries: RepCommissionEntry[];
+  /** When provided, renders a pencil-icon edit affordance next to each Paid
+   *  entry. Click invokes the callback with the entry id — parent opens
+   *  PaidCorrectionModal. Admin-only by parent's gating. */
+  onEditPaid?: (entryId: string) => void;
 }) {
   return (
     <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
@@ -68,6 +74,20 @@ export function RepCommissionCard({
                 <span className="text-[var(--accent-emerald-text)] font-bold text-sm">
                   ${entry.amount.toLocaleString()}
                 </span>
+                {/* Admin-only inline edit for Paid entries. Parent gates
+                    on role + opens PaidCorrectionModal (chargeback branch
+                    suppressed when launched from project page). */}
+                {onEditPaid && entry.status === 'Paid' && (
+                  <button
+                    type="button"
+                    onClick={() => onEditPaid(entry.id)}
+                    aria-label={`Edit ${entry.paymentStage} paid amount`}
+                    title="Edit recorded amount (admin)"
+                    className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
