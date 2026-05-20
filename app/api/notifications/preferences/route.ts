@@ -44,6 +44,10 @@ export async function GET() {
       quietHoursStartUtc: phoneInfo?.quietHoursStartUtc ?? null,
       quietHoursEndUtc: phoneInfo?.quietHoursEndUtc ?? null,
     },
+    // Phase D gate. Flips to true the moment ops sets SMS_ENABLED=true in
+    // Vercel (post A2P 10DLC). Until then, the UI keeps the "coming soon"
+    // affordance on SMS toggles and phone capture.
+    smsLive: process.env.SMS_ENABLED === 'true',
     /** One row per event in the user's audience. `mandatory` events return
      *  effective values that respect the registry's mandatory flag (settings
      *  UI shows them locked). */

@@ -90,7 +90,12 @@ async function resolveDecisions(
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, active: true },
+      select: {
+        role: true,
+        active: true,
+        quietHoursStartUtc: true,
+        quietHoursEndUtc: true,
+      },
     }),
   ]);
 
@@ -129,15 +134,62 @@ async function resolveDecisions(
     };
   }
 
+  // Quiet hours: silence sms + push when current UTC hour falls inside
+  // the user's configured window. Email always lands (it doesn't ping a
+  // device; the inbox-check is initiated by the user). Mandatory events
+  // bypass — chargebacks and role changes must reach the user immediately
+  // even at 3am.
+  const inQuiet = !mandatory && isInQuietHours(
+    user.quietHoursStartUtc,
+    user.quietHoursEndUtc,
+    quietHoursNow(),
+  );
+
   return {
     decisions: [
       { channel: 'email', enabled: mandatory ? true : emailEnabled },
-      { channel: 'sms', enabled: mandatory ? smsEnabled : smsEnabled },
-      { channel: 'push', enabled: mandatory ? pushEnabled : pushEnabled },
+      {
+        channel: 'sms',
+        enabled: mandatory ? smsEnabled : (smsEnabled && !inQuiet),
+        reason: inQuiet && smsEnabled && !mandatory ? 'quiet hours' : undefined,
+      },
+      {
+        channel: 'push',
+        enabled: mandatory ? pushEnabled : (pushEnabled && !inQuiet),
+        reason: inQuiet && pushEnabled && !mandatory ? 'quiet hours' : undefined,
+      },
     ],
     digestMode,
     mandatory,
   };
+}
+
+/** Indirection so tests can pin "now" without monkeypatching Date. */
+let nowProvider: () => Date = () => new Date();
+export function __setNowProviderForTests(fn: (() => Date) | null) {
+  nowProvider = fn ?? (() => new Date());
+}
+function quietHoursNow(): number {
+  return nowProvider().getUTCHours();
+}
+
+/**
+ * Hour-precision quiet-hours check. Window is [start, end) — start inclusive,
+ * end exclusive. Wraparound (e.g. 22→06) is supported: when end < start, the
+ * window spans midnight, so the hour is "inside" if it's >= start OR < end.
+ */
+export function isInQuietHours(
+  startUtc: number | null,
+  endUtc: number | null,
+  hourUtc: number,
+): boolean {
+  if (startUtc == null || endUtc == null) return false;
+  if (startUtc === endUtc) return false; // empty window
+  if (endUtc > startUtc) {
+    return hourUtc >= startUtc && hourUtc < endUtc;
+  }
+  // Wraparound
+  return hourUtc >= startUtc || hourUtc < endUtc;
 }
 
 /**

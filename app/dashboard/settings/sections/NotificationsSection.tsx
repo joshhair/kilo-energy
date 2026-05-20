@@ -28,6 +28,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Bell, Mail, MessageSquare, Smartphone, Lock, Loader2, ChevronDown } from 'lucide-react';
 import { Switch } from '../../../../components/ui/Switch';
 import { SelectMenu } from '../../../../components/ui/SelectMenu';
+import { TextInput } from '../../../../components/ui/Input';
+import { PrimaryButton, SecondaryButton } from '../../../../components/ui/Button';
 import { useToast } from '../../../../lib/toast';
 
 const CADENCE_OPTIONS: { value: DigestMode; label: string }[] = [
@@ -58,6 +60,10 @@ interface ApiResponse {
     quietHoursStartUtc: number | null;
     quietHoursEndUtc: number | null;
   };
+  /** Phase D gate: true once ops sets SMS_ENABLED=true in Vercel (after
+   *  A2P 10DLC approval). Until then the SMS column stays "Coming soon"
+   *  and the phone field stays read-only. */
+  smsLive?: boolean;
   events: EventRow[];
 }
 
@@ -366,7 +372,7 @@ export default function NotificationsSection() {
                   />
                   <MobileChannelRow
                     icon={MessageSquare} label="SMS"
-                    enabled={e.smsEnabled} locked={false} comingSoon
+                    enabled={e.smsEnabled} locked={false} comingSoon={!data.smsLive}
                     onToggle={(v) => updateRow(e.type, { smsEnabled: v })}
                   />
                   <MobileChannelRow
@@ -399,7 +405,7 @@ export default function NotificationsSection() {
                   ariaLabel="Toggle Email"
                 />
                 <DesktopChannelCell
-                  enabled={e.smsEnabled} locked={false} comingSoon
+                  enabled={e.smsEnabled} locked={false} comingSoon={!data.smsLive}
                   onToggle={(v) => updateRow(e.type, { smsEnabled: v })}
                   ariaLabel="Toggle SMS"
                 />
@@ -429,12 +435,12 @@ export default function NotificationsSection() {
       })}
 
       {/* Phone + quiet hours card — collapsed by default */}
-      <PhoneQuietHoursCard data={data} />
+      <PhoneQuietHoursCard data={data} onReload={load} />
     </div>
   );
 }
 
-function PhoneQuietHoursCard({ data }: { data: ApiResponse }) {
+function PhoneQuietHoursCard({ data, onReload }: { data: ApiResponse; onReload: () => Promise<void> }) {
   const [isOpen, setIsOpen] = useState(false);
   const phoneStatus = data.user.notificationPhone
     ? (data.user.phoneVerified ? 'Verified' : 'Unverified')
@@ -471,29 +477,7 @@ function PhoneQuietHoursCard({ data }: { data: ApiResponse }) {
               Verified phone needed for SMS. Quiet hours pause SMS and push (email always lands immediately).
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs uppercase tracking-wider block mb-1" style={{ color: 'var(--text-dim)' }}>
-              Phone (E.164)
-            </label>
-            <div
-              className="text-sm px-3 py-2 rounded-md"
-              style={{
-                background: 'var(--surface-pressed)',
-                color: data.user.notificationPhone ? 'var(--text-primary)' : 'var(--text-muted)',
-                border: '1px solid var(--border-default)',
-              }}
-            >
-              {data.user.notificationPhone ?? 'Not set'}
-              {data.user.notificationPhone && !data.user.phoneVerified && (
-                <span className="ml-2 text-[10px] uppercase tracking-wider" style={{ color: 'var(--accent-amber-text)' }}>
-                  Unverified
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-              SMS verification ships with Phase 4 (Twilio). The field is read-only until then.
-            </p>
-          </div>
+          <PhoneEditor data={data} onReload={onReload} />
 
           <div>
             <label className="text-xs uppercase tracking-wider block mb-1" style={{ color: 'var(--text-dim)' }}>
@@ -519,6 +503,165 @@ function PhoneQuietHoursCard({ data }: { data: ApiResponse }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Phone capture + OTP verify. Read-only until smsLive=true; then renders
+ *  an input + Send code button, swapping to a 6-digit OTP entry on success. */
+function PhoneEditor({ data, onReload }: { data: ApiResponse; onReload: () => Promise<void> }) {
+  const { toast } = useToast();
+  const live = !!data.smsLive;
+  const [phone, setPhone] = useState(data.user.notificationPhone ?? '');
+  const [code, setCode] = useState('');
+  const [stage, setStage] = useState<'idle' | 'awaiting-code' | 'busy'>(() =>
+    !data.user.phoneVerified && data.user.notificationPhone ? 'awaiting-code' : 'idle',
+  );
+
+  if (!live) {
+    return (
+      <div>
+        <label className="text-xs uppercase tracking-wider block mb-1" style={{ color: 'var(--text-dim)' }}>
+          Phone (E.164)
+        </label>
+        <div
+          className="text-sm px-3 py-2 rounded-md"
+          style={{
+            background: 'var(--surface-pressed)',
+            color: data.user.notificationPhone ? 'var(--text-primary)' : 'var(--text-muted)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
+          {data.user.notificationPhone ?? 'Not set'}
+          {data.user.notificationPhone && !data.user.phoneVerified && (
+            <span className="ml-2 text-[10px] uppercase tracking-wider" style={{ color: 'var(--accent-amber-text)' }}>
+              Unverified
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+          SMS verification ships with Phase 4 (Twilio). The field is read-only until then.
+        </p>
+      </div>
+    );
+  }
+
+  const sendCode = async () => {
+    if (!/^\+[1-9]\d{1,14}$/.test(phone)) {
+      toast('Phone must be E.164 (e.g. +14155551234)', 'error');
+      return;
+    }
+    setStage('busy');
+    try {
+      const res = await fetch('/api/notifications/phone/start-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast(body.error ?? `HTTP ${res.status}`, 'error');
+        setStage('idle');
+        return;
+      }
+      toast('Code sent — check your messages');
+      setStage('awaiting-code');
+      await onReload();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to send code', 'error');
+      setStage('idle');
+    }
+  };
+
+  const confirmCode = async () => {
+    if (!/^\d{6}$/.test(code)) {
+      toast('Code must be 6 digits', 'error');
+      return;
+    }
+    setStage('busy');
+    try {
+      const res = await fetch('/api/notifications/phone/confirm-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast(body.error ?? `HTTP ${res.status}`, 'error');
+        setStage('awaiting-code');
+        return;
+      }
+      toast('Phone verified');
+      setCode('');
+      setStage('idle');
+      await onReload();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to confirm code', 'error');
+      setStage('awaiting-code');
+    }
+  };
+
+  const busy = stage === 'busy';
+
+  return (
+    <div>
+      <label className="text-xs uppercase tracking-wider block mb-1" style={{ color: 'var(--text-dim)' }}>
+        Phone (E.164)
+      </label>
+      <div className="flex items-center gap-2">
+        <TextInput
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="+14155551234"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          disabled={busy}
+          className="flex-1 min-w-0"
+        />
+        <SecondaryButton
+          size="sm"
+          onClick={sendCode}
+          disabled={busy || !phone}
+          loading={busy}
+        >
+          {data.user.phoneVerified ? 'Change' : 'Send code'}
+        </SecondaryButton>
+      </div>
+      {data.user.notificationPhone && !data.user.phoneVerified && (
+        <span className="inline-block mt-1.5 text-[10px] uppercase tracking-wider" style={{ color: 'var(--accent-amber-text)' }}>
+          Unverified — enter the code we sent
+        </span>
+      )}
+
+      {stage === 'awaiting-code' && (
+        <div className="mt-2 flex items-center gap-2">
+          <TextInput
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="123456"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            className="flex-1 min-w-0 tracking-[0.3em] text-center"
+          />
+          <PrimaryButton
+            size="sm"
+            onClick={confirmCode}
+            disabled={busy || code.length !== 6}
+            loading={busy}
+          >
+            Verify
+          </PrimaryButton>
+        </div>
+      )}
+
+      {data.user.phoneVerified && stage === 'idle' && (
+        <p className="text-[11px] mt-1.5" style={{ color: 'var(--accent-emerald-text)' }}>
+          Verified
+        </p>
+      )}
     </div>
   );
 }
