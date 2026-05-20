@@ -39,7 +39,7 @@ function getAdminAssignmentStatus(
 }
 
 const STATUS_CHIP_STYLES = {
-  training:  { bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: 'color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', label: 'Training' },
+  training:  { bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: 'color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)', label: 'Active' },
   residuals: { bg: 'var(--surface-card)', color: 'var(--text-secondary)', border: 'var(--border-subtle)', label: 'Residuals' },
   maxed:     { bg: 'var(--surface-card)', color: 'var(--text-muted)', border: 'var(--border-subtle)', label: 'Maxed' },
   paused:    { bg: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: 'color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)', label: 'Paused' },

@@ -32,6 +32,18 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
+  // Trainer-stage entries are admin-only. The route gate is admin-or-PM
+  // (PMs legitimately create M1/M2/M3 + Bonus entries during phase work),
+  // so an extra check here gates the Trainer stage specifically. UI hides
+  // the Record-Trainer-Payment affordance from non-admins; this is
+  // defense-in-depth for direct API calls.
+  if (body.paymentStage === 'Trainer' && actor.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Forbidden — Trainer-stage payroll entries can only be created by admins.' },
+      { status: 403 },
+    );
+  }
+
   if (body.idempotencyKey) {
     const existing = await prisma.payrollEntry.findUnique({
       where: { idempotencyKey: body.idempotencyKey },
