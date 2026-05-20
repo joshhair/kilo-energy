@@ -10,5 +10,6 @@
   "app/api/projects/[id]/handoff/auto/route.ts": "Rep-allowed companion to the manual /handoff route. Same delegation pattern — sendInstallerHandoff writes the audit entries (mode='auto'). Auth + one-shot guard + rate-limit only.",
   "app/api/cron/stalled-digest/route.ts": "Cron handler — no user actor. Persists nothing on success (just sends an email); structured logger.info('stalled_digest_sent') captures the run signal.",
   "app/api/cron/blitz-reminders/route.ts": "Cron handler — no user actor. Mutates only NotificationDelivery rows via notify(); structured logger.info('blitz_reminders_sent') captures the run signal.",
+  "app/api/cron/pay-paid-summary/route.ts": "Cron handler — no user actor. Read-only over PayrollEntry; only side-effect is notify() fanout to admins. structured logger.info('pay_paid_summary_sent') captures the run signal.",
   "app/api/feedback/route.ts": "User-submitted feedback widget. The Feedback row IS the audit record — it captures user, role snapshot, message, URL, userAgent, timestamp. logChange would be circular here. Rate-limited at the route layer."
 }

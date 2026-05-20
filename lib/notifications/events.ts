@@ -86,12 +86,24 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
   },
 
   // ─── Pay ───────────────────────────────────────────────────────────
+  //
+  // Default rebalance (2026-05-20):
+  //   - `pay_pending` digestMode defaults to 'off'. Reps were getting two
+  //     emails per commission lifecycle (one when moved to Pending, one
+  //     when marked Paid). The Pending state is transient (resolves within
+  //     ~7 days when the publish cron fires). Reps who want the heads-up
+  //     can still opt in via Settings → Preferences.
+  //   - `pay_paid` stays instant. The "money landed" alert is the one reps
+  //     actually care about.
+  //   - `pay_paid_summary` is a new admin-only daily digest summarizing
+  //     every commission paid that day — gives admins a single roll-up
+  //     instead of N per-rep instants (they get those via fanout anyway).
   {
     type: 'pay_pending',
     label: 'Pay moved to Pending',
     description: 'A draft commission was moved to Pending — close to landing in your bank.',
     category: 'pay',
-    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+    defaults: { email: true, sms: false, push: false, digestMode: 'off' },
   },
   {
     type: 'pay_paid',
@@ -108,6 +120,14 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
     // Mandatory: a chargeback is a financial event the rep MUST see.
     mandatory: true,
+  },
+  {
+    type: 'pay_paid_summary',
+    label: 'Daily paid-out summary (admin)',
+    description: 'Single end-of-day digest listing every commission marked Paid that day, totals by rep.',
+    category: 'admin',
+    defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
+    audience: ['admin'],
   },
 
   // ─── Deal lifecycle ────────────────────────────────────────────────

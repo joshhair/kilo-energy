@@ -1,0 +1,33 @@
+name: Pay Paid Summary
+
+# End-of-day digest of every payroll entry that hit Paid in the last 24h.
+# Sends ONE email per admin with rep totals + stage breakdown — replaces
+# the per-rep fanout admins were receiving for every published batch.
+#
+# Triggers:
+#   - schedule: 6:00 PM Pacific (01:00 UTC the following day)
+#   - workflow_dispatch: manual run from the GitHub UI for testing
+#
+# Auth: GitHub repo secret PAY_PAID_SUMMARY_TOKEN must match Vercel env
+# of the same name. Mismatch → endpoint returns 401.
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger pay-paid-summary endpoint
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "${APP_URL}/api/cron/pay-paid-summary" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://app.kiloenergies.com' }}
+          TOKEN: ${{ secrets.PAY_PAID_SUMMARY_TOKEN }}
