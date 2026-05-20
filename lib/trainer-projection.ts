@@ -88,7 +88,7 @@ export function computeProjectedTrainerLegs(
   // the setter-trainer leg below will fire and pay this same trainer
   // — emitting both would double-pay (closer is also the trainer for
   // the setter, but not for themselves). Matches the same guard in
-  // project-transitions.ts:489 (shipped in this same commit chain).
+  // project-transitions.ts.
   const closerRes = resolveTrainerRate(
     { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate },
     project.repId,
@@ -97,16 +97,13 @@ export function computeProjectedTrainerLegs(
   );
   const closerSelfTrainerWithSetter =
     closerRes.trainerId === project.repId && project.setterId != null;
-  if (closerRes.rate > 0 && closerRes.trainerId && !closerSelfTrainerWithSetter) {
-    legs.push(buildLeg(closerRes.trainerId, closerRes.rate, wattsTotal, 'closer-trainer', closerRes.reason, project.id, payrollEntries));
-  }
 
-  // ── Setter-trainer leg ──
-  // Resolves the setter's chain trainer WITHOUT passing the project
-  // override (so we get the raw chain result), then applies the
-  // override if it targets the same trainer. Mirrors the 2026-04-24
-  // fix at project-transitions.ts:519-557 (Josh's Chris Abbott /
-  // Hunter Helton case).
+  // ── Setter-trainer resolution ──
+  // Resolved up-front (independent of the closer leg) so we can dedup
+  // SAME-TRAINER-BOTH-LEGS before emitting. Mirrors project-transitions.ts.
+  let setterRate = 0;
+  let setterTrainerId: string | null = null;
+  let setterReason = '';
   if (project.setterId) {
     const setterResRaw = resolveTrainerRate(
       { id: project.id, trainerId: null, trainerRate: null },
@@ -118,12 +115,38 @@ export function computeProjectedTrainerLegs(
       project.trainerId != null &&
       project.trainerRate != null &&
       setterResRaw.trainerId === project.trainerId;
-    const setterRate = overrideAppliesToSetter ? project.trainerRate! : setterResRaw.rate;
-    const setterTrainerId = overrideAppliesToSetter ? project.trainerId! : setterResRaw.trainerId;
-    const setterReason = overrideAppliesToSetter ? 'project-override' : setterResRaw.reason;
-    if (setterRate > 0 && setterTrainerId) {
-      legs.push(buildLeg(setterTrainerId, setterRate, wattsTotal, 'setter-trainer', setterReason, project.id, payrollEntries));
-    }
+    setterRate = overrideAppliesToSetter ? project.trainerRate! : setterResRaw.rate;
+    setterTrainerId = overrideAppliesToSetter ? project.trainerId! : setterResRaw.trainerId;
+    setterReason = overrideAppliesToSetter ? 'project-override' : setterResRaw.reason;
+  }
+
+  // Single-trainer rule: one leg per project even when same trainer
+  // appears on both closer + setter chains. Mirrors the dedup in
+  // project-transitions.ts at the engine level so projection and actual
+  // payroll generation can never disagree.
+  const sameTrainerBothLegs =
+    !!closerRes.trainerId &&
+    closerRes.rate > 0 &&
+    !!setterTrainerId &&
+    setterRate > 0 &&
+    closerRes.trainerId === setterTrainerId;
+
+  const closerLegFires = closerRes.rate > 0 && !!closerRes.trainerId && !closerSelfTrainerWithSetter;
+  if (closerLegFires) {
+    legs.push(buildLeg(closerRes.trainerId!, closerRes.rate, wattsTotal, 'closer-trainer', closerRes.reason, project.id, payrollEntries));
+  }
+
+  // Setter leg fires UNLESS the closer leg already fired for the same
+  // trainer (the combined case). Self-trainer-with-setter SUPPRESSES the
+  // closer leg, so the setter leg is allowed to fire in that case — it's
+  // the path that actually pays the trainer.
+  const setterLegFires =
+    !!project.setterId &&
+    !!setterTrainerId &&
+    setterRate > 0 &&
+    !(closerLegFires && sameTrainerBothLegs);
+  if (setterLegFires) {
+    legs.push(buildLeg(setterTrainerId!, setterRate, wattsTotal, 'setter-trainer', setterReason, project.id, payrollEntries));
   }
 
   return legs;

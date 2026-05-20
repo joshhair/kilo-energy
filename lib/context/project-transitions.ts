@@ -484,24 +484,83 @@ export function createMilestonePayroll(
   }
 
   // ── Trainer override M2 entries (installPayPct% of override at Installed) ──
+  //
+  // Single-trainer rule: a trainer is paid ONCE per project per milestone,
+  // even when they're attached to both the closer AND the setter on the
+  // same deal. The override is mechanically deducted from the closer's M2
+  // (via applyCloserTrainerDeduction earlier in this function), so firing
+  // the setter leg too would both double-pay the trainer AND double-deduct
+  // from the closer.
+  //
+  // History: prior to this dedup the closer leg + setter leg fired
+  // independently. When a trainer like Paul Tupou was attached at the
+  // project level AND had a residual TrainerAssignment with the setter
+  // (Nick Gleave), both legs resolved to Paul and emitted entries. Result:
+  // Paul over-paid by $0.10/W × kW × 1000, closer M2 under-paid by the
+  // same. Audit script `scripts/prod-read/audit-trainer-double-pay.mts`
+  // found 3 affected projects ($1,694 over-pay, all Draft at fix time).
   if (isInstalled) {
-    // Closer's trainer — honors the per-project override (project.trainerId +
-    // project.trainerRate) before falling back to the tier chain.
+    // Closer's trainer — honors the per-project override (project.trainerId
+    // + project.trainerRate) before falling back to the tier chain.
     const closerRes = resolveTrainerRate(
       { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate },
       old.repId,
       deps.trainerAssignmentsRef.current,
       prevEntries,
     );
-    // Self-trainer-with-setter guard: same rule as the M2 deduction
-    // above — if the trainer IS the closer AND a setter is present,
-    // the setter-trainer leg (below) emits the entry that pays this
-    // person. Emitting here too would double-pay.
     const closerSelfTrainerWithSetter = closerRes.trainerId === old.repId && !!freshProject.setterId;
-    if (closerRes.rate > 0 && closerRes.trainerId && !closerSelfTrainerWithSetter) {
+
+    // Setter's trainer — first resolve via tier chain, then apply the
+    // per-project override if it targets the same trainer. Resolved up-
+    // front (not inside the setter-leg branch) so the dedup check below
+    // has both sides in scope.
+    let setterRes: { rate: number; trainerId: string | null } | null = null;
+    if (freshProject.setterId) {
+      const setterResRaw = resolveTrainerRate(
+        { id: projectId, trainerId: null, trainerRate: null },
+        freshProject.setterId,
+        deps.trainerAssignmentsRef.current,
+        prevEntries,
+      );
+      const overrideAppliesToSetter =
+        freshProject.trainerId &&
+        freshProject.trainerRate != null &&
+        setterResRaw.trainerId === freshProject.trainerId;
+      setterRes = overrideAppliesToSetter
+        ? { rate: freshProject.trainerRate!, trainerId: freshProject.trainerId! }
+        : setterResRaw;
+    }
+
+    // SAME-TRAINER-BOTH-LEGS detection. When the same trainer is reached
+    // via both the closer's chain AND the setter's chain, fire ONE entry
+    // (not two) and credit BOTH trainee names in the notes so the audit
+    // trail reflects the dual relationship.
+    const sameTrainerBothLegs =
+      !!closerRes.trainerId &&
+      closerRes.rate > 0 &&
+      !!setterRes?.trainerId &&
+      setterRes.rate > 0 &&
+      closerRes.trainerId === setterRes.trainerId;
+
+    // closerRep already in scope from the function header (line ~332).
+    const setterRepResolved = freshProject.setterId
+      ? deps.repsRef.current.find(r => r.id === freshProject.setterId)
+      : undefined;
+    const closerTraineeName = closerRep?.name ?? old.repName ?? '';
+    const setterTraineeName = setterRepResolved?.name ?? freshProject.setterName ?? '';
+
+    // Closer leg (or combined leg, when same trainer covers both).
+    const closerLegFires = closerRes.rate > 0 && !!closerRes.trainerId && !closerSelfTrainerWithSetter;
+    if (closerLegFires) {
       const trainerRep = deps.repsRef.current.find(r => r.id === closerRes.trainerId);
       const m2TrainerAmount = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-      const closerTraineeNotesPrefix = `Trainer override M2 — ${closerRep?.name ?? old.repName ?? ''}`;
+      const traineeLabel = sameTrainerBothLegs && setterTraineeName
+        ? `${closerTraineeName} + ${setterTraineeName}`
+        : closerTraineeName;
+      const closerTraineeNotesPrefix = `Trainer override M2 — ${closerTraineeName}`;
+      // The existing-entry check covers BOTH a prior closer-only leg AND
+      // a prior combined leg (notes prefix starts with closer's name in
+      // either case).
       const closerTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
         (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(closerTraineeNotesPrefix) && e.repId === closerRes.trainerId
       );
@@ -517,54 +576,42 @@ export function createMilestonePayroll(
           paymentStage: 'Trainer',
           status: 'Draft',
           date: payDate,
-          notes: `Trainer override M2 — ${closerRep?.name ?? old.repName} ($${closerRes.rate.toFixed(2)}/W)`,
+          notes: `Trainer override M2 — ${traineeLabel} ($${closerRes.rate.toFixed(2)}/W)`,
         });
       }
     }
 
-    // Setter's trainer — first resolve via tier chain, then apply the
-    // per-project override if it targets the same trainer. Previously
-    // this slot ignored the project override entirely, so a manual
-    // $0.10/W override on Hunter was shadowed by Hunter's $0.20/W
-    // tier rate when Hunter was resolved for the setter slot.
-    // Fixed 2026-04-24 (Josh's Chris Abbott / Hunter Helton case).
-    if (freshProject.setterId) {
-      const setterResRaw = resolveTrainerRate(
-        { id: projectId, trainerId: null, trainerRate: null },
-        freshProject.setterId,
-        deps.trainerAssignmentsRef.current,
-        prevEntries,
+    // Setter leg — fires UNLESS the closer leg already emitted for the
+    // same trainer. When closerSelfTrainerWithSetter suppresses the
+    // closer leg, the setter leg IS allowed to fire (it's the path that
+    // pays the trainer in that case).
+    if (
+      setterRes &&
+      setterRes.rate > 0 &&
+      setterRes.trainerId &&
+      !(closerLegFires && sameTrainerBothLegs) &&
+      freshProject.setterId
+    ) {
+      const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterRes!.trainerId);
+      const m2SetterTrainerAmount = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+      const setterTraineeNotesPrefix = `Trainer override M2 — ${setterTraineeName}`;
+      const setterTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
+        (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterRes!.trainerId
       );
-      const overrideAppliesToSetter =
-        freshProject.trainerId &&
-        freshProject.trainerRate != null &&
-        setterResRaw.trainerId === freshProject.trainerId;
-      const setterRes = overrideAppliesToSetter
-        ? { rate: freshProject.trainerRate!, trainerId: freshProject.trainerId!, reason: 'project-override' as const }
-        : setterResRaw;
-      if (setterRes.rate > 0 && setterRes.trainerId) {
-        const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterRes.trainerId);
-        const m2SetterTrainerAmount = Math.round(setterRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
-        const setterRep = deps.repsRef.current.find(r => r.id === freshProject.setterId);
-        const setterTraineeNotesPrefix = `Trainer override M2 — ${setterRep?.name ?? freshProject.setterName ?? ''}`;
-        const setterTrainerAlreadyExists = [...prevEntries, ...newEntries].some(
-          (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterRes.trainerId
-        );
-        if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
-          newEntries.push({
-            id: `pay_${ts}_m2_trainer_s`,
-            repId: setterRes.trainerId,
-            repName: setterTrainerRep?.name ?? '',
-            projectId,
-            customerName: old.customerName,
-            amount: m2SetterTrainerAmount,
-            type: 'Deal',
-            paymentStage: 'Trainer',
-            status: 'Draft',
-            date: payDate,
-            notes: `Trainer override M2 — ${setterRep?.name ?? freshProject.setterName ?? ''} ($${setterRes.rate.toFixed(2)}/W)`,
-          });
-        }
+      if (m2SetterTrainerAmount > 0 && !setterTrainerAlreadyExists) {
+        newEntries.push({
+          id: `pay_${ts}_m2_trainer_s`,
+          repId: setterRes.trainerId,
+          repName: setterTrainerRep?.name ?? '',
+          projectId,
+          customerName: old.customerName,
+          amount: m2SetterTrainerAmount,
+          type: 'Deal',
+          paymentStage: 'Trainer',
+          status: 'Draft',
+          date: payDate,
+          notes: `Trainer override M2 — ${setterTraineeName} ($${setterRes.rate.toFixed(2)}/W)`,
+        });
       }
     }
   }
@@ -762,47 +809,23 @@ export function createM3Payroll(
   }
 
   // ── Trainer override M3 entries ((100 - installPayPct)% of override at PTO) ──
-  // Closer's trainer — gated by m3 > 0, which is 0 for sub-dealer deals.
-  // Honors the per-project override before falling back to the tier chain.
+  //
+  // Same single-trainer rule as the M2 path above: one entry per project
+  // per milestone, even when the trainer is on both the closer and the
+  // setter. See the M2 block's commentary for the rationale + bug history.
   const closerResM3Entry = resolveTrainerRate(
     { id: projectId, trainerId: old.trainerId, trainerRate: old.trainerRate },
     old.repId,
     deps.trainerAssignmentsRef.current,
     prevEntries,
   );
-  const closerTrainerM3AlreadyExists = closerResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
-    (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerResM3Entry.trainerId
-  ) : false;
   const closerSelfTrainerWithSetterM3Entry = closerResM3Entry.trainerId === old.repId && !!proj?.setterId;
-  if (closerResM3Entry.rate > 0 && closerResM3Entry.trainerId && m3 > 0 && !old.subDealerId && !closerTrainerM3AlreadyExists && !closerSelfTrainerWithSetterM3Entry) {
-    const trainerRep = deps.repsRef.current.find(r => r.id === closerResM3Entry.trainerId);
-    // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
-    const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerResM3Entry.trainerId);
-    const m2CloserRateMatch = m2CloserTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
-    const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
-    const overrideRate = !isNaN(m2CloserParsed) ? m2CloserParsed : closerResM3Entry.rate;
-    const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
-    if (m3TrainerAmount > 0) {
-      newEntries.push({
-        id: `pay_${ts}_m3_trainer_c`,
-        repId: closerResM3Entry.trainerId,
-        repName: trainerRep?.name ?? '',
-        projectId,
-        customerName: old.customerName,
-        amount: m3TrainerAmount,
-        type: 'Deal',
-        paymentStage: 'Trainer',
-        status: 'Draft',
-        date: payDate,
-        notes: `Trainer override M3 — ${closerRep?.name ?? old.repName} ($${overrideRate.toFixed(2)}/W)`,
-      });
-    }
-  }
 
-  // Setter's trainer — guarded by !old.subDealerId to match closer's trainer.
-  // Project-level override applies when it targets the same trainer the
-  // tier chain resolves to. Fixed 2026-04-24 in parallel with the M2
-  // path (see earlier block) so setter-side override behavior matches.
+  // Resolve setter's trainer up-front so the dedup check has both sides.
+  let setterResM3Entry: { rate: number; trainerId: string | null } | null = null;
+  const m3SetterTraineeName = proj?.setterId
+    ? (deps.repsRef.current.find(r => r.id === proj.setterId)?.name ?? proj.setterName ?? '')
+    : '';
   if (proj?.setterId && !old.subDealerId) {
     const setterResM3EntryRaw = resolveTrainerRate(
       { id: projectId, trainerId: null, trainerRate: null },
@@ -814,18 +837,70 @@ export function createM3Payroll(
       proj.trainerId &&
       proj.trainerRate != null &&
       setterResM3EntryRaw.trainerId === proj.trainerId;
-    const setterResM3Entry = m3OverrideAppliesToSetter
-      ? { rate: proj.trainerRate!, trainerId: proj.trainerId!, reason: 'project-override' as const }
+    setterResM3Entry = m3OverrideAppliesToSetter
+      ? { rate: proj.trainerRate!, trainerId: proj.trainerId! }
       : setterResM3EntryRaw;
-    const setterTraineeName = deps.repsRef.current.find(r => r.id === proj.setterId)?.name ?? proj.setterName ?? '';
-    const setterTraineeNotesPrefix = `Trainer override M3 — ${setterTraineeName}`;
+  }
+
+  // Same-trainer-both-legs detection for M3.
+  const sameTrainerBothLegsM3 =
+    !!closerResM3Entry.trainerId &&
+    closerResM3Entry.rate > 0 &&
+    !!setterResM3Entry?.trainerId &&
+    setterResM3Entry.rate > 0 &&
+    closerResM3Entry.trainerId === setterResM3Entry.trainerId;
+
+  // Closer leg (or combined leg, when same trainer covers both).
+  const closerTrainerM3AlreadyExists = closerResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
+    (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M3') && e.repId === closerResM3Entry.trainerId
+  ) : false;
+  const closerLegFiresM3 =
+    closerResM3Entry.rate > 0 &&
+    !!closerResM3Entry.trainerId &&
+    m3 > 0 &&
+    !old.subDealerId &&
+    !closerTrainerM3AlreadyExists &&
+    !closerSelfTrainerWithSetterM3Entry;
+  if (closerLegFiresM3) {
+    const trainerRep = deps.repsRef.current.find(r => r.id === closerResM3Entry.trainerId);
+    // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
+    const m2CloserTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === closerResM3Entry.trainerId);
+    const m2CloserRateMatch = m2CloserTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
+    const m2CloserParsed = m2CloserRateMatch ? parseFloat(m2CloserRateMatch[1]) : NaN;
+    const overrideRate = !isNaN(m2CloserParsed) ? m2CloserParsed : closerResM3Entry.rate;
+    const m3TrainerAmount = Math.round(overrideRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+    if (m3TrainerAmount > 0) {
+      const closerTraineeName = closerRep?.name ?? old.repName ?? '';
+      const traineeLabel = sameTrainerBothLegsM3 && m3SetterTraineeName
+        ? `${closerTraineeName} + ${m3SetterTraineeName}`
+        : closerTraineeName;
+      newEntries.push({
+        id: `pay_${ts}_m3_trainer_c`,
+        repId: closerResM3Entry.trainerId,
+        repName: trainerRep?.name ?? '',
+        projectId,
+        customerName: old.customerName,
+        amount: m3TrainerAmount,
+        type: 'Deal',
+        paymentStage: 'Trainer',
+        status: 'Draft',
+        date: payDate,
+        notes: `Trainer override M3 — ${traineeLabel} ($${overrideRate.toFixed(2)}/W)`,
+      });
+    }
+  }
+
+  // Setter leg — fires UNLESS the closer leg already emitted for the
+  // same trainer.
+  if (proj?.setterId && !old.subDealerId && setterResM3Entry && !(closerLegFiresM3 && sameTrainerBothLegsM3)) {
+    const setterTraineeNotesPrefix = `Trainer override M3 — ${m3SetterTraineeName}`;
     const setterTrainerM3AlreadyExists = setterResM3Entry.trainerId ? [...prevEntries, ...newEntries].some(
-      (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterResM3Entry.trainerId
+      (e) => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith(setterTraineeNotesPrefix) && e.repId === setterResM3Entry!.trainerId
     ) : false;
     if (setterResM3Entry.rate > 0 && setterResM3Entry.trainerId && setterM3 > 0 && !setterTrainerM3AlreadyExists) {
       const setterTrainerRep = deps.repsRef.current.find(r => r.id === setterResM3Entry.trainerId);
       // Lock to the M2 rate so M2+M3 use the same per-watt tier for this project
-      const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterResM3Entry.trainerId && (setterTraineeName ? e.notes?.includes(`— ${setterTraineeName} (`) : true));
+      const m2SetterTrainerEntry = prevEntries.find(e => e.projectId === projectId && e.paymentStage === 'Trainer' && e.notes?.startsWith('Trainer override M2') && e.repId === setterResM3Entry!.trainerId && (m3SetterTraineeName ? e.notes?.includes(`— ${m3SetterTraineeName} (`) : true));
       const m2SetterRateMatch = m2SetterTrainerEntry?.notes?.match(/\(\$([0-9.]+)\/W\)/);
       const m2SetterParsed = m2SetterRateMatch ? parseFloat(m2SetterRateMatch[1]) : NaN;
       const setterOverrideRate = !isNaN(m2SetterParsed) ? m2SetterParsed : setterResM3Entry.rate;
