@@ -171,7 +171,7 @@ export function FeedbackButton() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Send feedback"
-        className="fixed right-4 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-sm font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bottom-20 md:bottom-6"
+        className="fixed right-4 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-sm font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-6"
         style={{
           background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, var(--surface-card))',
           color: 'var(--accent-emerald-text)',

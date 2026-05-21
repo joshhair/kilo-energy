@@ -890,7 +890,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                         {cells.map((c) => {
                           const stageColor = c.paid ? 'var(--accent-emerald-text)' : c.applicable ? 'var(--text-primary)' : 'var(--text-dim)';
                           return (
-                            <div key={c.stage} className="flex items-center justify-between gap-3 py-2">
+                            <div key={c.stage} className="flex items-center justify-between gap-2 py-2">
                               <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <span
                                   className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold shrink-0"
@@ -920,7 +920,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                               {c.onToggle ? (
                                 <button
                                   onClick={c.onToggle}
-                                  className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
+                                  aria-label={c.paid ? 'Mark unpaid' : 'Mark paid'}
+                                  className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold min-h-[32px] active:scale-[0.97] transition-transform duration-75"
                                   style={{
                                     background: c.paid
                                       ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)'
@@ -930,7 +931,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                                     WebkitTapHighlightColor: 'transparent',
                                   }}
                                 >
-                                  {c.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                  {c.paid ? 'Unpaid' : 'Mark Paid'}
                                 </button>
                               ) : (
                                 <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>—</span>
