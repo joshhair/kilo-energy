@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { useMediaQuery } from '../../../lib/hooks';
-import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2, Search } from 'lucide-react';
+import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2, Search, Maximize2, X } from 'lucide-react';
 import MobileBottomSheet from '../mobile/shared/MobileBottomSheet';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -156,6 +156,26 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // Mobile gets a MobileBottomSheet mention picker (tap-friendly) instead
   // of the cursor-anchored floating dropdown that's fiddly on touch.
   const isMobile = useMediaQuery('(max-width: 640px)');
+  // Expanded mode: lifts the chatter into a full-viewport sheet via portal.
+  // Embedded card stays mounted underneath for quick-glance; tap the expand
+  // icon in the header to open, tap the X (or the backdrop) to collapse.
+  const [expanded, setExpanded] = useState(false);
+  // Lock the page scroll while the sheet is open so backgrounds don't drift
+  // under the sticky composer on iOS Safari. Also listens for Escape to
+  // close — matches the @mention picker + MobileBottomSheet keyboard story.
+  useEffect(() => {
+    if (!expanded) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpanded(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [expanded]);
   // Per-project mentionable user list, fetched from a dedicated
   // endpoint so vendor PMs (who have an empty reps[] in context)
   // can still tag people. Names only — not a contact directory.
@@ -666,8 +686,19 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="card-surface rounded-2xl p-4 sm:p-6 mt-5">
+  // Container layout swaps when expanded: a card with a capped scroll area
+  // (embedded mode) → a fullscreen flex column with the message list growing
+  // to fill the available viewport (sheet mode). Composer stays sticky in
+  // both modes via the inline `sticky bottom-0` further down.
+  const outerClass = expanded
+    ? 'fixed inset-0 z-50 bg-[var(--surface-page)] p-4 sm:p-6 flex flex-col animate-modal-panel overflow-hidden'
+    : 'card-surface rounded-2xl p-4 sm:p-6 mt-5';
+  const messageListClass = expanded
+    ? 'flex-1 overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2'
+    : 'max-h-[70vh] sm:max-h-[24rem] overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2';
+
+  const body = (
+    <div className={outerClass}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -678,12 +709,24 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           </span>
         )}
         <span className="text-[var(--text-muted)] text-xs">({totalMessages})</span>
+        {/* Expand / collapse — embedded → fullscreen sheet → embedded. Icon
+            sits at the right edge of the header so the unread badge + count
+            stay clustered with the title. */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? 'Collapse chatter' : 'Expand chatter'}
+          title={expanded ? 'Collapse' : 'Expand'}
+          className="ml-auto p-2 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/40 active:scale-[0.94] transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+        >
+          {expanded ? <X className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Message List — height uses viewport on tall phones, caps at desktop's 24rem */}
+      {/* Message List — capped in embedded mode, flex-grows in sheet mode. */}
       <div
         ref={scrollContainerRef}
-        className="max-h-[min(60vh,24rem)] overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2"
+        className={messageListClass}
       >
         {/* Load earlier messages button */}
         {!loading && messages.length > 0 && messages.length < totalMessages && (
@@ -978,4 +1021,22 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
       )}
     </div>
   );
+
+  // In sheet mode, render via portal above everything with a backdrop the
+  // user can tap to dismiss. createPortal anchors to document.body so the
+  // fixed-inset-0 panel ignores any ancestor transform/overflow context.
+  if (expanded && typeof document !== 'undefined') {
+    return createPortal(
+      <>
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-modal-backdrop"
+          onClick={() => setExpanded(false)}
+          aria-hidden
+        />
+        {body}
+      </>,
+      document.body,
+    );
+  }
+  return body;
 }
