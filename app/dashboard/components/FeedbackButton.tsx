@@ -79,33 +79,37 @@ export function FeedbackButton() {
   const captureScreenshot = async (): Promise<string | undefined> => {
     try {
       const htmlToImage = await import('html-to-image');
-      // html-to-image clones the target element and renders it from the
-      // clone's (0,0) anchor, ignoring window.scrollY. With a default
-      // toJpeg(document.body) call the screenshot is always "the top of
-      // the page", regardless of where the user is scrolled — confirmed
-      // by real-user reports (Josh, 2026-05-14: "the screenshot was not
-      // of what I was looking at, it was of the top of the page").
+      // The dashboard scrolls inside <main id="main-content"> (set
+      // overflow-y:auto in dashboard/layout.tsx so the sidebar can stay
+      // pinned). window.scrollY is therefore ALWAYS 0, no matter where
+      // the user is. The prior fix translated by -window.scrollY and so
+      // continued to capture the top of the page — confirmed by repeat
+      // reports (Josh 2026-05-14, 2026-05-21).
       //
-      // Fix: constrain the output canvas to the current viewport
-      // dimensions, then apply a CSS transform that slides the cloned
-      // body up by the current scroll offset so the visible region
-      // lands inside the canvas. This is the canonical html-to-image
-      // viewport-capture pattern.
-      const dataUrl = await htmlToImage.toJpeg(document.body, {
+      // Real fix: read scrollTop from the actual scroll container, capture
+      // <main> directly (not body), and translate the clone by that real
+      // offset. <main> exists on every /dashboard route since the widget
+      // is only mounted under that layout.
+      const mainEl = document.getElementById('main-content');
+      const target = mainEl ?? document.body;
+      const scrollTop = mainEl ? mainEl.scrollTop : window.scrollY;
+      const scrollLeft = mainEl ? mainEl.scrollLeft : window.scrollX;
+      const dataUrl = await htmlToImage.toJpeg(target, {
         quality: 0.7,
         pixelRatio: 1,
         cacheBust: true,
         width: window.innerWidth,
         height: window.innerHeight,
         style: {
-          transform: `translate(-${window.scrollX}px, -${window.scrollY}px)`,
+          transform: `translate(-${scrollLeft}px, -${scrollTop}px)`,
           transformOrigin: 'top left',
-          // Preserve the body's natural width/height inside the transform
-          // so the document layout doesn't reflow when the clone is
-          // rendered offscreen — otherwise responsive breakpoints can
-          // shift and the captured frame won't match what the user saw.
-          width: `${document.documentElement.scrollWidth}px`,
-          height: `${document.documentElement.scrollHeight}px`,
+          // Expand the clone to its full content size so all children are
+          // laid out (overflow:auto would otherwise hide everything below
+          // the viewport in the clone). Negative-translate then exposes
+          // exactly the visible viewport portion to the output canvas.
+          width: `${target.clientWidth}px`,
+          height: `${target.scrollHeight}px`,
+          overflow: 'visible',
         },
         filter: (node) => {
           // Exclude the widget itself (button + modal) from the capture.
