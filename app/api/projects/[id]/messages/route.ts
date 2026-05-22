@@ -20,16 +20,40 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '30', 10) || 30, 1), 100);
   const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0);
 
-  const [total, messages] = await Promise.all([
+  const [total, rawMessages] = await Promise.all([
     prisma.projectMessage.count({ where: { projectId: id } }),
     prisma.projectMessage.findMany({
       where: { projectId: id },
-      include: { checkItems: true, mentions: true },
+      include: { checkItems: true, mentions: true, reactions: true },
       orderBy: { createdAt: 'asc' },
       skip: offset,
       take: limit,
     }),
   ]);
+
+  // Enrich reactions with reactor display names so the UI can render the
+  // 👍 popover without a per-message roundtrip. Single batched lookup
+  // across every reactor across every message in the page.
+  const reactorIds = new Set<string>();
+  for (const m of rawMessages) for (const r of m.reactions) reactorIds.add(r.userId);
+  const reactorUsers = reactorIds.size > 0
+    ? await prisma.user.findMany({
+        where: { id: { in: [...reactorIds] } },
+        select: { id: true, firstName: true, lastName: true },
+      })
+    : [];
+  const reactorNameById = new Map(reactorUsers.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
+
+  const messages = rawMessages.map((m) => ({
+    ...m,
+    reactions: m.reactions
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((r) => ({
+        userId: r.userId,
+        userName: reactorNameById.get(r.userId) ?? 'Unknown',
+        reactionType: r.reactionType,
+      })),
+  }));
 
   return NextResponse.json({ messages, total });
 }

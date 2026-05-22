@@ -16,6 +16,7 @@
   "ProjectCloser": "Junction table. Visibility delegates to the parent Project — Prisma relational queries naturally inherit the Project gate when accessed via project.additionalClosers.",
   "ProjectSetter": "Junction table. Same rationale as ProjectCloser — accessed via project.additionalSetters.",
   "ProjectCheckItem": "Project-scoped child rows. Accessed only via project.checkItems include, inheriting the Project gate. No standalone /api/check-items endpoint exists.",
+  "ChatMessageReaction": "Child of ProjectMessage. Visibility delegates to parent via relational queries (message.project gate). The only write path is POST /api/projects/[id]/messages/[messageId]/react which calls requireProjectAccess(user, projectId) BEFORE touching the row — same gate that blocks viewing the parent message. No standalone listing endpoint exists; reactions are returned only as part of GET /api/projects/[id]/messages which already enforces project access.",
 
   "TrainerAssignment": "Trainer-trainee link rows. Read at the /api/trainer-assignments route which already gates by viewer (admin sees all, trainer sees own). TODO PR 4a — add a gate function for direct prisma reads.",
   "TrainerOverrideTier": "Admin-sensitive (trainer override payout structure). Currently read only at /api/trainer-assignments where the route is admin-only. TODO PR 4a — add admin-only gate so direct prisma reads default-deny.",

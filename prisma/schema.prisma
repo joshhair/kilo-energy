@@ -854,8 +854,29 @@ model ProjectMessage {
 
   checkItems ProjectCheckItem[]
   mentions   ProjectMention[]
+  reactions  ChatMessageReaction[]
 
   @@index([projectId])
+}
+
+/// Lightweight acknowledgement on a ProjectMessage — one row per
+/// (messageId, userId, reactionType). v1 ships with reactionType='like'
+/// only (👍 = "I saw this"); column kept as String not Prisma enum so
+/// future emoji types (👀 ✅ ❤️) can ship without a migration, mirroring
+/// the paymentStage convention. Cascade-deletes with the parent message.
+/// Privacy: delegated to ProjectMessage's gate (allowlisted) — a user
+/// can only see/create reactions on messages they can see.
+model ChatMessageReaction {
+  id           String         @id @default(cuid())
+  messageId    String
+  message      ProjectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId       String
+  reactionType String         @default("like")
+  createdAt    DateTime       @default(now())
+
+  @@unique([messageId, userId, reactionType])
+  @@index([messageId])
+  @@index([userId])
 }
 
 model ProjectCheckItem {

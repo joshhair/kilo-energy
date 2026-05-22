@@ -25,6 +25,12 @@ interface Mention {
   read: boolean;
 }
 
+interface Reaction {
+  userId: string;
+  userName: string;
+  reactionType: string;
+}
+
 interface ChatMessage {
   id: string;
   projectId: string;
@@ -34,6 +40,7 @@ interface ChatMessage {
   text: string;
   checkItems: CheckItem[];
   mentions: Mention[];
+  reactions?: Reaction[];
   createdAt: string;
 }
 
@@ -462,6 +469,52 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     [messages, projectId, toast]
   );
 
+  // ── Toggle reaction (👍 acknowledgement) ────────────────────────────────────
+  // Optimistic: flip the local reactions array immediately, restore from
+  // the server response (or roll back on error). Single reaction type for
+  // v1 — the server clamps to 'like' regardless of what we send.
+  const toggleReaction = useCallback(
+    async (messageId: string) => {
+      const repId = currentRepId;
+      const repName = currentRepName ?? 'You';
+      if (!repId) return; // shouldn't happen — chatter mounts only after auth
+      // Snapshot the previous reactions for rollback. We do this OUTSIDE
+      // the setMessages callback so the variable survives across renders.
+      let prevReactions: Reaction[] | undefined;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const current = m.reactions ?? [];
+          prevReactions = current;
+          const has = current.some((r) => r.userId === repId && r.reactionType === 'like');
+          const next = has
+            ? current.filter((r) => !(r.userId === repId && r.reactionType === 'like'))
+            : [...current, { userId: repId, userName: repName, reactionType: 'like' }];
+          return { ...m, reactions: next };
+        }),
+      );
+      try {
+        const res = await fetch(`/api/projects/${projectId}/messages/${messageId}/react`, { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body: { reacted: boolean; count: number; reactors: Reaction[] } = await res.json();
+        // Sync local state to the server's authoritative reactor list.
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, reactions: body.reactors } : m)),
+        );
+      } catch (err) {
+        // Rollback to the snapshot we captured.
+        if (prevReactions !== undefined) {
+          const snapshot = prevReactions;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === messageId ? { ...m, reactions: snapshot } : m)),
+          );
+        }
+        toast(`Reaction failed: ${err instanceof Error ? err.message : 'unknown error'}`, 'error');
+      }
+    },
+    [currentRepId, currentRepName, projectId, toast],
+  );
+
   // ── Set due date on check item ──────────────────────────────────────────────
   const setCheckItemDueDate = useCallback(
     (messageId: string, checkItemId: string, dueDate: string | null) => {
@@ -710,7 +763,15 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                   </div>
 
                   {/* Bubble — emerald for own (right), neutral card for others (left).
-                      Rounded asymmetrically toward the conversation side per iMessage convention. */}
+                      Rounded asymmetlically toward the conversation side per iMessage convention. */}
+                  {(() => {
+                    const myReacted = !!msg.reactions?.some((r) => r.userId === currentRepId && r.reactionType === 'like');
+                    const reactionCount = msg.reactions?.length ?? 0;
+                    const reactorTitle = reactionCount > 0
+                      ? msg.reactions!.map((r) => r.userName).join(', ')
+                      : 'Acknowledge this message';
+                    return (
+                  <>
                   <div
                     className={`rounded-2xl px-3.5 py-2.5 ${
                       isOwn
@@ -792,6 +853,30 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                       </div>
                     )}
                   </div>
+                  {/* Reaction row — 👍 toggle. Subtle when no one has reacted,
+                      emerald-filled when the current user has. Title attribute
+                      lists every reactor for hover/long-press peek. */}
+                  {!msg.id.startsWith('temp-') && (
+                    <div className={`mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <button
+                        type="button"
+                        onClick={() => toggleReaction(msg.id)}
+                        title={reactorTitle}
+                        aria-label={myReacted ? 'Remove your acknowledgement' : 'Acknowledge this message'}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all active:scale-[0.94] min-h-[32px] min-w-[32px] justify-center ${
+                          myReacted
+                            ? 'bg-[var(--accent-emerald-soft)] border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]'
+                            : 'bg-transparent border border-transparent text-[var(--text-dim)] hover:bg-[var(--accent-emerald-soft)]/40 hover:text-[var(--accent-emerald-text)]'
+                        }`}
+                      >
+                        <span aria-hidden>👍</span>
+                        {reactionCount > 0 && <span className="font-medium tabular-nums">{reactionCount}</span>}
+                      </button>
+                    </div>
+                  )}
+                  </>
+                    );
+                  })()}
                 </div>
               </div>
             );

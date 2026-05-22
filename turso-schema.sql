@@ -66,6 +66,14 @@ CREATE TABLE "BlitzRequest" (
     "updatedAt" DATETIME NOT NULL, type TEXT NOT NULL DEFAULT 'create', blitzId TEXT,
     CONSTRAINT "BlitzRequest_requestedById_fkey" FOREIGN KEY ("requestedById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
+CREATE TABLE "ChatMessageReaction" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "messageId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "reactionType" TEXT NOT NULL DEFAULT 'like',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ChatMessageReaction_messageId_fkey" FOREIGN KEY ("messageId") REFERENCES "ProjectMessage" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
 CREATE TABLE "DataAccessLog" (
         "id"              TEXT     PRIMARY KEY,
         "actorUserId"     TEXT     NOT NULL,
@@ -493,6 +501,9 @@ CREATE INDEX "BlitzRequest_status_idx" ON "BlitzRequest"("status");
 CREATE INDEX "Blitz_ownerId_idx" ON "Blitz"("ownerId");
 CREATE INDEX "Blitz_startDate_idx" ON "Blitz"("startDate");
 CREATE INDEX "Blitz_status_idx" ON "Blitz"("status");
+CREATE UNIQUE INDEX "ChatMessageReaction_messageId_userId_reactionType_key" ON "ChatMessageReaction"("messageId", "userId", "reactionType");
+CREATE INDEX "ChatMessageReaction_messageId_idx" ON "ChatMessageReaction"("messageId");
+CREATE INDEX "ChatMessageReaction_userId_idx" ON "ChatMessageReaction"("userId");
 CREATE INDEX "DataAccessLog_actorUserId_createdAt_idx" ON "DataAccessLog"("actorUserId", "createdAt");
 CREATE INDEX "DataAccessLog_createdAt_idx" ON "DataAccessLog"("createdAt");
 CREATE INDEX "DataAccessLog_modelName_createdAt_idx" ON "DataAccessLog"("modelName", "createdAt");
