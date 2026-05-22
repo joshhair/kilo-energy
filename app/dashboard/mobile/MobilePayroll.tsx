@@ -792,12 +792,18 @@ export default function MobilePayroll() {
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   >
-                    <span className="flex items-center gap-2 min-w-0 mr-2">
-                      <PaymentTypeBadge kind={entryTypeTab(entry)} showIcon={false} />
-                      <span className="text-base text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                        {entry.customerName || (entry.notes || (entry.type === 'Bonus' ? 'Bonus' : '—'))}
-                      </span>
-                    </span>
+                    {(() => {
+                      const kind = entryTypeTab(entry);
+                      const stageSuffix = kind === 'Deal' ? entry.paymentStage : null;
+                      return (
+                        <span className="flex items-center gap-2 min-w-0 mr-2">
+                          <PaymentTypeBadge kind={kind} stage={stageSuffix} showIcon={false} />
+                          <span className="text-base text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                            {entry.customerName || (entry.notes || (entry.type === 'Bonus' ? 'Bonus' : '—'))}
+                          </span>
+                        </span>
+                      );
+                    })()}
                     <div className="flex items-center gap-3 shrink-0">
                       <span
                         className="text-lg font-bold tabular-nums"
@@ -806,7 +812,6 @@ export default function MobilePayroll() {
                           fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
                         }}
                       >{fmt$(entry.amount)}</span>
-                      <span className="text-base" style={{ color: 'var(--text-muted)' }}>{entry.paymentStage}</span>
                     </div>
                   </button>
                 ))}

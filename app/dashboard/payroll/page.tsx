@@ -1502,10 +1502,14 @@ function PayrollPageInner() {
                   )}
                   <td style={{ padding: '12px 14px 12px 40px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>↳</span></td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <PaymentTypeBadge kind={entryTypeTab(entry)} />
-                      <span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}</span>
-                    </span>
+                    {(() => {
+                      const kind = entryTypeTab(entry);
+                      // Only Deal entries have a meaningful stage suffix
+                      // (M1/M2/M3). For Trainer/Bonus/Charge the paymentStage
+                      // equals the kind and would just duplicate the label.
+                      const stageSuffix = kind === 'Deal' ? entry.paymentStage : null;
+                      return <PaymentTypeBadge kind={kind} stage={stageSuffix} />;
+                    })()}
                   </td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
                     {entry.customerName && entry.projectId ? (

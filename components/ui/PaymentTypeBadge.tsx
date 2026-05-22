@@ -60,10 +60,15 @@ const STYLES: Record<PaymentTypeKind, BadgeStyle> = {
 
 export function PaymentTypeBadge({
   kind,
+  stage,
   showIcon = true,
   className = '',
 }: {
   kind: PaymentTypeKind;
+  /** Optional stage suffix rendered after a middot — e.g. 'M1' for Deal
+   *  entries. Pass undefined for Trainer/Bonus/Charge rows where the
+   *  paymentStage equals the kind and a suffix would just duplicate it. */
+  stage?: string | null;
   /** Default true. Set false for dense rows where label alone is enough. */
   showIcon?: boolean;
   /** Optional extra classes (caller-side spacing). */
@@ -73,11 +78,13 @@ export function PaymentTypeBadge({
   const Icon = s.Icon;
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${className}`}
       style={{ background: s.background, color: s.color }}
     >
       {showIcon && Icon ? <Icon className="w-3 h-3" aria-hidden /> : null}
       {s.label}
+      {stage ? <span aria-hidden>·</span> : null}
+      {stage ? <span>{stage}</span> : null}
     </span>
   );
 }
