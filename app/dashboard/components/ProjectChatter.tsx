@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2 } from 'lucide-react';
+import { useMediaQuery } from '../../../lib/hooks';
+import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2, Search } from 'lucide-react';
+import MobileBottomSheet from '../mobile/shared/MobileBottomSheet';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +146,9 @@ function MentionDropdown({ query, anchorRect, reps, onSelect, onClose: _onClose,
 export default function ProjectChatter({ projectId }: { projectId: string }) {
   const { currentRepId, currentRepName, currentRole, reps, subDealers } = useApp();
   const { toast } = useToast();
+  // Mobile gets a MobileBottomSheet mention picker (tap-friendly) instead
+  // of the cursor-anchored floating dropdown that's fiddly on touch.
+  const isMobile = useMediaQuery('(max-width: 640px)');
   // Per-project mentionable user list, fetched from a dedicated
   // endpoint so vendor PMs (who have an empty reps[] in context)
   // can still tag people. Names only — not a contact directory.
@@ -502,10 +507,28 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     [projectId]
   );
 
+  // Cap the composer's auto-grown height to ~4 visible lines at 14px text
+  // + 24px vertical padding before it switches to inner-scroll. Keeps the
+  // mobile sticky-composer from eating the entire screen when someone
+  // pastes a long message.
+  const COMPOSER_MAX_HEIGHT_PX = 140;
+  const autoGrowTextarea = (el: HTMLTextAreaElement) => {
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT_PX)}px`;
+  };
+
+  // Reset the composer height when the text empties (e.g., after send).
+  useEffect(() => {
+    if (composeText === '' && textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [composeText]);
+
   // ── @mention handling in textarea ──────────────────────────────────────────
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setComposeText(val);
+    autoGrowTextarea(e.target);
 
     const cursorPos = e.target.selectionStart;
     // Look backward from cursor for @ character
@@ -591,7 +614,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="card-surface rounded-2xl p-6 mt-5">
+    <div className="card-surface rounded-2xl p-4 sm:p-6 mt-5">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -604,10 +627,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         <span className="text-[var(--text-muted)] text-xs">({totalMessages})</span>
       </div>
 
-      {/* Message List */}
+      {/* Message List — height uses viewport on tall phones, caps at desktop's 24rem */}
       <div
         ref={scrollContainerRef}
-        className="max-h-96 overflow-y-auto space-y-1 mb-4 pr-1 scrollbar-thin"
+        className="max-h-[min(60vh,24rem)] overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2"
       >
         {/* Load earlier messages button */}
         {!loading && messages.length > 0 && messages.length < totalMessages && (
@@ -651,50 +674,58 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             return (
               <div
                 key={msg.id}
-                className={`group rounded-xl p-4 transition-all animate-fade-in-up ${
-                  isOwn ? 'bg-[var(--accent-emerald-solid)]/[0.05] border border-[var(--accent-emerald-solid)]/10' : 'bg-[var(--surface-card)]/40 border border-[var(--border-subtle)]/60'
-                }`}
+                className={`group animate-fade-in-up flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                 style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
               >
-                {/* Author row */}
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan-text)] flex-shrink-0">
-                    {getInitials(msg.authorName)}
+                <div className={`relative max-w-[88%] sm:max-w-[80%] ${isOwn ? 'ml-auto' : 'mr-auto'}`}>
+                  {/* Author row — hidden for own messages on mobile (implicit ownership via right-align + emerald);
+                      always shown for others so you know who said it. Wraps cleanly on narrow viewports. */}
+                  <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 mb-1 ${isOwn ? 'justify-end' : ''}`}>
+                    {!isOwn && (
+                      <>
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500/30 to-blue-700/30 flex items-center justify-center text-[10px] font-bold text-[var(--accent-cyan-text)] flex-shrink-0">
+                          {getInitials(msg.authorName)}
+                        </div>
+                        <span className="text-[var(--text-primary)] text-xs font-medium">{msg.authorName}</span>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${badge.bg} ${badge.text}`}>
+                          {badge.label}
+                        </span>
+                      </>
+                    )}
+                    <span className="text-[var(--text-dim)] text-[11px] ml-auto">{relativeTime(msg.createdAt)}</span>
+                    {canDelete && !isOptimistic && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMessage(msg.id)}
+                        aria-label="Delete message"
+                        title="Delete message"
+                        className="flex-shrink-0 p-2 sm:p-1.5 rounded-md transition-all opacity-50 hover:opacity-100 focus-visible:opacity-100 active:scale-[0.92] hover:bg-[var(--accent-red-solid)]/10 min-w-[32px] min-h-[32px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                        style={{ color: 'var(--text-muted)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-red-text)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-[var(--text-primary)] text-sm font-medium truncate">{msg.authorName}</span>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${badge.bg} ${badge.text}`}>
-                      {badge.label}
-                    </span>
-                  </div>
-                  <span className="text-[var(--text-dim)] text-xs flex-shrink-0">{relativeTime(msg.createdAt)}</span>
-                  {canDelete && !isOptimistic && (
-                    // Visibility: always-on at low opacity (mobile has no
-                    // hover), brightens on hover for desktop. Tap target is
-                    // 28×28 minimum so phones can hit it cleanly.
-                    <button
-                      type="button"
-                      onClick={() => deleteMessage(msg.id)}
-                      aria-label="Delete message"
-                      title="Delete message"
-                      className="flex-shrink-0 p-1.5 rounded-md transition-all opacity-50 hover:opacity-100 focus-visible:opacity-100 active:scale-[0.92] hover:bg-[var(--accent-red-solid)]/10"
-                      style={{ color: 'var(--text-muted)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-red-text)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
 
-                {/* Message text */}
-                <div className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap pl-[38px]">
-                  {renderMessageText(msg.text, mentionableUsers.map((u) => u.name))}
-                </div>
+                  {/* Bubble — emerald for own (right), neutral card for others (left).
+                      Rounded asymmetrically toward the conversation side per iMessage convention. */}
+                  <div
+                    className={`rounded-2xl px-3.5 py-2.5 ${
+                      isOwn
+                        ? 'bg-[var(--accent-emerald-soft)] border border-[var(--accent-emerald-solid)]/20 rounded-tr-md'
+                        : 'bg-[var(--surface-card)]/70 border border-[var(--border-subtle)]/60 rounded-tl-md'
+                    }`}
+                  >
+                    {/* Message text */}
+                    <div className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      {renderMessageText(msg.text, mentionableUsers.map((u) => u.name))}
+                    </div>
 
-                {/* Check items */}
-                {msg.checkItems.length > 0 && (
-                  <div className="mt-3 pl-[38px] space-y-1.5">
+                    {/* Check items — indented inside the bubble */}
+                    {msg.checkItems.length > 0 && (
+                      <div className="mt-2.5 space-y-1.5">
                     {msg.checkItems.map((ci) => {
                       const overdue = ci.dueDate && !ci.completed && isDueDateOverdue(ci.dueDate);
                       const isEditingThis = editingDueDate?.messageId === msg.id && editingDueDate?.checkItemId === ci.id;
@@ -758,8 +789,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                         </div>
                       );
                     })}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })
@@ -767,50 +800,88 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Compose Area */}
-      <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-        <textarea
-          ref={textareaRef}
-          value={composeText}
-          onChange={handleTextareaChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Write a message... Use @ to mention a rep"
-          rows={3}
-          className="w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-4 py-3 resize-none focus:outline-none"
-        />
+      {/* Compose Area — sticky to the bottom of the card on mobile so the
+          send action is always reachable when scrolling the message list.
+          Negative margins extend it edge-to-edge inside the p-4 card; the
+          safe-area-inset padding clears the iPhone home indicator. */}
+      <div className="sticky bottom-0 -mx-4 sm:mx-0 -mb-4 sm:mb-0 px-4 sm:px-0 pb-[env(safe-area-inset-bottom)] sm:pb-0 bg-[var(--surface)] sm:bg-transparent border-t sm:border-t-0 border-[var(--border)]/60 pt-3 sm:pt-0">
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden">
+          <textarea
+            ref={textareaRef}
+            value={composeText}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Write a message... Use @ to mention a rep"
+            rows={2}
+            style={{ maxHeight: COMPOSER_MAX_HEIGHT_PX }}
+            className="w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-4 py-3 resize-none focus:outline-none overflow-y-auto"
+          />
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 border-t border-[var(--border)]/60">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={addChecklistLine}
-              title="Add checklist item"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors"
-            >
-              <CheckSquare className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add Checklist Item</span>
-            </button>
-          </div>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-[var(--border)]/60">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={addChecklistLine}
+                title="Add checklist item"
+                aria-label="Add checklist item"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 justify-center sm:justify-start"
+              >
+                <CheckSquare className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Add Checklist Item</span>
+              </button>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[var(--text-dim)] text-[10px] hidden sm:inline">
-              {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
-            </span>
-            <button
-              onClick={handleSend}
-              disabled={!composeText.trim() || sending}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97]"
-              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
-            >
-              <Send className="w-3.5 h-3.5" />
-              Send
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[var(--text-dim)] text-[10px] hidden sm:inline">
+                {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
+              </span>
+              <button
+                onClick={handleSend}
+                disabled={!composeText.trim() || sending}
+                aria-label="Send message"
+                className="flex items-center gap-1.5 px-4 py-2 sm:px-3 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97] min-h-[44px] sm:min-h-0"
+                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
+              >
+                <Send className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                Send
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* @mention dropdown */}
-      {mentionActive && (
+      {/* @mention picker — bottom-sheet on mobile (tap to pick), cursor-
+          anchored floating popover on desktop (arrow keys + Enter). */}
+      {mentionActive && isMobile && (
+        <MobileBottomSheet open={mentionActive} onClose={() => setMentionActive(false)} title="Mention a teammate">
+          <div className="px-5 pb-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dim)' }} aria-hidden />
+              <input
+                type="text"
+                value={mentionQuery}
+                onChange={(e) => setMentionQuery(e.target.value)}
+                placeholder="Search names…"
+                autoFocus
+                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-xl pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-emerald-solid)]"
+              />
+            </div>
+          </div>
+          <div className="max-h-[50vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+            {mentionableUsers
+              .filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase()))
+              .slice(0, 20)
+              .map((u) => (
+                <MobileBottomSheet.Item
+                  key={u.id}
+                  label={u.name}
+                  onTap={() => handleMentionSelect(u)}
+                />
+              ))}
+          </div>
+        </MobileBottomSheet>
+      )}
+      {mentionActive && !isMobile && (
         <MentionDropdown
           query={mentionQuery}
           anchorRect={mentionAnchor}
