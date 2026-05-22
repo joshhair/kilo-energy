@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { SegmentedPills } from '../../../components/ui';
+import { PaymentTypeBadge } from '../../../components/ui/PaymentTypeBadge';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
@@ -23,14 +24,19 @@ import { PayrollSkeleton } from './components/PayrollSkeleton';
 import { StatCard, ReimBadge } from './components/StatCard';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
-type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
+type TypeTab = 'All' | 'Deal' | 'Bonus' | 'Trainer' | 'Charge';
 
-// Classifies a PayrollEntry into one of the three type tabs. Trainer
-// overrides are stored as type='Deal' + paymentStage='Trainer' in the
-// DB — we surface them under their own tab rather than bundling with
-// Deal so admins have a direct home for trainer overrides (matches
-// the combined-cards breakdown in commit 3bbf548). 2026-04-23.
-function entryTypeTab(entry: { type?: string; paymentStage?: string }): TypeTab {
+// Classifies a PayrollEntry into one of the four type kinds (excluding
+// 'All', which is the no-filter sentinel). Order of precedence:
+//   1. Standalone one-off charge (chargeCategory set)        → 'Charge'
+//   2. Trainer override stored as type='Deal'+stage='Trainer' → 'Trainer'
+//   3. Bonus row                                              → 'Bonus'
+//   4. Anything else (regular milestone deal)                 → 'Deal'
+// Trainer overrides land at #2 because legacy rows pre-date the explicit
+// chargeCategory field; bonus check at #3 covers the operator-recorded
+// post-window bonuses. 2026-04-23, extended 2026-05-21 for Charge.
+function entryTypeTab(entry: { type?: string; paymentStage?: string; chargeCategory?: string | null }): Exclude<TypeTab, 'All'> {
+  if (entry.chargeCategory != null) return 'Charge';
   if (entry.paymentStage === 'Trainer') return 'Trainer';
   if (entry.type === 'Bonus') return 'Bonus';
   return 'Deal';
@@ -118,7 +124,7 @@ function PayrollPageInner() {
 
   const [pageView, setPageView] = useState<PageView>(initialView);
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
-  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
+  const [typeTab, setTypeTab] = useState<TypeTab>((['All', 'Deal', 'Bonus', 'Trainer', 'Charge'] as const).includes(initialType as TypeTab) ? (initialType as TypeTab) : 'All');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // Which reps are expanded in the grouped payroll table. Default:
   // all collapsed (one summary row per rep). Josh flagged the flat
@@ -142,13 +148,15 @@ function PayrollPageInner() {
   // Bonus (just amount + notes + date). Toggle in the modal switches the
   // field set. Replaced the standalone Add Bonus modal in Batch 4.
   const [paymentForm, setPaymentForm] = useState({
-    type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback',
+    type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback' | 'Charge',
     repId: '',
     projectId: '',
     amount: '',
     stage: 'M1' as 'M1' | 'M2' | 'M3',
     date: '',
     notes: '',
+    // Standalone-charge category — only meaningful when type==='Charge'.
+    chargeCategory: 'misc' as 'equipment_damage' | 'reimbursement_clawback' | 'customer_dispute' | 'misc',
   });
   const paymentPanelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(paymentPanelRef, showPaymentModal);
@@ -325,7 +333,7 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, pendingCount, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount } = useMemo(() => {
+  const { filtered, filteredByDateRep, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     const allTypesInScope: typeof payrollEntries = [];
@@ -339,7 +347,7 @@ function PayrollPageInner() {
       if (filterRepId && p.repId !== filterRepId) continue;
 
       allTypesInScope.push(p);
-      if (entryTypeTab(p) !== typeTab) continue;
+      if (typeTab !== 'All' && entryTypeTab(p) !== typeTab) continue;
       filteredByDateRep.push(p);
 
       if (p.status === statusTab && (statusTab !== 'Paid' || p.date <= today)) {
@@ -347,10 +355,7 @@ function PayrollPageInner() {
       }
     }
 
-    // Per-type Pending count still used by the Publish button guard;
-    // the cards themselves now show combined breakdowns (below).
-    const pendingCount = filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today).length;
-    // Combined across all types (Deal + Bonus + Trainer) — the summary-
+    // Combined across all types (Deal + Bonus + Trainer + Charge) — the summary-
     // card view admins scan at a glance. Cards always show combined so
     // the top-line number doesn't lie about what's owed across all types.
     // The per-type tab below still filters the row list for drill-down.
@@ -362,7 +367,7 @@ function PayrollPageInner() {
     const draftCount = allTypesInScope.filter((p) => p.status === 'Draft').length;
     const combinedPendingCount = allTypesInScope.filter((p) => p.status === 'Pending').length;
 
-    return { filtered, filteredByDateRep, pendingCount, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount };
+    return { filtered, filteredByDateRep, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -478,7 +483,7 @@ function PayrollPageInner() {
     setShowPublishConfirm(false);
     setAdminPage(1);
     changeStatusTab('Paid');
-    toast(`${typeTab} payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
+    toast(`Payroll published — $${amount.toLocaleString()} marked as Paid`, 'success');
     // Persist to DB via bulk endpoint for atomicity
     try {
       const res = await fetch('/api/payroll', {
@@ -696,6 +701,7 @@ function PayrollPageInner() {
       stage: 'M1',
       date: todayLocalDateStr(),
       notes: `Correction for ${entry.paymentStage} paid ${entry.date}`,
+      chargeCategory: 'misc',
     });
     setShowPaymentModal(true);
   };
@@ -752,29 +758,32 @@ function PayrollPageInner() {
     const rep = reps.find((r) => r.id === paymentForm.repId);
     const isBonus = paymentForm.type === 'Bonus';
     const isChargeback = paymentForm.type === 'Chargeback';
-    const project = !isBonus ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
+    const isCharge = paymentForm.type === 'Charge';
+    const project = (!isBonus && !isCharge) ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
 
-    if (!isBonus && paymentForm.stage === 'M3') {
+    if (!isBonus && !isCharge && paymentForm.stage === 'M3') {
       if (!paymentForm.projectId || !project) { paymentSubmitting.current = false; toast('M3 payments require a linked project', 'error'); return; }
       const installerName = project.installer ?? '';
       const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
       if (payPct >= 100) { paymentSubmitting.current = false; toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
     }
 
-    // Chargebacks are stored as negative "Deal" entries (matches the
-    // auto-generated shape from handleChargebacks). Admin enters the
-    // dollar amount positively for UX; we negate here before persisting.
+    // Negative-amount entries (chargebacks + standalone charges) — admin
+    // enters the positive dollar amount for UX, we negate before persisting.
     const rawAmount = parseFloat(paymentForm.amount);
-    const signedAmount = isChargeback ? -rawAmount : rawAmount;
-    const dbType = isBonus ? 'Bonus' : 'Deal';
-    const dbStage = isBonus ? 'Bonus' : paymentForm.stage;
-    const chargebackNote = isChargeback ? `Chargeback — manual${paymentForm.notes ? ` · ${paymentForm.notes}` : ''}` : paymentForm.notes;
+    const signedAmount = (isChargeback || isCharge) ? -rawAmount : rawAmount;
+    const dbType: 'Deal' | 'Bonus' = isBonus ? 'Bonus' : 'Deal';
+    const dbStage: PayrollEntry['paymentStage'] =
+      isBonus ? 'Bonus' : isCharge ? 'Charge' : paymentForm.stage;
+    const chargebackNote = isChargeback
+      ? `Chargeback — manual${paymentForm.notes ? ` · ${paymentForm.notes}` : ''}`
+      : paymentForm.notes;
 
     const newEntry: PayrollEntry = {
       id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       repId: paymentForm.repId,
       repName: rep?.name ?? '',
-      projectId: isBonus ? null : (paymentForm.projectId || null),
+      projectId: (isBonus || isCharge) ? null : (paymentForm.projectId || null),
       customerName: project?.customerName ?? '',
       amount: signedAmount,
       type: dbType,
@@ -782,22 +791,28 @@ function PayrollPageInner() {
       status: 'Draft',
       date: paymentForm.date || localDateString(new Date()),
       notes: chargebackNote,
+      isChargeback: isChargeback || isCharge,
+      chargebackOfId: null,
+      chargeCategory: isCharge ? paymentForm.chargeCategory : null,
     };
     setPayrollEntries((prev) => [...prev, newEntry]);
     setShowPaymentModal(false);
-    setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
+    setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '', chargeCategory: 'misc' });
     setStatusTab('Draft');
-    setTypeTab(isBonus ? 'Bonus' : 'Deal');
+    // Navigate to the pill that surfaces this entry. 'All' would also work
+    // but jumping to the type-specific pill confirms the row exists at the
+    // shape the admin expected.
+    setTypeTab(isCharge ? 'Charge' : isBonus ? 'Bonus' : isChargeback ? 'Deal' : 'Deal');
     setFilterRepId('');
     setSelectedIds(new Set());
     setAdminPage(1);
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set('status', 'Draft');
-    nextParams.set('type', isBonus ? 'Bonus' : 'Deal');
+    nextParams.set('type', isCharge ? 'Charge' : isBonus ? 'Bonus' : 'Deal');
     nextParams.delete('rep');
     router.replace(`?${nextParams.toString()}`, { scroll: false });
     paymentSubmitting.current = false;
-    const label = isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
+    const label = isCharge ? 'Charge' : isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
     toast(`${label} draft added for ${rep?.name ?? 'rep'} — $${Math.abs(signedAmount).toLocaleString()}`, 'success');
     // Persist to DB via context helper — registers temp ID in resolution map so
     // markForPayroll awaits the real DB id before sending PATCH (prevents phantom temp ID bug)
@@ -989,11 +1004,11 @@ function PayrollPageInner() {
             </button>
             <button
               onClick={() => setShowPublishConfirm(true)}
-              disabled={pendingCount === 0}
+              disabled={combinedPendingCount === 0}
               className="font-semibold px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
             >
-              Publish {typeTab} Payroll
+              Publish Payroll
             </button>
             <button
               onClick={() => {
@@ -1295,7 +1310,7 @@ function PayrollPageInner() {
           options={(['Draft', 'Pending', 'Paid'] as StatusTab[]).map((s) => ({
             value: s,
             label: s,
-            badge: filteredByDateRep.filter((p) => p.status === s && entryTypeTab(p) === typeTab && (s !== 'Paid' || p.date <= today)).length,
+            badge: filteredByDateRep.filter((p) => p.status === s && (typeTab === 'All' || entryTypeTab(p) === typeTab) && (s !== 'Paid' || p.date <= today)).length,
           }))}
           value={statusTab}
           onChange={changeStatusTab}
@@ -1306,14 +1321,16 @@ function PayrollPageInner() {
       <div className="mb-6">
         <SegmentedPills<TypeTab>
           options={[
-            { value: 'Deal', label: 'Deal Payments' },
-            { value: 'Bonus', label: 'Bonus Payments' },
-            { value: 'Trainer', label: 'Trainer Payments' },
+            { value: 'All', label: 'All' },
+            { value: 'Deal', label: 'Deal' },
+            { value: 'Bonus', label: 'Bonus' },
+            { value: 'Trainer', label: 'Trainer' },
+            { value: 'Charge', label: 'Charge' },
           ]}
           value={typeTab}
           onChange={changeTypeTab}
           size="sm"
-          ariaLabel="Payroll type"
+          ariaLabel="Payroll type filter"
         />
       </div>
 
@@ -1367,21 +1384,28 @@ function PayrollPageInner() {
       {filtered.length === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {statusTab.toLowerCase()} {typeTab.toLowerCase()} payments</p>
+            <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              No {statusTab.toLowerCase()} {typeTab === 'All' ? 'payments' : `${typeTab.toLowerCase()} payments`}
+            </p>
             <p style={{ color: 'var(--text-dim)', fontSize: 12 }}>
-              {statusTab === 'Draft' ? (typeTab === 'Deal' ? 'Draft entries are auto-created when projects hit milestones' : 'Create a bonus entry for any rep') : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
+              {statusTab === 'Draft' ? 'Draft entries are auto-created when projects hit milestones. Use + Add Payment to record a bonus or charge.' : statusTab === 'Pending' ? 'Select Draft entries and mark them for payroll' : 'Publish pending payroll to move entries here'}
             </p>
             {statusTab === 'Draft' && (
               <button
                 onClick={() => {
                   paymentSubmitting.current = false;
-                  setPaymentForm((p) => ({ ...p, type: typeTab === 'Bonus' ? 'Bonus' : 'Deal' }));
+                  // Pre-select the form type from the active filter when it's
+                  // unambiguous; otherwise default to Deal and let the user
+                  // toggle inside the modal.
+                  const presetType: 'Deal' | 'Bonus' | 'Chargeback' =
+                    typeTab === 'Bonus' ? 'Bonus' : typeTab === 'Charge' ? 'Chargeback' : 'Deal';
+                  setPaymentForm((p) => ({ ...p, type: presetType }));
                   setShowPaymentModal(true);
                 }}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2 rounded-lg transition-all hover:opacity-90 active:scale-[0.97]"
                 style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
               >
-                <ArrowRight className="w-3.5 h-3.5" /> Add {typeTab === 'Bonus' ? 'Bonus' : 'Payment'}
+                <ArrowRight className="w-3.5 h-3.5" /> Add Payment
               </button>
             )}
           </div>
@@ -1399,7 +1423,7 @@ function PayrollPageInner() {
                 )}
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Rep</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Type</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>{typeTab === 'Deal' ? 'Customer' : 'Note'}</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Detail</th>
                 <th style={{ padding: '10px 14px', textAlign: 'right' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Amount</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Date</th>
                 <th style={{ padding: '10px 14px', textAlign: 'left' as const, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--text-muted)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' as const, userSelect: 'none' as const }}>Status</th>
@@ -1477,9 +1501,14 @@ function PayrollPageInner() {
                     </td>
                   )}
                   <td style={{ padding: '12px 14px 12px 40px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}>↳</span></td>
-                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}{entry.notes && (typeTab === 'Deal' || typeTab === 'Trainer') && (entry.notes === 'Setter' || entry.notes.startsWith('Trainer override')) ? ` (${entry.notes})` : ''}</span></td>
+                  <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <PaymentTypeBadge kind={entryTypeTab(entry)} />
+                      <span style={{ color: 'var(--text-secondary)' }}>{entry.paymentStage}</span>
+                    </span>
+                  </td>
                   <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }} onClick={(e) => e.stopPropagation()}>
-                    {(typeTab === 'Deal' || typeTab === 'Trainer') && entry.customerName && entry.projectId ? (
+                    {entry.customerName && entry.projectId ? (
                       <Link
                         href={`/dashboard/projects/${entry.projectId}`}
                         className="hover:underline"
@@ -1489,7 +1518,7 @@ function PayrollPageInner() {
                         {entry.customerName}
                       </Link>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>{(typeTab === 'Deal' || typeTab === 'Trainer') ? (entry.customerName || '\u2014') : (entry.notes || '\u2014')}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{entry.notes || '\u2014'}</span>
                     )}
                   </td>
                   <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
@@ -1612,7 +1641,7 @@ function PayrollPageInner() {
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[var(--text-secondary)] text-sm mb-3">
-                <span className="text-[var(--accent-emerald-text)] font-semibold">{selectedEntries.length}</span> of {pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'} selected. This action cannot be undone.
+                <span className="text-[var(--accent-emerald-text)] font-semibold">{selectedEntries.length}</span> of {pendingEntries.length} pending {pendingEntries.length === 1 ? 'entry' : 'entries'} selected. This action cannot be undone.
                 {futureCount > 0 && (
                   <> <span className="text-[var(--accent-amber-text)]">{futureCount} future-dated</span> {futureCount === 1 ? 'entry is' : 'entries are'} unchecked by default — opt in per row to include.</>
                 )}
@@ -1721,11 +1750,19 @@ function PayrollPageInner() {
       {showPaymentModal && (() => {
         const isBonus = paymentForm.type === 'Bonus';
         const isChargeback = paymentForm.type === 'Chargeback';
+        const isCharge = paymentForm.type === 'Charge';
         const closeAndReset = () => {
           setShowPaymentModal(false);
-          setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '' });
+          setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '', chargeCategory: 'misc' });
         };
-        const titleFor = isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
+        const titleFor = isCharge ? 'Charge' : isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
+        // Type toggle colors mirror the PaymentTypeBadge palette so the
+        // active mode previews how the resulting row will look in the list.
+        const typeAccent = (t: typeof paymentForm.type) =>
+          t === 'Chargeback' ? 'var(--accent-red-solid)'
+          : t === 'Charge'   ? 'var(--accent-red-solid)'
+          : t === 'Bonus'    ? 'var(--accent-amber-solid)'
+          : 'var(--brand)';
         return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
           <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
@@ -1736,28 +1773,49 @@ function PayrollPageInner() {
               </button>
             </div>
             <form onSubmit={handleAddPayment} className="space-y-4">
-              {/* Type toggle — Deal (project + stage) / Bonus (rep + amount only)
-                  / Chargeback (project-linked, stored as negative Deal).
-                  Mirrors the unified mobile pattern; replaces the old two-modal split. */}
+              {/* Type toggle: Deal (project + stage) / Bonus (rep + amount only)
+                  / Chargeback (clawback of a specific Paid entry, project-linked)
+                  / Charge (standalone one-off deduction, no parent entry,
+                  needs a category). Stored as negative Deal regardless. */}
               <div>
                 <label className={labelCls}>Type</label>
                 <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-                  {(['Deal', 'Bonus', 'Chargeback'] as const).map((t) => (
+                  {(['Deal', 'Bonus', 'Chargeback', 'Charge'] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
-                      className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? (t === 'Chargeback' ? 'text-[var(--text-primary)]' : 'text-black') : 'text-[var(--text-secondary)]'}`}
-                      style={{ background: paymentForm.type === t ? (t === 'Chargeback' ? 'var(--accent-red, #ef4444)' : 'var(--brand)') : 'transparent' }}
+                      className={`flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? ((t === 'Chargeback' || t === 'Charge') ? 'text-[var(--text-primary)]' : 'text-black') : 'text-[var(--text-secondary)]'}`}
+                      style={{ background: paymentForm.type === t ? typeAccent(t) : 'transparent' }}
                     >
                       {t}
                     </button>
                   ))}
                 </div>
                 {isChargeback && (
-                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Enter the positive dollar amount to claw back. Stored as a negative Draft entry — admin controls when it actually hits payroll.</p>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Clawback of a specific paid milestone. Enter positive dollars; stored as a negative Draft entry. Pick the cancelled deal below.</p>
+                )}
+                {isCharge && (
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">One-off deduction (equipment damage, clawback, dispute). No project needed. Stored as a negative Draft entry — publish to apply.</p>
                 )}
               </div>
+              {isCharge && (
+                <div>
+                  <label className={labelCls}>Category</label>
+                  <SearchableSelect
+                    value={paymentForm.chargeCategory}
+                    onChange={(val) => setPaymentForm((p) => ({ ...p, chargeCategory: val as typeof p.chargeCategory }))}
+                    options={[
+                      { value: 'equipment_damage', label: 'Equipment damage' },
+                      { value: 'reimbursement_clawback', label: 'Reimbursement clawback' },
+                      { value: 'customer_dispute', label: 'Customer dispute' },
+                      { value: 'misc', label: 'Misc' },
+                    ]}
+                    placeholder="Select category"
+                    searchable={false}
+                  />
+                </div>
+              )}
               <div>
                 <label className={labelCls}>Rep</label>
                 <RepSelector
@@ -1769,7 +1827,7 @@ function PayrollPageInner() {
                   clearLabel="— Select rep —"
                 />
               </div>
-              {!isBonus && (
+              {!isBonus && !isCharge && (
                 <div>
                   <label className={labelCls}>Project</label>
                   <SearchableSelect
@@ -1793,7 +1851,7 @@ function PayrollPageInner() {
                   />
                 </div>
               )}
-              <div className={isBonus ? '' : 'grid grid-cols-2 gap-3'}>
+              <div className={isBonus || isCharge ? '' : 'grid grid-cols-2 gap-3'}>
                 <div>
                   <label className={labelCls}>Amount ($)</label>
                   <input required type="number" min="0.01" step="0.01"
@@ -1801,7 +1859,7 @@ function PayrollPageInner() {
                     onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
                     className={inputCls} />
                 </div>
-                {!isBonus && (
+                {!isBonus && !isCharge && (
                   <div>
                     <label className={labelCls}>Stage</label>
                     <SearchableSelect
@@ -1819,22 +1877,22 @@ function PayrollPageInner() {
                 )}
               </div>
               <div>
-                <label className={labelCls}>{isBonus ? 'Date' : isChargeback ? 'Date' : 'Pay Date'}</label>
+                <label className={labelCls}>{isBonus ? 'Date' : isChargeback ? 'Date' : isCharge ? 'Charge Date' : 'Pay Date'}</label>
                 <input type="date" value={paymentForm.date}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Notes</label>
-                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : isChargeback ? 'e.g. Deal cancelled by homeowner — M2 claw-back' : 'e.g. Additional payment — special circumstance'}
+                <label className={labelCls}>{isCharge ? 'Reason' : 'Notes'}</label>
+                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : isChargeback ? 'e.g. Deal cancelled by homeowner — M2 claw-back' : isCharge ? 'e.g. iPad screen damaged, replacement cost' : 'e.g. Additional payment — special circumstance'}
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))}
                   className={inputCls + ' placeholder-slate-500'} />
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${isChargeback ? 'text-[var(--text-primary)]' : 'btn-primary text-black'}`}
-                  style={{ backgroundColor: isChargeback ? 'var(--accent-red, #ef4444)' : 'var(--brand)' }}>
+                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${(isChargeback || isCharge) ? 'text-[var(--text-primary)]' : 'btn-primary text-black'}`}
+                  style={{ backgroundColor: (isChargeback || isCharge) ? 'var(--accent-red-solid)' : 'var(--brand)' }}>
                   Add {titleFor}
                 </button>
                 <button type="button" onClick={closeAndReset}

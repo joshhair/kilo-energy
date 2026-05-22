@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/db';
 import { requireAdmin, requireAdminOrPM } from '../../../lib/api-auth';
 import { logChange } from '../../../lib/audit';
 import { parseJsonBody } from '../../../lib/api-validation';
-import { createPayrollSchema, patchPayrollSchema } from '../../../lib/schemas/payroll';
+import { createPayrollSchema, patchPayrollSchema, CHARGE_CATEGORY_LABELS } from '../../../lib/schemas/payroll';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { REP_PUBLIC_SELECT } from '../../../lib/redact';
 import { serializePayrollEntry } from '../../../lib/serialize';
@@ -109,26 +109,35 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Standalone charges land with paymentStage='Charge' so aggregators +
+  // type pills can classify them distinctly from milestone-attached
+  // chargebacks. Linked chargebacks still inherit the parent's stage
+  // (M1/M2/M3) as established. The schema layer guarantees mutual
+  // exclusivity between chargebackOfId and chargeCategory.
+  const isStandaloneCharge = body.chargeCategory != null;
   const entry = await prisma.payrollEntry.create({
     data: {
       repId: body.repId,
       projectId: body.projectId ?? null,
       amountCents: fromDollars(body.amount).cents,
       type: body.type,
-      paymentStage: body.paymentStage,
+      paymentStage: isStandaloneCharge ? 'Charge' : body.paymentStage,
       status: body.status,
       date: body.date,
       notes: body.notes ?? '',
       idempotencyKey: body.idempotencyKey ?? null,
       isChargeback: body.isChargeback ?? false,
       chargebackOfId: body.chargebackOfId ?? null,
+      chargeCategory: body.chargeCategory ?? null,
     },
     include: { rep: true, project: true },
   });
 
   await logChange({
     actor: { id: actor.id, email: actor.email ?? null },
-    action: entry.isChargeback ? 'chargeback_create' : 'payroll_create',
+    action: isStandaloneCharge
+      ? 'payroll_charge_create'
+      : entry.isChargeback ? 'chargeback_create' : 'payroll_create',
     entityType: 'PayrollEntry',
     entityId: entry.id,
     detail: {
@@ -139,6 +148,7 @@ export async function POST(req: NextRequest) {
       status: entry.status,
       isChargeback: entry.isChargeback,
       chargebackOfId: entry.chargebackOfId,
+      chargeCategory: entry.chargeCategory,
     },
   });
   logger.info('payroll_created', {
@@ -154,7 +164,10 @@ export async function POST(req: NextRequest) {
 
   // Chargeback notification — mandatory event the rep MUST see (per the
   // event registry's mandatory flag). Fires regardless of the rep's
-  // preference, force-routes to email at minimum.
+  // preference, force-routes to email at minimum. Branches between linked
+  // chargeback wording ("clawback of M2 on Smith deal") and standalone
+  // charge wording ("Equipment damage — $500 charge recorded") so reps
+  // aren't told a non-existent milestone was clawed back.
   if (entry.isChargeback) {
     const amount = (entry.amountCents / 100).toLocaleString('en-US', {
       style: 'currency', currency: 'USD',
@@ -162,24 +175,50 @@ export async function POST(req: NextRequest) {
     const projectName = entry.project?.customerName ?? 'a deal';
     const myPayUrl = `${process.env.APP_URL || 'https://app.kiloenergies.com'}/dashboard/my-pay`;
     const repFirstName = entry.rep?.firstName ?? 'there';
+    const categoryLabel = entry.chargeCategory
+      ? CHARGE_CATEGORY_LABELS[entry.chargeCategory as keyof typeof CHARGE_CATEGORY_LABELS] ?? entry.chargeCategory
+      : null;
+
+    const subject = isStandaloneCharge && categoryLabel
+      ? `Charge recorded — ${amount} (${categoryLabel})`
+      : `Chargeback issued — ${amount} on ${projectName}`;
+
+    const heading = isStandaloneCharge ? 'A one-off charge was recorded' : 'A chargeback was issued';
+
+    const bodyHtml = isStandaloneCharge && categoryLabel
+      ? `
+          <p style="margin:0 0 12px 0;">Hi ${escapeHtml(repFirstName)} — a charge of <strong>${amount}</strong> (${escapeHtml(categoryLabel)}) was recorded on your account${entry.project ? ` related to <strong>${escapeHtml(projectName)}</strong>` : ''}.</p>
+          ${entry.notes ? `<p style="margin:0 0 12px 0;color:#5b6477;font-size:13px;">Reason: ${escapeHtml(entry.notes)}</p>` : ''}
+          <p style="margin:0;color:#5b6477;font-size:13px;">If you have questions, reach out to your admin.</p>
+        `
+      : `
+          <p style="margin:0 0 12px 0;">Hi ${escapeHtml(repFirstName)} — a chargeback of <strong>${amount}</strong> was recorded against the <strong>${escapeHtml(projectName)}</strong> deal at the <strong>${escapeHtml(entry.paymentStage)}</strong> stage.</p>
+          ${entry.notes ? `<p style="margin:0 0 12px 0;color:#5b6477;font-size:13px;">Reason: ${escapeHtml(entry.notes)}</p>` : ''}
+          <p style="margin:0;color:#5b6477;font-size:13px;">If you have questions, reach out to your admin.</p>
+        `;
+
+    const smsBody = isStandaloneCharge && categoryLabel
+      ? `Kilo: charge of ${amount} (${categoryLabel}) recorded.`
+      : `Kilo: chargeback of ${amount} on ${projectName} (${entry.paymentStage}).`;
+
+    const pushBody = isStandaloneCharge && categoryLabel
+      ? `Charge ${amount} — ${categoryLabel}`
+      : `Chargeback ${amount} — ${projectName}`;
+
     notify({
       type: 'pay_chargeback',
       userId: entry.repId,
       projectId: entry.projectId ?? undefined,
       forceMandatory: true,
-      subject: `Chargeback issued — ${amount} on ${projectName}`,
+      subject,
       emailHtml: renderNotificationEmail({
-        heading: 'A chargeback was issued',
-        bodyHtml: `
-          <p style="margin:0 0 12px 0;">Hi ${escapeHtml(repFirstName)} — a chargeback of <strong>${amount}</strong> was recorded against the <strong>${escapeHtml(projectName)}</strong> deal at the <strong>${escapeHtml(entry.paymentStage)}</strong> stage.</p>
-          ${entry.notes ? `<p style="margin:0 0 12px 0;color:#5b6477;font-size:13px;">Reason: ${escapeHtml(entry.notes)}</p>` : ''}
-          <p style="margin:0;color:#5b6477;font-size:13px;">If you have questions, reach out to your admin.</p>
-        `,
+        heading,
+        bodyHtml,
         cta: { label: 'Open My Pay', url: myPayUrl },
         footerNote: 'Chargeback alerts are required and cannot be turned off.',
       }),
-      smsBody: `Kilo: chargeback of ${amount} on ${projectName} (${entry.paymentStage}).`,
-      pushBody: `Chargeback ${amount} — ${projectName}`,
+      smsBody,
+      pushBody,
     }).catch((err) => {
       logger.error('chargeback_notification_failed', {
         entryId: entry.id,

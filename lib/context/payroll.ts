@@ -33,6 +33,12 @@ export function createPayrollActions(deps: PayrollDeps) {
         date: entry.date,
         notes: entry.notes,
         idempotencyKey: clientId,
+        // Chargeback / one-off charge fields. The server resolves the
+        // standalone-charge path off chargeCategory; chargebackOfId is for
+        // linked clawbacks. Mutually exclusive (schema enforces it).
+        isChargeback: entry.isChargeback,
+        chargebackOfId: entry.chargebackOfId ?? null,
+        chargeCategory: entry.chargeCategory ?? null,
       }),
     })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })

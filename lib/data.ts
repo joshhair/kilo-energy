@@ -275,16 +275,22 @@ export interface PayrollEntry {
   customerName: string;
   amount: number;
   type: 'Deal' | 'Bonus';
-  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer' | 'Setter';
+  paymentStage: 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer' | 'Setter' | 'Charge';
   status: 'Draft' | 'Pending' | 'Paid';
   date: string;
   notes: string;
   /** Explicit chargeback tracking. When true, amount is negative and
    *  chargebackOfId references the original Paid entry being clawed back.
    *  Replaces the prior "any negative-amount Paid entry is a chargeback"
-   *  convention so reports can filter cleanly and audit remains unambiguous. */
+   *  convention so reports can filter cleanly and audit remains unambiguous.
+   *  For standalone one-off charges (chargeCategory set), isChargeback is
+   *  also true but chargebackOfId is null. */
   isChargeback?: boolean;
   chargebackOfId?: string | null;
+  /** Standalone one-off charge category — non-null implies a Charge entry
+   *  (paymentStage='Charge', isChargeback=true, chargebackOfId=null, amount<0).
+   *  Mutually exclusive with chargebackOfId. */
+  chargeCategory?: string | null;
 }
 
 export interface Reimbursement {

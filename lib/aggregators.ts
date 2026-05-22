@@ -54,6 +54,12 @@ export interface PayrollAggregable {
    *  the "amount < 0" heuristic for backward compatibility. */
   isChargeback?: boolean;
   paymentStage?: string;
+  /** Standalone one-off charge category (equipment_damage, etc.). When
+   *  non-null, the entry is a non-milestone charge and consumers should
+   *  classify it as type 'Charge' (separate from milestone-attached
+   *  chargebacks). The breakdown still rolls the negative amount into
+   *  the chargebacks bucket — Charges ARE chargebacks for math purposes. */
+  chargeCategory?: string | null;
 }
 
 export interface PaidOutOptions {

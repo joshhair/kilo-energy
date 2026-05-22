@@ -14,9 +14,10 @@ import PayrollStatusTabs from './shared/PayrollStatusTabs';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { SegmentedPills } from '../../../components/ui';
+import { PaymentTypeBadge } from '../../../components/ui/PaymentTypeBadge';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
-type TypeTab = 'Deal' | 'Bonus' | 'Trainer';
+type TypeTab = 'All' | 'Deal' | 'Bonus' | 'Trainer' | 'Charge';
 type PageView = 'payroll' | 'reimbursements';
 type ReimFilterStatus = 'All' | 'Pending' | 'Approved' | 'Denied';
 
@@ -24,7 +25,8 @@ type ReimFilterStatus = 'All' | 'Pending' | 'Approved' | 'Denied';
 // overrides are stored as type='Deal' + paymentStage='Trainer' in the
 // DB — we surface them under their own tab. Mirrors the desktop helper
 // in app/dashboard/payroll/page.tsx (2026-04-23).
-function entryTypeTab(entry: { type?: string; paymentStage?: string }): TypeTab {
+function entryTypeTab(entry: { type?: string; paymentStage?: string; chargeCategory?: string | null }): Exclude<TypeTab, 'All'> {
+  if (entry.chargeCategory != null) return 'Charge';
   if (entry.paymentStage === 'Trainer') return 'Trainer';
   if (entry.type === 'Bonus') return 'Bonus';
   return 'Deal';
@@ -52,18 +54,18 @@ export default function MobilePayroll() {
   // /dashboard/payroll?view=reimbursements&status=Paid&type=Bonus
   // lands on the same view. Matches desktop pattern shipped 2026-04-23.
   const initialStatus = (searchParams.get('status') ?? 'Draft') as StatusTab;
-  const initialType = (searchParams.get('type') ?? 'Deal') as TypeTab;
+  const initialType = (searchParams.get('type') ?? 'All') as TypeTab;
   const initialView = (searchParams.get('view') === 'reimbursements' ? 'reimbursements' : 'payroll') as PageView;
 
   const [pageView, setPageView] = useState<PageView>(initialView);
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
-  const [typeTab, setTypeTab] = useState<TypeTab>(['Deal', 'Bonus', 'Trainer'].includes(initialType) ? initialType : 'Deal');
+  const [typeTab, setTypeTab] = useState<TypeTab>((['All', 'Deal', 'Bonus', 'Trainer', 'Charge'] as const).includes(initialType as TypeTab) ? (initialType as TypeTab) : 'All');
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
   const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<PayrollEntry | null>(null);
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback', stage: 'M1' as string });
+  const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback' | 'Charge', stage: 'M1' as string, chargeCategory: 'misc' as 'equipment_damage' | 'reimbursement_clawback' | 'customer_dispute' | 'misc' });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
 
@@ -77,7 +79,7 @@ export default function MobilePayroll() {
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     if (statusTab !== 'Draft') params.set('status', statusTab); else params.delete('status');
-    if (typeTab !== 'Deal') params.set('type', typeTab); else params.delete('type');
+    if (typeTab !== 'All') params.set('type', typeTab); else params.delete('type');
     if (pageView === 'reimbursements') params.set('view', 'reimbursements'); else params.delete('view');
     if (filterRepId) params.set('rep', filterRepId); else params.delete('rep');
     if (filterFrom) params.set('from', filterFrom); else params.delete('from');
@@ -154,7 +156,7 @@ export default function MobilePayroll() {
   const pendingTotal = useMemo(() => {
     const today = todayLocalDateStr();
     return payrollEntries
-      .filter((e) => e.status === 'Pending' && entryTypeTab(e) === typeTab && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
+      .filter((e) => e.status === 'Pending' && (typeTab === 'All' || entryTypeTab(e) === typeTab) && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
       .reduce((s, e) => s + e.amount, 0);
   }, [payrollEntries, typeTab, effectiveRole, effectiveRepId]);
 
@@ -183,7 +185,7 @@ export default function MobilePayroll() {
     const today = todayLocalDateStr();
     return payrollEntries.filter((e) =>
       e.status === statusTab &&
-      entryTypeTab(e) === typeTab &&
+      (typeTab === 'All' || entryTypeTab(e) === typeTab) &&
       (statusTab !== 'Paid' || e.date <= today) &&
       (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
       (!filterRepId || e.repId === filterRepId) &&
@@ -327,43 +329,47 @@ export default function MobilePayroll() {
       const rep = reps.find((r) => r.id === paymentForm.repId);
       const isBonus = paymentForm.type === 'Bonus';
       const isChargeback = paymentForm.type === 'Chargeback';
-      const project = !isBonus ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
+      const isCharge = paymentForm.type === 'Charge';
+      const project = (!isBonus && !isCharge) ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
 
-      if (!isBonus && paymentForm.stage === 'M3') {
+      if (!isBonus && !isCharge && paymentForm.stage === 'M3') {
         if (!paymentForm.projectId || !project) { toast('M3 payments require a linked project', 'error'); return; }
         const installerName = project.installer ?? '';
         const payPct = installerPayConfigs[installerName]?.installPayPct ?? 100;
         if (payPct >= 100) { toast('M3 payments are only allowed for installers with a partial install payment percentage (installPayPct < 100)', 'error'); return; }
       }
 
-      // Chargebacks are stored as negative "Deal" entries (matches the
-      // auto-generated shape from handleChargebacks). User enters positive;
-      // we negate here.
+      // Chargebacks + standalone Charges store negative amounts. User
+      // enters positive; we negate here.
       const raw = parseFloat(paymentForm.amount);
-      const signed = isChargeback ? -raw : raw;
-      const dbType = paymentForm.type === 'Bonus' ? 'Bonus' : 'Deal';
-      const dbStage = paymentForm.type === 'Bonus' ? 'Bonus' : paymentForm.stage;
+      const signed = (isChargeback || isCharge) ? -raw : raw;
+      const dbType: 'Deal' | 'Bonus' = isBonus ? 'Bonus' : 'Deal';
+      const dbStage: PayrollEntry['paymentStage'] =
+        isBonus ? 'Bonus' : isCharge ? 'Charge' : (paymentForm.stage as 'M1' | 'M2' | 'M3');
       const notesOut = isChargeback ? `Chargeback — manual${paymentForm.notes ? ` · ${paymentForm.notes}` : ''}` : paymentForm.notes;
       const newEntry: PayrollEntry = {
         id: `pay_${Date.now()}`,
         repId: paymentForm.repId,
         repName: rep?.name ?? '',
-        projectId: isBonus ? null : (paymentForm.projectId || null),
+        projectId: (isBonus || isCharge) ? null : (paymentForm.projectId || null),
         customerName: project?.customerName ?? '',
         amount: signed,
         type: dbType,
-        paymentStage: dbStage as 'M1' | 'M2' | 'M3' | 'Bonus' | 'Trainer',
+        paymentStage: dbStage,
         status: 'Draft',
         date: paymentForm.date || todayLocalDateStr(),
         notes: notesOut,
+        isChargeback: isChargeback || isCharge,
+        chargebackOfId: null,
+        chargeCategory: isCharge ? paymentForm.chargeCategory : null,
       };
       setPayrollEntries((prev) => [...prev, newEntry]);
       setShowAddPayment(false);
-      setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal', stage: 'M1' });
+      setPaymentForm({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal', stage: 'M1', chargeCategory: 'misc' });
       setStatusTab('Draft');
-      setTypeTab(isBonus ? 'Bonus' : 'Deal');
+      setTypeTab(isCharge ? 'Charge' : isBonus ? 'Bonus' : isChargeback ? 'Deal' : 'Deal');
       setFilterRepId('');
-      const label = isChargeback ? 'Chargeback' : 'Payment';
+      const label = isCharge ? 'Charge' : isChargeback ? 'Chargeback' : 'Payment';
       toast(`${label} added for ${rep?.name ?? 'rep'} — ${fmt$(Math.abs(signed))}`, 'success');
 
       persistPayrollEntry(newEntry);
@@ -631,7 +637,7 @@ export default function MobilePayroll() {
       </div>
       {pendingTotal > 0 && (
         <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-          {fmt$(pendingTotal)} pending · {typeTab}
+          {fmt$(pendingTotal)} pending{typeTab !== 'All' ? ` · ${typeTab}` : ''}
         </p>
       )}
 
@@ -786,8 +792,11 @@ export default function MobilePayroll() {
                     className="w-full flex items-center justify-between py-3 text-left active:opacity-80 transition-colors"
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   >
-                    <span className="text-base text-[var(--text-primary)] truncate mr-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--')}
+                    <span className="flex items-center gap-2 min-w-0 mr-2">
+                      <PaymentTypeBadge kind={entryTypeTab(entry)} showIcon={false} />
+                      <span className="text-base text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                        {entry.customerName || (entry.notes || (entry.type === 'Bonus' ? 'Bonus' : '—'))}
+                      </span>
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span
@@ -832,7 +841,7 @@ export default function MobilePayroll() {
               fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
             }}
           >
-            {statusTab === 'Pending' ? `Publish ${typeTab} Payroll` : 'Approve All'}
+            {statusTab === 'Pending' ? 'Publish Payroll' : 'Approve All'}
           </button>
         </div>
       )}
@@ -840,7 +849,7 @@ export default function MobilePayroll() {
       <ConfirmDialog
         open={showPublishConfirm}
         title="Publish Payroll?"
-        message={`This will mark ${filtered.filter((e) => e.date <= todayLocalDateStr()).length} pending ${typeTab.toLowerCase()} ${filtered.filter((e) => e.date <= todayLocalDateStr()).length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone.`}
+        message={`This will mark ${filtered.filter((e) => e.date <= todayLocalDateStr()).length} pending ${filtered.filter((e) => e.date <= todayLocalDateStr()).length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone. Future-dated entries are excluded — use the desktop payroll page if you need to publish those early.`}
         confirmLabel="Publish Payroll"
         onConfirm={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
         onClose={() => setShowPublishConfirm(false)}
@@ -939,19 +948,23 @@ export default function MobilePayroll() {
           <div>
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Type</label>
             <div className="flex gap-2">
-              {(['Deal', 'Bonus', 'Chargeback'] as const).map((t) => {
+              {(['Deal', 'Bonus', 'Chargeback', 'Charge'] as const).map((t) => {
                 const selected = paymentForm.type === t;
-                const isChargebackBtn = t === 'Chargeback';
-                const nextStage = t === 'Bonus' ? 'Bonus' : paymentForm.stage && paymentForm.stage !== 'Bonus' ? paymentForm.stage : 'M1';
+                const isNegativeBtn = t === 'Chargeback' || t === 'Charge';
+                const selectedBg = t === 'Chargeback' || t === 'Charge'
+                  ? 'var(--accent-red-solid)'
+                  : t === 'Bonus' ? 'var(--accent-amber-solid)'
+                  : 'var(--accent-emerald-solid)';
+                const nextStage = t === 'Bonus' ? 'Bonus' : t === 'Charge' ? 'Charge' : paymentForm.stage && paymentForm.stage !== 'Bonus' && paymentForm.stage !== 'Charge' ? paymentForm.stage : 'M1';
                 return (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setPaymentForm((f) => ({ ...f, type: t, stage: nextStage }))}
-                    className="flex-1 min-h-[48px] rounded-xl text-sm font-medium transition-colors"
+                    className="flex-1 min-h-[48px] rounded-xl text-xs font-medium transition-colors"
                     style={{
-                      background: selected ? (isChargebackBtn ? 'var(--accent-red, #ef4444)' : 'var(--accent-emerald-solid)') : 'var(--surface-card)',
-                      color: selected ? (isChargebackBtn ? '#fff' : '#000') : 'var(--text-muted)',
+                      background: selected ? selectedBg : 'var(--surface-card)',
+                      color: selected ? (isNegativeBtn ? '#fff' : '#000') : 'var(--text-muted)',
                       border: selected ? 'none' : '1px solid var(--border-subtle)',
                       fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                     }}
@@ -962,9 +975,28 @@ export default function MobilePayroll() {
               })}
             </div>
             {paymentForm.type === 'Chargeback' && (
-              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Positive dollar amount. Stored as a negative Draft entry — admin controls when it hits payroll.</p>
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Clawback of a paid milestone on a cancelled deal. Positive dollars; stored as negative.</p>
+            )}
+            {paymentForm.type === 'Charge' && (
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>One-off deduction (no project). Pick a category below. Stored as a negative Draft entry.</p>
             )}
           </div>
+          {paymentForm.type === 'Charge' && (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Category</label>
+              <select
+                value={paymentForm.chargeCategory}
+                onChange={(e) => setPaymentForm((f) => ({ ...f, chargeCategory: e.target.value as typeof f.chargeCategory }))}
+                className={`${inputCls} min-h-[48px]`}
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <option value="equipment_damage">Equipment damage</option>
+                <option value="reimbursement_clawback">Reimbursement clawback</option>
+                <option value="customer_dispute">Customer dispute</option>
+                <option value="misc">Misc</option>
+              </select>
+            </div>
+          )}
           {(paymentForm.type === 'Deal' || paymentForm.type === 'Chargeback') && (
             <div>
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Stage</label>

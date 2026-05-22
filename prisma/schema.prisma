@@ -598,6 +598,14 @@ model PayrollEntry {
   editedBy            String?
   editReason          String?
 
+  /// Category label for standalone one-off charges (equipment damage,
+  /// clawback, customer dispute, misc). Non-null implies a "Charge" entry:
+  /// negative amount, isChargeback=true, chargebackOfId=null, and
+  /// paymentStage='Charge'. Distinct from linked chargebacks (which clawback
+  /// a specific Paid entry). Null on every other row including legacy
+  /// chargebacks. Validation lives in lib/schemas/payroll.ts.
+  chargeCategory String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
