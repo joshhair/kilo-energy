@@ -132,6 +132,10 @@ function PayrollPageInner() {
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishingPayroll, setPublishingPayroll] = useState(false);
   const publishingPayrollRef = useRef(false);
+  // Which Pending entries are checked for publish in the confirm modal.
+  // Initialized on modal open: past + today checked, future unchecked.
+  // User can override per row before confirming.
+  const [publishSelectedIds, setPublishSelectedIds] = useState<Set<string>>(new Set());
   const [markingForPayroll, setMarkingForPayroll] = useState(false);
   const markingForPayrollRef = useRef(false);
   // Unified add-payment form — covers Deal (requires project + stage) and
@@ -386,6 +390,21 @@ function PayrollPageInner() {
     }
   }, [showActionBar]);
 
+  // When the publish modal opens, default-select every Pending entry whose
+  // pay date is today or earlier. Future-dated entries stay unchecked so
+  // admins must explicitly opt in to publish them early. Reset on close.
+  useEffect(() => {
+    if (!showPublishConfirm) {
+      setPublishSelectedIds(new Set());
+      return;
+    }
+    const defaults = new Set<string>();
+    for (const p of filteredByDateRep) {
+      if (p.status === 'Pending' && p.date <= today) defaults.add(p.id);
+    }
+    setPublishSelectedIds(defaults);
+  }, [showPublishConfirm, filteredByDateRep, today]);
+
   if (effectiveRole === 'project_manager') {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -448,8 +467,9 @@ function PayrollPageInner() {
     if (publishingPayrollRef.current) return;
     publishingPayrollRef.current = true;
     setPublishingPayroll(true);
-    // Publish only Pending entries matching the active type tab
-    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && e.date <= today);
+    // Publish the entries the user explicitly checked in the modal.
+    // Defaults exclude future-dated entries, but the user can opt them in.
+    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && publishSelectedIds.has(e.id));
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
     setPayrollEntries((prev) =>
@@ -1549,23 +1569,42 @@ function PayrollPageInner() {
 
       {/* Publish Confirm Modal */}
       {showPublishConfirm && (() => {
-        const pendingEntries = filteredByDateRep.filter((p) => p.status === 'Pending' && p.date <= today);
-        // Build a per-rep summary sorted descending by total payout
-        const repSummary = Array.from(
-          pendingEntries.reduce((map, e) => {
-            if (!map.has(e.repId)) map.set(e.repId, { name: e.repName, total: 0, count: 0 });
-            const rec = map.get(e.repId)!;
-            rec.total += e.amount;
-            rec.count += 1;
-            return map;
-          }, new Map<string, { name: string; total: number; count: number }>())
-        )
-          .map(([id, v]) => ({ ...v, id }))
-          .sort((a, b) => b.total - a.total);
+        // Show every Pending entry the user can see (no date filter at
+        // display time). Default-checked are past+today (set in the
+        // useEffect that watches showPublishConfirm); future-dated rows
+        // are shown but unchecked so the admin can opt them in per row.
+        const pendingEntries = filteredByDateRep
+          .filter((p) => p.status === 'Pending')
+          .sort((a, b) => a.repName.localeCompare(b.repName) || a.date.localeCompare(b.date));
+        const byRep = pendingEntries.reduce((map, e) => {
+          if (!map.has(e.repId)) map.set(e.repId, { name: e.repName, entries: [] as typeof pendingEntries });
+          map.get(e.repId)!.entries.push(e);
+          return map;
+        }, new Map<string, { name: string; entries: typeof pendingEntries }>());
+        const repGroups = Array.from(byRep.entries()).map(([id, g]) => ({
+          id, name: g.name, entries: g.entries,
+        })).sort((a, b) => a.name.localeCompare(b.name));
+
+        const selectedEntries = pendingEntries.filter((e) => publishSelectedIds.has(e.id));
+        const selectedTotal = selectedEntries.reduce((s, e) => s + e.amount, 0);
+        const allIds = pendingEntries.map((e) => e.id);
+        const pastIds = pendingEntries.filter((e) => e.date <= today).map((e) => e.id);
+        const futureCount = pendingEntries.length - pastIds.length;
+
+        const toggleOne = (id: string) => {
+          setPublishSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+          });
+        };
+        const selectAll = () => setPublishSelectedIds(new Set(allIds));
+        const selectPastOnly = () => setPublishSelectedIds(new Set(pastIds));
+        const clearAll = () => setPublishSelectedIds(new Set());
 
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-            <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-lg bg-[var(--accent-amber-soft)]">
                   <AlertTriangle className="w-5 h-5 text-[var(--accent-amber-text)]" />
@@ -1573,15 +1612,19 @@ function PayrollPageInner() {
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">Publish Payroll?</h2>
               </div>
               <p className="text-[var(--text-secondary)] text-sm mb-3">
-                This will mark <span className="text-[var(--accent-amber-text)] font-semibold">{pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'}</span> as <span className="text-[var(--accent-emerald-text)] font-semibold">Paid</span>. Only <span className="text-[var(--accent-amber-text)] font-semibold">{typeTab}</span> entries are affected. This action cannot be undone.
+                <span className="text-[var(--accent-emerald-text)] font-semibold">{selectedEntries.length}</span> of {pendingEntries.length} pending {typeTab.toLowerCase()} {pendingEntries.length === 1 ? 'entry' : 'entries'} selected. This action cannot be undone.
+                {futureCount > 0 && (
+                  <> <span className="text-[var(--accent-amber-text)]">{futureCount} future-dated</span> {futureCount === 1 ? 'entry is' : 'entries are'} unchecked by default — opt in per row to include.</>
+                )}
               </p>
+
               {filterRepId && (() => {
                 const filteredRepName = reps.find((r) => r.id === filterRepId)?.name ?? 'selected rep';
                 return (
                   <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
                     <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
                     <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
-                      <span className="font-semibold">Rep filter is active.</span> Only entries for <span className="font-semibold">{filteredRepName}</span> will be published. Other reps&apos; Pending entries will not be affected.
+                      <span className="font-semibold">Rep filter is active.</span> Only entries for <span className="font-semibold">{filteredRepName}</span> are shown.
                     </p>
                   </div>
                 );
@@ -1591,32 +1634,60 @@ function PayrollPageInner() {
                 <div className="flex items-start gap-2 bg-[var(--accent-amber-soft)] border border-yellow-700/40 rounded-lg px-3 py-2.5 mb-3">
                   <AlertTriangle className="w-4 h-4 text-[var(--accent-amber-text)] shrink-0 mt-0.5" />
                   <p className="text-[var(--accent-amber-text)] text-xs leading-relaxed">
-                    <span className="font-semibold">Date filter is active.</span> Only entries{payFilterFrom && <> from <span className="font-semibold">{payFilterFrom}</span></>}{payFilterTo && <> to <span className="font-semibold">{payFilterTo}</span></>} will be published. Pending entries outside this date range will not be affected.
+                    <span className="font-semibold">Date filter is active.</span> Only entries{payFilterFrom && <> from <span className="font-semibold">{payFilterFrom}</span></>}{payFilterTo && <> to <span className="font-semibold">{payFilterTo}</span></>} are shown.
                   </p>
                 </div>
               )}
 
-              {/* Per-rep breakdown */}
-              {repSummary.length > 0 && (
-                <div className="bg-[var(--surface-card)]/60 border border-[var(--border)]/60 rounded-xl mb-5 overflow-hidden">
-                  <div className="px-4 py-2 border-b border-[var(--border)]/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Payout Breakdown</span>
-                    <span className="text-xs text-[var(--text-muted)]">{repSummary.length} rep{repSummary.length !== 1 ? 's' : ''}</span>
-                  </div>
-                  <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
-                    {repSummary.map((rep) => (
-                      <div key={rep.id} className="flex items-center justify-between px-4 py-2.5">
-                        <div>
-                          <p className="text-[var(--text-primary)] text-sm font-medium">{rep.name}</p>
-                          <p className="text-[var(--text-muted)] text-xs">{rep.count} {rep.count === 1 ? 'entry' : 'entries'}</p>
+              {/* Bulk selection controls */}
+              <div className="flex items-center gap-2 mb-2 text-xs">
+                <span className="text-[var(--text-dim)] mr-1">Bulk:</span>
+                <button type="button" onClick={selectAll} className="px-2 py-1 rounded-md bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">All ({allIds.length})</button>
+                <button type="button" onClick={selectPastOnly} className="px-2 py-1 rounded-md bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Past + today ({pastIds.length})</button>
+                <button type="button" onClick={clearAll} className="px-2 py-1 rounded-md bg-[var(--surface-card)] border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">None</button>
+              </div>
+
+              {/* Per-rep entries with checkboxes */}
+              {repGroups.length > 0 && (
+                <div className="bg-[var(--surface-card)]/60 border border-[var(--border)]/60 rounded-xl mb-4 overflow-hidden flex-1 flex flex-col min-h-0">
+                  <div className="divide-y divide-slate-800/60 overflow-y-auto flex-1">
+                    {repGroups.map((rep) => {
+                      const repSelected = rep.entries.filter((e) => publishSelectedIds.has(e.id));
+                      const repSelectedTotal = repSelected.reduce((s, e) => s + e.amount, 0);
+                      return (
+                        <div key={rep.id} className="px-3 py-2">
+                          <div className="flex items-center justify-between px-1 py-1 mb-1">
+                            <p className="text-[var(--text-primary)] text-sm font-semibold">{rep.name}</p>
+                            <p className="text-[var(--text-muted)] text-xs">{repSelected.length}/{rep.entries.length} · <span className="text-[var(--accent-emerald-text)] font-bold tabular-nums">{repSelectedTotal < 0 ? '-' : ''}${Math.abs(repSelectedTotal).toLocaleString()}</span></p>
+                          </div>
+                          <div className="space-y-0.5">
+                            {rep.entries.map((e) => {
+                              const isFuture = e.date > today;
+                              const checked = publishSelectedIds.has(e.id);
+                              return (
+                                <label key={e.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--surface-card)] cursor-pointer">
+                                  <input type="checkbox" checked={checked} onChange={() => toggleOne(e.id)} className="shrink-0 accent-[var(--accent-emerald-solid)]" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-[var(--text-secondary)] truncate">
+                                      {e.paymentStage}{e.customerName ? ` · ${e.customerName}` : ''}{e.notes ? ` · ${e.notes}` : ''}
+                                    </p>
+                                    <p className="text-[11px] text-[var(--text-dim)]">
+                                      {e.date}
+                                      {isFuture && <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] font-semibold">Future</span>}
+                                    </p>
+                                  </div>
+                                  <span className={`text-sm font-bold tabular-nums shrink-0 ${e.amount < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'}`}>{e.amount < 0 ? '-' : ''}${Math.abs(e.amount).toLocaleString()}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <span className={`${rep.total < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-emerald-text)]'} font-bold tabular-nums`}>{rep.total < 0 ? '-' : ''}${Math.abs(rep.total).toLocaleString()}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="px-4 py-2.5 border-t border-[var(--border)]/60 flex items-center justify-between bg-[var(--surface-card)]/40">
-                    <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Total</span>
-                    <span className="text-[var(--text-primary)] font-black tabular-nums">${pendingEntries.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
+                    <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Selected total</span>
+                    <span className="text-[var(--text-primary)] font-black tabular-nums">${selectedTotal.toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -1624,11 +1695,11 @@ function PayrollPageInner() {
               <div className="flex gap-3">
                 <button
                   onClick={handlePublish}
-                  disabled={publishingPayroll}
+                  disabled={publishingPayroll || selectedEntries.length === 0}
                   className="btn-primary flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-[var(--accent-emerald-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)' }}
                 >
-                  {publishingPayroll ? 'Publishing…' : 'Publish Payroll'}
+                  {publishingPayroll ? 'Publishing…' : `Publish ${selectedEntries.length} ${selectedEntries.length === 1 ? 'entry' : 'entries'}`}
                 </button>
                 <button
                   onClick={() => setShowPublishConfirm(false)}
