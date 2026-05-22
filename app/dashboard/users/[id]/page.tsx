@@ -1211,11 +1211,40 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         const closerDealCount = projects.filter((p) => p.repId === id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId as string)).size;
-        const closerEntries = repPayroll.filter((e) => e.type === 'Deal' && e.notes !== 'Setter' && !e.notes?.startsWith('Co-setter') && !e.notes?.startsWith('Co-closer') && e.paymentStage !== 'Trainer');
-        const coCloserEntries = repPayroll.filter((e) => e.notes?.startsWith('Co-closer'));
-        const setterEntries = repPayroll.filter((e) => e.notes === 'Setter' || e.notes?.startsWith('Co-setter'));
+
+        // Classify each payroll entry by the parent project's role assignment
+        // rather than fragile notes-string matching. The legacy classifier
+        // depended on `notes === 'Setter'` which only got stamped on
+        // engine-generated AND Glide-imported entries — admin-manually-created
+        // setter entries (via the + Add Payment modal) come through with no
+        // notes and were misclassified as Closer pay (e.g. Kenneth on
+        // Willard Coleman M2 paid 2026-05-15). Project-relation is the source
+        // of truth: if you're the setterId on a deal, the entry is setter pay.
+        const projectById = new Map(projects.map((p) => [p.id, p]));
+        const classifyEntry = (e: typeof repPayroll[number]): 'Closer' | 'Co-closer' | 'Setter' | 'Co-setter' | 'Trainer' | 'Bonus' => {
+          if (e.paymentStage === 'Trainer') return 'Trainer';
+          if (e.type !== 'Deal') return 'Bonus';
+          if (!e.projectId) return 'Bonus'; // standalone Bonus/Charge entries have no project
+          const proj = projectById.get(e.projectId);
+          if (!proj) return 'Closer'; // unknown project — fall back to historical default
+          // Self-gen: the same person is both closer + setter. The M1 portion
+          // accrues to the setter slot, M2/M3 to the closer slot — preserve
+          // the legacy notes hint as the disambiguator since it's still
+          // stamped on engine-generated self-gen entries.
+          if (proj.repId === id && proj.setterId === id) {
+            return e.notes === 'Setter' ? 'Setter' : 'Closer';
+          }
+          if (proj.repId === id) return 'Closer';
+          if (proj.setterId === id) return 'Setter';
+          if (proj.additionalClosers?.some((c: { userId: string }) => c.userId === id)) return 'Co-closer';
+          if (proj.additionalSetters?.some((c: { userId: string }) => c.userId === id)) return 'Co-setter';
+          return 'Closer';
+        };
+        const closerEntries = repPayroll.filter((e) => classifyEntry(e) === 'Closer');
+        const coCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Co-closer');
+        const setterEntries = repPayroll.filter((e) => classifyEntry(e) === 'Setter' || classifyEntry(e) === 'Co-setter');
         const trainerEntries = repPayroll.filter((e) => e.paymentStage === 'Trainer');
-        const bonusEntries = repPayroll.filter((e) => e.type !== 'Deal' && e.notes !== 'Setter' && e.paymentStage !== 'Trainer');
+        const bonusEntries = repPayroll.filter((e) => classifyEntry(e) === 'Bonus');
         const sum = (arr: typeof repPayroll) => arr.reduce((s, e) => s + e.amount, 0);
         const closerPay = sum(closerEntries);
         const coCloserPay = sum(coCloserEntries);
