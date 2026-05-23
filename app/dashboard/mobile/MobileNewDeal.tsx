@@ -1971,7 +1971,13 @@ export default function MobileNewDeal() {
                 onChange={(e) => {
                   const val = e.target.value;
                   update('leadSource', val);
-                  if (val !== 'blitz') { update('blitzId', ''); update('setterId', ''); }
+                  // DO NOT clear setterId — see desktop new-deal/page.tsx and
+                  // the prior regression history (Tyson, Melissa, Hunter, Patrick).
+                  // A picked setter remains a valid setter when leadSource changes;
+                  // only the blitz field disappears, so blitzId is the only thing
+                  // we clear. The setterValidationError memo + submit guard catch
+                  // invalid setter/blitz combos visibly instead.
+                  if (val !== 'blitz') { update('blitzId', ''); }
                 }}
                 className={selectCls('')} style={v0InputStyle('')}
               >

@@ -1,0 +1,19 @@
+{
+  "$schema": "Allowlist for check-no-silent-rep-clears.mjs. Each entry: file:line that the gate would otherwise flag, with a written reason in `_reasons`. Adding an entry means you've verified the clear is intentional, cannot drop a user's picked value in a real submission flow, and has been reviewed by someone other than the author.",
+  "entries": [
+    { "location": "app/dashboard/new-deal/page.tsx:268" },
+    { "location": "app/dashboard/new-deal/page.tsx:1113" },
+    { "location": "app/dashboard/new-deal/page.tsx:1802" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:306" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1980" },
+    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:136" }
+  ],
+  "_reasons": {
+    "app/dashboard/new-deal/page.tsx:268": "repId-change effect — blitz availability is rep-scoped (admin can only pick a blitz the chosen rep is approved for), so an old blitz must be cleared when the rep changes. Safe: blitz auto-selection on a new rep does not preserve stale state. setterId is preserved (validator catches mismatches).",
+    "app/dashboard/new-deal/page.tsx:1113": "Admin's closer picker — same rationale as :268. The chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared here (was the regression source).",
+    "app/dashboard/new-deal/page.tsx:1802": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:306": "Mobile equivalent of the desktop :268 repId-change effect. Same rationale.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:1980": "Mobile equivalent of the desktop :1802 lead-source toggle. Same rationale.",
+    "app/dashboard/mobile/MobileProjectDetail.tsx:136": "useState initializer for editVals — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token even though the line starts with `leadSource: ''`)."
+  }
+}

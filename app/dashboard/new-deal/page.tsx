@@ -1101,7 +1101,18 @@ function NewDealPage() {
                       use the same canonical ordering from lib/sorting.ts. */}
                   <RepSelector
                     value={form.repId}
-                    onChange={(repId) => { update('repId', repId); update('setterId', ''); update('blitzId', ''); setErrors((prev) => ({ ...prev, repId: validateField('repId', repId) })); }}
+                    onChange={(repId) => {
+                      // DO NOT clear setterId here. Setter validity is scoped to
+                      // the BLITZ, not the closer. Clearing it on closer change
+                      // silently drops a deliberate pick — that's the regression
+                      // (Tyson 2026-04-22, Melissa 2026-04-26, Hunter 2026-05-11,
+                      // Patrick 2026-05-23). See setterValidationError memo: if
+                      // the new closer's blitz set makes the setter invalid, the
+                      // banner surfaces it and the submit guard blocks it.
+                      update('repId', repId);
+                      update('blitzId', '');
+                      setErrors((prev) => ({ ...prev, repId: validateField('repId', repId) }));
+                    }}
                     reps={closerPickerReps.filter((r) => r.id !== form.setterId)}
                     placeholder="— Select closer —"
                     clearLabel="— Select closer —"
@@ -1789,7 +1800,9 @@ function NewDealPage() {
                       update('leadSource', form.leadSource === value ? '' : value);
                       if (value !== 'blitz' || form.leadSource === 'blitz') {
                         update('blitzId', '');
-                        if (form.leadSource === 'blitz') { update('setterId', ''); }
+                        // DO NOT clear setterId — see comment on the closer picker
+                        // (and prior regressions). A setter is still a valid setter
+                        // even if the lead source is no longer "blitz".
                       }
                       if (form.leadSource !== 'blitz' && value === 'blitz' && !form.soldDate) {
                         update('soldDate', new Date().toLocaleDateString('en-CA'));
@@ -1833,9 +1846,12 @@ function NewDealPage() {
                           }
                         }
                       }
-                      // Blitz deselected — leave soldDate as-is to preserve any manually entered date
-                      // Clear setter whenever a blitz is selected (including first selection); don't clear on deselect
-                      if (blitzId) { update('setterId', ''); }
+                      // Blitz deselected — leave soldDate as-is to preserve any manually entered date.
+                      // DO NOT clear setterId here. This is the EXACT regression that
+                      // dropped Patrick from Bryce Marsh's deal on 2026-05-23 (and
+                      // Tyson, Melissa, Hunter before him). The setterValidationError
+                      // memo + submit guard surface invalid picks visibly — no silent
+                      // mutation. See feedback_setter_silent_clear memory.
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}

@@ -15,6 +15,8 @@
     "check:primitives": "node scripts/check-primitive-usage.mjs",
     "check:notifications": "node scripts/check-notification-coverage.mjs",
     "check:button-contrast": "node scripts/check-button-contrast.mjs",
+    "check:no-silent-rep-clears": "node scripts/check-no-silent-rep-clears.mjs",
+    "audit:pre-push": "node scripts/pre-push-audit.mjs",
     "snapshot:turso-schema": "tsx scripts/snapshot-turso-schema.mts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
