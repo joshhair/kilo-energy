@@ -2425,7 +2425,7 @@ function NewAssignmentModal({
           </div>
 
           {/* isActiveTraining */}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer">
             <input
               type="checkbox"
               checked={isActiveTraining}
@@ -2433,7 +2433,7 @@ function NewAssignmentModal({
               className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface-card)]"
             />
             <span className="text-base text-[var(--text-secondary)]">Active coaching</span>
-            <span className="text-xs text-[var(--text-muted)]">(uncheck for Residuals from day one)</span>
+            <span className="text-xs text-[var(--text-muted)] basis-full sm:basis-auto">(uncheck for Residuals from day one)</span>
           </label>
 
           {/* Tier list */}
@@ -2441,11 +2441,11 @@ function NewAssignmentModal({
             <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-2">Tier Chain</label>
             <div className="space-y-2">
               {tiers.map((tier, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
-                  <div className="flex-1 grid grid-cols-2 gap-2">
+                <div key={idx} className="flex items-start gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0 pt-5">T{idx + 1}</span>
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
+                      <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">$/W</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2457,18 +2457,7 @@ function NewAssignmentModal({
                       />
                     </div>
                     <div>
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
-                        <label className="flex items-center gap-1 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={tier.perpetuity}
-                            onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
-                            className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
-                          />
-                          <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
-                        </label>
-                      </div>
+                      <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">Up to deal</label>
                       <input
                         type="number"
                         step="1"
@@ -2481,12 +2470,21 @@ function NewAssignmentModal({
                           tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
                         }`}
                       />
+                      <label className="flex items-center gap-1.5 cursor-pointer mt-1.5">
+                        <input
+                          type="checkbox"
+                          checked={tier.perpetuity}
+                          onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
+                          className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
+                        />
+                        <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
+                      </label>
                     </div>
                   </div>
                   {tiers.length > 1 && (
                     <button
                       onClick={() => removeTier(idx)}
-                      className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
+                      className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1 mt-5"
                       title="Remove tier"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2543,7 +2541,7 @@ function NewAssignmentModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
               style={{ backgroundColor: 'var(--brand)' }}
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -2703,7 +2701,7 @@ function EditAssignmentModal({
               Trainer and rep can&apos;t be changed on an existing assignment. Delete and recreate to reassign.
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isActiveTraining}
@@ -2711,18 +2709,18 @@ function EditAssignmentModal({
                 className="w-4 h-4 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface-card)]"
               />
               <span className="text-base text-[var(--text-secondary)]">Active coaching</span>
-              <span className="text-xs text-[var(--text-muted)]">(uncheck for Residuals)</span>
+              <span className="text-xs text-[var(--text-muted)] basis-full sm:basis-auto">(uncheck for Residuals)</span>
             </label>
 
             <div>
               <label className="text-[var(--text-secondary)] text-sm uppercase tracking-wider block mb-2">Tier Chain</label>
               <div className="space-y-2">
                 {tiers.map((tier, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
-                    <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0">T{idx + 1}</span>
-                    <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div key={idx} className="flex items-start gap-2 bg-[var(--surface-card)]/50 rounded-xl p-3 border border-[var(--border-subtle)]">
+                    <span className="text-xs text-[var(--text-muted)] font-semibold w-6 flex-shrink-0 pt-5">T{idx + 1}</span>
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">$/W</label>
+                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">$/W</label>
                         <input
                           type="number"
                           step="0.01"
@@ -2734,18 +2732,7 @@ function EditAssignmentModal({
                         />
                       </div>
                       <div>
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Up to deal</label>
-                          <label className="flex items-center gap-1 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={tier.perpetuity}
-                              onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
-                              className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
-                            />
-                            <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
-                          </label>
-                        </div>
+                        <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider block mb-0.5">Up to deal</label>
                         <input
                           type="number"
                           step="1"
@@ -2758,12 +2745,21 @@ function EditAssignmentModal({
                             tier.perpetuity ? 'text-[var(--text-dim)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'
                           }`}
                         />
+                        <label className="flex items-center gap-1.5 cursor-pointer mt-1.5">
+                          <input
+                            type="checkbox"
+                            checked={tier.perpetuity}
+                            onChange={(e) => updateTier(idx, 'perpetuity', e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-[var(--border)] text-amber-500 focus:ring-amber-500/50 bg-[var(--surface)]"
+                          />
+                          <span className="text-xs text-[var(--text-muted)]">Perpetuity</span>
+                        </label>
                       </div>
                     </div>
                     {tiers.length > 1 && (
                       <button
                         onClick={() => removeTier(idx)}
-                        className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1"
+                        className="text-[var(--text-muted)] hover:text-[var(--accent-red-text)] transition-colors p-1 mt-5"
                         title="Remove tier"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -2797,7 +2793,7 @@ function EditAssignmentModal({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-black transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
                 style={{ backgroundColor: 'var(--brand)' }}
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

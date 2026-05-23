@@ -1,0 +1,11 @@
+{
+  "$schema": "Allowlisted file:line locations where the check:button-contrast gate would otherwise flag a violation. Each entry needs a one-sentence reason that survives review. Adding an entry means the styling is intentional and you've confirmed it reads correctly in BOTH dark and light themes.",
+
+  "whiteText": [],
+  "textColorAsBackground": [
+    "app/dashboard/components/BottomNav.tsx:130"
+  ],
+  "_reasons": {
+    "app/dashboard/components/BottomNav.tsx:130": "2px-tall nav indicator pill — no text rendered on top, only a hairline marker that picks up the brand emerald color. Background:--accent-emerald-text is intentional here as a color reference."
+  }
+}

@@ -672,13 +672,13 @@ export default function MobileTraining({
                               <div className="overflow-hidden">
                             {isMenuOpen && (
                               <div
-                                className="px-4 pb-3 flex flex-wrap gap-2"
+                                className="px-4 pb-3 pt-3 grid grid-cols-2 gap-2"
                                 style={{ borderTop: '1px solid var(--border-subtle)' }}
                               >
                                 <Link
                                   href={`/dashboard/users/${row.assignment.traineeId}`}
                                   onClick={() => setOpenActionMenuId(null)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
                                   style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
                                 >
                                   View profile
@@ -687,16 +687,16 @@ export default function MobileTraining({
                                 {row.assignment.isActiveTraining === false ? (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); resumeTraining(row.assignment.id); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
-                                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
+                                    style={{ background: 'var(--accent-amber-solid)', color: 'var(--text-on-accent)', border: '1px solid var(--accent-amber-solid)' }}
                                   >
                                     <Play className="w-3 h-3" /> Resume
                                   </button>
                                 ) : (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); markGraduated(row.assignment.id); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
-                                    style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
+                                    style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)', border: '1px solid var(--accent-emerald-solid)' }}
                                   >
                                     <ShieldCheck className="w-3 h-3" /> Graduate
                                   </button>
@@ -705,7 +705,7 @@ export default function MobileTraining({
                                 {!row.assignment.id.startsWith('direct-') && onEditAssignment && (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); onEditAssignment(row.assignment.id); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
                                     style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
                                   >
                                     <Pencil className="w-3 h-3" /> Edit
@@ -715,7 +715,7 @@ export default function MobileTraining({
                                 {onBackfill && (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); onBackfill(row.assignment.id); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
                                     style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
                                   >
                                     <RotateCcw className="w-3 h-3" /> Backfill
@@ -725,8 +725,8 @@ export default function MobileTraining({
                                 {onDeleteAssignment && (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); onDeleteAssignment(row.assignment.id); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
-                                    style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 10%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)' }}
+                                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
+                                    style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 12%, transparent)', color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)' }}
                                   >
                                     <Trash2 className="w-3 h-3" /> Delete
                                   </button>

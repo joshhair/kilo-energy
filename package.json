@@ -14,6 +14,7 @@
     "check:privacy-gate": "node scripts/check-privacy-gate-coverage.mjs",
     "check:primitives": "node scripts/check-primitive-usage.mjs",
     "check:notifications": "node scripts/check-notification-coverage.mjs",
+    "check:button-contrast": "node scripts/check-button-contrast.mjs",
     "snapshot:turso-schema": "tsx scripts/snapshot-turso-schema.mts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
