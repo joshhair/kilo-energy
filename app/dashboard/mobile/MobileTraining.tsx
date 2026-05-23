@@ -232,7 +232,7 @@ export default function MobileTraining({
   }, [trainerAssignments, setTrainerAssignments, toast]);
 
   const markGraduated = useCallback((id: string) => patchAssignment(id, { isActiveTraining: false }, 'Marked as graduated'), [patchAssignment]);
-  const resumeTraining = useCallback((id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed'), [patchAssignment]);
+  const resumeTraining = useCallback((id: string) => patchAssignment(id, { isActiveTraining: true }, 'Coaching reactivated'), [patchAssignment]);
 
   const myAssignments = effectiveRole === 'admin'
     ? trainerAssignments
@@ -689,8 +689,9 @@ export default function MobileTraining({
                                     onClick={() => { setOpenActionMenuId(null); resumeTraining(row.assignment.id); }}
                                     className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"
                                     style={{ background: 'var(--accent-amber-solid)', color: 'var(--text-on-accent)', border: '1px solid var(--accent-amber-solid)' }}
+                                    title="Move this rep back to Active coaching from Residuals"
                                   >
-                                    <Play className="w-3 h-3" /> Resume
+                                    <Play className="w-3 h-3" /> Reactivate
                                   </button>
                                 ) : (
                                   <button

@@ -673,7 +673,7 @@ function TrainingPageInner() {
   };
 
   const markGraduated = (id: string) => patchAssignment(id, { isActiveTraining: false }, 'Marked as graduated');
-  const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Training resumed');
+  const resumeTraining = (id: string) => patchAssignment(id, { isActiveTraining: true }, 'Coaching reactivated');
 
   const deleteAssignment = (id: string) => {
     // Synthetic rows surfaced from per-project trainer overrides aren't
@@ -1332,7 +1332,7 @@ function TrainingPageInner() {
                                 onClick={() => { setOpenMenuId(null); resumeTraining(a.id); }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
                               >
-                                <Play className="w-3.5 h-3.5" /> Resume Training
+                                <Play className="w-3.5 h-3.5" /> Reactivate Coaching
                               </button>
                             ) : (
                               <button
@@ -2008,11 +2008,11 @@ function ResidualTraineeCard({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onResume}
-            title="Resume training — move back to Active Trainees"
+            title="Reactivate coaching — move back to Active Trainees"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-amber-text)] hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Resume Training
+            Reactivate Coaching
           </button>
         </div>
       </div>
@@ -2380,10 +2380,10 @@ function NewAssignmentModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] overflow-y-auto overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="min-h-full grid place-items-center p-4">
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-4">
         <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 rounded-2xl p-6 w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -2676,10 +2676,10 @@ function EditAssignmentModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto overscroll-contain"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] overflow-y-auto overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="min-h-full grid place-items-center p-4">
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-4">
         <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 rounded-2xl p-6 w-full max-w-lg">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
