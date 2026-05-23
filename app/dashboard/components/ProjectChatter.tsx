@@ -80,8 +80,10 @@ function isDueDateOverdue(iso: string): boolean {
 }
 
 /** Parse `@Name` patterns and render highlighted spans.
- *  Matches only against known user names to avoid over-matching trailing words. */
-function renderMessageText(text: string, knownNames: string[]): React.ReactNode[] {
+ *  Matches only against known user names to avoid over-matching trailing words.
+ *  `bubbleTone='own'` lifts the mention to a higher-contrast color since the
+ *  own-message bubble (emerald-soft) collides with the default emerald-text. */
+function renderMessageText(text: string, knownNames: string[], bubbleTone: 'own' | 'other' = 'other'): React.ReactNode[] {
   if (knownNames.length === 0) return [<span key={0}>{text}</span>];
   // Sort longest-first so multi-word names beat their sub-strings
   const escaped = [...knownNames]
@@ -91,8 +93,14 @@ function renderMessageText(text: string, knownNames: string[]): React.ReactNode[
   const parts = text.split(pattern);
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
+      // Own-message bubble (emerald-soft bg) → mention text uses primary so
+      // it pops against the green tint. Others' bubble (neutral surface bg)
+      // → keep the brand emerald.
+      const mentionClass = bubbleTone === 'own'
+        ? 'text-[var(--text-primary)] font-bold underline decoration-[var(--accent-emerald-display)] decoration-2 underline-offset-2'
+        : 'text-[var(--accent-emerald-text)] font-medium';
       return (
-        <span key={i} className="text-[var(--accent-emerald-text)] font-medium">{part}</span>
+        <span key={i} className={mentionClass}>{part}</span>
       );
     }
     return <span key={i}>{part}</span>;
@@ -827,7 +835,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                   >
                     {/* Message text */}
                     <div className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap break-words">
-                      {renderMessageText(msg.text, mentionableUsers.map((u) => u.name))}
+                      {renderMessageText(msg.text, mentionableUsers.map((u) => u.name), isOwn ? 'own' : 'other')}
                     </div>
 
                     {/* Check items — indented inside the bubble */}
@@ -944,10 +952,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             value={composeText}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Write a message... Use @ to mention a rep"
+            placeholder="Write a message…"
             rows={1}
             style={{ maxHeight: COMPOSER_MAX_HEIGHT_PX }}
-            className="flex-1 min-w-0 bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto"
+            className="flex-1 min-w-0 bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto sm:min-h-[4.5rem]"
           />
 
           {/* Inline icon buttons on mobile (right of the textarea); desktop
