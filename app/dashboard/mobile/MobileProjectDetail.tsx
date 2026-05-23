@@ -1096,7 +1096,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                           </button>
                           <Collapse open={isOpen}>
                             <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
-                              <div className="flex items-center justify-between gap-3 py-2">
+                              {/* Same row layout as Closer/Setter expanded rows (post 2026-05-21 fix):
+                                  flex items-center, gap-2, button shrinks to icon-size + shorter
+                                  label so 'Mark Unpaid' / 'Projected' can't overlap the amount text
+                                  on iPhone-narrow viewports. */}
+                              <div className="flex items-center justify-between gap-2 py-2">
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <span className="inline-flex items-center justify-center px-2.5 h-9 rounded-full text-xs font-bold shrink-0"
                                     style={{
@@ -1109,7 +1113,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                                     <span className="text-base font-bold tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
                                       {fmt$(leg.amount)}
                                     </span>
-                                    <span className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
+                                    <span className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-dim)' }}>
                                       ${leg.rate.toFixed(2)}/W × {project.kWSize} kW
                                     </span>
                                   </div>
@@ -1117,7 +1121,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                                 {leg.hasEntry ? (
                                   <button
                                     onClick={() => togglePartyEntryPaid(leg.trainerId, 'Trainer')}
-                                    className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold min-h-[40px] active:scale-[0.97] transition-transform duration-75"
+                                    aria-label={leg.paid ? 'Mark unpaid' : 'Mark paid'}
+                                    className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold min-h-[32px] active:scale-[0.97] transition-transform duration-75"
                                     style={{
                                       background: leg.paid ? 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)' : 'color-mix(in srgb, var(--accent-amber-solid) 18%, transparent)',
                                       color: leg.paid ? 'var(--accent-emerald-text)' : 'var(--accent-amber-text)',
@@ -1125,10 +1130,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                                       WebkitTapHighlightColor: 'transparent',
                                     }}
                                   >
-                                    {leg.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                    {leg.paid ? 'Unpaid' : 'Mark Paid'}
                                   </button>
                                 ) : (
-                                  <span className="shrink-0 text-xs" style={{ color: 'var(--text-dim)' }}>Projected (no entry until install)</span>
+                                  // Projected (no entry yet) — short label, allowed to wrap to a
+                                  // 2nd line on narrow screens instead of pushing into the amount column.
+                                  <span className="shrink-0 max-w-[110px] text-right text-[11px] leading-tight" style={{ color: 'var(--text-dim)' }}>
+                                    Projected<br />(after install)
+                                  </span>
                                 )}
                               </div>
                             </div>

@@ -688,19 +688,22 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
 
   // Container layout swaps when expanded: a card with a capped scroll area
   // (embedded mode) → a fullscreen flex column with the message list growing
-  // to fill the available viewport (sheet mode). Composer stays sticky in
-  // both modes via the inline `sticky bottom-0` further down.
+  // to fill the available viewport (sheet mode). The expanded panel adds
+  // safe-area-inset-top padding so the X button clears the iPhone notch +
+  // any browser chrome (URL bar bounce can otherwise cover the header).
   const outerClass = expanded
-    ? 'fixed inset-0 z-50 bg-[var(--surface-page)] p-4 sm:p-6 flex flex-col animate-modal-panel overflow-hidden'
+    ? 'fixed inset-0 z-50 bg-[var(--surface-page)] px-4 sm:px-6 pb-4 sm:pb-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:pt-6 flex flex-col animate-modal-panel overflow-hidden'
     : 'card-surface rounded-2xl p-4 sm:p-6 mt-5';
   const messageListClass = expanded
-    ? 'flex-1 overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2'
+    ? 'flex-1 overflow-y-auto space-y-2 mb-3 pr-1 scrollbar-thin scroll-pb-2'
     : 'max-h-[70vh] sm:max-h-[24rem] overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2';
 
   const body = (
     <div className={outerClass}>
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      {/* Header — sticky in expanded mode so the collapse X stays reachable
+          even after scrolling far into history. In embedded mode the header
+          scrolls naturally with the page. */}
+      <div className={`flex items-center gap-2 mb-3 sm:mb-4 ${expanded ? 'shrink-0' : ''}`}>
         <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
         <h2 className="text-[var(--text-primary)] font-semibold">Chatter</h2>
         {unreadCount > 0 && (
@@ -928,49 +931,76 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Compose Area — sticky to the bottom of the card on mobile so the
-          send action is always reachable when scrolling the message list.
-          Negative margins extend it edge-to-edge inside the p-4 card; the
+      {/* Compose Area — pinned to the bottom of the card on mobile so the
+          send action is always reachable while scrolling messages. Tightened
+          significantly post-launch feedback (2026-05-22): textarea starts at
+          1 row + auto-grow, toolbar shrunk, Send button icon-only on mobile
+          to reduce the bar height ~60% (was eating half the viewport). The
           safe-area-inset padding clears the iPhone home indicator. */}
-      <div className="sticky bottom-0 -mx-4 sm:mx-0 -mb-4 sm:mb-0 px-4 sm:px-0 pb-[env(safe-area-inset-bottom)] sm:pb-0 bg-[var(--surface)] sm:bg-transparent border-t sm:border-t-0 border-[var(--border)]/60 pt-3 sm:pt-0">
-        <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden">
+      <div className={`${expanded ? '' : 'sticky bottom-0'} -mx-4 sm:mx-0 -mb-4 sm:mb-0 px-4 sm:px-0 pb-[env(safe-area-inset-bottom)] sm:pb-0 bg-[var(--surface)] sm:bg-transparent border-t sm:border-t-0 border-[var(--border)]/60 pt-2 sm:pt-0`}>
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden flex items-end gap-2 p-1.5 sm:p-0 sm:block">
           <textarea
             ref={textareaRef}
             value={composeText}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             placeholder="Write a message... Use @ to mention a rep"
-            rows={2}
+            rows={1}
             style={{ maxHeight: COMPOSER_MAX_HEIGHT_PX }}
-            className="w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-4 py-3 resize-none focus:outline-none overflow-y-auto"
+            className="flex-1 min-w-0 bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto"
           />
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-[var(--border)]/60">
+          {/* Inline icon buttons on mobile (right of the textarea); desktop
+              keeps the original full toolbar row beneath for the Cmd+Enter hint
+              and the labeled Send button. */}
+          <div className="flex items-center gap-1 shrink-0 sm:hidden">
+            <button
+              onClick={addChecklistLine}
+              title="Add checklist item"
+              aria-label="Add checklist item"
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 active:scale-[0.94] transition-all"
+            >
+              <CheckSquare className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={!composeText.trim() || sending}
+              aria-label="Send message"
+              className="flex items-center justify-center w-10 h-10 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.94] transition-all"
+              style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Desktop toolbar — original layout with the labeled Add Checklist
+              + Cmd+Enter hint + Send pill. Hidden on mobile because the inline
+              icon row above replaces it. */}
+          <div className="hidden sm:flex items-center justify-between px-3 py-2 border-t border-[var(--border)]/60">
             <div className="flex items-center gap-1">
               <button
                 onClick={addChecklistLine}
                 title="Add checklist item"
                 aria-label="Add checklist item"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 justify-center sm:justify-start"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 transition-colors"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Add Checklist Item</span>
+                <span>Add Checklist Item</span>
               </button>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[var(--text-dim)] text-[10px] hidden sm:inline">
+              <span className="text-[var(--text-dim)] text-[10px]">
                 {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to send
               </span>
               <button
                 onClick={handleSend}
                 disabled={!composeText.trim() || sending}
                 aria-label="Send message"
-                className="flex items-center gap-1.5 px-4 py-2 sm:px-3 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97] min-h-[44px] sm:min-h-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 active:scale-[0.97]"
                 style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
               >
-                <Send className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                <Send className="w-3.5 h-3.5" />
                 Send
               </button>
             </div>

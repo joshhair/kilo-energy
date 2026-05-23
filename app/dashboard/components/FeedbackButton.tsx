@@ -187,10 +187,17 @@ export function FeedbackButton() {
         <span className="hidden sm:inline">Send feedback</span>
       </button>
 
-      {/* Modal */}
+      {/* Modal — anchored to the BOTTOM on mobile and the CENTER on desktop.
+          On iOS Safari, items-center collides with the keyboard: when the
+          textarea is focused, Safari shrinks the visible viewport and slides
+          the modal up so the top gets clipped (Josh hit this 2026-05-22).
+          items-end on mobile pins the modal to the bottom edge — the keyboard
+          appears underneath, the modal stays fully visible. Desktop keeps
+          the original centered behavior. max-h uses dvh which accounts for
+          the dynamic visible viewport (no growing past keyboard). */}
       {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget && !submitting) setOpen(false);
@@ -201,7 +208,7 @@ export function FeedbackButton() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="feedback-modal-title"
-            className="w-full max-w-md rounded-2xl shadow-2xl"
+            className="w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[calc(100dvh-env(safe-area-inset-top))] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
