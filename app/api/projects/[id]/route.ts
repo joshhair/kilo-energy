@@ -7,6 +7,7 @@ import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/sche
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../../lib/serialize';
 import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib/commission-server';
+import { resolveTrainerLegs } from '../../../../lib/commission';
 import { fromDollars } from '../../../../lib/money';
 import type { InstallerBaseline } from '../../../../lib/data';
 import { logger, errorContext } from '../../../../lib/logger';
@@ -585,30 +586,236 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    // Trainer stage: realign to the new trainerRate × kW pool. When a
-    // project has multiple Draft/Pending Trainer entries (e.g. 80% at
-    // M2 + 20% at M3 under installPayPct=80), preserve the existing
-    // proportional split so the M2/M3 breakdown stays intact. Single-
-    // entry case collapses to "entry gets the full pool" which is the
-    // common path for projects before Installed phase.
-    const trainerEntryIds = draftsToSync.filter((e) => e.paymentStage === 'Trainer').map((e) => e.id);
-    if (trainerEntryIds.length > 0) {
-      const trainerRate = project.trainerRate ?? 0;
-      const kW = project.kWSize ?? 0;
-      const poolCents = Math.round(trainerRate * kW * 100_000); // rate × kW × 1000 dollars, × 100 = cents
-      const trainerRows = await prisma.payrollEntry.findMany({
-        where: { id: { in: trainerEntryIds } },
-        select: { id: true, amountCents: true },
+    // Trainer stage: multi-party recompute (2026-05-23). Rather than
+    // realign a single trainer pool's amounts (the pre-2026-05-23 logic
+    // which assumed one trainer per project), DELETE all unpaid Trainer
+    // entries and regenerate from current project state using the
+    // multi-party leg resolver. Paid entries are NEVER touched — money
+    // has moved and rewriting the row would falsify the audit trail.
+    // The Bryce/Patrick/Tyson case (two setters with different trainers)
+    // requires this: editing the deal to add Tyson as a co-setter must
+    // generate Paul's Trainer entry alongside Hunter's.
+    const trainerEntryRows = draftsToSync.filter((e) => e.paymentStage === 'Trainer');
+    if (trainerEntryRows.length > 0) {
+      // Look up trainer assignments + every prior Trainer entry on the
+      // system (the resolver uses them for tier-progression counting).
+      const [trainerAssignmentsForRegen, allTrainerEntries, allReps] = await Promise.all([
+        prisma.trainerAssignment.findMany({ include: { tiers: { orderBy: { sortOrder: 'asc' } } } }),
+        prisma.payrollEntry.findMany({
+          where: { paymentStage: 'Trainer' },
+          select: { repId: true, projectId: true, paymentStage: true, status: true },
+        }),
+        prisma.user.findMany({ select: { id: true, firstName: true, lastName: true } }),
+      ]);
+      const repNameById = (uid: string): string | undefined => {
+        const u = allReps.find((r) => r.id === uid);
+        if (!u) return undefined;
+        return `${u.firstName} ${u.lastName}`.trim();
+      };
+      const trainerAssignmentsResolverShape = trainerAssignmentsForRegen.map((a) => ({
+        id: a.id,
+        trainerId: a.trainerId,
+        traineeId: a.traineeId,
+        isActiveTraining: a.isActiveTraining,
+        tiers: a.tiers.map((t) => ({ upToDeal: t.upToDeal, ratePerW: t.ratePerW })),
+      }));
+
+      // Build the party lists from the just-updated project.
+      const closerPartiesForRegen = [
+        { userId: project.closerId, m2Amount: project.m2AmountCents / 100 },
+        ...project.additionalClosers.map((c) => ({
+          userId: c.userId,
+          userName: c.user ? `${c.user.firstName} ${c.user.lastName}`.trim() : undefined,
+          m2Amount: c.m2AmountCents / 100,
+        })),
+      ];
+      const setterPartiesForRegen = project.setterId
+        ? [
+            { userId: project.setterId, m2Amount: project.setterM2AmountCents / 100 },
+            ...project.additionalSetters.map((s) => ({
+              userId: s.userId,
+              userName: s.user ? `${s.user.firstName} ${s.user.lastName}`.trim() : undefined,
+              m2Amount: s.m2AmountCents / 100,
+            })),
+          ]
+        : project.additionalSetters.map((s) => ({
+            userId: s.userId,
+            userName: s.user ? `${s.user.firstName} ${s.user.lastName}`.trim() : undefined,
+            m2Amount: s.m2AmountCents / 100,
+          }));
+
+      const rawLegs = resolveTrainerLegs(
+        {
+          project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate },
+          closerParties: closerPartiesForRegen,
+          setterParties: setterPartiesForRegen,
+          trainerAssignments: trainerAssignmentsResolverShape,
+          payrollEntries: allTrainerEntries.map((e) => ({
+            repId: e.repId,
+            projectId: e.projectId,
+            paymentStage: e.paymentStage,
+          })),
+        },
+        repNameById,
+      );
+
+      // Self-trainer-with-setter guard mirror.
+      const anySetterForRegen = setterPartiesForRegen.some((p) => !!p.userId);
+      const legsForRegen = rawLegs.filter((leg) => {
+        if (leg.side === 'closer' && anySetterForRegen && leg.trainerId === leg.traineeId) return false;
+        return true;
       });
-      const currentSum = trainerRows.reduce((s, e) => s + e.amountCents, 0);
-      for (const row of trainerRows) {
-        const proportion = currentSum > 0 ? row.amountCents / currentSum : 1 / trainerRows.length;
-        const newCents = Math.round(poolCents * proportion);
-        await prisma.payrollEntry.update({
-          where: { id: row.id },
-          data: { amountCents: newCents },
+
+      // Aggregate by trainer with cross-side cap at 1.0.
+      type Agg = { trainerId: string; share: number; rate: number; chosenShare: number; trainees: string[]; isOverride: boolean };
+      const byTrainer = new Map<string, Agg>();
+      for (const leg of legsForRegen) {
+        const existing = byTrainer.get(leg.trainerId);
+        if (existing) {
+          existing.share += leg.share;
+          if (leg.share > existing.chosenShare) {
+            existing.rate = leg.ratePerW;
+            existing.chosenShare = leg.share;
+          }
+          if (leg.traineeName && !existing.trainees.includes(leg.traineeName)) {
+            existing.trainees.push(leg.traineeName);
+          }
+        } else {
+          byTrainer.set(leg.trainerId, {
+            trainerId: leg.trainerId,
+            share: leg.share,
+            rate: leg.ratePerW,
+            chosenShare: leg.share,
+            trainees: leg.traineeName ? [leg.traineeName] : [],
+            isOverride: leg.side === 'override',
+          });
+        }
+      }
+
+      // Distribute trainer pay across M2/M3 by installPct split. Pull the
+      // installer's installPayPct so M2 gets installPct% and M3 gets the
+      // remainder. Matches the engine's M2/M3 amount calculation.
+      const installerForRegen = await prisma.installer.findUnique({
+        where: { id: project.installerId },
+        select: { installPayPct: true },
+      });
+      const installPctForRegen = installerForRegen?.installPayPct ?? 100;
+      const kWForRegen = project.kWSize ?? 0;
+
+      // Identify which Trainer entries are PAID (preserve them) vs UNPAID
+      // (delete + recreate). Paid entries already in DB are NOT in
+      // draftsToSync (status filter excluded Paid), but we re-check here
+      // since the regen loop only emits entries that don't conflict.
+      const paidTrainerEntries = await prisma.payrollEntry.findMany({
+        where: { projectId: id, paymentStage: 'Trainer', status: 'Paid' },
+        select: { repId: true, notes: true },
+      });
+      const paidNotesPrefixes = new Set(
+        paidTrainerEntries.map((e) => `${e.repId}::${(e.notes ?? '').split(' ($')[0]}`),
+      );
+
+      // Wipe unpaid trainer entries for this project.
+      const unpaidTrainerIds = trainerEntryRows.map((r) => r.id);
+      if (unpaidTrainerIds.length > 0) {
+        await prisma.payrollEntry.deleteMany({
+          where: { id: { in: unpaidTrainerIds } },
         });
       }
+
+      // Determine which milestones to regen — only those with existing
+      // M-stage entries (i.e., the deal has reached that milestone).
+      const stagesPresent = new Set(
+        (await prisma.payrollEntry.findMany({
+          where: { projectId: id, paymentStage: { in: ['M2', 'M3'] } },
+          select: { paymentStage: true },
+        })).map((e) => e.paymentStage),
+      );
+
+      // Insert regenerated trainer entries.
+      const m2PayDateRow = await prisma.payrollEntry.findFirst({
+        where: { projectId: id, paymentStage: 'M2' },
+        select: { date: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      const m3PayDateRow = await prisma.payrollEntry.findFirst({
+        where: { projectId: id, paymentStage: 'M3' },
+        select: { date: true },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const newTrainerEntriesData: Array<{
+        repId: string; projectId: string; amountCents: number;
+        type: string; paymentStage: string; status: string; date: string;
+        notes: string;
+      }> = [];
+
+      let regenCount = 0;
+      for (const agg of byTrainer.values()) {
+        const cappedShare = Math.min(1.0, agg.share);
+        const traineeLabel = agg.trainees.length > 0 ? agg.trainees.join(' + ') : '';
+        const notesBase = traineeLabel
+          ? `Trainer override {STAGE} — ${traineeLabel}`
+          : `Trainer override {STAGE}`;
+
+        // M2 amount
+        if (stagesPresent.has('M2')) {
+          const amount = agg.rate * kWForRegen * 1000 * (installPctForRegen / 100) * cappedShare;
+          const cents = Math.round(amount * 100);
+          if (cents > 0) {
+            const paidKey = `${agg.trainerId}::${notesBase.replace('{STAGE}', 'M2')}`;
+            if (!paidNotesPrefixes.has(paidKey)) {
+              newTrainerEntriesData.push({
+                repId: agg.trainerId,
+                projectId: id,
+                amountCents: cents,
+                type: 'Deal',
+                paymentStage: 'Trainer',
+                status: 'Draft',
+                date: m2PayDateRow?.date ?? new Date().toISOString().slice(0, 10),
+                notes: `${notesBase.replace('{STAGE}', 'M2')} ($${agg.rate.toFixed(2)}/W)`,
+              });
+              regenCount++;
+            }
+          }
+        }
+        // M3 amount
+        if (stagesPresent.has('M3') && installPctForRegen < 100) {
+          const m3Pct = (100 - installPctForRegen) / 100;
+          const amount = agg.rate * kWForRegen * 1000 * m3Pct * cappedShare;
+          const cents = Math.round(amount * 100);
+          if (cents > 0) {
+            const paidKey = `${agg.trainerId}::${notesBase.replace('{STAGE}', 'M3')}`;
+            if (!paidNotesPrefixes.has(paidKey)) {
+              newTrainerEntriesData.push({
+                repId: agg.trainerId,
+                projectId: id,
+                amountCents: cents,
+                type: 'Deal',
+                paymentStage: 'Trainer',
+                status: 'Draft',
+                date: m3PayDateRow?.date ?? new Date().toISOString().slice(0, 10),
+                notes: `${notesBase.replace('{STAGE}', 'M3')} ($${agg.rate.toFixed(2)}/W)`,
+              });
+              regenCount++;
+            }
+          }
+        }
+      }
+
+      if (newTrainerEntriesData.length > 0) {
+        await prisma.payrollEntry.createMany({ data: newTrainerEntriesData });
+      }
+
+      // Audit log — capture before/after for forensic trace.
+      await logChange({
+        actor: { id: user.id, email: user.email ?? null },
+        action: 'trainer_payroll_recomputed',
+        entityType: 'Project',
+        entityId: id,
+        before: { unpaidTrainerEntriesRemoved: unpaidTrainerIds.length },
+        after: { trainerEntriesCreated: regenCount, trainersOnDeal: Array.from(byTrainer.keys()) },
+        fields: [],
+      });
     }
 
     logger.info('drafts_realigned_after_recompute', {

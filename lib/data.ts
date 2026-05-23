@@ -1448,8 +1448,8 @@ export function getInstallerRatesForDeal(
 // Re-exported here so existing `import { calculateCommission } from
 // '@/lib/data'` call sites continue working. New code should import
 // from '@/lib/commission' directly.
-export { calculateCommission, splitCloserSetterPay, resolveTrainerRate } from './commission';
-export type { CommissionSplit, TrainerRateResolution, TrainerRateReason } from './commission';
+export { calculateCommission, splitCloserSetterPay, resolveTrainerRate, resolveTrainerLegs } from './commission';
+export type { CommissionSplit, TrainerRateResolution, TrainerRateReason, TrainerLeg, TrainerLegSide, TrainerLegsInput, TrainerPartyInput } from './commission';
 
 // ─── Incentives ──────────────────────────────────────────────────────────────
 

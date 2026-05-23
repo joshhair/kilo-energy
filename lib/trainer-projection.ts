@@ -20,8 +20,10 @@
  */
 import {
   resolveTrainerRate,
+  resolveTrainerLegs,
   type TrainerResolverAssignment,
   type TrainerResolverPayrollEntry,
+  type TrainerLeg,
 } from './commission';
 
 /** Local extension — `paid` flag needs the entry's status, which the
@@ -44,7 +46,7 @@ export interface ProjectedTrainerLeg {
   trainerId: string;
   /** Resolved $/W rate. */
   rate: number;
-  /** Total projected $ for this leg = rate × kW × 1000. Lumped (not split into M2/M3). */
+  /** Total projected $ for this leg = rate × kW × 1000 × share. Lumped (not split into M2/M3). */
   amount: number;
   leg: 'closer-trainer' | 'setter-trainer';
   /** Why this leg fired (project override, tier, etc.). */
@@ -53,6 +55,20 @@ export interface ProjectedTrainerLeg {
   paid: boolean;
   /** True when an actual PayrollEntry already exists for this leg (i.e., not just projection). */
   hasEntry: boolean;
+  /**
+   * (Multi-party only) Distinct trainees credited to this trainer on this deal.
+   * Populated when the multi-party path is used (additionalClosers or
+   * additionalSetters provided to computeProjectedTrainerLegs). Always at
+   * least one trainee on the multi-party path; empty/undefined on legacy
+   * single-party legs.
+   */
+  trainees?: Array<{ userId: string | null; name: string }>;
+  /**
+   * (Multi-party only) Fraction of the deal this trainer is paid on
+   * (0..1 after the cross-side cap). Undefined on legacy single-party
+   * legs (those always represent share=1.0 of the deal).
+   */
+  share?: number;
 }
 
 export interface TrainerProjectionInput {
@@ -63,6 +79,19 @@ export interface TrainerProjectionInput {
   repId: string;
   setterId: string | null;
   kWSize: number;
+  /**
+   * (Multi-party — optional.) When ANY of `additionalClosers`,
+   * `additionalSetters`, `m2Amount`, or `setterM2Amount` is provided,
+   * the multi-party path runs: every party's TrainerAssignment chain
+   * is resolved and shares are computed from m2 amounts. When omitted,
+   * the legacy single-party path runs (preserves pre-2026-05-23
+   * behavior for every existing caller). Mirrors the engine logic in
+   * lib/context/project-transitions.ts.
+   */
+  additionalClosers?: ReadonlyArray<{ userId: string; userName?: string; m2Amount: number }>;
+  additionalSetters?: ReadonlyArray<{ userId: string; userName?: string; m2Amount: number }>;
+  m2Amount?: number;
+  setterM2Amount?: number;
 }
 
 /**
@@ -78,6 +107,22 @@ export function computeProjectedTrainerLegs(
   trainerAssignments: readonly TrainerResolverAssignment[],
   payrollEntries: readonly PayrollEntryWithStatus[],
 ): ProjectedTrainerLeg[] {
+  // Multi-party path — when the caller passes additionalClosers/Setters or
+  // explicit m2 amounts, walk every party so co-setter/co-closer trainers
+  // get projected legs of their own. Added 2026-05-23 to support the
+  // Bryce/Patrick/Tyson multi-trainer scenario.
+  const usesMultiParty =
+    (project.additionalClosers && project.additionalClosers.length > 0) ||
+    (project.additionalSetters && project.additionalSetters.length > 0) ||
+    project.m2Amount !== undefined ||
+    project.setterM2Amount !== undefined;
+
+  if (usesMultiParty) {
+    return computeMultiPartyProjectedLegs(project, trainerAssignments, payrollEntries);
+  }
+
+  // ── Legacy single-party path — preserves every pre-2026-05-23 behavior
+  // for callers that haven't been upgraded yet. ─────────────────────────
   const legs: ProjectedTrainerLeg[] = [];
   const wattsTotal = (project.kWSize ?? 0) * 1000;
 
@@ -173,6 +218,149 @@ function buildLeg(
     paid: !!(entry && entry.status === 'Paid'),
     hasEntry: !!entry,
   };
+}
+
+/**
+ * Multi-party path — walks every closer + setter party on the deal,
+ * resolves each chain, applies the same self-trainer-with-setter guard
+ * and cross-side cap as the engine in project-transitions.ts.
+ *
+ * Returns one ProjectedTrainerLeg per dedup'd trainer (not per party),
+ * with `trainees[]` listing every party whose chain led to this trainer
+ * and `share` reflecting their summed contribution (capped at 1.0).
+ *
+ * For the project page Commission Breakdown, this means a Bryce/Patrick/
+ * Tyson deal renders two trainer rows: Hunter (via Patrick, share 0.5)
+ * and Paul (via Tyson, share 0.5).
+ */
+function computeMultiPartyProjectedLegs(
+  project: TrainerProjectionInput,
+  trainerAssignments: readonly TrainerResolverAssignment[],
+  payrollEntries: readonly PayrollEntryWithStatus[],
+): ProjectedTrainerLeg[] {
+  const wattsTotal = (project.kWSize ?? 0) * 1000;
+
+  const primaryCloserM2 = project.m2Amount ?? 1;
+  const closerParties = [
+    { userId: project.repId, m2Amount: primaryCloserM2 },
+    ...(project.additionalClosers ?? []).map((c) => ({
+      userId: c.userId,
+      userName: c.userName,
+      m2Amount: c.m2Amount,
+    })),
+  ];
+  const setterParties = project.setterId
+    ? [
+        { userId: project.setterId, m2Amount: project.setterM2Amount ?? 1 },
+        ...(project.additionalSetters ?? []).map((s) => ({
+          userId: s.userId,
+          userName: s.userName,
+          m2Amount: s.m2Amount,
+        })),
+      ]
+    : (project.additionalSetters ?? []).map((s) => ({
+        userId: s.userId,
+        userName: s.userName,
+        m2Amount: s.m2Amount,
+      }));
+
+  const repName = (_id: string): string | undefined => undefined; // names hydrated by caller
+  const rawLegs = resolveTrainerLegs(
+    {
+      project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate },
+      closerParties,
+      setterParties,
+      trainerAssignments,
+      payrollEntries,
+    },
+    repName,
+  );
+
+  // Same guards as the engine: self-trainer-with-setter drops the closer-side
+  // self-loop leg when any setter party exists.
+  const anySetter = setterParties.some((p) => !!p.userId);
+  const filteredLegs = rawLegs.filter((leg) => {
+    if (leg.side === 'closer' && anySetter && leg.trainerId === leg.traineeId) {
+      return false;
+    }
+    return true;
+  });
+
+  // Aggregate by trainerId.
+  interface Group {
+    trainerId: string;
+    legs: TrainerLeg[];
+    totalShare: number;
+    chosenRate: number;
+    chosenShareForRate: number;
+    isOverride: boolean;
+    sides: Set<'closer' | 'setter' | 'override'>;
+  }
+  const byTrainer = new Map<string, Group>();
+  for (const leg of filteredLegs) {
+    const existing = byTrainer.get(leg.trainerId);
+    if (existing) {
+      existing.legs.push(leg);
+      existing.totalShare += leg.share;
+      existing.sides.add(leg.side);
+      if (leg.share > existing.chosenShareForRate) {
+        existing.chosenRate = leg.ratePerW;
+        existing.chosenShareForRate = leg.share;
+      }
+    } else {
+      byTrainer.set(leg.trainerId, {
+        trainerId: leg.trainerId,
+        legs: [leg],
+        totalShare: leg.share,
+        chosenRate: leg.ratePerW,
+        chosenShareForRate: leg.share,
+        isOverride: leg.side === 'override',
+        sides: new Set([leg.side]),
+      });
+    }
+  }
+
+  const out: ProjectedTrainerLeg[] = [];
+  for (const group of byTrainer.values()) {
+    const cappedShare = Math.min(1.0, group.totalShare);
+    const amount = group.chosenRate * wattsTotal * cappedShare;
+    if (amount <= 0) continue;
+
+    // Determine the dominant leg name for backward compat. Prefer the side
+    // with the largest accumulated share; tie → setter (matches legacy
+    // dedup behavior where setter leg owns the combined entry).
+    const closerShare = group.legs
+      .filter((l) => l.side === 'closer')
+      .reduce((s, l) => s + l.share, 0);
+    const setterShare = group.legs
+      .filter((l) => l.side === 'setter')
+      .reduce((s, l) => s + l.share, 0);
+    const legName: 'closer-trainer' | 'setter-trainer' =
+      group.isOverride
+        ? (project.setterId ? 'setter-trainer' : 'closer-trainer')
+        : (setterShare >= closerShare ? 'setter-trainer' : 'closer-trainer');
+
+    const entry = payrollEntries.find(
+      (e) => e.projectId === project.id && e.paymentStage === 'Trainer' && e.repId === group.trainerId,
+    );
+
+    const trainees = group.legs
+      .filter((l) => l.traineeId !== null)
+      .map((l) => ({ userId: l.traineeId, name: l.traineeName }));
+
+    out.push({
+      trainerId: group.trainerId,
+      rate: group.chosenRate,
+      amount,
+      leg: legName,
+      reason: group.legs[0].reason,
+      paid: !!(entry && entry.status === 'Paid'),
+      hasEntry: !!entry,
+      trainees,
+      share: cappedShare,
+    });
+  }
+  return out;
 }
 
 /**

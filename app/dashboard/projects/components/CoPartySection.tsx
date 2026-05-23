@@ -8,7 +8,7 @@
 // Admin-only surface — rendered inside forms that themselves gate on
 // role, so no per-component auth check here.
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Scale } from 'lucide-react';
 import type { Rep } from '@/lib/types';
 
 export interface CoPartyDraft {
@@ -37,6 +37,23 @@ interface CoPartySectionProps {
   disabled?: boolean;
   /** Tooltip / inline message shown when disabled. */
   disabledReason?: string;
+  /**
+   * Optional callback for the "Split equally" button. When provided AND
+   * there's at least one co-party row, a green button appears next to
+   * "Add ..." that re-distributes M1/M2/M3 evenly across primary + all
+   * co-parties. Parent owns the math because it holds primary amounts.
+   *
+   * Added 2026-05-23 for the multi-setter/multi-trainer scenario: a
+   * 50/50 split between Patrick + Tyson should be one click, not manual
+   * arithmetic in four input fields.
+   */
+  onSplitEqually?: () => void;
+  /**
+   * Optional preview text rendered under the rows when a split has
+   * been applied. Used for the "Hunter gets $X, Paul gets $Y" trainer
+   * pay summary. Caller computes the text from the current draft state.
+   */
+  splitPreview?: string;
 }
 
 const emptyRow: CoPartyDraft = { userId: '', m1Amount: '0', m2Amount: '0', m3Amount: '' };
@@ -52,6 +69,8 @@ export function CoPartySection({
   onFirstAdd,
   disabled = false,
   disabledReason,
+  onSplitEqually,
+  splitPreview,
 }: CoPartySectionProps) {
   const addRow = () => {
     if (disabled) return;
@@ -74,18 +93,35 @@ export function CoPartySection({
         <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">
           {label} {rows.length > 0 && <span className="text-[var(--text-muted)] normal-case">({rows.length})</span>}
         </label>
-        <button
-          type="button"
-          onClick={addRow}
-          disabled={disabled}
-          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors ${
-            disabled
-              ? 'border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed'
-              : 'border-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-emerald-solid)]/10'
-          }`}
-        >
-          <Plus className="w-3 h-3" /> Add {label.replace(/s$/, '').toLowerCase()}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onSplitEqually && rows.length > 0 && !disabled && (
+            <button
+              type="button"
+              onClick={onSplitEqually}
+              title={`Split M1/M2/M3 evenly across primary + ${rows.length} ${label.toLowerCase()}`}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg font-semibold transition-colors"
+              style={{
+                background: 'var(--accent-emerald-solid)',
+                color: 'var(--text-on-accent)',
+                border: '1px solid var(--accent-emerald-solid)',
+              }}
+            >
+              <Scale className="w-3 h-3" /> Split equally
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={addRow}
+            disabled={disabled}
+            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors ${
+              disabled
+                ? 'border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed'
+                : 'border-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-emerald-solid)]/10'
+            }`}
+          >
+            <Plus className="w-3 h-3" /> Add {label.replace(/s$/, '').toLowerCase()}
+          </button>
+        </div>
       </div>
 
       {disabled && disabledReason && (
@@ -160,6 +196,11 @@ export function CoPartySection({
           <p className="text-[10px] text-[var(--text-muted)] ml-1">
             Each amount is this person&apos;s own cut of that milestone. Primary amounts above are separate — total commission at each milestone is the sum across primary + all {label.toLowerCase()}.
           </p>
+          {splitPreview && (
+            <p className="text-[10px] ml-1" style={{ color: 'var(--accent-emerald-text)' }}>
+              {splitPreview}
+            </p>
+          )}
         </div>
       )}
     </div>

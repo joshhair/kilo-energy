@@ -1174,6 +1174,26 @@ export default function MobileNewDeal() {
                       ],
                     }));
                   }}
+                  onSplitEqually={() => {
+                    const n = 1 + form.additionalClosers.length;
+                    const m1Shares = evenSplit(closerM1, n);
+                    const m2Shares = evenSplit(closerM2, n);
+                    const m3Shares = evenSplit(closerM3, n);
+                    setForm((f) => ({
+                      ...f,
+                      additionalClosers: f.additionalClosers.map((co, i) => ({
+                        ...co,
+                        m1Amount: String(m1Shares[i + 1] ?? 0),
+                        m2Amount: String(m2Shares[i + 1] ?? 0),
+                        m3Amount: m3Shares[i + 1] ? String(m3Shares[i + 1]) : '',
+                      })),
+                    }));
+                  }}
+                  splitPreview={
+                    form.additionalClosers.length > 0
+                      ? `Even split: each closer earns ${(100 / (1 + form.additionalClosers.length)).toFixed(0)}% of the deal.`
+                      : undefined
+                  }
                 />
                 <CoPartySection
                   label="Co-setters"
@@ -1197,6 +1217,26 @@ export default function MobileNewDeal() {
                       ],
                     }));
                   }}
+                  onSplitEqually={() => {
+                    const n = 1 + form.additionalSetters.length;
+                    const m1Shares = evenSplit(setterM1, n);
+                    const m2Shares = evenSplit(setterM2, n);
+                    const m3Shares = evenSplit(setterM3, n);
+                    setForm((f) => ({
+                      ...f,
+                      additionalSetters: f.additionalSetters.map((co, i) => ({
+                        ...co,
+                        m1Amount: String(m1Shares[i + 1] ?? 0),
+                        m2Amount: String(m2Shares[i + 1] ?? 0),
+                        m3Amount: m3Shares[i + 1] ? String(m3Shares[i + 1]) : '',
+                      })),
+                    }));
+                  }}
+                  splitPreview={
+                    form.additionalSetters.length > 0
+                      ? `Even split: each setter earns ${(100 / (1 + form.additionalSetters.length)).toFixed(0)}% of the deal. Each setter's trainer override applies to their share.`
+                      : undefined
+                  }
                 />
               </>
             )}

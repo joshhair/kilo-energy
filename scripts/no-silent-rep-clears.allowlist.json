@@ -3,17 +3,17 @@
   "entries": [
     { "location": "app/dashboard/new-deal/page.tsx:268" },
     { "location": "app/dashboard/new-deal/page.tsx:1066" },
-    { "location": "app/dashboard/new-deal/page.tsx:1752" },
+    { "location": "app/dashboard/new-deal/page.tsx:1798" },
     { "location": "app/dashboard/mobile/MobileNewDeal.tsx:306" },
-    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1941" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1981" },
     { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:136" }
   ],
   "_reasons": {
     "app/dashboard/new-deal/page.tsx:268": "repId-change effect — blitz availability is rep-scoped (admin can only pick a blitz the chosen rep is approved for), so an old blitz must be cleared when the rep changes. Safe: blitz auto-selection on a new rep does not preserve stale state. setterId is preserved (validator catches mismatches).",
     "app/dashboard/new-deal/page.tsx:1066": "Admin's closer picker — same rationale as :268. The chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared here (was the regression source).",
-    "app/dashboard/new-deal/page.tsx:1752": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved.",
+    "app/dashboard/new-deal/page.tsx:1798": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved.",
     "app/dashboard/mobile/MobileNewDeal.tsx:306": "Mobile equivalent of the desktop :268 repId-change effect. Same rationale.",
-    "app/dashboard/mobile/MobileNewDeal.tsx:1941": "Mobile equivalent of the desktop :1752 lead-source toggle. Same rationale.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:1981": "Mobile equivalent of the desktop :1798 lead-source toggle. Same rationale.",
     "app/dashboard/mobile/MobileProjectDetail.tsx:136": "useState initializer for editVals — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token even though the line starts with `leadSource: ''`)."
   }
 }

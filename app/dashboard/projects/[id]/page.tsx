@@ -23,6 +23,7 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ProjectChatter from '../../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection';
+import { evenSplit } from '../../../../lib/commission-split';
 import { PipelineStepper, PhaseBadge, PIPELINE_STEPS } from '../components/detail/PipelineStepper';
 import { RepCommissionCard } from '../components/detail/RepCommissionCard';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
@@ -676,11 +677,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const setterTotalExpected = project.setterId
     ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
     : 0;
-  // Compute every projected trainer leg (closer-trainer + setter-trainer)
-  // and pick the primary for display alongside the existing single-row
-  // trainer block. Previously this only resolved the closer's chain —
-  // missing the setter-trainer leg (Hunter → Chris on McMorrow). With
-  // the projection helper, both legs surface.
+  // Compute every projected trainer leg (closer-trainer + setter-trainer
+  // for every primary + co-party). Multi-party path activated when any
+  // additionalClosers/Setters exist or when explicit m2 amounts are
+  // passed — see lib/trainer-projection.ts. For Bryce/Patrick/Tyson:
+  // Hunter (via Patrick, share 0.5) + Paul (via Tyson, share 0.5) both
+  // surface as separate legs.
   const projectedTrainerLegs = computeProjectedTrainerLegs(
     {
       id: project.id,
@@ -689,6 +691,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       repId: project.repId,
       setterId: project.setterId ?? null,
       kWSize: project.kWSize ?? 0,
+      m2Amount: project.m2Amount,
+      setterM2Amount: project.setterM2Amount,
+      additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+        userId: c.userId,
+        userName: c.userName ?? '',
+        m2Amount: c.m2Amount ?? 0,
+      })),
+      additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+        userId: s.userId,
+        userName: s.userName ?? '',
+        m2Amount: s.m2Amount ?? 0,
+      })),
     },
     trainerAssignments,
     payrollEntries,
@@ -697,6 +711,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const effectiveTrainerRate = primaryTrainerLeg?.rate ?? 0;
   const effTrainerId = primaryTrainerLeg?.trainerId ?? null;
   const trainerTotalExpected = projectedTrainerLegs.reduce((s, l) => s + l.amount, 0);
+  const isMultiTrainer = projectedTrainerLegs.length > 1;
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
@@ -980,6 +995,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 repId: project.repId,
                 setterId: project.setterId ?? null,
                 kWSize: project.kWSize ?? 0,
+                m2Amount: project.m2Amount,
+                setterM2Amount: project.setterM2Amount,
+                additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+                  userId: c.userId,
+                  userName: c.userName ?? '',
+                  m2Amount: c.m2Amount ?? 0,
+                })),
+                additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+                  userId: s.userId,
+                  userName: s.userName ?? '',
+                  m2Amount: s.m2Amount ?? 0,
+                })),
               },
               trainerAssignments,
               payrollEntries,
@@ -1278,11 +1305,42 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {(project.trainerId || trainerEntries.length > 0 || effTrainerId) && (
               <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-[var(--text-primary)] text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
-                    <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
-                    {trainerTotalExpected > 0 && (
-                      <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                  <div className="flex-1 min-w-0">
+                    {isMultiTrainer ? (
+                      <>
+                        <p className="text-[var(--text-primary)] text-sm font-semibold">{projectedTrainerLegs.length} trainers on this deal</p>
+                        <p className="text-[var(--text-muted)] text-xs">Each trainer paid on their setter/closer&apos;s share</p>
+                        {trainerTotalExpected > 0 && (
+                          <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Combined total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          {projectedTrainerLegs.map((leg) => {
+                            const trainerName = reps.find((r) => r.id === leg.trainerId)?.name ?? '(trainer)';
+                            const traineeLabel = leg.trainees && leg.trainees.length > 0
+                              ? leg.trainees.map((t) => t.name || reps.find((r) => r.id === t.userId)?.name || '?').join(' + ')
+                              : '';
+                            const sharePct = Math.round((leg.share ?? 1) * 100);
+                            return (
+                              <div key={leg.trainerId} className="flex items-center justify-between text-xs bg-[var(--surface-card)]/60 rounded-lg px-2.5 py-1.5">
+                                <span className="text-[var(--text-primary)]">
+                                  <span className="font-medium">{trainerName}</span>
+                                  {traineeLabel && <span className="text-[var(--text-muted)]"> · via {traineeLabel}</span>}
+                                  <span className="text-[var(--text-muted)]"> · ${leg.rate.toFixed(2)}/W × {sharePct}%</span>
+                                </span>
+                                <span className="text-[var(--accent-emerald-text)] font-semibold tabular-nums">${leg.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[var(--text-primary)] text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
+                        <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
+                        {trainerTotalExpected > 0 && (
+                          <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                        )}
+                      </>
                     )}
                   </div>
                   {/* Admin-only: record a backdated Trainer-stage entry. Used
@@ -1725,6 +1783,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   // and let admin enter amounts manually — safer than
                   // silently mutating the primary's cut on first add.
                 }}
+                onSplitEqually={() => {
+                  // Compute the full closer commission as primary's stored
+                  // amount + sum of co-closer cuts (the parts the form is
+                  // currently showing). Split across N parties; primary's
+                  // amount stays as-is on save and the API reduces it by
+                  // the sum of co-cuts to preserve deal totals.
+                  const n = 1 + editVals.additionalClosers.length;
+                  const sumCo = (field: keyof CoPartyDraft) =>
+                    editVals.additionalClosers.reduce(
+                      (s, co) => s + (parseFloat(co[field] as string) || 0),
+                      0,
+                    );
+                  const totalM1 = (project.m1Amount ?? 0) + sumCo('m1Amount');
+                  const totalM2 = (project.m2Amount ?? 0) + sumCo('m2Amount');
+                  const totalM3 = (project.m3Amount ?? 0) + sumCo('m3Amount');
+                  const m1Shares = evenSplit(totalM1, n);
+                  const m2Shares = evenSplit(totalM2, n);
+                  const m3Shares = evenSplit(totalM3, n);
+                  setEditVals((v) => ({
+                    ...v,
+                    additionalClosers: v.additionalClosers.map((co, i) => ({
+                      ...co,
+                      m1Amount: String(m1Shares[i + 1] ?? 0),
+                      m2Amount: String(m2Shares[i + 1] ?? 0),
+                      m3Amount: m3Shares[i + 1] ? String(m3Shares[i + 1]) : '',
+                    })),
+                  }));
+                }}
+                splitPreview={
+                  editVals.additionalClosers.length > 0
+                    ? `Even split: each closer earns ${(100 / (1 + editVals.additionalClosers.length)).toFixed(0)}% of the deal.`
+                    : undefined
+                }
               />
 
               {/* Co-setters — same shape. */}
@@ -1738,6 +1829,34 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 onChange={(rows) => setEditVals((v) => ({ ...v, additionalSetters: rows }))}
                 disabled={!editVals.setterId}
                 disabledReason="Select a primary setter above to add co-setters."
+                onSplitEqually={() => {
+                  const n = 1 + editVals.additionalSetters.length;
+                  const sumCo = (field: keyof CoPartyDraft) =>
+                    editVals.additionalSetters.reduce(
+                      (s, co) => s + (parseFloat(co[field] as string) || 0),
+                      0,
+                    );
+                  const totalM1 = (project.setterM1Amount ?? 0) + sumCo('m1Amount');
+                  const totalM2 = (project.setterM2Amount ?? 0) + sumCo('m2Amount');
+                  const totalM3 = (project.setterM3Amount ?? 0) + sumCo('m3Amount');
+                  const m1Shares = evenSplit(totalM1, n);
+                  const m2Shares = evenSplit(totalM2, n);
+                  const m3Shares = evenSplit(totalM3, n);
+                  setEditVals((v) => ({
+                    ...v,
+                    additionalSetters: v.additionalSetters.map((co, i) => ({
+                      ...co,
+                      m1Amount: String(m1Shares[i + 1] ?? 0),
+                      m2Amount: String(m2Shares[i + 1] ?? 0),
+                      m3Amount: m3Shares[i + 1] ? String(m3Shares[i + 1]) : '',
+                    })),
+                  }));
+                }}
+                splitPreview={
+                  editVals.additionalSetters.length > 0
+                    ? `Even split: each setter earns ${(100 / (1 + editVals.additionalSetters.length)).toFixed(0)}% of the deal. Each setter's trainer override applies to their share.`
+                    : undefined
+                }
               />
 
               {/* Per-project trainer override — admin-only one-off attachment. */}

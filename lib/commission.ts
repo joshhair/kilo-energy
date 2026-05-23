@@ -137,6 +137,160 @@ export function resolveTrainerRate(
   return { rate: 0, trainerId: null, reason: 'maxed' };
 }
 
+// ─── Multi-party trainer-leg resolver ───────────────────────────────────────
+//
+// Built 2026-05-23 for the multi-setter/multi-trainer scenario (Bryce/Patrick/
+// Tyson with separate trainers Hunter + Paul, splitting the deal 50/50).
+//
+// resolveTrainerRate above answers "what's the rate for ONE party?". This
+// helper answers "what trainer entries should fire for ALL parties on this
+// deal?" by walking the primary closer/setter AND each co-party, resolving
+// each one's chain, and assigning a share so amounts split proportionally.
+//
+// Semantics:
+//   * Per-project override (project.trainerId + project.trainerRate) wins
+//     and SHORT-CIRCUITS: returns a single leg with share=1.0 attributed to
+//     side='override'. This preserves the "historical / one-off mentor" UX
+//     where admin says "for this one deal, Hunter at $0.10/W, period."
+//   * Otherwise we walk every party (primary + co-parties) on each side
+//     and resolve their TrainerAssignment chain. The party's share is its
+//     M2 amount / total M2 amount on that side — so Patrick getting $500 of
+//     a $1000 setter pool has share=0.5, and Hunter's leg pays out at
+//     ratePerW × kW × installPct × 0.5.
+//   * If the SAME trainer is reached via multiple legs (e.g. Hunter trains
+//     both Patrick AND Tyson, or trains both a closer and a setter on the
+//     same deal), the caller is responsible for dedup — typically by
+//     summing the leg amounts and concatenating trainee names in the
+//     PayrollEntry.notes field. We return one leg per party rather than
+//     pre-merging so the caller has full forensic detail.
+//   * Self-trainer-with-setter (closer is their own trainer AND a setter
+//     exists) is a special case from prior bug history; the caller still
+//     handles that — we just return the legs and let the existing dedup
+//     rules decide what to fire.
+//
+// History context: when this was single-trainer-only, the resolver returned
+// one rate. Co-setter trainers got NOTHING. The Bryce/Patrick deal on
+// 2026-05-23 surfaced this — Patrick + Tyson 50/50 with trainers Hunter +
+// Paul should have paid each trainer half the override, but Hunter got
+// 100% and Paul got 0. See project_kilo_setter_regression memory for the
+// surrounding incident chain.
+
+/** Minimal shape of one party on a deal (primary or co-). */
+export interface TrainerPartyInput {
+  /** User ID of the closer or setter. Null/empty = no party on this slot. */
+  userId: string | null | undefined;
+  userName?: string;
+  /** M2 dollars assigned to this party. Drives the share calc. */
+  m2Amount: number;
+}
+
+/** Inputs needed to resolve all trainer legs for one project. */
+export interface TrainerLegsInput {
+  project: TrainerResolverProject;
+  /** Primary closer + every additional closer with their M2 amounts. */
+  closerParties: TrainerPartyInput[];
+  /** Primary setter + every additional setter with their M2 amounts. */
+  setterParties: TrainerPartyInput[];
+  trainerAssignments: readonly TrainerResolverAssignment[];
+  payrollEntries: readonly TrainerResolverPayrollEntry[];
+}
+
+/** Which side of the deal a trainer leg attributes to. */
+export type TrainerLegSide = 'closer' | 'setter' | 'override';
+
+/** One trainer's pay leg on a deal. Multiple legs may share a trainerId. */
+export interface TrainerLeg {
+  trainerId: string;
+  ratePerW: number;
+  /** 0..1 — multiply into kW × installPct% for this leg's dollar amount. */
+  share: number;
+  side: TrainerLegSide;
+  /** The trainee whose chain produced this leg. Null on override-path legs. */
+  traineeId: string | null;
+  /** Pre-resolved display name for the trainee, used in PayrollEntry.notes. */
+  traineeName: string;
+  reason: TrainerRateReason;
+}
+
+/**
+ * Resolves every trainer leg that should fire on this deal. See section
+ * comment above for semantics; see tests/unit/multi-setter-trainer-split
+ * for worked examples.
+ */
+export function resolveTrainerLegs(
+  input: TrainerLegsInput,
+  repNameById: (id: string) => string | undefined,
+): TrainerLeg[] {
+  const { project, closerParties, setterParties, trainerAssignments, payrollEntries } = input;
+
+  // 1. Per-project override — single leg covering the whole deal.
+  if (project.trainerId && project.trainerRate != null) {
+    return [{
+      trainerId: project.trainerId,
+      ratePerW: project.trainerRate,
+      share: 1.0,
+      side: 'override',
+      traineeId: null,
+      traineeName: '',
+      reason: 'project-override',
+    }];
+  }
+
+  const legs: TrainerLeg[] = [];
+
+  // 2. Closer side — walk every closer party, resolve each one's chain.
+  const totalCloserM2 = closerParties.reduce((s, p) => s + (p.m2Amount || 0), 0);
+  for (const party of closerParties) {
+    if (!party.userId) continue;
+    const res = resolveTrainerRate(
+      // Pass override-free project shape so chain resolution isn't
+      // short-circuited; the override path was handled above.
+      { id: project.id, trainerId: null, trainerRate: null },
+      party.userId,
+      trainerAssignments,
+      payrollEntries,
+    );
+    if (res.rate <= 0 || !res.trainerId) continue;
+    const share = totalCloserM2 > 0 ? (party.m2Amount || 0) / totalCloserM2 : 0;
+    if (share <= 0) continue;
+    legs.push({
+      trainerId: res.trainerId,
+      ratePerW: res.rate,
+      share,
+      side: 'closer',
+      traineeId: party.userId,
+      traineeName: party.userName ?? repNameById(party.userId) ?? '',
+      reason: res.reason,
+    });
+  }
+
+  // 3. Setter side — same pattern.
+  const totalSetterM2 = setterParties.reduce((s, p) => s + (p.m2Amount || 0), 0);
+  for (const party of setterParties) {
+    if (!party.userId) continue;
+    const res = resolveTrainerRate(
+      { id: project.id, trainerId: null, trainerRate: null },
+      party.userId,
+      trainerAssignments,
+      payrollEntries,
+    );
+    if (res.rate <= 0 || !res.trainerId) continue;
+    const share = totalSetterM2 > 0 ? (party.m2Amount || 0) / totalSetterM2 : 0;
+    if (share <= 0) continue;
+    legs.push({
+      trainerId: res.trainerId,
+      ratePerW: res.rate,
+      share,
+      side: 'setter',
+      traineeId: party.userId,
+      traineeName: party.userName ?? repNameById(party.userId) ?? '',
+      reason: res.reason,
+    });
+  }
+
+  return legs;
+}
+
 /** Per-rep breakdown of a deal's commission across milestones. */
 export interface CommissionSplit {
   closerTotal: number;
