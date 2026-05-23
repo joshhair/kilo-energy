@@ -340,17 +340,16 @@ function NewDealPage() {
   const currentRep = reps.find((r) => r.id === effectiveRepId);
   const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
-  // When a blitz is selected, only approved participants of that blitz may be setters.
-  const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'));
-    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    const approvedIds = new Set(
-      (selectedBlitz?.participants ?? [])
-        .filter((p) => p.joinStatus === 'approved')
-        .map((p) => p.userId),
-    );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
-  }, [form.blitzId, rawBlitzes, reps]);
+  // Setter picker is NOT scoped to the picked blitz. A setter can be on
+  // a deal attached to a blitz they weren't formally a participant of —
+  // e.g. a lead they set informally during the blitz window, or a follow-
+  // up where the deal-blitz attribution is closer-driven. Product
+  // decision 2026-05-23 after the 4th setter-drop regression. See
+  // project_kilo_setter_regression memory.
+  const setterPickerReps = useMemo(
+    () => reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both')),
+    [reps],
+  );
 
   // When a blitz is selected, restrict the admin closer dropdown to approved blitz participants.
   const closerPickerReps = useMemo(() => {
@@ -364,33 +363,10 @@ function NewDealPage() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Setter / blitz mismatch — surfaced as a visible error, NOT silent mutation.
-  //
-  // Previous design auto-cleared form.setterId via useEffect whenever the
-  // setter wasn't in setterPickerReps. That regressed three times
-  // (Tyson on Trevor 2026-04-22, Melissa Lance 2026-04-26, Hunter Helton
-  // 2026-05-11) because silent mutation of user input is the root
-  // anti-pattern — even guarded against half-loaded data, a transient
-  // blitz selection could clear the setter without the user noticing.
-  //
-  // New approach: derived validation. If the picked setter isn't an
-  // approved participant of the picked blitz, render an inline error
-  // and block submit. The user's setterId is sacred — never auto-cleared.
-  // When they resolve the conflict (different setter, different blitz,
-  // or remove the blitz), the error disappears and the picked setter
-  // is preserved.
-  const setterValidationError = useMemo<string>(() => {
-    if (!form.setterId) return '';
-    if (!form.blitzId) return '';
-    if (reps.length === 0) return '';
-    if (rawBlitzes.length === 0) return '';
-    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    if (!selectedBlitz) return '';
-    if (setterPickerReps.some((r) => r.id === form.setterId)) return '';
-    const setterName = reps.find((r) => r.id === form.setterId)?.name ?? 'The selected setter';
-    const blitzName = (selectedBlitz as { name?: string }).name ?? 'this blitz';
-    return `${setterName} isn't an approved participant of ${blitzName}. Pick a different setter, change the blitz, or have the blitz leader approve them.`;
-  }, [form.setterId, form.blitzId, setterPickerReps, reps, rawBlitzes]);
+  // (setterValidationError memo removed 2026-05-23 — see project_kilo_setter_regression.
+  // The setter no longer has to be a blitz participant. Closer-attribution is the
+  // model: the closer attaches the deal to the blitz it was produced on, and the
+  // setter is whoever set the appt — those facts don't have to agree.)
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {
@@ -662,14 +638,6 @@ function NewDealPage() {
       return;
     }
 
-    // Guard: setter must be approved on the picked blitz (philosophy fix —
-    // we surface this as an error rather than silently dropping setterId).
-    if (setterValidationError) {
-      toast(setterValidationError, 'error');
-      submittingRef.current = false;
-      return;
-    }
-
     // BVI intake validation — phone, email, and address are required so
     // BVI ops can reach the homeowner. Errors render inline in the panel
     // and recompute live as the rep types fixes.
@@ -701,26 +669,13 @@ function NewDealPage() {
         submittingRef.current = false;
         return;
       }
-      if (form.setterId && !approvedIds.has(form.setterId)) {
-        setSlideDirection('backward');
-        setCurrentStep(0);
-        toast('Selected setter is not an approved participant of this blitz.', 'error');
-        submittingRef.current = false;
-        return;
-      }
+      // (Setter + co-setter approval checks removed 2026-05-23 — setters and
+      // co-setters are not required to be blitz participants. The closer is.)
       const unapprovedCoCloser = form.additionalClosers.find((c) => !approvedIds.has(c.userId));
       if (unapprovedCoCloser) {
         setSlideDirection('backward');
         setCurrentStep(0);
         toast('A co-closer is not an approved participant of this blitz.', 'error');
-        submittingRef.current = false;
-        return;
-      }
-      const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
-      if (unapprovedCoSetter) {
-        setSlideDirection('backward');
-        setCurrentStep(0);
-        toast('A co-setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
       }
@@ -1102,13 +1057,11 @@ function NewDealPage() {
                   <RepSelector
                     value={form.repId}
                     onChange={(repId) => {
-                      // DO NOT clear setterId here. Setter validity is scoped to
-                      // the BLITZ, not the closer. Clearing it on closer change
-                      // silently drops a deliberate pick — that's the regression
-                      // (Tyson 2026-04-22, Melissa 2026-04-26, Hunter 2026-05-11,
-                      // Patrick 2026-05-23). See setterValidationError memo: if
-                      // the new closer's blitz set makes the setter invalid, the
-                      // banner surfaces it and the submit guard blocks it.
+                      // DO NOT clear setterId here. Setter is independent of
+                      // closer + blitz — see project_kilo_setter_regression.
+                      // Silently clearing it on closer change dropped real
+                      // setters from real deals four times (Tyson 04-22,
+                      // Melissa 04-26, Hunter 05-11, Patrick 05-23).
                       update('repId', repId);
                       update('blitzId', '');
                       setErrors((prev) => ({ ...prev, repId: validateField('repId', repId) }));
@@ -1132,9 +1085,6 @@ function NewDealPage() {
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />
-                {setterValidationError && (
-                  <p className="text-red-500 text-sm mt-1" role="alert">{setterValidationError}</p>
-                )}
                 {setterAssignment && trainerRep && (
                   <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
                     ★ Trainer: {trainerRep.name} — override{' '}
@@ -1847,11 +1797,10 @@ function NewDealPage() {
                         }
                       }
                       // Blitz deselected — leave soldDate as-is to preserve any manually entered date.
-                      // DO NOT clear setterId here. This is the EXACT regression that
-                      // dropped Patrick from Bryce Marsh's deal on 2026-05-23 (and
-                      // Tyson, Melissa, Hunter before him). The setterValidationError
-                      // memo + submit guard surface invalid picks visibly — no silent
-                      // mutation. See feedback_setter_silent_clear memory.
+                      // DO NOT clear setterId here. Setter is independent of
+                      // blitz attribution — see project_kilo_setter_regression.
+                      // Silent clears on blitz change dropped real setters from
+                      // real deals four times (Tyson, Melissa, Hunter, Patrick).
                     }}
                     onBlur={() => handleBlur('blitzId')}
                     className={inputCls('blitzId')} style={inputFieldStyle('blitzId')}

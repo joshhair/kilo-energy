@@ -445,16 +445,13 @@ export default function MobileNewDeal() {
   const currentRep = reps.find((r) => r.id === effectiveRepId);
   const closerId = effectiveRole === 'admin' ? form.repId : (currentRep?.repType === 'setter' ? '' : (effectiveRepId ?? ''));
 
-  const setterPickerReps = useMemo(() => {
-    if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both'));
-    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    const approvedIds = new Set(
-      (selectedBlitz?.participants ?? [])
-        .filter((p) => p.joinStatus === 'approved')
-        .map((p) => p.userId),
-    );
-    return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'setter' || r.repType === 'both'));
-  }, [form.blitzId, rawBlitzes, reps]);
+  // Setter picker is NOT scoped to the picked blitz — see desktop new-deal/page.tsx
+  // and project_kilo_setter_regression. Setter participation in a blitz is separate
+  // from setter-credit on a blitz-attributed deal.
+  const setterPickerReps = useMemo(
+    () => reps.filter((r) => r.active && (r.repType === 'setter' || r.repType === 'both')),
+    [reps],
+  );
 
   const closerPickerReps = useMemo(() => {
     if (!form.blitzId) return reps.filter((r) => r.active && (r.repType === 'closer' || r.repType === 'both'));
@@ -467,24 +464,7 @@ export default function MobileNewDeal() {
     return reps.filter((r) => r.active && approvedIds.has(r.id) && (r.repType === 'closer' || r.repType === 'both'));
   }, [form.blitzId, rawBlitzes, reps]);
 
-  // Setter / blitz mismatch — surfaced as a visible error, NOT silent
-  // mutation. Mirrors desktop philosophy fix — see new-deal/page.tsx
-  // for the full regression history (Tyson 2026-04-22, Melissa Lance
-  // 2026-04-26, Hunter Helton 2026-05-11). The user's setterId is
-  // sacred; we render an inline error and block submit instead of
-  // silently clearing.
-  const setterValidationError = useMemo<string>(() => {
-    if (!form.setterId) return '';
-    if (!form.blitzId) return '';
-    if (reps.length === 0) return '';
-    if (rawBlitzes.length === 0) return '';
-    const selectedBlitz = rawBlitzes.find((b) => b.id === form.blitzId);
-    if (!selectedBlitz) return '';
-    if (setterPickerReps.some((r) => r.id === form.setterId)) return '';
-    const setterName = reps.find((r) => r.id === form.setterId)?.name ?? 'The selected setter';
-    const blitzName = (selectedBlitz as { name?: string }).name ?? 'this blitz';
-    return `${setterName} isn't an approved participant of ${blitzName}. Pick a different setter, change the blitz, or have the blitz leader approve them.`;
-  }, [form.setterId, form.blitzId, setterPickerReps, reps, rawBlitzes]);
+  // (setterValidationError memo removed 2026-05-23 — see project_kilo_setter_regression.)
 
   // Clear installerProductId when the selected PC product has been deleted from context.
   useEffect(() => {
@@ -812,26 +792,13 @@ export default function MobileNewDeal() {
         submittingRef.current = false;
         return;
       }
-      if (form.setterId && !approvedIds.has(form.setterId)) {
-        stepDirectionRef.current = 'back';
-        setCurrentStep(0);
-        toast('Selected setter is not an approved participant of this blitz.', 'error');
-        submittingRef.current = false;
-        return;
-      }
+      // (Setter + co-setter approval checks removed 2026-05-23 — setters and
+      // co-setters are not required to be blitz participants. The closer is.)
       const unapprovedCoCloser = form.additionalClosers.find((c) => !approvedIds.has(c.userId));
       if (unapprovedCoCloser) {
         stepDirectionRef.current = 'back';
         setCurrentStep(0);
         toast('A co-closer is not an approved participant of this blitz.', 'error');
-        submittingRef.current = false;
-        return;
-      }
-      const unapprovedCoSetter = form.additionalSetters.find((s) => !approvedIds.has(s.userId));
-      if (unapprovedCoSetter) {
-        stepDirectionRef.current = 'back';
-        setCurrentStep(0);
-        toast('A co-setter is not an approved participant of this blitz.', 'error');
         submittingRef.current = false;
         return;
       }
@@ -1174,9 +1141,6 @@ export default function MobileNewDeal() {
                   trainerAssignments={trainerAssignments}
                   excludeRepId={closerId || undefined}
                 />
-                {setterValidationError && (
-                  <p className="text-red-500 text-sm mt-1" role="alert">{setterValidationError}</p>
-                )}
                 {setterAssignment && trainerRep && (
                   <p className="text-base text-[var(--accent-amber-text)] mt-1">
                     Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
@@ -1971,12 +1935,9 @@ export default function MobileNewDeal() {
                 onChange={(e) => {
                   const val = e.target.value;
                   update('leadSource', val);
-                  // DO NOT clear setterId — see desktop new-deal/page.tsx and
-                  // the prior regression history (Tyson, Melissa, Hunter, Patrick).
-                  // A picked setter remains a valid setter when leadSource changes;
-                  // only the blitz field disappears, so blitzId is the only thing
-                  // we clear. The setterValidationError memo + submit guard catch
-                  // invalid setter/blitz combos visibly instead.
+                  // DO NOT clear setterId — setter is independent of leadSource
+                  // and blitz. See project_kilo_setter_regression (Tyson, Melissa,
+                  // Hunter, Patrick — four prod incidents from silent clears).
                   if (val !== 'blitz') { update('blitzId', ''); }
                 }}
                 className={selectCls('')} style={v0InputStyle('')}
