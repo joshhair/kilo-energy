@@ -241,6 +241,9 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   if (updates.productType !== undefined) dbUpdates.productType = updates.productType;
   if (updates.kWSize !== undefined) dbUpdates.kWSize = updates.kWSize;
   if (updates.netPPW !== undefined) dbUpdates.netPPW = updates.netPPW;
+  // Primary closer + setter — server uses `closerId`, client uses `repId`.
+  // The rename happens here so the rest of the app can stay in client terms.
+  if (updates.repId !== undefined) dbUpdates.closerId = updates.repId;
   if (updates.setterId !== undefined) dbUpdates.setterId = updates.setterId;
   if (updates.soldDate !== undefined) dbUpdates.soldDate = updates.soldDate;
   if (updates.baselineOverride !== undefined) dbUpdates.baselineOverrideJson = updates.baselineOverride ? JSON.stringify(updates.baselineOverride) : null;

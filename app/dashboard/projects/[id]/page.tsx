@@ -96,6 +96,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     productType: '',
     kWSize: '',
     netPPW: '',
+    // Primary closer (server: closerId, client: repId). Required on save —
+    // closerId is a non-null FK in the DB. Picker offered 2026-05-25 after
+    // Josh's "I am unable to change who the closer is on a project" report.
+    repId: '',
     setterId: '',
     soldDate: '',
     notes: '',
@@ -417,6 +421,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       productType: project.productType,
       kWSize: String(project.kWSize),
       netPPW: String(project.netPPW),
+      repId: project.repId,
       setterId: project.setterId ?? '',
       soldDate: project.soldDate,
       notes: project.notes ?? '',
@@ -470,6 +475,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       editVals.useBaselineOverride !== !!project.baselineOverride;
 
     const errs: Record<string, string> = {};
+    if (!editVals.repId) errs.repId = 'Closer is required';
     if (!editVals.installer) errs.installer = 'Installer is required';
     if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId && baselineAffectingChanged) errs.installer = 'SolarTech requires a product — select a SolarTech product';
     if (!editVals.soldDate) errs.soldDate = 'Sold date is required';
@@ -608,6 +614,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         setterM2Amount: editSetterM2Amount,
         setterM3Amount: editSetterM3Amount,
       }),
+      // Primary closer — required. mapProjectUpdateToDb renames repId →
+      // closerId on the wire so the rest of the app keeps using `repId`.
+      ...(editVals.repId !== project.repId ? {
+        repId: editVals.repId,
+        repName: reps.find((r) => r.id === editVals.repId)?.name ?? project.repName,
+      } : {}),
       setterId: editVals.setterId || undefined,
       setterName: setterRep?.name ?? (editVals.setterId ? project.setterName : undefined),
       soldDate: editVals.soldDate,
@@ -1748,13 +1760,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
+              {/* Closer (primary rep) — required. closerId is a non-null FK
+                  in the DB so we don't render an empty option here. */}
+              <div>
+                <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Closer</label>
+                <select value={editVals.repId} onChange={(e) => setEditVals((v) => ({ ...v, repId: e.target.value }))}
+                  className={`w-full bg-[var(--surface-card)] border ${editErrors.repId ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}>
+                  {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editVals.repId) && r.id !== editVals.setterId).map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+                {editErrors.repId && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.repId}</p>}
+              </div>
+
               {/* Setter */}
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
                 <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
                   className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">— None —</option>
-                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== project.repId).map((r) => (
+                  {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== editVals.repId).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
@@ -1770,7 +1795,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <CoPartySection
                 label="Co-closers"
                 rows={editVals.additionalClosers}
-                primaryUserId={project.repId}
+                primaryUserId={editVals.repId}
                 excludeUserIds={[editVals.setterId, ...editVals.additionalClosers.map((c) => c.userId), ...editVals.additionalSetters.map((s) => s.userId)].filter(Boolean)}
                 repTypeFilter={(r) => r.repType === 'closer' || r.repType === 'both'}
                 reps={reps}
@@ -1823,7 +1848,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 label="Co-setters"
                 rows={editVals.additionalSetters}
                 primaryUserId={editVals.setterId}
-                excludeUserIds={[project.repId, editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+                excludeUserIds={[editVals.repId, editVals.setterId, ...editVals.additionalSetters.map((s) => s.userId), ...editVals.additionalClosers.map((c) => c.userId)].filter(Boolean)}
                 repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
                 reps={reps}
                 onChange={(rows) => setEditVals((v) => ({ ...v, additionalSetters: rows }))}

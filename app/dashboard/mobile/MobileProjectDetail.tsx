@@ -113,6 +113,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     kWSize: string;
     netPPW: string;
     soldDate: string;
+    repId: string;
     setterId: string;
     notes: string;
     useBaselineOverride: boolean;
@@ -129,7 +130,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     blitzId: string;
   }>({
     installer: '', financer: '', productType: '', kWSize: '', netPPW: '', soldDate: '',
-    setterId: '', notes: '', useBaselineOverride: false,
+    repId: '', setterId: '', notes: '', useBaselineOverride: false,
     overrideCloserPerW: '', overrideSetterPerW: '', overrideKiloPerW: '',
     solarTechProductId: '', additionalClosers: [], additionalSetters: [],
     trainerId: '', trainerRate: '', noChainTrainer: false,
@@ -267,6 +268,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       kWSize: String(project.kWSize),
       netPPW: String(project.netPPW),
       soldDate: project.soldDate,
+      repId: project.repId,
       setterId: project.setterId ?? '',
       notes: project.notes ?? '',
       useBaselineOverride: !!project.baselineOverride,
@@ -303,7 +305,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       return Number.isFinite(n) ? n : 0;
     };
     const cleanClosers = editDraft.additionalClosers
-      .filter((c) => !!c.userId && c.userId !== project.repId)
+      .filter((c) => !!c.userId && c.userId !== (editDraft.repId || project.repId))
       .map((c, i) => ({
         userId: c.userId,
         userName: reps.find((r) => r.id === c.userId)?.name ?? '',
@@ -387,6 +389,12 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const nextBlitzId = editDraft.leadSource === 'blitz' ? (editDraft.blitzId || null) : null;
 
     updateProject({
+      // Primary closer (server: closerId, client: repId). Only sent when
+      // changed — avoids triggering a no-op recompute on save.
+      ...(editDraft.repId && editDraft.repId !== project.repId ? {
+        repId: editDraft.repId,
+        repName: reps.find((r) => r.id === editDraft.repId)?.name ?? project.repName,
+      } : {}),
       setterId: editDraft.setterId || undefined,
       setterName: setterRep?.name ?? (editDraft.setterId ? project.setterName : undefined),
       notes: editDraft.notes,
@@ -1468,6 +1476,23 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           preview UI lives. */}
       <MobileBottomSheet open={editSheetOpen} onClose={() => setEditSheetOpen(false)} title="Edit Project">
         <div className="px-5 space-y-5 pb-24">
+          {/* Closer (primary rep) — required. Added 2026-05-25. */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Closer
+            </label>
+            <select
+              value={editDraft.repId}
+              onChange={(e) => setEditDraft((d) => ({ ...d, repId: e.target.value }))}
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+            >
+              {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editDraft.repId) && r.id !== editDraft.setterId).map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Setter */}
           <div>
             <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
@@ -1480,7 +1505,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >
               <option value="">— None —</option>
-              {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== project.repId).map((r) => (
+              {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editDraft.setterId) && r.id !== editDraft.repId).map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
@@ -1577,7 +1602,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           <CoPartySection
             label="Co-closers"
             rows={editDraft.additionalClosers}
-            primaryUserId={project.repId}
+            primaryUserId={editDraft.repId || project.repId}
             excludeUserIds={[editDraft.setterId, ...editDraft.additionalClosers.map((c) => c.userId), ...editDraft.additionalSetters.map((s) => s.userId)].filter(Boolean)}
             repTypeFilter={(r) => r.repType === 'closer' || r.repType === 'both'}
             reps={reps}
@@ -1587,7 +1612,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             label="Co-setters"
             rows={editDraft.additionalSetters}
             primaryUserId={editDraft.setterId}
-            excludeUserIds={[project.repId, editDraft.setterId, ...editDraft.additionalSetters.map((s) => s.userId), ...editDraft.additionalClosers.map((c) => c.userId)].filter(Boolean)}
+            excludeUserIds={[editDraft.repId || project.repId, editDraft.setterId, ...editDraft.additionalSetters.map((s) => s.userId), ...editDraft.additionalClosers.map((c) => c.userId)].filter(Boolean)}
             repTypeFilter={(r) => r.repType === 'setter' || r.repType === 'both'}
             reps={reps}
             onChange={(rows) => setEditDraft((d) => ({ ...d, additionalSetters: rows }))}
@@ -1621,7 +1646,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '12px', fontSize: '0.95rem', color: 'var(--text-primary)' }}
               >
                 <option value="">— no trainer override —</option>
-                {reps.filter((r) => r.active && r.id !== project.repId && r.id !== editDraft.setterId).map((r) => (
+                {reps.filter((r) => r.active && r.id !== (editDraft.repId || project.repId) && r.id !== editDraft.setterId).map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>

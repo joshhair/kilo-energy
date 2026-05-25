@@ -6,7 +6,8 @@
     { "location": "app/dashboard/new-deal/page.tsx:1798" },
     { "location": "app/dashboard/mobile/MobileNewDeal.tsx:306" },
     { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1981" },
-    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:136" }
+    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:133" },
+    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:137" }
   ],
   "_reasons": {
     "app/dashboard/new-deal/page.tsx:268": "repId-change effect — blitz availability is rep-scoped (admin can only pick a blitz the chosen rep is approved for), so an old blitz must be cleared when the rep changes. Safe: blitz auto-selection on a new rep does not preserve stale state. setterId is preserved (validator catches mismatches).",
@@ -14,6 +15,7 @@
     "app/dashboard/new-deal/page.tsx:1798": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved.",
     "app/dashboard/mobile/MobileNewDeal.tsx:306": "Mobile equivalent of the desktop :268 repId-change effect. Same rationale.",
     "app/dashboard/mobile/MobileNewDeal.tsx:1981": "Mobile equivalent of the desktop :1798 lead-source toggle. Same rationale.",
-    "app/dashboard/mobile/MobileProjectDetail.tsx:136": "useState initializer for editVals — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token even though the line starts with `leadSource: ''`)."
+    "app/dashboard/mobile/MobileProjectDetail.tsx:133": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (regex matches `setterId: ''` on a line that also has `repId: ''`). Added 2026-05-25 when repId was added to the editDraft schema for the closer-picker fix.",
+    "app/dashboard/mobile/MobileProjectDetail.tsx:137": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token on a line that starts with `leadSource: ''`). Line number shifted from :136 by the repId addition."
   }
 }
