@@ -12,8 +12,14 @@ import {
 } from '../../lib/data';
 import { fmt$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
-import { viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../lib/period-projection';
-import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle } from 'lucide-react';
+import {
+  viewerPipelineRemaining,
+  computeTrainerOverridePipeline,
+  computeOnPace,
+  viewerFullCommission as viewerFullCommissionPure,
+} from '../../lib/period-projection';
+import { getPeriodDaysRemaining, getPeriodLabel } from '../../lib/period';
+import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle, Rocket } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
 import {
@@ -952,6 +958,52 @@ export default function DashboardPage() {
         today: todayStr,
       });
 
+  // ── On-Pace projection ──────────────────────────────────────────────────
+  //
+  // Mirrors MobileDashboard so the two surfaces always agree on the
+  // forward-looking number. Same shared helpers (computeOnPace,
+  // viewerFullCommission) — desktop just never imported them before.
+  // See [[project_kilo_on_pace_formula]] for the math.
+  //
+  //   OnPace(P) = commissionEarnedFromInPeriodDeals + paceRate × monthsRemainingInP
+  //
+  // - paceRate = deals/month × average full commission per deal (role-aware
+  //   via viewerFullCommission) calculated against all non-cancelled deals.
+  // - daysRemainingInPeriod = horizon, 'all' maps to 'this-year' so the
+  //   two tabs reconcile on the shared "On Pace For YYYY" label.
+  const allMyProjectsNonCancelled = allMyProjects.filter((p) => p.phase !== 'Cancelled');
+  const paceRate = (() => {
+    if (allMyProjectsNonCancelled.length === 0) return 0;
+    const avgFullCommissionPerDeal =
+      allMyProjectsNonCancelled.reduce((s, p) => s + viewerFullCommissionPure(p, effectiveRepId), 0) /
+      allMyProjectsNonCancelled.length;
+    const sorted = [...allMyProjectsNonCancelled].sort((a, b) => a.soldDate.localeCompare(b.soldDate));
+    const firstDealDate = new Date(sorted[0].soldDate + 'T12:00:00');
+    // Floor effective days at 30 so a brand-new rep's 1-deal-in-3-days
+    // doesn't extrapolate to 10/mo. Matches mobile.
+    const daysSinceFirst = Math.max((new Date().getTime() - firstDealDate.getTime()) / 86400000, 1);
+    const effectiveDays = Math.max(daysSinceFirst, 30);
+    const dealsPerMonth = (allMyProjectsNonCancelled.length / effectiveDays) * 30.44;
+    return dealsPerMonth * avgFullCommissionPerDeal;
+  })();
+  const inPeriodCommissionEarned = (() => {
+    const horizonPeriod = period === 'all' ? 'this-year' : period;
+    return allMyProjects
+      .filter((p) => p.phase !== 'Cancelled' && isInPeriod(p.soldDate, horizonPeriod))
+      .reduce((s, p) => s + viewerFullCommissionPure(p, effectiveRepId), 0);
+  })();
+  const onPaceHorizonPeriod = period === 'all' ? 'this-year' : period;
+  const daysRemainingInPeriod = getPeriodDaysRemaining(onPaceHorizonPeriod) ?? 0;
+  const onPaceValue = computeOnPace({
+    inPeriodCommissionEarned,
+    paceRate,
+    daysRemainingInPeriod,
+  });
+  const isYearLikePeriod = period === 'all' || period === 'this-year';
+  const onPaceLabel = isYearLikePeriod
+    ? `On Pace For ${new Date().getFullYear()}`
+    : `On Pace · ${getPeriodLabel(period)}`;
+
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
   const unpaidPayroll = allMyPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
   // Build a per-project total of ALL payroll entries (any status) so we can subtract
@@ -1170,6 +1222,23 @@ export default function DashboardPage() {
       pctChange: computePctChange(inPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
+    },
+    {
+      // Mirror of MobileDashboard's On Pace hero. Card variant for desktop
+      // until Phase 2 promotes it to the hero. Subtitle echoes mobile's
+      // breakdown line so reps can verify the math at a glance.
+      label: onPaceLabel,
+      value: fmt$(Math.round(onPaceValue)),
+      sub: `${fmt$(Math.round(inPeriodCommissionEarned))} earned + pace`,
+      icon: Rocket,
+      color: 'text-[var(--accent-emerald-text)]',
+      accentGradient: 'from-emerald-500 to-emerald-400',
+      glowClass: 'stat-glow-emerald',
+      sparkData: pipelineSparkData,
+      sparkStroke: 'var(--accent-emerald-solid)',
+      pctChange: undefined as number | null | undefined,
+      href: '/dashboard/my-pay',
+      tooltip: 'In-period commission + paceRate × months remaining. Matches the mobile dashboard hero.',
     },
     (() => {
       const sold = formatCompactKWParts(totalKWSold);
