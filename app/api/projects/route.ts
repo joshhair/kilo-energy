@@ -113,28 +113,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
       }
     }
-    if (body.setterId) {
-      const setterParticipation = await prisma.blitzParticipant.findFirst({
-        where: { blitzId: body.blitzId, userId: body.setterId, joinStatus: 'approved' },
-      });
-      if (!setterParticipation) {
-        return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
-      }
-    }
+    // (Setter + co-setter blitz-participation checks removed 2026-05-23 —
+    // setters can earn credit on a blitz-attributed deal without being
+    // formally approved on the blitz roster. See project_kilo_setter_regression
+    // memory; mirrors the client-side removal in commit 18ee9c6. Closer +
+    // co-closer remain required: closer-on-blitz is still the rule.)
     for (const coCloser of body.additionalClosers ?? []) {
       const p = await prisma.blitzParticipant.findFirst({
         where: { blitzId: body.blitzId, userId: coCloser.userId, joinStatus: 'approved' },
       });
       if (!p) {
         return NextResponse.json({ error: 'Co-closer is not an approved participant of this blitz' }, { status: 403 });
-      }
-    }
-    for (const coSetter of body.additionalSetters ?? []) {
-      const p = await prisma.blitzParticipant.findFirst({
-        where: { blitzId: body.blitzId, userId: coSetter.userId, joinStatus: 'approved' },
-      });
-      if (!p) {
-        return NextResponse.json({ error: 'Co-setter is not an approved participant of this blitz' }, { status: 403 });
       }
     }
   }

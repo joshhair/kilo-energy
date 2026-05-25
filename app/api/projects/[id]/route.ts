@@ -129,15 +129,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           return NextResponse.json({ error: 'Closer is not an approved participant of this blitz' }, { status: 403 });
         }
       }
-      const setterId = body.setterId !== undefined ? body.setterId : (existing?.setterId ?? null);
-      if (setterId) {
-        const setterParticipation = await prisma.blitzParticipant.findFirst({
-          where: { blitzId: effectiveBlitzId, userId: setterId, joinStatus: 'approved' },
-        });
-        if (!setterParticipation) {
-          return NextResponse.json({ error: 'Setter is not an approved participant of this blitz' }, { status: 403 });
-        }
-      }
+      // (Setter blitz-participation check removed 2026-05-23 — setter is
+      // independent of the blitz the deal attaches to. See POST counterpart
+      // and project_kilo_setter_regression memory. Closer above stays
+      // checked: closer-on-blitz is still the rule.)
     }
   }
 
