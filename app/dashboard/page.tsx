@@ -16,9 +16,11 @@ import {
   viewerPipelineRemaining,
   computeTrainerOverridePipeline,
   computeOnPace,
+  computeCashForecast,
   viewerFullCommission as viewerFullCommissionPure,
+  viewerMilestones,
 } from '../../lib/period-projection';
-import { getPeriodDaysRemaining, getPeriodLabel } from '../../lib/period';
+import { getPeriodDaysRemaining, getPeriodLabel, isHistoricalPeriod } from '../../lib/period';
 import { TrendingUp, AlertCircle, DollarSign, CheckCircle, CheckSquare, Zap, Target, FolderKanban, Flag, Clock, ChevronRight, ChevronUp, ChevronDown, PlusCircle, PauseCircle, HelpCircle, Rocket } from 'lucide-react';
 
 // ── Extracted component imports ──────────────────────────────────────────────
@@ -972,8 +974,8 @@ export default function DashboardPage() {
   // - daysRemainingInPeriod = horizon, 'all' maps to 'this-year' so the
   //   two tabs reconcile on the shared "On Pace For YYYY" label.
   const allMyProjectsNonCancelled = allMyProjects.filter((p) => p.phase !== 'Cancelled');
-  const paceRate = (() => {
-    if (allMyProjectsNonCancelled.length === 0) return 0;
+  const { paceRate, dealsPerMonth } = (() => {
+    if (allMyProjectsNonCancelled.length === 0) return { paceRate: 0, dealsPerMonth: 0 };
     const avgFullCommissionPerDeal =
       allMyProjectsNonCancelled.reduce((s, p) => s + viewerFullCommissionPure(p, effectiveRepId), 0) /
       allMyProjectsNonCancelled.length;
@@ -983,8 +985,8 @@ export default function DashboardPage() {
     // doesn't extrapolate to 10/mo. Matches mobile.
     const daysSinceFirst = Math.max((new Date().getTime() - firstDealDate.getTime()) / 86400000, 1);
     const effectiveDays = Math.max(daysSinceFirst, 30);
-    const dealsPerMonth = (allMyProjectsNonCancelled.length / effectiveDays) * 30.44;
-    return dealsPerMonth * avgFullCommissionPerDeal;
+    const dpm = (allMyProjectsNonCancelled.length / effectiveDays) * 30.44;
+    return { paceRate: dpm * avgFullCommissionPerDeal, dealsPerMonth: dpm };
   })();
   const inPeriodCommissionEarned = (() => {
     const horizonPeriod = period === 'all' ? 'this-year' : period;
@@ -1003,6 +1005,33 @@ export default function DashboardPage() {
   const onPaceLabel = isYearLikePeriod
     ? `On Pace For ${new Date().getFullYear()}`
     : `On Pace · ${getPeriodLabel(period)}`;
+
+  // ── 2026 Cash Forecast (period='all' hero) ──────────────────────────────
+  //
+  // Dates each pending milestone by phase ETA + lag, sums those landing by
+  // Dec 31, plus future-sales milestones at current pace, plus paidYTD.
+  // Mirrors MobileDashboard exactly so the two surfaces never diverge.
+  const yearToDatePaid = sumPaid(allMyPayroll.filter((p) => isInPeriod(p.date, 'this-year')));
+  const avgMilestones = (() => {
+    const allMy = allMyProjects.filter((p) => p.phase !== 'Cancelled');
+    if (allMy.length === 0) return { avgM1: 0, avgM2: 0, avgM3: 0 };
+    let m1Sum = 0, m2Sum = 0, m3Sum = 0;
+    for (const p of allMy) {
+      const m = viewerMilestones(p, effectiveRepId);
+      m1Sum += m.m1; m2Sum += m.m2; m3Sum += m.m3;
+    }
+    return { avgM1: m1Sum / allMy.length, avgM2: m2Sum / allMy.length, avgM3: m3Sum / allMy.length };
+  })();
+  const cashForecast = computeCashForecast({
+    projects: allMyProjects,
+    repId: effectiveRepId,
+    dealsPerMonth,
+    avgM1: avgMilestones.avgM1,
+    avgM2: avgMilestones.avgM2,
+    avgM3: avgMilestones.avgM3,
+    paidYTD: yearToDatePaid,
+  });
+  const isHistorical = isHistoricalPeriod(period);
 
   // "Total Estimated Pay" = unpaid payroll + expected amounts from projects not yet in payroll
   const unpaidPayroll = allMyPayroll.filter((p) => p.status !== 'Paid').reduce((sum, p) => sum + p.amount, 0);
@@ -1302,20 +1331,87 @@ export default function DashboardPage() {
           qualifies. Visual weight scales with proximity. Phase 2c. */}
       <UpcomingBlitzBanner variant="desktop" />
 
-      {/* ── Welcome Banner with Glow CTA ─────────────────────────────────── */}
+      {/* Period tabs — moved ABOVE the hero in the 2026-05-25 mobile-parity
+          refactor so changing periods visibly drives the hero's content
+          (Cash Forecast → Historical → On Pace). Shared SegmentedPills. */}
+      <div className="flex justify-end mb-4">
+        <SegmentedPills
+          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          ariaLabel="Filter dashboard by period"
+        />
+      </div>
+
+      {/* ── Period-aware hero ─────────────────────────────────────────────
+          Three modes mirroring MobileDashboard:
+            • period === 'all' → 2026 Cash Forecast (with On Pace echo)
+            • isHistorical     → Historical Earned + Next Payout reminder
+            • otherwise        → On Pace For YYYY/Period
+          All three share the layout shell + Submit-a-Deal CTA so the
+          desktop muscle memory stays intact. */}
       <div className="card-surface rounded-xl md:rounded-2xl mb-6">
         <div className="px-6 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[var(--text-secondary)] text-sm font-medium tracking-wide mb-1">{getGreeting(effectiveRepName)}</p>
-            <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
-              <span style={{ color: 'var(--text-primary)' }}>Next Payout:</span> <span style={{ color: 'var(--accent-emerald-text)' }}>${pendingPayrollTotal.toLocaleString()}</span>
-            </p>
-            <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-2">
-              {nextFridayLabel}
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
-                {paydayCountdownLabel}
-              </span>
-            </p>
+
+            {period === 'all' && cashForecast.total > 0 ? (
+              <>
+                <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
+                  <span style={{ color: 'var(--text-primary)' }}>{new Date().getFullYear()} Cash Forecast:</span>{' '}
+                  <span style={{ color: 'var(--accent-emerald-text)' }}>${Math.round(cashForecast.total).toLocaleString()}</span>
+                </p>
+                <p className="text-[var(--text-muted)] text-xs mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    <span className="text-[var(--text-secondary)] font-medium">{onPaceLabel}:</span>{' '}
+                    <span className="text-[var(--accent-emerald-text)] font-semibold tabular-nums">${Math.round(onPaceValue).toLocaleString()}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-[var(--text-dim)]">·</span>
+                  <span>
+                    Paid YTD: <span className="text-[var(--text-secondary)] font-semibold tabular-nums">${Math.round(yearToDatePaid).toLocaleString()}</span>
+                  </span>
+                  <span
+                    title="Cash Forecast sums pending milestones dated by phase ETA + future-sales milestones at current pace + paid YTD. Lands by Dec 31."
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--surface-card)] text-[var(--text-muted)] cursor-help"
+                    aria-label="Cash Forecast math explanation"
+                  >
+                    <HelpCircle className="w-3 h-3" />
+                  </span>
+                </p>
+              </>
+            ) : isHistorical ? (
+              <>
+                <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
+                  <span style={{ color: 'var(--text-primary)' }}>Earned · {getPeriodLabel(period)}:</span>{' '}
+                  <span style={{ color: 'var(--accent-emerald-text)' }}>${totalPaid.toLocaleString()}</span>
+                </p>
+                <p className="text-[var(--text-muted)] text-xs mt-1.5 flex items-center gap-2">
+                  {nextFridayLabel}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${daysUntilPayday <= 2 ? 'bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : 'bg-[var(--border)]/50 text-[var(--text-secondary)] border border-[var(--border)]/30'}`}>
+                    Next payout: ${pendingPayrollTotal.toLocaleString()} · {paydayCountdownLabel}
+                  </span>
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em' }}>
+                  <span style={{ color: 'var(--text-primary)' }}>{onPaceLabel}:</span>{' '}
+                  <span style={{ color: 'var(--accent-emerald-text)' }}>${Math.round(onPaceValue).toLocaleString()}</span>
+                </p>
+                <p className="text-[var(--text-muted)] text-xs mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    Earned in-period: <span className="text-[var(--text-secondary)] font-semibold tabular-nums">${Math.round(inPeriodCommissionEarned).toLocaleString()}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-[var(--text-dim)]">·</span>
+                  <span>{dealsPerMonth.toFixed(1)} deals/mo</span>
+                  <span aria-hidden="true" className="text-[var(--text-dim)]">·</span>
+                  <span>
+                    {nextFridayLabel} · ${pendingPayrollTotal.toLocaleString()} ({paydayCountdownLabel})
+                  </span>
+                </p>
+              </>
+            )}
           </div>
 
           <div className="relative inline-flex shrink-0">
@@ -1331,18 +1427,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Period tabs — shared SegmentedPills primitive */}
-      <div className="flex justify-end mb-6">
-        <SegmentedPills
-          options={PERIODS.map((p) => ({ value: p.value, label: p.label }))}
-          value={period}
-          onChange={setPeriod}
-          size="sm"
-          ariaLabel="Filter dashboard by period"
-        />
-      </div>
-
-      {/* Next Payout shown in welcome banner above — no duplicate needed */}
+      {/* Next Payout shown in hero above when historical; on-pace echo when 'all' */}
 
       {/* MTD ring charts removed — financial detail lives in My Pay */}
 
