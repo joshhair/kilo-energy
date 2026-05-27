@@ -1,13 +1,20 @@
-// One-shot inspection: list form fields in the BVI master intake PDF.
-// Tells us whether the PDF is fillable (has AcroForm fields) or static (no fields).
+// Inspection: list AcroForm fields in a BVI intake PDF.
+// Tells us whether the PDF is fillable (has AcroForm fields) or static.
 //
-// Run: npx tsx scripts/inspect-bvi-pdf.mts
+// Run (default — inspects the deployed template):
+//   npx tsx scripts/inspect-bvi-pdf.mts
+//
+// Run against a different file (e.g. a refreshed template before swap):
+//   npx tsx scripts/inspect-bvi-pdf.mts path/to/other.pdf
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 
-const pdfPath = path.resolve(process.cwd(), 'lib/forms/bvi-intake.pdf');
+const argPath = process.argv[2];
+const pdfPath = argPath
+  ? path.resolve(process.cwd(), argPath)
+  : path.resolve(process.cwd(), 'lib/forms/bvi-intake.pdf');
 const bytes = readFileSync(pdfPath);
 const doc = await PDFDocument.load(bytes);
 

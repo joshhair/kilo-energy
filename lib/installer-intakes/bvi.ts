@@ -114,17 +114,34 @@ export function parseBviIntake(json: string | null | undefined): BviIntake {
 
 // PDF rendering uses AcroForm fields by name (see lib/pdf/installer-handoff.ts).
 // Field names in lib/forms/bvi-intake.pdf must match the constants in
-// renderBviPdf(). Current BVI field names:
-//   Text:     salesRepName, customerName, customerPhone, customerEmail,
-//             customerAddress, financeProduct, existingSystemInfo,
-//             batteryOther, gateCode, additionalNotes
-//   Checkbox: exportTypeNem3, exportTypeNonExport, siteSurveyYes,
-//             siteSurveyNo, batteryInsideGarage, batteryOutsideGarage,
-//             dogsYes, dogsNo, lockedGatesYes, lockedGatesNo
+// renderBviPdf(). Current BVI field names (refreshed 2026-05-26 to match
+// BVI's updated Sales Intake Form):
+//
+//   Text:     rep_name, rep_phone, rep_email,
+//             cust_name, cust_phone, cust_email, cust_address,
+//             existing_system, battery_other, gate_code, notes,
+//             finance_other_text
+//   Checkbox: export_nem3, export_non_export,
+//             finance_hdm, finance_wheelhouse, finance_cash, finance_other_cb,
+//             finance_hdm_v2, finance_wheelhouse_v2, finance_cash_v2, finance_other_cb_v2,
+//             survey_yes, survey_no,
+//             battery_inside, battery_outside,
+//             dogs_yes, dogs_no,
+//             gates_yes, gates_no
+//
+// The _v2 finance checkboxes are duplicates in BVI's source template
+// (likely an Acrobat editor remnant). The renderer fills BOTH primary
+// and _v2 variants defensively so the recipient sees consistent state
+// regardless of which copy their PDF viewer renders.
+//
+// Finance-product checkbox state is DERIVED at render time from the
+// Project's existing financer + productFamily + productType fields by
+// deriveBviFinanceFlags() in lib/handoff-service.ts. No new form input
+// needed — the rep's upstream picks drive the checkboxes.
 //
 // To update field positions or add fields: edit lib/forms/bvi-intake.pdf
-// in Acrobat Pro (Tools → Prepare Form), save in place. No code changes
-// needed unless field names change.
+// in Acrobat Pro (Tools → Prepare Form), save in place. To enumerate the
+// current field names: npx tsx scripts/inspect-bvi-pdf.mts [path-to-pdf]
 
 /**
  * Required-field validation for the BVI intake.

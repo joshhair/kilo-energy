@@ -2,19 +2,26 @@ import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { renderInstallerHandoffPdf, type HandoffPdfPayload } from '@/lib/pdf/installer-handoff';
 import { EMPTY_BVI_INTAKE } from '@/lib/installer-intakes/bvi';
+import { deriveBviFinanceFlags } from '@/lib/handoff-service';
 
 /**
  * Smoke tests for the BVI handoff PDF renderer. The renderer fills the
  * named AcroForm fields in lib/forms/bvi-intake.pdf and flattens. We
  * verify: the output is a valid non-empty PDF that re-loads, and that
  * the form has been flattened (no live form fields remain).
+ *
+ * Template refreshed 2026-05-26: snake_case field names + 4 finance-
+ * product checkboxes (HDM / Wheelhouse / CASH / Other + text) + new
+ * Sales Rep phone + email fields.
  */
 
 const BASE_PAYLOAD: HandoffPdfPayload = {
   installerSlug: 'bvi',
   salesRepName: 'Jane Smith',
+  salesRepPhone: '555-0100',
+  salesRepEmail: 'jane@kiloenergies.com',
   customerName: 'John Homeowner',
-  financeProduct: 'Goodleap',
+  bviFinance: { hdm: false, wheelhouse: false, cash: false, otherText: 'Goodleap' },
   intake: {
     ...EMPTY_BVI_INTAKE,
     customerPhone: '555-0200',
@@ -74,5 +81,57 @@ describe('renderInstallerHandoffPdf', () => {
     };
     const bytes = await renderInstallerHandoffPdf(payload);
     expect(bytes.byteLength).toBeGreaterThan(1000);
+  });
+
+  it('renders with HDM + Wheelhouse finance checkboxes both checked (Jane Smith scenario)', async () => {
+    // The driving real-world case: Wheelhouse-financed deal with HDM
+    // equipment family. Both boxes should be checked, otherText empty.
+    const payload: HandoffPdfPayload = {
+      ...BASE_PAYLOAD,
+      bviFinance: { hdm: true, wheelhouse: true, cash: false, otherText: '' },
+    };
+    const bytes = await renderInstallerHandoffPdf(payload);
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(1);
+    expect(doc.getForm().getFields().length).toBe(0); // flattened
+  });
+
+  it('renders with the rep contact fields populated', async () => {
+    // Sanity: setText on rep_name/rep_phone/rep_email doesn't throw, and
+    // empty rep_phone is tolerated (User.phone defaults to '' in schema).
+    const payload: HandoffPdfPayload = {
+      ...BASE_PAYLOAD,
+      salesRepPhone: '',
+    };
+    const bytes = await renderInstallerHandoffPdf(payload);
+    expect(bytes.byteLength).toBeGreaterThan(1000);
+  });
+});
+
+describe('deriveBviFinanceFlags', () => {
+  it('Jane Smith case: Wheelhouse financer + HDM family → both boxes checked', () => {
+    const flags = deriveBviFinanceFlags('Wheelhouse', 'HDM', 'Loan');
+    expect(flags).toEqual({ hdm: true, wheelhouse: true, cash: false, otherText: '' });
+  });
+
+  it('Cash-financed deal: only CASH checked', () => {
+    const flags = deriveBviFinanceFlags('Cash', null, 'Cash');
+    expect(flags).toEqual({ hdm: false, wheelhouse: false, cash: true, otherText: '' });
+  });
+
+  it('HDM-only (financer === HDM, no productFamily)', () => {
+    const flags = deriveBviFinanceFlags('HDM', null, 'Loan');
+    expect(flags).toEqual({ hdm: true, wheelhouse: false, cash: false, otherText: '' });
+  });
+
+  it('Unmapped financer falls through to Other with the financer name', () => {
+    const flags = deriveBviFinanceFlags('Goodleap', null, 'PPA');
+    expect(flags).toEqual({ hdm: false, wheelhouse: false, cash: false, otherText: 'Goodleap' });
+  });
+
+  it('Loan productType does NOT trigger CASH (only Cash productType does)', () => {
+    const flags = deriveBviFinanceFlags('EnFin', 'SPR-MAX3', 'Loan');
+    expect(flags.cash).toBe(false);
+    expect(flags.otherText).toBe('EnFin');
   });
 });

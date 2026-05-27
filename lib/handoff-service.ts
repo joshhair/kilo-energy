@@ -29,6 +29,42 @@ import { renderInstallerHandoffPdf, type HandoffPdfPayload } from '@/lib/pdf/ins
 import { renderHandoffEmailHtml } from '@/lib/email-templates/installer-handoff';
 import { parseBviIntake, bviHandoffFilename } from '@/lib/installer-intakes/bvi';
 
+/**
+ * Derive BVI's "Finance Product" checkbox state from existing Project
+ * fields (financer, productFamily, productType). The 2026-05-26 BVI
+ * template refresh moved this question from one free-text field to four
+ * checkboxes (HDM / Wheelhouse / CASH / Other + text). Auto-mapping here
+ * means no new form fields for the rep — Jane Smith's Wheelhouse-
+ * financed HDM-family deal results in BOTH HDM and Wheelhouse boxes
+ * checked, exactly matching what the rep already picked upstream.
+ *
+ * Mapping rules:
+ *   - hdm        ← financer === 'HDM'        OR productFamily === 'HDM'
+ *   - wheelhouse ← financer === 'Wheelhouse' OR productFamily === 'Wheelhouse'
+ *   - cash       ← financer === 'Cash'       OR productType   === 'Cash'
+ *   - if NONE matched → otherText = financer name (BVI sees what we have)
+ *
+ * Exported for unit tests + future installer-mapping reuse.
+ */
+export interface BviFinanceFlags {
+  hdm: boolean;
+  wheelhouse: boolean;
+  cash: boolean;
+  otherText: string;
+}
+
+export function deriveBviFinanceFlags(
+  financerName: string,
+  productFamily: string | null,
+  productType: string | null,
+): BviFinanceFlags {
+  const hdm        = financerName === 'HDM'        || productFamily === 'HDM';
+  const wheelhouse = financerName === 'Wheelhouse' || productFamily === 'Wheelhouse';
+  const cash       = financerName === 'Cash'       || productType   === 'Cash';
+  const otherText = (!hdm && !wheelhouse && !cash) ? financerName : '';
+  return { hdm, wheelhouse, cash, otherText };
+}
+
 export type HandoffMode =
   | 'manual'   // admin/PM clicked Send/Resend in the project page
   | 'auto'     // rep submitted a BVI deal with auto-send checked
@@ -73,6 +109,13 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
       handoffSentAt: true,
       utilityBillFileId: true,
       kWSize: true,
+      // productType + product.family feed the BVI finance-product
+      // checkbox derivation (HDM / Wheelhouse / CASH / Other). The 2026-
+      // 05-26 BVI template replaced a free-text financeProduct field with
+      // four checkboxes — we derive them from existing Project data so the
+      // rep workflow stays unchanged.
+      productType: true,
+      product: { select: { family: true } },
       installer: {
         select: {
           id: true, name: true, primaryEmail: true, ccEmails: true,
@@ -122,8 +165,16 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
   const pdfPayload: HandoffPdfPayload = {
     installerSlug: 'bvi',
     salesRepName: repName,
+    // Rep contact — surfaced on the new BVI template's Sales Rep section.
+    // User.phone defaults to '' (not null), User.email is required.
+    salesRepPhone: project.closer.phone || '',
+    salesRepEmail: project.closer.email,
     customerName: project.customerName,
-    financeProduct: project.financer.name,
+    bviFinance: deriveBviFinanceFlags(
+      project.financer.name,
+      project.product?.family ?? null,
+      project.productType,
+    ),
     intake,
   };
   let pdfBytes: Uint8Array;
