@@ -74,11 +74,22 @@ async function renderBviPdf(payload: HandoffPdfPayload): Promise<Uint8Array> {
   // block in lib/installer-intakes/bvi.ts for the full list.
   form.getTextField('rep_name').setText(payload.salesRepName);
   form.getTextField('rep_phone').setText(payload.salesRepPhone);
-  form.getTextField('rep_email').setText(payload.salesRepEmail);
+  // Email + address fields can hold strings longer than the visual field
+  // width (long firstname.lastname@company.com, or a full street address).
+  // Acrobat's default 12pt clips at the right border — drop to 9pt so
+  // common-length values render fully without changing the template's
+  // field positions. Matches the notes-field treatment below.
+  const repEmail = form.getTextField('rep_email');
+  repEmail.setFontSize(9);
+  repEmail.setText(payload.salesRepEmail);
   form.getTextField('cust_name').setText(payload.customerName);
   form.getTextField('cust_phone').setText(intake.customerPhone);
-  form.getTextField('cust_email').setText(intake.customerEmail);
-  form.getTextField('cust_address').setText(intake.customerAddress);
+  const custEmail = form.getTextField('cust_email');
+  custEmail.setFontSize(9);
+  custEmail.setText(intake.customerEmail);
+  const custAddress = form.getTextField('cust_address');
+  custAddress.setFontSize(9);
+  custAddress.setText(intake.customerAddress);
   form.getTextField('existing_system').setText(intake.existingSystemInfo);
   form.getTextField('gate_code').setText(intake.gateCode);
   // notes can hold a long paragraph; force a smaller font so it doesn't
