@@ -560,6 +560,59 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const currentStepIndex = PIPELINE_STEPS.indexOf(project.phase);
   const isOffTrack = currentStepIndex === -1;
 
+  // ── Admin-only: resolved baselines + commission summary ──
+
+  const projectBaselines = (() => {
+    if (project.baselineOverride) return project.baselineOverride;
+    if (project.installer === 'SolarTech' && project.solarTechProductId) {
+      try {
+        return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
+      } catch {
+        return { closerPerW: 0, kiloPerW: 0 } as InstallerBaseline;
+      }
+    }
+    if (project.installerProductId) {
+      return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);
+    }
+    return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
+  })();
+
+  const mobileTrainerLegs = computeProjectedTrainerLegs(
+    {
+      id: project.id,
+      trainerId: project.trainerId ?? null,
+      trainerRate: project.trainerRate ?? null,
+      repId: project.repId,
+      setterId: project.setterId ?? null,
+      kWSize: project.kWSize ?? 0,
+      m2Amount: project.m2Amount,
+      setterM2Amount: project.setterM2Amount,
+      additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+        userId: c.userId, userName: c.userName ?? '', m2Amount: c.m2Amount ?? 0,
+      })),
+      additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+        userId: s.userId, userName: s.userName ?? '', m2Amount: s.m2Amount ?? 0,
+      })),
+    },
+    trainerAssignments,
+    payrollEntries,
+  );
+  const mobileTrainerTotal = mobileTrainerLegs.reduce((s, l) => s + l.amount, 0);
+
+  const closerTotalForSummary = (project.m1Amount ?? 0) + (project.m2Amount ?? 0) + (project.m3Amount ?? 0);
+  const setterTotalForSummary = project.setterId
+    ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
+    : 0;
+  const coCloserTotal = (project.additionalClosers ?? []).reduce(
+    (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
+  );
+  const coSetterTotal = (project.additionalSetters ?? []).reduce(
+    (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
+  );
+  const totalProjectCommission = closerTotalForSummary + setterTotalForSummary + coCloserTotal + coSetterTotal + mobileTrainerTotal;
+  const kiloGross = (project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000;
+  const kiloMarginAmount = Math.round((kiloGross - totalProjectCommission) * 100) / 100;
+
   // ── Info rows ──
 
   const infoRows: [string, string][] = [
@@ -829,6 +882,19 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style={{ background: 'var(--surface-card)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{project.setterName} (setter) total</span>
                 <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt$(setterTotalExpected)}</span>
+              </div>
+            )}
+            {/* Admin-only: Total Commission + Kilo Margin summary */}
+            {isAdmin && (
+              <div className="mb-3 rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Commission</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalProjectCommission)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo Margin</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: kiloMarginAmount < 0 ? 'var(--accent-red-text)' : 'var(--accent-purple-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(kiloMarginAmount)}</span>
+                </div>
               </div>
             )}
             {!isMeView && (() => {
