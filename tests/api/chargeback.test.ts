@@ -1,8 +1,10 @@
 // API tests for explicit chargeback creation via POST /api/payroll.
 //
 // Verifies the Batch 2 gates:
-//   - isChargeback=true requires chargebackOfId
-//   - chargebackOfId must reference an existing Paid entry
+//   - isChargeback=true requires context: a chargebackOfId (linked), a
+//     chargeCategory (standalone charge), or a projectId (manual project
+//     clawback). A fully contextless chargeback is rejected.
+//   - chargebackOfId (when set) must reference an existing Paid entry
 //   - Referenced entry must be on same project + rep + stage
 //   - |amount| ≤ original amount
 //   - Can't chargeback a chargeback
@@ -130,19 +132,44 @@ describe('POST /api/payroll — chargeback flow', () => {
     expect(res.status).toBe(400);
   });
 
-  it('rejects chargeback without chargebackOfId (Zod refine)', async () => {
+  it('rejects a fully contextless chargeback — no parent, no category, no project (Zod refine)', async () => {
     const res = await POST(mkRequest({
       repId: testRepId,
-      projectId: testProjectId,
       amount: -500,
       type: 'Deal',
       paymentStage: 'M1',
       status: 'Draft',
       date: '2026-04-20',
       isChargeback: true,
-      // missing chargebackOfId
+      // no chargebackOfId, no chargeCategory, no projectId
     }));
     expect(res.status).toBe(400);
+  });
+
+  it('accepts a project-scoped chargeback without a linked parent entry', async () => {
+    // Manual payroll-page "Chargeback" flow: clawback against a known deal
+    // without linking a specific Paid PayrollEntry (e.g. the original was
+    // paid pre-app in Glide). projectId supplies the required context.
+    // Regression guard for Rebekah's 2026-05-28 "can't save chargeback on
+    // Troy Kramer" report.
+    const res = await POST(mkRequest({
+      repId: testRepId,
+      projectId: testProjectId,
+      amount: -1000,
+      type: 'Deal',
+      paymentStage: 'M2',
+      status: 'Draft',
+      date: '2026-04-20',
+      notes: 'Manual clawback — no in-app paid row to link',
+      isChargeback: true,
+      // no chargebackOfId, no chargeCategory — project context only
+    }));
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    createdIds.push(body.id);
+    expect(body.isChargeback).toBe(true);
+    expect(body.chargebackOfId).toBeNull();
+    expect(body.amount).toBe(-1000);
   });
 
   it('rejects chargeback exceeding original amount', async () => {

@@ -27,10 +27,20 @@ export const CHARGE_CATEGORY_LABELS: Record<typeof CHARGE_CATEGORIES[number], st
  *  post-window corrections. Capped to ±1M to catch fat-finger mistakes
  *  without blocking legitimate entries.
  *
- *  Standalone Charge entries: `chargeCategory` is non-null AND
- *  `chargebackOfId` is null. The two flags are mutually exclusive — a row
- *  is either a clawback of a specific Paid entry (chargebackOfId set) or
- *  a standalone one-off charge (chargeCategory set), never both.
+ *  A chargeback (isChargeback=true) must carry context in one of three
+ *  shapes:
+ *    1. Linked clawback — `chargebackOfId` points at the Paid entry being
+ *       clawed back (RecordChargebackModal on the project page). Service
+ *       layer validates the parent is Paid + same project/rep/stage.
+ *    2. Standalone charge — `chargeCategory` set, `chargebackOfId` null
+ *       (one-off deduction with no parent, e.g. equipment damage).
+ *    3. Project clawback — `projectId` set, no parent + no category. The
+ *       manual "Chargeback" flow on the payroll page records a clawback
+ *       against a known (typically cancelled) deal without linking a
+ *       specific Paid PayrollEntry — e.g. the original was paid pre-app in
+ *       Glide so there's no in-app row to point at.
+ *  `chargebackOfId` and `chargeCategory` remain mutually exclusive — a row
+ *  is never both a linked clawback and a standalone charge.
  */
 export const createPayrollSchema = z.object({
   repId: idSchema,
@@ -56,10 +66,12 @@ export const createPayrollSchema = z.object({
    *  clawback of a specific paid entry. Mutually exclusive with chargebackOfId. */
   chargeCategory: z.enum(CHARGE_CATEGORIES).nullish(),
 }).refine(
-  // Chargebacks must have EITHER a parent (linked) OR a category (standalone),
-  // never neither.
-  (d) => !d.isChargeback || d.chargebackOfId != null || d.chargeCategory != null,
-  { message: 'chargeback requires either chargebackOfId (linked) or chargeCategory (standalone)', path: ['chargebackOfId'] },
+  // A chargeback must carry context: a parent Paid entry (linked clawback),
+  // a charge category (standalone charge), or at least a project (manual
+  // project-scoped clawback from the payroll page). A fully contextless
+  // chargeback — no parent, no category, no project — is rejected.
+  (d) => !d.isChargeback || d.chargebackOfId != null || d.chargeCategory != null || d.projectId != null,
+  { message: 'chargeback requires a chargebackOfId (linked), chargeCategory (standalone), or projectId (project clawback)', path: ['chargebackOfId'] },
 ).refine(
   // Mutually exclusive — a row is one or the other.
   (d) => !(d.chargebackOfId != null && d.chargeCategory != null),

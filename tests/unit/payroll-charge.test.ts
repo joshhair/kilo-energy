@@ -82,6 +82,21 @@ describe('createPayrollSchema — standalone Charge', () => {
     expect(parsed.success).toBe(true);
   });
 
+  it('accepts a project-scoped chargeback with neither parent nor category', () => {
+    // Regression guard for the manual payroll-page "Chargeback" flow:
+    // a clawback against a known (cancelled) deal that does not link a
+    // specific Paid PayrollEntry. projectId supplies the required context.
+    // (Rebekah's 2026-05-28 "can't save chargeback on Troy Kramer" report.)
+    const parsed = createPayrollSchema.safeParse({
+      ...baseValid,
+      paymentStage: 'M2',
+      projectId: 'cm_troy_kramer_deal',
+      chargebackOfId: null,
+      chargeCategory: null,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it('every CHARGE_CATEGORY has a human-readable label', () => {
     for (const c of CHARGE_CATEGORIES) {
       expect(CHARGE_CATEGORY_LABELS[c]).toBeTruthy();

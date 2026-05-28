@@ -761,6 +761,12 @@ function PayrollPageInner() {
     const isCharge = paymentForm.type === 'Charge';
     const project = (!isBonus && !isCharge) ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
 
+    // Manual chargebacks are project-scoped clawbacks — the server requires
+    // a chargebackOfId, chargeCategory, OR projectId. The payroll-page flow
+    // supplies the projectId, so guard it here with a clear message rather
+    // than letting the request fail with the generic "failed to save" toast.
+    if (isChargeback && !paymentForm.projectId) { paymentSubmitting.current = false; toast('Select the deal to charge back', 'error'); return; }
+
     if (!isBonus && !isCharge && paymentForm.stage === 'M3') {
       if (!paymentForm.projectId || !project) { paymentSubmitting.current = false; toast('M3 payments require a linked project', 'error'); return; }
       const installerName = project.installer ?? '';
