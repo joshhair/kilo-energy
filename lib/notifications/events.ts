@@ -135,8 +135,10 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
   // Two events for proper privacy slicing. The rep event renders each
   // recipient's OWN commission slice only (their M1/M2/M3 + customer +
   // sold date + their role + party names without other-party amounts).
-  // The admin event renders the full deal with kilo margin and full
-  // attribution. Sub-dealer deals skip the rep event entirely (their
+  // The admin event renders the full deal with per-party commission
+  // totals and full attribution — but never kilo margin (margin never
+  // travels through email; see the deal-submitted.ts policy note).
+  // Sub-dealer deals skip the rep event entirely (their
   // commission structure doesn't match the standard rep formula) but
   // still fire the admin event.
   {
@@ -149,7 +151,7 @@ export const NOTIFICATION_EVENTS: EventDefinition[] = [
   {
     type: 'deal_submitted_admin',
     label: 'New deal submitted',
-    description: 'A rep submitted a new deal. Includes full attribution and margin for admin oversight.',
+    description: 'A rep submitted a new deal. Includes full attribution and commission totals for admin oversight.',
     category: 'admin',
     defaults: { email: true, sms: false, push: false, digestMode: 'instant' },
     audience: ['admin'],

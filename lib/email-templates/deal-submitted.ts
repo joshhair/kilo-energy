@@ -10,8 +10,10 @@
  *     the deal. TypeScript will refuse compilation if a caller tries to
  *     pass a kiloMargin field through this template.
  *
- *   - `AdminDealEmailData` carries the full picture: kilo margin, all
- *     rep commission totals, attribution chain. Admin-only.
+ *   - `AdminDealEmailData` carries per-party commission totals + the
+ *     attribution chain for admin oversight. It deliberately OMITS kilo
+ *     margin and kiloPerW — margin never travels through email (see the
+ *     policy note on the type). Admin-only.
  *
  * Both use the existing `renderNotificationEmail` shell for brand
  * consistency with the other Phase 3 notification templates.
@@ -155,8 +157,9 @@ export function renderDealSubmittedRepEmail(data: RepDealEmailData): {
   return { subject, html };
 }
 
-/** Render the admin-tier deal-submitted email. Includes kilo margin
- *  and full commission attribution. Admin audience only. */
+/** Render the admin-tier deal-submitted email. Includes per-party
+ *  commission totals + full attribution, but NEVER kilo margin or
+ *  kiloPerW (see the AdminDealEmailData policy note). Admin audience only. */
 export function renderDealSubmittedAdminEmail(data: AdminDealEmailData): {
   subject: string;
   html: string;
