@@ -609,9 +609,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const coSetterTotal = (project.additionalSetters ?? []).reduce(
     (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
   );
-  const totalProjectCommission = closerTotalForSummary + setterTotalForSummary + coCloserTotal + coSetterTotal + mobileTrainerTotal;
-  const kiloGross = (project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000;
-  const kiloMarginAmount = Math.round((kiloGross - totalProjectCommission) * 100) / 100;
+  // Three admin-only rollups related by: Rep Commission + Kilo Margin =
+  // Total Commission. Total = gross pool Kilo receives from the installer;
+  // Rep = everything paid out to reps; Margin = what Kilo keeps. Margin is
+  // derived by subtraction so the three always reconcile to the cent.
+  const repCommissionTotal = Math.round((closerTotalForSummary + setterTotalForSummary + coCloserTotal + coSetterTotal + mobileTrainerTotal) * 100) / 100;
+  const totalCommissionGross = Math.round((project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000 * 100) / 100;
+  const kiloMarginAmount = Math.round((totalCommissionGross - repCommissionTotal) * 100) / 100;
 
   // ── Info rows ──
 
@@ -884,12 +888,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{fmt$(setterTotalExpected)}</span>
               </div>
             )}
-            {/* Admin-only: Total Commission + Kilo Margin summary */}
+            {/* Admin-only: commission rollup — Total = Rep + Kilo Margin */}
             {isAdmin && (
               <div className="mb-3 rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)' }}>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Commission</span>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalProjectCommission)}</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalCommissionGross)}</span>
+                </div>
+                <div className="my-1.5 h-px" style={{ background: 'color-mix(in srgb, var(--accent-purple-solid) 18%, transparent)' }} />
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Rep Commission</span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(repCommissionTotal)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Kilo Margin</span>

@@ -731,9 +731,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const coSetterTotal = (project.additionalSetters ?? []).reduce(
     (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
   );
-  const totalProjectCommission = closerTotalExpected + setterTotalExpected + coCloserTotal + coSetterTotal + trainerTotalExpected;
-  const kiloGross = (project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000;
-  const kiloMarginAmount = Math.round((kiloGross - totalProjectCommission) * 100) / 100;
+  // Three admin-only rollups related by: Rep Commission + Kilo Margin =
+  // Total Commission. Total = the gross pool Kilo receives from the installer
+  // ((sold − Kilo cost) × W); Rep = everything paid out to reps (closer +
+  // setter + co-parties + trainers); Margin = what Kilo keeps. Margin is
+  // derived by subtraction so the three always reconcile to the cent.
+  const repCommissionTotal = Math.round((closerTotalExpected + setterTotalExpected + coCloserTotal + coSetterTotal + trainerTotalExpected) * 100) / 100;
+  const totalCommissionGross = Math.round((project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000 * 100) / 100;
+  const kiloMarginAmount = Math.round((totalCommissionGross - repCommissionTotal) * 100) / 100;
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
@@ -1174,11 +1179,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </span>
           </div>
 
-          {/* ── Admin-only: Total Commission + Kilo Margin summary ── */}
+          {/* ── Admin-only: commission rollup — Total = Rep + Kilo Margin ── */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4 px-1">
             <div className="flex items-center gap-2">
               <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Total Commission</span>
-              <span className="text-[var(--accent-emerald-text)] text-sm font-bold tabular-nums">${totalProjectCommission.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span className="text-[var(--text-primary)] text-sm font-bold tabular-nums">${totalCommissionGross.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Rep Commission</span>
+              <span className="text-[var(--accent-emerald-text)] text-sm font-bold tabular-nums">${repCommissionTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Kilo Margin</span>
