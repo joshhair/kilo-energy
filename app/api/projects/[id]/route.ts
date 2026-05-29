@@ -185,17 +185,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // sheet's Clear button; defaults false on new projects.
   if (body.noChainTrainer !== undefined) data.noChainTrainer = body.noChainTrainer;
 
-  // FK resolution: installer/financer name → ID
+  // FK resolution: installer/financer name → ID.
+  //
+  // Archived guard: an archived installer/financer must not be SELECTABLE on
+  // a deal — but archiving one must NOT freeze every existing deal that
+  // already uses it. The edit modal re-sends the current installer + financer
+  // names on EVERY save, so a blanket `!active → 400` rejected all edits
+  // (notes, phase, netPPW, …) on any deal whose installer/financer was later
+  // archived. Only reject when the value is actually CHANGING to an archived
+  // one; re-sending the deal's existing (since-archived) selection is allowed.
+  const currentFks = (body.installer !== undefined || body.financer !== undefined)
+    ? await prisma.project.findUnique({ where: { id }, select: { installerId: true, financerId: true } })
+    : null;
   if (body.installer !== undefined) {
     const inst = await prisma.installer.findFirst({ where: { name: body.installer } });
     if (!inst) return NextResponse.json({ error: `Installer "${body.installer}" not found` }, { status: 400 });
-    if (!inst.active) return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
+    if (!inst.active && inst.id !== currentFks?.installerId) return NextResponse.json({ error: 'Installer is archived' }, { status: 400 });
     data.installerId = inst.id;
   }
   if (body.financer !== undefined) {
     const fin = await prisma.financer.findFirst({ where: { name: body.financer } });
     if (!fin) return NextResponse.json({ error: `Financer "${body.financer}" not found` }, { status: 400 });
-    if (!fin.active) return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
+    if (!fin.active && fin.id !== currentFks?.financerId) return NextResponse.json({ error: 'Financer is archived' }, { status: 400 });
     data.financerId = fin.id;
   }
 
