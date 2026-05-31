@@ -148,7 +148,7 @@ export default function IncentiveCard({
         </div>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full animate-progress-grow transition-colors duration-300"
             style={{ width: `${pct}%`, background: barFill }}
           />
         </div>

@@ -1209,7 +1209,6 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         // them without re-deriving. Each filter mirrors the classification in
         // the row below so totals and drill-down sets are guaranteed to match.
         const closerDealCount = projects.filter((p) => p.repId === id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
-        const setterDealCount = projects.filter((p) => p.setterId === id && p.repId !== id && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
         const trainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId as string)).size;
 
         // Classify each payroll entry by the parent project's role assignment
@@ -1286,7 +1285,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 )}
                 <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="py-2.5 text-[var(--text-primary)]">Setter</td>
-                  <td className="py-2.5 text-[var(--text-secondary)]">{setterDealCount}</td>
+                  <td className="py-2.5 text-[var(--text-secondary)]">{new Set(setterEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
                   <td className={amountCls} onClick={() => openDrill('Setter', setterEntries, setterPay)}>${setterPay.toLocaleString()}</td>
                 </tr>
                 <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
@@ -1460,7 +1459,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
                 {!isPM && (
                   <td className="px-5 py-3 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums">
-                    {(proj.phase === 'Cancelled' || proj.phase === 'On Hold') ? '$0' : `$${(proj.repId === id
+                    {(proj.phase === 'Cancelled' || proj.phase === 'On Hold' || proj.phase === 'Completed') ? '$0' : `$${(proj.repId === id
                         ? (proj.setterId === id ? (proj.m1Amount ?? 0) : (proj.setterId ? 0 : (proj.m1Amount ?? 0))) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterId === id ? (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) : 0)
                         : proj.setterId === id
                           ? (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)

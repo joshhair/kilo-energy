@@ -790,7 +790,7 @@ export default function MobileReps() {
                 <div className="flex gap-4 mt-3 text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                   <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{deals}</span> deals</span>
                   <span>&middot;</span>
-                  <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{kw.toFixed(1)}</span> kW</span>
+                  <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(kw)}</span></span>
                   <span>&middot;</span>
                   <span><span className="font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${paid.toLocaleString()}</span> paid</span>
                 </div>
