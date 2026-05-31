@@ -1136,6 +1136,14 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                         repId: project.repId,
                         setterId: project.setterId ?? null,
                         kWSize: project.kWSize ?? 0,
+                        m2Amount: project.m2Amount,
+                        setterM2Amount: project.setterM2Amount,
+                        additionalClosers: (project.additionalClosers ?? []).map((c) => ({
+                          userId: c.userId, userName: c.userName ?? '', m2Amount: c.m2Amount ?? 0,
+                        })),
+                        additionalSetters: (project.additionalSetters ?? []).map((s) => ({
+                          userId: s.userId, userName: s.userName ?? '', m2Amount: s.m2Amount ?? 0,
+                        })),
                       },
                       trainerAssignments,
                       payrollEntries,

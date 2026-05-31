@@ -656,7 +656,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // dedicated slot matching closer/setter. Identified by paymentStage
   // (some trainers are admins/reps too, so repId alone isn't reliable).
   const trainerEntries = projectEntries.filter((e) => e.paymentStage === 'Trainer');
-  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId) && !trainerEntries.includes(e));
+  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId) && !trainerEntries.includes(e) && !e.isChargeback);
 
   // Resolved baseline rates for this project
   const projectBaselines = (() => {
@@ -959,7 +959,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         // their projected trainer pay folds into the role hero card via
         // `viewerTrainerPay` below — the trainer-only heading would be
         // misleading. So we keep the exclusion guards here.
-        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
+        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) && !(project.additionalSetters ?? []).some((s) => s.userId === effectiveRepId);
         const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
         return (
         <div className="card-surface rounded-2xl p-6 mb-5">
@@ -980,7 +980,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             // `viewerTrainerPay` block below), so the standalone trainer
             // card only fires when this is a pure trainer view — no other
             // role on the deal.
-            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId);
+            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) && !coSetterEntry;
 
             // Trainer-only path: single lump paid at Trainer stage, no M1/M2/M3.
             // Projected as trainerRate × kW × 1000; paid entries override if

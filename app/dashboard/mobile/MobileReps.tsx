@@ -12,6 +12,7 @@ import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Collapse } from '../components/Collapse';
 import { TopPerformersPodium } from '../users/components/TopPerformersPodium';
 import { SegmentedPills } from '../../../components/ui';
 
@@ -59,6 +60,32 @@ const ROLE_BADGE: Record<string, { label: string; color: string; bg: string }> =
   project_manager:  { label: 'PM',       color: 'var(--accent-cyan-text)', bg: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)' },
   admin:            { label: 'Admin',    color: 'var(--accent-amber-text)', bg: 'var(--accent-amber-soft)' },
 };
+
+function InactiveSection({ open, onToggle, label, children }: {
+  open: boolean;
+  onToggle: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
+        style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
+      >
+        <ChevronRight className={`w-4 h-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+        <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+          {label}
+        </span>
+      </button>
+      <Collapse open={open} durationMs={280}>
+        <div className="mt-2 space-y-2">{children}</div>
+      </Collapse>
+    </div>
+  );
+}
 
 export default function MobileReps() {
   const router = useRouter();
@@ -802,214 +829,154 @@ export default function MobileReps() {
 
       {/* Inactive reps — shown for rep or all filter */}
       {isAdmin && (roleFilter === 'rep' || roleFilter === 'all') && inactiveReps.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button
-            type="button"
-            onClick={() => setShowInactiveReps((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveReps ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Inactive reps ({inactiveReps.length})
-            </span>
-          </button>
-          {showInactiveReps && (
-            <div className="mt-2 space-y-2">
-              {inactiveReps.map((rep) => (
-                <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
-                    {(rep.firstName?.[0] ?? '') + (rep.lastName?.[0] ?? '')}
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${rep.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {rep.name} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
-                    </p>
-                    {rep.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>}
-                  </div>
-                  <button
-                    disabled={reactivatingId === rep.id}
-                    onClick={async () => {
-                      setReactivatingId(rep.id);
-                      try {
-                        await reactivateRep(rep.id);
-                        toast(`${rep.name} reactivated`, 'success');
-                      } catch {
-                        toast('Failed to reactivate rep', 'error');
-                      } finally {
-                        setReactivatingId(null);
-                      }
-                    }}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
-                  </button>
-                </div>
-              ))}
+        <InactiveSection open={showInactiveReps} onToggle={() => setShowInactiveReps((v) => !v)} label={`Inactive reps (${inactiveReps.length})`}>
+          {inactiveReps.map((rep) => (
+            <div key={rep.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
+                {(rep.firstName?.[0] ?? '') + (rep.lastName?.[0] ?? '')}
+              </div>
+              <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${rep.id}`)}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  {rep.name} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                </p>
+                {rep.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.email}</p>}
+              </div>
+              <button
+                disabled={reactivatingId === rep.id}
+                onClick={async () => {
+                  setReactivatingId(rep.id);
+                  try {
+                    await reactivateRep(rep.id);
+                    toast(`${rep.name} reactivated`, 'success');
+                  } catch {
+                    toast('Failed to reactivate rep', 'error');
+                  } finally {
+                    setReactivatingId(null);
+                  }
+                }}
+                className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
+              </button>
             </div>
-          )}
-        </div>
+          ))}
+        </InactiveSection>
       )}
 
       {/* Inactive sub-dealers — shown for sub-dealer or all filter */}
       {isAdmin && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button
-            type="button"
-            onClick={() => setShowInactiveSubDealers((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Inactive sub-dealers ({inactiveSubDealers.length})
-            </span>
-          </button>
-          {showInactiveSubDealers && (
-            <div className="mt-2 space-y-2">
-              {inactiveSubDealers.map((sd) => (
-                <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
-                    {(sd.firstName[0] ?? '') + (sd.lastName[0] ?? '')}
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${sd.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {sd.firstName} {sd.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
-                    </p>
-                    {sd.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
-                  </div>
-                  <button
-                    disabled={reactivatingSubDealerId === sd.id}
-                    onClick={async () => {
-                      setReactivatingSubDealerId(sd.id);
-                      try {
-                        await reactivateSubDealer(sd.id);
-                        toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
-                      } catch {
-                        toast('Failed to reactivate sub-dealer', 'error');
-                      } finally {
-                        setReactivatingSubDealerId(null);
-                      }
-                    }}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
-                  </button>
-                </div>
-              ))}
+        <InactiveSection open={showInactiveSubDealers} onToggle={() => setShowInactiveSubDealers((v) => !v)} label={`Inactive sub-dealers (${inactiveSubDealers.length})`}>
+          {inactiveSubDealers.map((sd) => (
+            <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
+                {(sd.firstName[0] ?? '') + (sd.lastName[0] ?? '')}
+              </div>
+              <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${sd.id}`)}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  {sd.firstName} {sd.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                </p>
+                {sd.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{sd.email}</p>}
+              </div>
+              <button
+                disabled={reactivatingSubDealerId === sd.id}
+                onClick={async () => {
+                  setReactivatingSubDealerId(sd.id);
+                  try {
+                    await reactivateSubDealer(sd.id);
+                    toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                  } catch {
+                    toast('Failed to reactivate sub-dealer', 'error');
+                  } finally {
+                    setReactivatingSubDealerId(null);
+                  }
+                }}
+                className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
+              </button>
             </div>
-          )}
-        </div>
+          ))}
+        </InactiveSection>
       )}
 
       {/* Inactive PMs — shown for project_manager or all filter */}
       {isAdmin && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button
-            type="button"
-            onClick={() => setShowInactivePMs((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Inactive project managers ({inactivePMs.length})
-            </span>
-          </button>
-          {showInactivePMs && (
-            <div className="mt-2 space-y-2">
-              {inactivePMs.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
-                    {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
-                    </p>
-                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
-                  </div>
-                  <button
-                    disabled={reactivatingPmId === u.id}
-                    onClick={async () => {
-                      setReactivatingPmId(u.id);
-                      try {
-                        const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                        if (!res.ok) throw new Error();
-                        setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
-                        toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                      } catch {
-                        toast('Failed to reactivate project manager', 'error');
-                      } finally {
-                        setReactivatingPmId(null);
-                      }
-                    }}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
-                  </button>
-                </div>
-              ))}
+        <InactiveSection open={showInactivePMs} onToggle={() => setShowInactivePMs((v) => !v)} label={`Inactive project managers (${inactivePMs.length})`}>
+          {inactivePMs.map((u) => (
+            <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
+                {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
+              </div>
+              <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                </p>
+                {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+              </div>
+              <button
+                disabled={reactivatingPmId === u.id}
+                onClick={async () => {
+                  setReactivatingPmId(u.id);
+                  try {
+                    const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                    if (!res.ok) throw new Error();
+                    setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                    toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                  } catch {
+                    toast('Failed to reactivate project manager', 'error');
+                  } finally {
+                    setReactivatingPmId(null);
+                  }
+                }}
+                className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
+              </button>
             </div>
-          )}
-        </div>
+          ))}
+        </InactiveSection>
       )}
 
       {/* Inactive admins — shown for admin or all filter */}
       {isAdmin && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
-        <div className="mt-2 pt-4 border-t border-dashed" style={{ borderColor: 'var(--border-subtle)' }}>
-          <button
-            type="button"
-            onClick={() => setShowInactiveAdmins((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left transition-colors"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-sm font-semibold flex-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              Inactive admins ({inactiveAdmins.length})
-            </span>
-          </button>
-          {showInactiveAdmins && (
-            <div className="mt-2 space-y-2">
-              {inactiveAdmins.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
-                    {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                      {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
-                    </p>
-                    {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
-                  </div>
-                  <button
-                    disabled={reactivatingAdminId === u.id}
-                    onClick={async () => {
-                      setReactivatingAdminId(u.id);
-                      try {
-                        const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                        if (!res.ok) throw new Error();
-                        setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
-                        toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                      } catch {
-                        toast('Failed to reactivate admin', 'error');
-                      } finally {
-                        setReactivatingAdminId(null);
-                      }
-                    }}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
-                    style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                  >
-                    {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
-                  </button>
-                </div>
-              ))}
+        <InactiveSection open={showInactiveAdmins} onToggle={() => setShowInactiveAdmins((v) => !v)} label={`Inactive admins (${inactiveAdmins.length})`}>
+          {inactiveAdmins.map((u) => (
+            <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: 0.7 }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'color-mix(in srgb, var(--text-muted) 20%, transparent)', color: 'var(--text-muted)' }}>
+                {(u.firstName[0] ?? '') + (u.lastName[0] ?? '')}
+              </div>
+              <div className="flex-1 min-w-0" onClick={() => router.push(`/dashboard/users/${u.id}`)}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  {u.firstName} {u.lastName} <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">(inactive)</span>
+                </p>
+                {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{u.email}</p>}
+              </div>
+              <button
+                disabled={reactivatingAdminId === u.id}
+                onClick={async () => {
+                  setReactivatingAdminId(u.id);
+                  try {
+                    const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                    if (!res.ok) throw new Error();
+                    setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                    toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                  } catch {
+                    toast('Failed to reactivate admin', 'error');
+                  } finally {
+                    setReactivatingAdminId(null);
+                  }
+                }}
+                className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
+                style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
+              </button>
             </div>
-          )}
-        </div>
+          ))}
+        </InactiveSection>
       )}
 
       {confirmAction && (
