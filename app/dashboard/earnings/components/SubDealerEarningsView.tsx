@@ -68,7 +68,7 @@ export function SubDealerEarningsView() {
               </thead>
               <tbody>
                 {sorted.map((entry) => (
-                  <tr key={entry.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
+                  <tr key={entry.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/[0.15] hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="px-6 py-3 text-[var(--text-primary)]">{entry.customerName || '\u2014'}</td>
                     <td className="px-6 py-3">
                       <span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{entry.paymentStage}</span>

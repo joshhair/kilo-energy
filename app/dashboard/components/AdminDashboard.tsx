@@ -354,13 +354,14 @@ export function AdminDashboard({
           <Link
             key={label}
             href={href}
-            className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 border font-bold text-sm transition-all duration-150 ease-out motion-safe:hover:scale-[1.02] motion-safe:hover:-translate-y-px motion-safe:active:scale-[0.97] motion-safe:active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--qa-ring)] focus-visible:ring-offset-[var(--surface-page)]"
             style={{
+              '--qa-ring': accent,
               fontFamily: "'DM Sans', sans-serif",
               background: `color-mix(in srgb, ${accent} 10%, var(--surface-card))`,
               borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
               color: text,
-            }}
+            } as CSSProperties}
           >
             <Icon className="w-[15px] h-[15px] flex-shrink-0" />
             {label}
@@ -370,11 +371,12 @@ export function AdminDashboard({
 
       {/* Top 6 GradCard stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
-        {topStats.map((stat) => {
+        {topStats.map((stat, i) => {
           const gc = gradCardConfig[stat.label] ?? { color: stat.accentHex, grad: tintedGrad(stat.accentHex) };
           return (
-            <Link key={stat.label} href={stat.href} className="group cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:translate-y-[-2px]" style={{ textDecoration: 'none' }}>
-              <div title={stat.tooltip} style={{
+            <Link key={stat.label} href={stat.href} className={`group cursor-pointer hover:scale-[1.02] transition-all duration-[200ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:translate-y-[-2px] animate-slide-in-scale stagger-${i + 1}`} style={{ textDecoration: 'none' }}>
+              <div title={stat.tooltip} className="group-hover:shadow-[0_0_0_2px_var(--gc-ring)] transition-[box-shadow] duration-[250ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" style={{
+                '--gc-ring': gc.color,
                 background: gc.grad,
                 border: `1px solid ${gc.color}40`,
                 borderRadius: 16,
@@ -383,7 +385,7 @@ export function AdminDashboard({
                 overflow: 'hidden',
                 flex: 1,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent)',
-              }}>
+              } as CSSProperties}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${gc.color}, transparent 70%)` }} />
                 <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${gc.color}15 0%, transparent 70%)` }} />
                 <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 14 }}>{stat.label}</p>
@@ -568,7 +570,7 @@ export function AdminDashboard({
                     </thead>
                     <tbody>
                       {periodInstallerRanking.map((inst, i) => (
-                        <tr key={inst.name} className="border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors">
+                        <tr key={inst.name} className="relative border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-amber-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                           <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium flex items-center gap-2">
                             {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-[var(--text-primary)]`}>#{i + 1}</span>}
                             {inst.name}
@@ -725,7 +727,7 @@ export function AdminDashboard({
                       const closerPay = isCancelled ? 0 : ((proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + coCloserPay);
                       const setterPay = isCancelled ? 0 : ((proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0) + coSetterPay);
                       return (
-                      <tr key={proj.id} className="border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150">
+                      <tr key={proj.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                         {/* 1 */}<td className="px-6 py-3">
                           <Link href={`/dashboard/projects/${proj.id}`} className="text-[var(--text-primary)] hover:text-[var(--accent-emerald-text)] transition-colors">{proj.customerName}</Link>
                           {proj.subDealerId && <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-[var(--accent-amber-text)] border border-amber-500/20">Sub-Dealer</span>}
