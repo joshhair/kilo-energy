@@ -1433,6 +1433,36 @@ function TrainingPageInner() {
             />
           );
         })()}
+
+        {/* Edit assignment modal */}
+        {editAssignmentId && (() => {
+          const ea = trainerAssignments.find((a) => a.id === editAssignmentId);
+          if (!ea) return null;
+          return (
+            <EditAssignmentModal
+              assignment={ea}
+              reps={reps}
+              onClose={() => setEditAssignmentId(null)}
+              onSaved={(updated) => {
+                setTrainerAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+                setEditAssignmentId(null);
+                toast('Assignment updated', 'success');
+              }}
+            />
+          );
+        })()}
+
+        {deleteConfirm && (
+          <ConfirmDialog
+            open
+            onClose={() => setDeleteConfirm(null)}
+            onConfirm={confirmDeleteAssignment}
+            title={deleteConfirm.title}
+            message={deleteConfirm.message}
+            confirmLabel="Delete"
+            danger
+          />
+        )}
       </div>
     );
   }

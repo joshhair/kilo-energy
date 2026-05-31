@@ -132,7 +132,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
           {participants.map((p: any, i: number) => {
             const name = `${p.user.firstName} ${p.user.lastName}`;
             const stats = statsByUserId.get(p.user.id);
-            const statusBadge = p.joinStatus === 'approved' ? 'Approved' : p.joinStatus === 'pending' ? 'Pending' : 'Denied';
+            const statusBadge = p.joinStatus === 'approved' ? 'Approved' : p.joinStatus === 'pending' ? 'Pending' : p.joinStatus === 'invited' ? 'Invited' : p.joinStatus === 'waitlist' ? 'Waitlist' : 'Denied';
             const isOwner = p.user.id === blitzOwnerId;
             // Attendance pills only render for non-owner approved
             // participants — the leader marks others, not themselves.
@@ -177,6 +177,19 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                       style={{ color: 'var(--accent-red-text)', border: '1px solid var(--accent-red-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                     >
                       <X className="w-3.5 h-3.5" /> Decline
+                    </button>
+                  </div>
+                )}
+
+                {p.joinStatus === 'waitlist' && canManage && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      disabled={processing.has(p.user.id)}
+                      onClick={() => handleDecision(p.user.id, 'approved')}
+                      className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 text-sm font-semibold text-black rounded-lg disabled:opacity-40"
+                      style={{ background: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Check className="w-3.5 h-3.5" /> Approve
                     </button>
                   </div>
                 )}
