@@ -1785,11 +1785,21 @@ export default function DashboardPage() {
               const setterM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M1' && e.status === 'Paid');
               const setterM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M2' && e.status === 'Paid');
               const setterM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.setterId && e.paymentStage === 'M3' && e.status === 'Paid');
+              const closerM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.repId && e.paymentStage === 'M1' && e.status === 'Paid');
+              const closerM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.repId && e.paymentStage === 'M2' && e.status === 'Paid');
+              const closerM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === proj.repId && e.paymentStage === 'M3' && e.status === 'Paid');
               const coCloserEntry = (proj.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
               const coSetterEntry = (proj.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
               const coPartyM1Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M1' && e.status === 'Paid');
               const coPartyM2Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M2' && e.status === 'Paid');
               const coPartyM3Paid = payrollEntries.some(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'M3' && e.status === 'Paid');
+              const trainerEntries = proj.trainerId === effectiveRepId
+                ? payrollEntries.filter(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer')
+                : [];
+              const _trainerPaid = trainerEntries.some(e => e.status === 'Paid');
+              const trainerPayAmount = trainerEntries.length > 0
+                ? trainerEntries.reduce((s, e) => s + e.amount, 0)
+                : Math.round((proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000);
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
@@ -1798,7 +1808,9 @@ export default function DashboardPage() {
                     ? coCloserEntry.m1Amount + coCloserEntry.m2Amount + (coCloserEntry.m3Amount ?? 0)
                     : coSetterEntry
                       ? coSetterEntry.m1Amount + coSetterEntry.m2Amount + (coSetterEntry.m3Amount ?? 0)
-                      : 0;
+                      : proj.trainerId === effectiveRepId
+                        ? trainerPayAmount
+                        : 0;
               const soldLabel = (() => {
                 if (!proj.soldDate) return '—';
                 const [y, m, d] = proj.soldDate.split('-').map(Number);
@@ -1853,10 +1865,10 @@ export default function DashboardPage() {
                           </>
                         ) : (
                           <>
-                            <MilestoneDot label="M1" paid={proj.m1Paid} amount={proj.m1Amount ?? 0} />
-                            <MilestoneDot label="M2" paid={proj.m2Paid} amount={m2DisplayAmount} />
+                            <MilestoneDot label="M1" paid={closerM1Paid} amount={proj.m1Amount ?? 0} />
+                            <MilestoneDot label="M2" paid={closerM2Paid} amount={m2DisplayAmount} />
                             {(proj.m3Amount ?? 0) > 0 && (
-                              <MilestoneDot label="M3" paid={proj.m3Paid} amount={proj.m3Amount ?? 0} />
+                              <MilestoneDot label="M3" paid={closerM3Paid} amount={proj.m3Amount ?? 0} />
                             )}
                           </>
                         )}

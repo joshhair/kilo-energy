@@ -489,7 +489,7 @@ function RepEarningsView() {
       <div className="mb-5">
         <SegmentedPills<'deal' | 'bonus' | 'reimbursements'>
           options={[
-            { value: 'deal', label: 'Payroll Report', badge: sortedDealsBase.length },
+            { value: 'deal', label: 'Payroll Report', badge: sortedDealsBase.length - reimbCount },
             { value: 'bonus', label: 'Bonuses', badge: sortedBonuses.length },
             { value: 'reimbursements', label: 'Reimb. History', badge: filteredReimbs.length },
           ]}
