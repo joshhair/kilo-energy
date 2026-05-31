@@ -252,7 +252,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   // have to open it to discover them. canManage gates this since reps
   // can't act on pending rows anyway.
   const pendingParticipantCount = canManage
-    ? (blitz?.participants?.filter((p: any) => p.joinStatus === 'pending').length ?? 0)
+    ? (blitz?.participants?.filter((p: any) => ['pending', 'invited', 'waitlist'].includes(p.joinStatus)).length ?? 0)
     : 0;
 
   const tabs: BlitzTab[] = [
@@ -458,6 +458,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               totalDeals={approvedVisibleProjects.length}
               totalKW={totalKW}
               notes={blitz.notes}
+              isAdmin={isAdmin}
+              netProfit={kiloMargin - totalCosts}
             />
             {!isAdmin && effectiveRepId && visibleProjects.length > 0 && (() => {
               const myPay = visibleProjects.reduce((s: number, p: any) => {

@@ -20,8 +20,9 @@ import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deducti
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
-import { RotateCcw, Zap, ClipboardCopy, Share2, Link2 } from 'lucide-react';
+import { RotateCcw, Zap } from 'lucide-react';
 import CalcHistoryPanel from './shared/CalcHistoryPanel';
+import CalcShareBar from './shared/CalcShareBar';
 import MobileCalculatorSkeleton from './shared/MobileCalculatorSkeleton';
 import { SegmentedPills } from '../../../components/ui';
 
@@ -550,7 +551,7 @@ export default function MobileCalculator() {
               type="button"
               onClick={handleReset}
               title="Clear all fields"
-              className="flex-shrink-0 p-3 rounded-xl transition-colors"
+              className="flex-shrink-0 p-3.5 rounded-xl transition-colors active:scale-[0.93] transition-transform duration-100"
               style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
             >
               <RotateCcw className="w-4 h-4" />
@@ -886,18 +887,7 @@ export default function MobileCalculator() {
             </p>
           </div>
 
-          {/* Share actions */}
-          <div className="flex gap-2 mt-4">
-            <button type="button" onClick={handleCopyResult} title="Copy deal summary" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              <ClipboardCopy className="w-3.5 h-3.5 flex-shrink-0" /> Copy
-            </button>
-            <button type="button" onClick={handleShareResult} title="Copy share summary" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              <Share2 className="w-3.5 h-3.5 flex-shrink-0" /> Share
-            </button>
-            <button type="button" onClick={handleShareURL} title="Copy shareable URL" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              <Link2 className="w-3.5 h-3.5 flex-shrink-0" /> Link
-            </button>
-          </div>
+          <CalcShareBar onCopy={handleCopyResult} onShare={handleShareResult} onShareURL={handleShareURL} />
         </MobileCard>
         </div>
       )}

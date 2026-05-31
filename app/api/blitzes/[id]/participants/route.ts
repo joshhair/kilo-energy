@@ -298,7 +298,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // their own 'invited' record to 'approved' (accept) or 'declined'
   // (pass) — this is the rep-confirmation arm of Phase 3d. They cannot
   // touch anyone else's row.
-  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, startDate: true, endDate: true } });
+  const blitz = await prisma.blitz.findUnique({ where: { id: blitzId }, select: { ownerId: true, name: true, startDate: true, endDate: true, confirmDeadline: true, maxParticipants: true } });
   if (!blitz) return NextResponse.json({ error: 'Blitz not found' }, { status: 404 });
   if (body.userId === blitz.ownerId && body.joinStatus !== undefined && body.joinStatus !== 'approved') {
     return NextResponse.json({ error: 'Cannot change the blitz owner\'s join status to non-approved' }, { status: 400 });
@@ -327,8 +327,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Can only edit your own blitz goal' }, { status: 403 });
   }
 
+  // For invited reps self-accepting, enforce the same capacity and deadline
+  // gates that the POST endpoint applies to self-service joins.
+  let effectiveJoinStatus = body.joinStatus;
+  if (isSelfAcceptingInvite && body.joinStatus === 'approved') {
+    if (blitz.confirmDeadline && new Date() > blitz.confirmDeadline) {
+      effectiveJoinStatus = 'waitlist';
+    } else if (blitz.maxParticipants != null) {
+      const approvedCount = await prisma.blitzParticipant.count({
+        where: { blitzId, joinStatus: 'approved' },
+      });
+      if (approvedCount >= blitz.maxParticipants) {
+        effectiveJoinStatus = 'waitlist';
+      }
+    }
+  }
+
   const data: Record<string, unknown> = {};
-  if (body.joinStatus !== undefined) data.joinStatus = body.joinStatus;
+  if (effectiveJoinStatus !== undefined) data.joinStatus = effectiveJoinStatus;
   if (body.attendanceStatus !== undefined) data.attendanceStatus = body.attendanceStatus;
   if (body.targetDeals !== undefined) data.targetDeals = body.targetDeals;
 
@@ -339,7 +355,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 
   // If the participant is no longer approved, unlink their orphaned deals (same logic as DELETE).
-  if (body.joinStatus !== undefined && body.joinStatus !== 'approved' && existing.joinStatus === 'approved') {
+  if (effectiveJoinStatus !== undefined && effectiveJoinStatus !== 'approved' && existing.joinStatus === 'approved') {
     const approvedAfterPatch = await prisma.blitzParticipant.findMany({
       where: { blitzId, joinStatus: 'approved' },
       select: { userId: true },
@@ -380,7 +396,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // If the participant is re-approved after being unlinked, re-link their deals within the blitz window.
-  if (body.joinStatus === 'approved' && existing.joinStatus !== 'approved') {
+  if (effectiveJoinStatus === 'approved' && existing.joinStatus !== 'approved') {
     // Scope re-linking to deals where the other primary party is also a participant of THIS blitz.
     // Without this, overlapping blitz windows would allow re-approval in Blitz B to steal deals
     // that were originally linked to Blitz A (their blitzId was set to null when unlinked from A).

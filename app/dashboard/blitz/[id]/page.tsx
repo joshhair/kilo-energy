@@ -601,7 +601,7 @@ export default function BlitzDetailPage() {
   // them by opening the tab. canManage gates this since reps can't act on
   // pending rows anyway. Renders inline next to the tab label.
   const pendingParticipantCount = canManage
-    ? (blitz?.participants?.filter((p: any) => p.joinStatus === 'pending').length ?? 0)
+    ? (blitz?.participants?.filter((p: any) => ['pending', 'invited', 'waitlist'].includes(p.joinStatus)).length ?? 0)
     : 0;
 
   const tabs: { key: TabKey; label: string; pendingBadge?: number }[] = [

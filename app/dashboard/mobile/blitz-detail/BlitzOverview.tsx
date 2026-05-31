@@ -1,23 +1,30 @@
 'use client';
 
-import { formatCompactKWParts } from '../../../../lib/utils';
+import { formatCompactKWParts, formatCurrency } from '../../../../lib/utils';
 
 interface Props {
   participantCount: number;
   totalDeals: number;
   totalKW: number;
   notes?: string | null;
+  isAdmin?: boolean;
+  netProfit?: number;
 }
 
-export default function BlitzOverview({ participantCount, totalDeals, totalKW, notes }: Props) {
+export default function BlitzOverview({ participantCount, totalDeals, totalKW, notes, isAdmin, netProfit }: Props) {
+  const kw = formatCompactKWParts(totalKW);
+  const stats: { value: string | number; label: string; valueClass?: string }[] = [
+    { value: participantCount, label: participantCount !== 1 ? 'Participants' : 'Participant' },
+    { value: totalDeals, label: totalDeals !== 1 ? 'Deals' : 'Deal' },
+    { value: kw.value, label: `Total ${kw.unit}` },
+    ...(isAdmin && netProfit !== undefined
+      ? [{ value: formatCurrency(netProfit), label: 'Net Profit', valueClass: netProfit >= 0 ? 'var(--accent-emerald-solid)' : 'var(--accent-red-solid)' }]
+      : []),
+  ];
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-2 [&>*]:min-w-0">
-        {([
-          { value: participantCount, label: participantCount !== 1 ? 'Participants' : 'Participant' },
-          { value: totalDeals, label: totalDeals !== 1 ? 'Deals' : 'Deal' },
-          (() => { const t = formatCompactKWParts(totalKW); return { value: t.value, label: `Total ${t.unit}` }; })(),
-        ] as const).map((stat, i) => (
+      <div className={`grid gap-2 [&>*]:min-w-0 ${stats.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        {stats.map((stat, i) => (
           <div
             key={stat.label}
             className="rounded-xl p-3 text-center"
@@ -29,8 +36,8 @@ export default function BlitzOverview({ participantCount, totalDeals, totalKW, n
             }}
           >
             <p
-              className="text-xl font-bold text-[var(--text-primary)] leading-none whitespace-nowrap"
-              style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+              className="text-xl font-bold leading-none whitespace-nowrap"
+              style={{ color: stat.valueClass ?? 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
             >
               {stat.value}
             </p>
