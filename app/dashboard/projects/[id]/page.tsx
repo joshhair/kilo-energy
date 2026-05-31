@@ -562,7 +562,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       return Number.isFinite(n) ? n : 0;
     };
     const additionalClosersOut = editVals.additionalClosers
-      .filter((c) => !!c.userId && c.userId !== project.repId)
+      .filter((c) => !!c.userId && c.userId !== (editVals.repId || project.repId))
       .map((c, i) => ({
         userId: c.userId,
         userName: reps.find((r) => r.id === c.userId)?.name ?? '',

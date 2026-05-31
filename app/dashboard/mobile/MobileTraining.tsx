@@ -15,6 +15,7 @@ import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
 import MobileCard from './shared/MobileCard';
 import MobileEmptyState from './shared/MobileEmptyState';
+import MobileTraineeExpandPanel from './MobileTraineeExpandPanel';
 import { SegmentedPills } from '../../../components/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -624,8 +625,7 @@ export default function MobileTraining({
                     }`}
                   >
                     <div className="overflow-hidden">
-                  {isExpanded && (
-                    <div style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <div aria-hidden={!isExpanded || undefined} style={{ borderTop: '1px solid var(--border-subtle)' }}>
                       {group.rows.map((row, idx) => {
                         const isMenuOpen = openActionMenuId === row.assignment.id;
                         const traineeName = row.trainee?.name ?? 'Unknown';
@@ -670,9 +670,9 @@ export default function MobileTraining({
                               }`}
                             >
                               <div className="overflow-hidden">
-                            {isMenuOpen && (
                               <div
                                 className="px-4 pb-3 pt-3 grid grid-cols-2 gap-2"
+                                aria-hidden={!isMenuOpen || undefined}
                                 style={{ borderTop: '1px solid var(--border-subtle)' }}
                               >
                                 <Link
@@ -733,14 +733,12 @@ export default function MobileTraining({
                                   </button>
                                 )}
                               </div>
-                            )}
                               </div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  )}
                     </div>
                   </div>
                 </div>
@@ -816,6 +814,7 @@ export default function MobileTraining({
       />
 
       {/* ── Trainees list (filtered by tab) ─────────────────────────────── */}
+      <div key={repView} className="motion-safe:animate-[fadeUpIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]">
       {visibleTrainees.length === 0 ? (
         <MobileCard>
           <MobileEmptyState
@@ -831,7 +830,7 @@ export default function MobileTraining({
           {visibleTrainees.map((td, idx) => {
             const isOpen = expandedAssignment === td.assignment.id;
             return (
-              <div key={td.assignment.id} style={{ borderBottom: idx < visibleTrainees.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+              <div key={td.assignment.id} className="motion-safe:animate-[fadeUpIn_260ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ borderBottom: idx < visibleTrainees.length - 1 ? '1px solid var(--border-subtle)' : 'none', animationDelay: `${Math.min(idx, 6) * 40}ms` }}>
                 <button
                   onClick={() => setExpandedAssignment(isOpen ? null : td.assignment.id)}
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 min-h-[48px]
@@ -867,61 +866,13 @@ export default function MobileTraining({
                   }`}
                 >
                   <div className="overflow-hidden">
-                    {isOpen && <div className="px-4 pb-3">
-                      {(() => {
-                        const prevThreshold = td.activeTierIndex > 0
-                          ? (td.assignment.tiers[td.activeTierIndex - 1].upToDeal ?? 0) : 0;
-                        const nextThreshold = td.assignment.tiers[td.activeTierIndex]?.upToDeal ?? null;
-                        const range = nextThreshold === null ? 1 : Math.max(1, nextThreshold - prevThreshold);
-                        const pct = nextThreshold === null ? 100 : Math.min(100, ((td.consumedDeals - prevThreshold) / range) * 100);
-                        return (
-                          <div className="mb-3 pt-1 motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '0ms' }}>
-                            <div className="flex justify-between text-[11px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
-                              <span>{td.consumedDeals} deals</span>
-                              <span>{nextThreshold === null ? 'Max tier reached' : `${nextThreshold} to advance`}</span>
-                            </div>
-                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
-                              <div
-                                className="h-full rounded-full animate-progress-grow"
-                                style={{ width: `${pct}%`, transformOrigin: 'left', animationDelay: '60ms', background: 'var(--accent-emerald-solid)' }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      <div className="flex justify-between items-center mb-2 text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '80ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                        <span className="font-semibold uppercase tracking-widest text-[11px]" style={{ color: 'var(--text-dim)' }}>Earned from Trainee</span>
-                        <span className="font-bold tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(td.earningsFromTrainee)}</span>
-                      </div>
-                      <table className="w-full text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '140ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                        <thead>
-                          <tr style={{ color: 'var(--text-dim)' }}>
-                            <th className="text-left py-1 font-semibold uppercase tracking-widest">Deals Up To</th>
-                            <th className="text-right py-1 font-semibold uppercase tracking-widest">Rate ($/W)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {td.assignment.tiers.map((tier, i) => (
-                            <tr
-                              key={i}
-                              className="motion-safe:animate-[fadeSlideIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]"
-                              style={{ animationDelay: `${200 + i * 55}ms`, color: i === td.activeTierIndex ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
-                            >
-                              <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
-                              <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                                ${tier.ratePerW.toFixed(2)}
-                                {i === td.activeTierIndex && (
-                                  <span
-                                    className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide leading-none"
-                                    style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', color: 'var(--accent-emerald-text)' }}
-                                  >ACTIVE</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>}
+                    <MobileTraineeExpandPanel
+                      isOpen={isOpen}
+                      tiers={td.assignment.tiers}
+                      activeTierIndex={td.activeTierIndex}
+                      consumedDeals={td.consumedDeals}
+                      earningsFromTrainee={td.earningsFromTrainee}
+                    />
                   </div>
                 </div>
               </div>
@@ -929,6 +880,7 @@ export default function MobileTraining({
           })}
         </div>
       )}
+      </div>
 
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
