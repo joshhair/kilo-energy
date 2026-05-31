@@ -116,6 +116,9 @@ const SETTINGS_KEYFRAMES = `
     to   { transform: translateX(100%); }
   }
   @media(prefers-reduced-motion:reduce){ .export-shimmer{ display:none; } .export-pulse{ animation:none; } }
+  @keyframes cb-col-in { from { width: 0; opacity: 0; transform: translateX(-8px); } to { width: 44px; opacity: 1; transform: translateX(0); } }
+  .cb-col-in { animation: cb-col-in 200ms cubic-bezier(0.16,1,0.3,1) both; overflow: hidden; }
+  @media(prefers-reduced-motion:reduce){ .cb-col-in { animation: none; } }
 `;
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -318,13 +321,15 @@ function InstallersSection() {
             <MobileCard key={inst.name}>
               <div className="flex items-center justify-between gap-3">
                 {selectMode && (
-                  <button
-                    onClick={() => toggleSelect(inst.name)}
-                    className="shrink-0 p-1 active:opacity-70 transition-colors"
-                    style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
-                  >
-                    {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                  </button>
+                  <div className="cb-col-in">
+                    <button
+                      onClick={() => toggleSelect(inst.name)}
+                      className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-[0.85] transition-transform duration-100 ease-out"
+                      style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
+                    >
+                      {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                    </button>
+                  </div>
                 )}
                 <div
                   className="flex-1 min-w-0"
@@ -434,13 +439,15 @@ function FinancersSection() {
             <MobileCard key={fin.name}>
               <div className="flex items-center justify-between gap-3">
                 {selectMode && (
-                  <button
-                    onClick={() => toggleSelect(fin.name)}
-                    className="shrink-0 p-1 active:opacity-70 transition-colors"
-                    style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
-                  >
-                    {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                  </button>
+                  <div className="cb-col-in">
+                    <button
+                      onClick={() => toggleSelect(fin.name)}
+                      className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-[0.85] transition-transform duration-100 ease-out"
+                      style={{ color: isSelected ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
+                    >
+                      {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                    </button>
+                  </div>
                 )}
                 <div
                   className="flex-1 min-w-0"
@@ -725,13 +732,17 @@ function ProjectManagersSection() {
                 <button
                   key={field}
                   onClick={() => togglePerm(pm.id, field, pm[field])}
-                  className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-colors min-h-[44px] active:scale-[0.95] transition-transform duration-100"
+                  className="flex items-center gap-1.5 text-base px-3 py-2.5 rounded-xl border transition-all duration-150 ease-out min-h-[44px] active:scale-[0.95]"
                   style={{
                     background: pm[field] ? 'transparent' : 'var(--surface-card)',
                     color: pm[field] ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                     borderColor: pm[field]
                       ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
                       : 'var(--border-subtle)',
+                    boxShadow: pm[field]
+                      ? '0 0 0 2px color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)'
+                      : '0 0 0 2px transparent',
+                    transition: 'all 150ms ease-out',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                   }}
                 >
