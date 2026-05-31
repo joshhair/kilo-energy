@@ -559,12 +559,18 @@ export default function MobileEarnings() {
 // ── Admin Earnings View (mobile) ─────────────────────────────────────────────
 
 export function MobileAdminEarnings() {
-  const { reimbursements, setReimbursements } = useApp();
+  const { reimbursements, setReimbursements, payrollEntries, setPayrollEntries, reps } = useApp();
   const { toast } = useToast();
-  const [adminShowArchived, setAdminShowArchived] = useState(false);
-  const [deleteReimbId, setDeleteReimbId] = useState<string | null>(null);
+  const todayStr = localDateString(new Date());
 
   useEffect(() => { document.title = 'Earnings | Kilo Energy'; }, []);
+
+  type AdminTab = 'payroll' | 'reimbursements' | 'by-rep';
+  const [adminTab, setAdminTab] = useState<AdminTab>('payroll');
+
+  // ── Reimbursement tab state ──────────────────────────────────────────────
+  const [adminShowArchived, setAdminShowArchived] = useState(false);
+  const [deleteReimbId, setDeleteReimbId] = useState<string | null>(null);
 
   const adminReimbsForReview = useMemo(() => {
     return reimbursements
@@ -577,6 +583,60 @@ export function MobileAdminEarnings() {
       });
   }, [reimbursements, adminShowArchived]);
 
+  // ── Payroll tab state ────────────────────────────────────────────────────
+  const [adminRepFilter, setAdminRepFilter] = useState('');
+  const [adminStatusFilter, setAdminStatusFilter] = useState('');
+  const [markAllConfirmOpen, setMarkAllConfirmOpen] = useState(false);
+
+  const filteredAdminPayroll = useMemo(() => {
+    return payrollEntries
+      .filter((e) => (!adminRepFilter || e.repId === adminRepFilter) && (!adminStatusFilter || e.status === adminStatusFilter))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [payrollEntries, adminRepFilter, adminStatusFilter]);
+
+  const markPaid = (id: string) => {
+    setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Pending' ? { ...e, status: 'Paid' } : e));
+    fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Marked as paid', 'success'); })
+      .catch(() => { setPayrollEntries((prev) => prev.map((e) => e.id === id && e.status === 'Paid' ? { ...e, status: 'Pending' } : e)); toast('Failed to mark as paid', 'error'); });
+  };
+
+  const markAllPendingPaid = async () => {
+    const pending = filteredAdminPayroll.filter((e) => e.status === 'Pending').map((e) => e.id);
+    if (!pending.length) return;
+    const idSet = new Set(pending);
+    setPayrollEntries((prev) => prev.map((e) => idSet.has(e.id) ? { ...e, status: 'Paid' } : e));
+    const results = await Promise.allSettled(
+      pending.map((id) =>
+        fetch(`/api/payroll/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Paid' }) })
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return id; })
+      )
+    );
+    const failedIds = new Set(results.flatMap((r, i) => r.status === 'rejected' ? [pending[i]] : []));
+    if (failedIds.size > 0) {
+      setPayrollEntries((prev) => prev.map((e) => failedIds.has(e.id) ? { ...e, status: 'Pending' } : e));
+      toast(`${failedIds.size} entr${failedIds.size === 1 ? 'y' : 'ies'} failed to update`, 'error');
+    }
+    const successCount = pending.length - failedIds.size;
+    if (successCount > 0) toast(`Marked ${successCount} entr${successCount === 1 ? 'y' : 'ies'} as paid`, 'success');
+  };
+
+  // ── By Rep tab state ─────────────────────────────────────────────────────
+  const [byRepPeriod, setByRepPeriod] = useState<Period>('all');
+
+  const repSummary = useMemo(() => {
+    return reps.map((rep) => {
+      const entries = payrollEntries.filter((e) => e.repId === rep.id && matchesPeriod(e.date, byRepPeriod));
+      const paid    = entries.filter((e) => e.status === 'Paid' && e.date <= todayStr).reduce((s, e) => s + e.amount, 0);
+      const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
+      const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
+      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && matchesPeriod(r.date, byRepPeriod) && !r.archivedAt);
+      const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
+      return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
+    }).sort((a, b) => b.total - a.total);
+  }, [reps, payrollEntries, reimbursements, todayStr, byRepPeriod]);
+
+  // ── Reimbursement handlers ───────────────────────────────────────────────
   const undoReimbStatus = (id: string, revertTo: 'Pending' | 'Approved' | 'Denied') => {
     const currentRow = reimbursements.find((r) => r.id === id);
     if (!currentRow) return;
@@ -604,11 +664,8 @@ export function MobileAdminEarnings() {
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived: !already }) })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        if (already) {
-          toast('Reimbursement restored', 'success');
-        } else {
-          toast('Reimbursement archived', 'success', { label: 'Undo', onClick: () => archiveReimbAdmin(id) });
-        }
+        if (already) { toast('Reimbursement restored', 'success'); }
+        else { toast('Reimbursement archived', 'success', { label: 'Undo', onClick: () => archiveReimbAdmin(id) }); }
       })
       .catch(() => { setReimbursements((rs) => rs.map((r) => r.id === id ? row : r)); toast('Failed to update', 'error'); });
   };
@@ -625,105 +682,262 @@ export function MobileAdminEarnings() {
       .catch(() => { setReimbursements((rs) => [...rs, row]); toast('Failed to delete — rolled back', 'error'); });
   };
 
+  const selectCls = 'rounded-xl px-3 py-2 text-sm flex-1 focus:outline-none';
+
   return (
     <div className="px-5 pt-4 pb-28 space-y-4">
       <MobilePageHeader title="Earnings" />
-      <MobileSection
-        title="Reimbursement Review"
-        count={adminReimbsForReview.filter((r) => r.status === 'Pending').length}
-        collapsible
-        defaultOpen
-      >
-        <div className="flex items-center justify-between mb-2 px-1">
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {adminReimbsForReview.filter((r) => r.status === 'Pending').length} pending · {adminReimbsForReview.length} total
-          </span>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" style={{ color: 'var(--text-muted)' }}>
-            <input
-              type="checkbox"
-              checked={adminShowArchived}
-              onChange={(e) => setAdminShowArchived(e.target.checked)}
-              className="accent-[var(--accent-emerald-solid)]"
-            />
-            Show archived
-          </label>
-        </div>
-        {adminReimbsForReview.length === 0 ? (
-          <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-            {adminShowArchived ? 'No reimbursements' : 'All caught up — no pending reimbursements'}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {adminReimbsForReview.map((r) => (
-              <div
-                key={r.id}
-                className="rounded-2xl p-3"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: r.archivedAt ? 0.55 : 1 }}
-              >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
-                    <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <StatusDot status={r.status} />
-                      <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{r.date}</span>
-                      {r.receiptName && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>· 📎 receipt</span>}
+
+      {/* Tab bar */}
+      <SegmentedPills<AdminTab>
+        options={[
+          { value: 'payroll', label: 'Payroll', badge: filteredAdminPayroll.length },
+          { value: 'reimbursements', label: 'Reimbs', badge: adminReimbsForReview.filter((r) => r.status === 'Pending').length },
+          { value: 'by-rep', label: 'By Rep' },
+        ]}
+        value={adminTab}
+        onChange={setAdminTab}
+        scrollable
+        ariaLabel="Admin earnings tabs"
+      />
+
+      {/* ── Payroll tab ─────────────────────────────────────────────────────── */}
+      {adminTab === 'payroll' && (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <select
+              value={adminRepFilter}
+              onChange={(e) => setAdminRepFilter(e.target.value)}
+              className={selectCls}
+              style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+            >
+              <option value="">All reps</option>
+              {reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <select
+              value={adminStatusFilter}
+              onChange={(e) => setAdminStatusFilter(e.target.value)}
+              className={selectCls}
+              style={{ background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}
+            >
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Paid">Paid</option>
+              <option value="Draft">Draft</option>
+            </select>
+          </div>
+          {filteredAdminPayroll.some((e) => e.status === 'Pending') && (
+            <button
+              onClick={() => setMarkAllConfirmOpen(true)}
+              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl"
+              style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Mark All Pending Paid
+            </button>
+          )}
+          {filteredAdminPayroll.length === 0 ? (
+            <p className="text-base py-6 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No entries match your filters</p>
+          ) : (
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+              {filteredAdminPayroll.map((e, idx) => (
+                <div
+                  key={e.id}
+                  className="px-4 py-3 flex items-center justify-between gap-3"
+                  style={{ borderBottom: idx < filteredAdminPayroll.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-1" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{e.repName}</p>
+                    <p className="text-sm truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{e.customerName || '—'} · {e.paymentStage || e.type}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <StatusDot status={e.status} />
+                      <span className="text-sm" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{e.date}</span>
                     </div>
                   </div>
-                  <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                    {fmt$(r.amount)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {r.status === 'Pending' && (
-                    <>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$(e.amount)}
+                    </span>
+                    {e.status === 'Pending' && (
                       <button
-                        onClick={() => setReimbStatus(r.id, 'Approved')}
-                        className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        onClick={() => markPaid(e.id)}
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg"
                         style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                        <CheckCircle2 className="w-3 h-3" /> Mark Paid
                       </button>
-                      <button
-                        onClick={() => setReimbStatus(r.id, 'Denied')}
-                        className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'rgb(248,113,113)' }}
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Deny
-                      </button>
-                    </>
-                  )}
-                  {r.receiptUrl && (
-                    <a
-                      href={r.receiptUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
-                    >
-                      View receipt
-                    </a>
-                  )}
-                  <button
-                    onClick={() => archiveReimbAdmin(r.id)}
-                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
-                  >
-                    <Archive className="w-3.5 h-3.5" /> {r.archivedAt ? 'Restore' : 'Archive'}
-                  </button>
-                  <button
-                    onClick={() => setDeleteReimbId(r.id)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', color: 'rgb(248,113,113)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 20%, transparent)' }}
-                  >
-                    Delete
-                  </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Reimbursements tab ──────────────────────────────────────────────── */}
+      {adminTab === 'reimbursements' && (
+        <MobileSection
+          title="Reimbursement Review"
+          count={adminReimbsForReview.filter((r) => r.status === 'Pending').length}
+          collapsible
+          defaultOpen
+        >
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {adminReimbsForReview.filter((r) => r.status === 'Pending').length} pending · {adminReimbsForReview.length} total
+            </span>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" style={{ color: 'var(--text-muted)' }}>
+              <input
+                type="checkbox"
+                checked={adminShowArchived}
+                onChange={(e) => setAdminShowArchived(e.target.checked)}
+                className="accent-[var(--accent-emerald-solid)]"
+              />
+              Show archived
+            </label>
           </div>
-        )}
-      </MobileSection>
+          {adminReimbsForReview.length === 0 ? (
+            <p className="text-base py-4 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              {adminShowArchived ? 'No reimbursements' : 'All caught up — no pending reimbursements'}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {adminReimbsForReview.map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-2xl p-3"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', opacity: r.archivedAt ? 0.55 : 1 }}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{r.repName}</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <StatusDot status={r.status} />
+                        <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{r.date}</span>
+                        {r.receiptName && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>· 📎 receipt</span>}
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$(r.amount)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {r.status === 'Pending' && (
+                      <>
+                        <button
+                          onClick={() => setReimbStatus(r.id, 'Approved')}
+                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => setReimbStatus(r.id, 'Denied')}
+                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 15%, transparent)', color: 'rgb(248,113,113)' }}
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Deny
+                        </button>
+                      </>
+                    )}
+                    {r.receiptUrl && (
+                      <a
+                        href={r.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
+                      >
+                        View receipt
+                      </a>
+                    )}
+                    <button
+                      onClick={() => archiveReimbAdmin(r.id)}
+                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                    >
+                      <Archive className="w-3.5 h-3.5" /> {r.archivedAt ? 'Restore' : 'Archive'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteReimbId(r.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', color: 'rgb(248,113,113)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 20%, transparent)' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </MobileSection>
+      )}
+
+      {/* ── By Rep tab ──────────────────────────────────────────────────────── */}
+      {adminTab === 'by-rep' && (
+        <div className="space-y-3">
+          <SegmentedPills<Period>
+            options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
+            value={byRepPeriod}
+            onChange={setByRepPeriod}
+            scrollable
+            ariaLabel="Period filter"
+          />
+          {repSummary.length === 0 ? (
+            <p className="text-base py-6 text-center" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No reps found</p>
+          ) : (
+            <div className="space-y-2">
+              {repSummary.map((s) => (
+                <div
+                  key={s.rep.id}
+                  className="rounded-2xl p-4"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-base font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{s.rep.name}</p>
+                      <p className="text-xs capitalize" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{s.rep.repType}</p>
+                    </div>
+                    <span className="text-xl font-black tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$(s.total)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl p-2 text-center" style={{ background: 'var(--surface-page)' }}>
+                      <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Paid</p>
+                      <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(s.paid)}</p>
+                    </div>
+                    <div className="rounded-xl p-2 text-center" style={{ background: 'var(--surface-page)' }}>
+                      <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Pending</p>
+                      <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(s.pending)}</p>
+                    </div>
+                    <div className="rounded-xl p-2 text-center" style={{ background: 'var(--surface-page)' }}>
+                      <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Draft</p>
+                      <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-secondary)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(s.draft)}</p>
+                    </div>
+                  </div>
+                  {s.reimbPending > 0 && (
+                    <p className="text-xs mt-2" style={{ color: 'var(--accent-purple-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      Reimbs pending: {fmt$(s.reimbPending)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={markAllConfirmOpen}
+        title="Mark All Pending Paid"
+        message={`Mark all ${filteredAdminPayroll.filter((e) => e.status === 'Pending').length} pending entr${filteredAdminPayroll.filter((e) => e.status === 'Pending').length === 1 ? 'y' : 'ies'} as paid?`}
+        confirmLabel="Mark Paid"
+        onConfirm={() => { setMarkAllConfirmOpen(false); markAllPendingPaid(); }}
+        onClose={() => setMarkAllConfirmOpen(false)}
+      />
       <ConfirmDialog
         open={!!deleteReimbId}
         title="Delete Reimbursement"

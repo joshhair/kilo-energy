@@ -396,12 +396,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Payroll actions (delegated to lib/context/payroll.ts) ──
   const payrollActions = useMemo(() => createPayrollActions({
-    getPayrollEntries: () => payrollEntries,
+    getPayrollEntries: () => payrollEntriesRef.current,
     setPayrollEntries,
     payrollIdResolutionMap,
-  }), [payrollEntries, setPayrollEntries]);
+  }), [setPayrollEntries]);
   const { persistPayrollEntry, deletePayrollEntriesFromDb } = payrollActions;
-  // markForPayroll needs live payrollEntries for originalStatuses snapshot — see value block
 
   // installerBaselines is derived from the currently active pricing version per installer
   // (flat rate only — tiered installers show the first band for backward compat display)
@@ -968,10 +967,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
               );
             }
           } catch (parseErr) {
-            // Non-JSON response — leave optimistic state alone, but log
-            // because it usually means the server returned an HTML error
-            // page instead of JSON (API misconfig or proxy interception).
-            console.warn('[updateProject] non-JSON response from PATCH, keeping optimistic state:', parseErr);
+            // Non-JSON response — re-fetch the project from the server to
+            // re-align optimistic state (including computed m3Amount) with
+            // what the server actually stored.
+            console.warn('[updateProject] non-JSON response from PATCH, re-fetching project to re-sync state:', parseErr);
+            fetch(`/api/projects/${id}`)
+              .then((r) => r.ok ? r.json() : null)
+              .then((serverProject) => {
+                if (serverProject?.id) {
+                  setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
+                }
+              })
+              .catch(() => {/* best-effort re-sync; original toast already fired */});
           }
         })
         .catch((err) => {
@@ -996,14 +1003,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (old && updates.phase && updates.phase !== old.phase) {
       const newPhase = updates.phase as Phase;
+      // Accumulators for the single consolidated setPayrollEntries call at the
+      // end of this block. All phase-transition mutations are collected here so
+      // that only one setState fires, eliminating any risk of later functional
+      // updaters seeing an intermediate snapshot.
+      const payrollEntryIdsToDelete: string[] = [];
+      const payrollEntriesToAdd: PayrollEntry[] = [];
 
       // Un-cancelling: remove orphaned chargebacks
       if (old.phase === 'Cancelled' && newPhase !== 'Cancelled') {
-        setPayrollEntries((prevEntries) => {
-          const orphanIds = getOrphanedChargebackIds(id, prevEntries);
-          if (orphanIds.length > 0) deletePayrollEntriesFromDb(orphanIds);
-          return prevEntries.filter((e) => !orphanIds.includes(e.id));
-        });
+        const orphanIds = getOrphanedChargebackIds(id, payrollEntriesRef.current);
+        if (orphanIds.length > 0) {
+          deletePayrollEntriesFromDb(orphanIds);
+          payrollEntryIdsToDelete.push(...orphanIds);
+        }
       }
 
       // Cancellation: chargebacks
@@ -1033,13 +1046,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const postRollbackEntries = safeRollbackToDelete.length > 0
         ? payrollEntriesRef.current.filter((e) => !safeRollbackToDelete.includes(e.id))
         : payrollEntriesRef.current;
-      setPayrollEntries((prevEntries) => {
-        if (safeRollbackToDelete.length > 0) {
-          deletePayrollEntriesFromDb(safeRollbackToDelete);
-          return prevEntries.filter((e) => !safeRollbackToDelete.includes(e.id));
-        }
-        return prevEntries;
-      });
+      if (safeRollbackToDelete.length > 0) {
+        deletePayrollEntriesFromDb(safeRollbackToDelete);
+        payrollEntryIdsToDelete.push(...safeRollbackToDelete);
+      }
 
       const isSubDealerDeal = !!old.subDealerId;
       const isAcceptance = newPhase === 'Acceptance' && old.phase !== 'Acceptance';
@@ -1071,7 +1081,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
             m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
-            setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
+            payrollEntriesToAdd.push(...m1Entries);
           }
         }
       }
@@ -1089,7 +1099,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }, postRollbackEntries);
           if (m1Entries.length > 0) {
             m1Entries.forEach((entry) => pendingMilestonePersists.push(entry));
-            setPayrollEntries((prevEntries) => [...prevEntries, ...m1Entries]);
+            payrollEntriesToAdd.push(...m1Entries);
           }
         }
       }
@@ -1123,7 +1133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }, postRollbackEntries);
             if (m1m2Entries.length > 0) {
               m1m2Entries.forEach((entry) => pendingMilestonePersists.push(entry));
-              setPayrollEntries((prevEntries) => [...prevEntries, ...m1m2Entries]);
+              payrollEntriesToAdd.push(...m1m2Entries);
               if (isInstalled) newlyCreatedM2Entries = m1m2Entries;
             }
           }
@@ -1137,8 +1147,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }, [...postRollbackEntries, ...newlyCreatedM2Entries]);
         if (m3Entries.length > 0) {
           m3Entries.forEach((entry) => pendingMilestonePersists.push(entry));
-          setPayrollEntries((prevEntries) => [...prevEntries, ...m3Entries]);
+          payrollEntriesToAdd.push(...m3Entries);
         }
+      }
+
+      // Single consolidated setState for all phase-transition payroll mutations
+      // (un-cancel orphan removal, rollback deletion, and all milestone additions).
+      // One call ensures no intermediate snapshots are visible to chained updaters.
+      if (payrollEntryIdsToDelete.length > 0 || payrollEntriesToAdd.length > 0) {
+        setPayrollEntries((prevEntries) => [
+          ...prevEntries.filter((e) => !payrollEntryIdsToDelete.includes(e.id)),
+          ...payrollEntriesToAdd,
+        ]);
       }
     }
 

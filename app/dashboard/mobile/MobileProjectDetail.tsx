@@ -7,14 +7,16 @@ import { useToast } from '../../../lib/toast';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
-  getInstallerRatesForDeal, splitCloserSetterPay,
+  getInstallerRatesForDeal, splitCloserSetterPay, SOLARTECH_FAMILIES,
+  type PayrollEntry,
 } from '../../../lib/data';
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
 import { computeProjectedTrainerLegs } from '../../../lib/trainer-projection';
-import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy } from 'lucide-react';
+import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy, GraduationCap } from 'lucide-react';
 import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
+import RecordTrainerPaymentModal from '../projects/components/RecordTrainerPaymentModal';
 import { findChargebackForEntry } from '../../../lib/chargebacks';
 import MobileCard from './shared/MobileCard';
 import MobileSection from './shared/MobileSection';
@@ -65,10 +67,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }, [projectId]);
 
   const {
-    effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, reps,
+    effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, setPayrollEntries, reps,
     trainerAssignments, persistPayrollEntry,
     updateProject: ctxUpdateProject, installerPayConfigs,
-    installerPricingVersions,
+    installerPricingVersions, activeInstallers, activeFinancers,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
     isViewingAs, viewAsUser, currentUserScopedInstallerId,
   } = useApp();
@@ -105,6 +107,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [expandedParty, setExpandedParty] = useState<string | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
+  const [showRecordTrainerPayment, setShowRecordTrainerPayment] = useState(false);
   const [, setEditErrors] = useState<Record<string, string>>({});
   const [editDraft, setEditDraft] = useState<{
     installer: string;
@@ -330,31 +333,41 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const nextTrainerRate = nextTrainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : undefined;
     const trainerRep = nextTrainerId ? reps.find((r) => r.id === nextTrainerId) : undefined;
 
-    // Recalculate milestone amounts — setter presence changes closer M1
-    // ($0 with setter, flat without). Legacy SolarTech projects (product
-    // no longer in active catalog) throw — catch and preserve stored
-    // amounts. Server-side defense skips overwrite when pricingSource=
-    // 'fallback' so DB amounts stay intact (Corrine Brooks shape).
-    const kw = project.kWSize;
-    const ppw = project.netPPW;
+    // Recalculate milestone amounts using editDraft values so that changes
+    // to installer, kW, PPW, sold date, and baseline override are reflected
+    // in the optimistic update (parity with the desktop edit modal).
+    // NaN/0 inputs fall back to the current project values so a bad parse
+    // doesn't zero-out milestones before validation can catch it.
+    const kw = parseFloat(editDraft.kWSize) > 0 ? parseFloat(editDraft.kWSize) : project.kWSize;
+    const ppw = parseFloat(editDraft.netPPW) > 0 ? parseFloat(editDraft.netPPW) : project.netPPW;
+    const parsedOverrideSetterPerW = parseFloat(editDraft.overrideSetterPerW);
+    const baselineOverride: InstallerBaseline | undefined = editDraft.useBaselineOverride
+      ? {
+          closerPerW: parseFloat(editDraft.overrideCloserPerW) || 0,
+          kiloPerW: parseFloat(editDraft.overrideKiloPerW) || 0,
+          ...(editDraft.overrideSetterPerW !== '' && !isNaN(parsedOverrideSetterPerW)
+            ? { setterPerW: parsedOverrideSetterPerW }
+            : {}),
+        }
+      : undefined;
     let baseline: InstallerBaseline;
     let baselineResolutionFailed = false;
-    if (project.baselineOverride) {
-      baseline = project.baselineOverride;
-    } else if (project.installer === 'SolarTech' && project.solarTechProductId) {
+    if (editDraft.useBaselineOverride && baselineOverride) {
+      baseline = baselineOverride;
+    } else if (editDraft.installer === 'SolarTech' && editDraft.solarTechProductId) {
       try {
-        baseline = getSolarTechBaseline(project.solarTechProductId, kw, solarTechProducts);
+        baseline = getSolarTechBaseline(editDraft.solarTechProductId, kw, solarTechProducts);
       } catch {
         baseline = { closerPerW: 0, kiloPerW: 0 };
         baselineResolutionFailed = true;
       }
-    } else if (project.installer === 'SolarTech' && !project.solarTechProductId) {
+    } else if (editDraft.installer === 'SolarTech' && !editDraft.solarTechProductId) {
       baseline = { closerPerW: 0, kiloPerW: 0 };
       baselineResolutionFailed = true;
-    } else if (project.installerProductId) {
-      baseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, project.soldDate, productCatalogPricingVersions);
+    } else if (project.installerProductId && editDraft.installer === project.installer) {
+      baseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editDraft.soldDate, productCatalogPricingVersions);
     } else {
-      baseline = getInstallerRatesForDeal(project.installer, project.soldDate, kw, installerPricingVersions);
+      baseline = getInstallerRatesForDeal(editDraft.installer, editDraft.soldDate, kw, installerPricingVersions);
     }
     // Use the canonical splitCloserSetterPay so optimistic amounts match
     // the server's compute. Independent calculateCommission calls overstate
@@ -363,7 +376,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const setterPerW = 'setterPerW' in baseline && baseline.setterPerW != null
       ? baseline.setterPerW
       : Math.round((baseline.closerPerW + 0.10) * 100) / 100;
-    const installPayPct = installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+    const installPayPct = installerPayConfigs[editDraft.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
     const hasSetter = !!editDraft.setterId;
     const hasM3 = installPayPct < 100 && !project.subDealerId;
     const effectiveTrainerRate = editDraft.trainerId && Number.isFinite(trainerRateNum) ? trainerRateNum : 0;
@@ -389,6 +402,17 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     const nextBlitzId = editDraft.leadSource === 'blitz' ? (editDraft.blitzId || null) : null;
 
     updateProject({
+      installer: editDraft.installer,
+      financer: editDraft.financer,
+      productType: editDraft.productType,
+      kWSize: kw,
+      netPPW: ppw,
+      soldDate: editDraft.soldDate || project.soldDate,
+      baselineOverride,
+      solarTechProductId: (editDraft.installer !== project.installer && editDraft.installer !== 'SolarTech')
+        ? undefined
+        : (editDraft.solarTechProductId || undefined),
+      ...(editDraft.installer !== project.installer ? { installerProductId: undefined } : {}),
       // Primary closer (server: closerId, client: repId). Only sent when
       // changed — avoids triggering a no-op recompute on save.
       ...(editDraft.repId && editDraft.repId !== project.repId ? {
@@ -1514,6 +1538,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             onTap={openEditSheet}
           />
         )}
+        {isAdmin && project.phase !== 'Cancelled' && project.phase !== 'On Hold' && (
+          <MobileBottomSheet.Item
+            label="Record Trainer Payment"
+            icon={GraduationCap}
+            onTap={() => { setMoreSheetOpen(false); setShowRecordTrainerPayment(true); }}
+          />
+        )}
         {(isAdmin && !isPM || effectiveRepId === project.repId) && (
           <MobileBottomSheet.Item
             label="Duplicate Deal"
@@ -1553,13 +1584,158 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         )}
       </MobileBottomSheet>
 
-      {/* Edit Project bottom sheet — admin-only, scoped to setter + notes
-          + co-party management. Heavier edits (installer, financer, kW,
-          PPW, baseline override) remain on desktop where the commission
-          preview UI lives. */}
+      {/* Edit Project bottom sheet — admin-only. */}
       <MobileBottomSheet open={editSheetOpen} onClose={() => setEditSheetOpen(false)} title="Edit Project">
         <div className="px-5 space-y-5 pb-24">
-          {/* Closer (primary rep) — required. Added 2026-05-25. */}
+
+          {/* Installer */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Installer
+            </label>
+            <select
+              value={editDraft.installer}
+              onChange={(e) => setEditDraft((d) => ({
+                ...d,
+                installer: e.target.value,
+                solarTechProductId: e.target.value === 'SolarTech' ? d.solarTechProductId : '',
+              }))}
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+            >
+              {(activeInstallers.includes(editDraft.installer) || !editDraft.installer
+                ? activeInstallers
+                : [editDraft.installer, ...activeInstallers]
+              ).map((inst) => (
+                <option key={inst} value={inst}>{activeInstallers.includes(inst) ? inst : `${inst} (archived)`}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* SolarTech Product — shown only when installer is SolarTech */}
+          {editDraft.installer === 'SolarTech' && (
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                SolarTech Product
+              </label>
+              <select
+                value={editDraft.solarTechProductId}
+                onChange={(e) => setEditDraft((d) => ({ ...d, solarTechProductId: e.target.value }))}
+                className="w-full min-h-[48px] outline-none"
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              >
+                <option value="">— Select product —</option>
+                {SOLARTECH_FAMILIES.map((family) => {
+                  const familyProducts = solarTechProducts.filter((p) => p.family === family);
+                  if (familyProducts.length === 0) return null;
+                  return (
+                    <optgroup key={family} label={family}>
+                      {familyProducts.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
+          {/* Product Type */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Product Type
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {(['PPA', 'Lease', 'Loan', 'Cash'] as const).map((pt) => (
+                <button
+                  key={pt}
+                  type="button"
+                  onClick={() => setEditDraft((d) => ({
+                    ...d,
+                    productType: pt,
+                    financer: pt === 'Cash' ? 'Cash' : d.financer === 'Cash' ? '' : d.financer,
+                  }))}
+                  className="py-2 rounded-xl text-sm font-medium transition-all"
+                  style={
+                    editDraft.productType === pt
+                      ? { background: 'var(--accent-emerald-solid)', border: '1px solid var(--accent-emerald-solid)', color: '#000' }
+                      : { background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', color: 'var(--text-secondary)' }
+                  }
+                >
+                  {pt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Financer — hidden for Cash deals (auto-set) */}
+          {editDraft.productType !== 'Cash' && (
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                Financer
+              </label>
+              <select
+                value={editDraft.financer}
+                onChange={(e) => setEditDraft((d) => ({ ...d, financer: e.target.value }))}
+                className="w-full min-h-[48px] outline-none"
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              >
+                <option value="">— Select —</option>
+                {(activeFinancers.includes(editDraft.financer) || !editDraft.financer
+                  ? activeFinancers.filter((f) => f !== 'Cash')
+                  : [editDraft.financer, ...activeFinancers.filter((f) => f !== 'Cash')]
+                ).map((fin) => (
+                  <option key={fin} value={fin}>{fin}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* System Size + Net PPW */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                Size (kW)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={editDraft.kWSize}
+                onChange={(e) => setEditDraft((d) => ({ ...d, kWSize: e.target.value }))}
+                className="w-full min-h-[48px] outline-none"
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              />
+            </div>
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                Net PPW ($)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={editDraft.netPPW}
+                onChange={(e) => setEditDraft((d) => ({ ...d, netPPW: e.target.value }))}
+                className="w-full min-h-[48px] outline-none"
+                style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+              />
+            </div>
+          </div>
+
+          {/* Sold Date */}
+          <div>
+            <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+              Sold Date
+            </label>
+            <input
+              type="date"
+              value={editDraft.soldDate}
+              onChange={(e) => setEditDraft((d) => ({ ...d, soldDate: e.target.value }))}
+              className="w-full min-h-[48px] outline-none"
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
+            />
+          </div>
+
+          {/* Closer (primary rep) — required. */}
           <div>
             <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
               Closer
@@ -1748,6 +1924,59 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             </div>
           )}
 
+          {/* Baseline Override */}
+          {isAdmin && (
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
+              <label className="flex items-center gap-2 cursor-pointer mb-3">
+                <input
+                  type="checkbox"
+                  checked={editDraft.useBaselineOverride}
+                  onChange={(e) => setEditDraft((d) => ({ ...d, useBaselineOverride: e.target.checked }))}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent-emerald-solid)' }}
+                />
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Override baseline for this project</span>
+              </label>
+              {editDraft.useBaselineOverride && (
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Closer $/W</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editDraft.overrideCloserPerW}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, overrideCloserPerW: e.target.value }))}
+                      className="w-full outline-none"
+                      style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '10px 12px', fontSize: '0.9rem', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Setter $/W</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editDraft.overrideSetterPerW}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, overrideSetterPerW: e.target.value }))}
+                      className="w-full outline-none"
+                      style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '10px 12px', fontSize: '0.9rem', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Kilo $/W</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editDraft.overrideKiloPerW}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, overrideKiloPerW: e.target.value }))}
+                      className="w-full outline-none"
+                      style={{ background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)', borderRadius: '12px', padding: '10px 12px', fontSize: '0.9rem', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -1874,6 +2103,26 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               amount: e.amount,
               date: e.date,
             }))}
+        />
+      )}
+
+      {/* Record Trainer Payment modal (admin-only). Creates a Trainer-stage
+          payroll entry on this project — used for Glide-imported deals where
+          the trainer is attached but no Trainer payroll was auto-generated. */}
+      {isAdmin && (
+        <RecordTrainerPaymentModal
+          open={showRecordTrainerPayment}
+          onClose={() => setShowRecordTrainerPayment(false)}
+          onSaved={(entry: PayrollEntry) => {
+            setPayrollEntries((prev) => [entry, ...prev]);
+          }}
+          projectId={project.id}
+          projectCustomerName={project.customerName}
+          projectKWSize={project.kWSize}
+          defaultTrainerId={project.trainerId ?? mobileTrainerLegs[0]?.trainerId ?? null}
+          defaultTrainerRate={project.trainerRate ?? mobileTrainerLegs[0]?.rate ?? null}
+          installPayPct={installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT}
+          reps={reps}
         />
       )}
     </div>

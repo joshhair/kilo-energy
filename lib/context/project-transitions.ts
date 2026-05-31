@@ -524,7 +524,7 @@ export function createMilestonePayroll(
   }
   const ts = Date.now();
   const newEntries: PayrollEntry[] = [];
-  const closerRep = deps.repsRef.current.find((r) => r.id === old.repId);
+  const closerRep = deps.repsRef.current.find((r) => r.id === freshProject.repId);
 
   // Per-rep dedup helper: skip if this rep already has an entry for this project+stage.
   const repAlreadyExists = (repId: string) =>
@@ -539,8 +539,8 @@ export function createMilestonePayroll(
   // cross-side trainer cap.
   const m2CloserParties: TrainerPartyInput[] = [
     {
-      userId: old.repId,
-      userName: closerRep?.name ?? old.repName,
+      userId: freshProject.repId,
+      userName: closerRep?.name ?? freshProject.repName,
       m2Amount: freshProject.m2Amount ?? 0,
     },
     ...(freshProject.additionalClosers ?? []).map((c) => ({
@@ -591,20 +591,20 @@ export function createMilestonePayroll(
     // the override trainer is the closer AND a setter exists, the original
     // logic didn't deduct from the closer.
     const overrideTrainerIsCloserSelf =
-      freshProject.trainerId === old.repId && !!freshProject.setterId;
+      freshProject.trainerId === freshProject.repId && !!freshProject.setterId;
     if (!overrideTrainerIsCloserSelf) {
-      m2TrainerLegs.deductionsByUserId.set(old.repId, overrideEntryAmount);
+      m2TrainerLegs.deductionsByUserId.set(freshProject.repId, overrideEntryAmount);
     }
   }
-  const closerM2TrainerDeduction = m2TrainerLegs.deductionsByUserId.get(old.repId) ?? 0;
+  const closerM2TrainerDeduction = m2TrainerLegs.deductionsByUserId.get(freshProject.repId) ?? 0;
 
   // Closer entry (skip M1 only when a setter exists AND will receive an M1 entry — M1 goes entirely to the setter)
   // Use freshProject.setterId (post-update) so a simultaneously-added setter suppresses the closer M1.
-  if ((fullAmount ?? 0) > 0 && !(isAcceptance && freshProject.setterId && (freshProject.setterM1Amount ?? 0) > 0) && !repAlreadyExists(old.repId)) {
+  if ((fullAmount ?? 0) > 0 && !(isAcceptance && freshProject.setterId && (freshProject.setterM1Amount ?? 0) > 0) && !repAlreadyExists(freshProject.repId)) {
     newEntries.push({
       id: `pay_${ts}_${stage.toLowerCase()}_c`,
-      repId: old.repId,
-      repName: closerRep?.name ?? old.repName,
+      repId: freshProject.repId,
+      repName: closerRep?.name ?? freshProject.repName,
       projectId,
       customerName: old.customerName,
       amount: Math.max(0, fullAmount! - closerM2TrainerDeduction),
@@ -861,7 +861,7 @@ export function createM3Payroll(
 
   const m3TrainerLegs = (m3 > 0 && !old.subDealerId)
     ? computeTrainerLegsForMilestone({
-        project: { id: projectId, trainerId: old.trainerId, trainerRate: old.trainerRate },
+        project: { id: projectId, trainerId: proj?.trainerId, trainerRate: proj?.trainerRate },
         closerParties: m3CloserParties,
         setterParties: m3SetterParties,
         trainerAssignments: deps.trainerAssignmentsRef.current,
@@ -879,7 +879,7 @@ export function createM3Payroll(
   const m3OverrideEntryAmount = m3TrainerLegs.entries.find((e) => e.isOverride)?.amount ?? 0;
   if (m3OverrideEntryAmount > 0 && m3TrainerLegs.deductionsByUserId.size === 0) {
     const overrideTrainerIsCloserSelfM3 =
-      old.trainerId === old.repId && !!proj?.setterId;
+      proj?.trainerId === old.repId && !!proj?.setterId;
     if (!overrideTrainerIsCloserSelfM3) {
       m3TrainerLegs.deductionsByUserId.set(old.repId, m3OverrideEntryAmount);
     }

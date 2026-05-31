@@ -9,7 +9,7 @@ import { getTrainerOverrideRate } from '../../../lib/data';
 import { fmt$, isPaidAndEffective } from '../../../lib/utils';
 import {
   ChevronDown, GraduationCap, Banknote, Plus, Search,
-  Pencil, Play, ShieldCheck, RotateCcw, Trash2, Users, X, MoreVertical,
+  Pencil, Play, ShieldCheck, RotateCcw, Trash2, Users, X, MoreVertical, ArrowRight,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -96,6 +96,10 @@ export default function MobileTraining({
   const [adminStatusFilter, setAdminStatusFilter] = useState<'all' | 'training' | 'residuals' | 'maxed' | 'paused'>('all');
   const [expandedTrainerIds, setExpandedTrainerIds] = useState<Set<string>>(new Set());
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
+  const [adminTrainerFilter, setAdminTrainerFilter] = useState('');
+  const [adminRepFilter, setAdminRepFilter] = useState('');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'Draft' | 'Pending' | 'Paid'>('all');
 
   // ── Derived data ─────────────────────────────────────────────────────────
   // NOTE: every hook below must run unconditionally on every render — the
@@ -165,6 +169,8 @@ export default function MobileTraining({
   const filteredAdminRows = useMemo(() => {
     return adminRows.filter((row) => {
       if (adminStatusFilter !== 'all' && row.status !== adminStatusFilter) return false;
+      if (adminTrainerFilter && row.assignment.trainerId !== adminTrainerFilter) return false;
+      if (adminRepFilter && row.assignment.traineeId !== adminRepFilter) return false;
       if (adminSearch) {
         const q = adminSearch.toLowerCase();
         return (
@@ -174,7 +180,7 @@ export default function MobileTraining({
       }
       return true;
     });
-  }, [adminRows, adminStatusFilter, adminSearch]);
+  }, [adminRows, adminStatusFilter, adminTrainerFilter, adminRepFilter, adminSearch]);
 
   const groupedByTrainer = useMemo(() => {
     const map = new Map<string, { trainerId: string; trainerName: string; rows: typeof filteredAdminRows }>();
@@ -205,6 +211,16 @@ export default function MobileTraining({
     const activeTrainingCount = adminRows.filter((r) => r.status === 'training').length;
     return { totalAssignments, uniqueTrainerCount, avgRate, lifetimeTrainerPaid, activeTrainingCount };
   }, [effectiveRole, trainerAssignments, adminRows, payrollEntries]);
+
+  const trainerOptions = useMemo(() => {
+    const ids = new Set(trainerAssignments.map((a) => a.trainerId));
+    return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [trainerAssignments, reps]);
+
+  const repOptions = useMemo(() => {
+    const ids = new Set(trainerAssignments.map((a) => a.traineeId));
+    return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [trainerAssignments, reps]);
 
   const patchAssignment = useCallback(async (
     id: string,
@@ -388,7 +404,40 @@ export default function MobileTraining({
     });
   }, [myAssignments, directPseudoAssignments, reps, projects, payrollEntries, trainerEntries, effectiveRepId]);
 
-  const sortedOverrides = [...trainerEntries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+  const getTraineeForEntry = (entry: (typeof trainerEntries)[0]): { name: string; id: string } | null => {
+    if (!entry.projectId) return null;
+    const project = projects.find((p) => p.id === entry.projectId);
+    if (!project) return null;
+    for (const td of traineeData) {
+      if (project.repId === td.traineeId || project.setterId === td.traineeId) {
+        return { name: td.traineeName, id: td.traineeId };
+      }
+    }
+    return null;
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filteredPayments = useMemo(() => {
+    let list = [...trainerEntries];
+    if (paymentSearch) {
+      const q = paymentSearch.toLowerCase();
+      list = list.filter((e) => {
+        const trainee = getTraineeForEntry(e);
+        return (
+          (e.customerName ?? '').toLowerCase().includes(q) ||
+          (trainee?.name ?? '').toLowerCase().includes(q) ||
+          (e.notes ?? '').toLowerCase().includes(q)
+        );
+      });
+    }
+    if (paymentStatusFilter !== 'all') {
+      list = list.filter((e) => e.status === paymentStatusFilter);
+    }
+    return list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    // getTraineeForEntry is a closure over traineeData + projects — those are
+    // already listed, so depending on the function itself would double-add.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects]);
 
   // Active / Residuals split (rep view). Matches desktop's filter rule: any
   // assignment with isActiveTraining === false belongs to Residuals; the rest
@@ -558,6 +607,94 @@ export default function MobileTraining({
           })}
         </div>
 
+        {/* Trainer + Rep dropdowns */}
+        <div className="flex gap-2">
+          <select
+            value={adminTrainerFilter}
+            onChange={(e) => setAdminTrainerFilter(e.target.value)}
+            className="flex-1 py-2 px-3 rounded-2xl text-sm focus:outline-none"
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: adminTrainerFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
+          >
+            <option value="">All Trainers</option>
+            {trainerOptions.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+          <select
+            value={adminRepFilter}
+            onChange={(e) => setAdminRepFilter(e.target.value)}
+            className="flex-1 py-2 px-3 rounded-2xl text-sm focus:outline-none"
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: adminRepFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
+          >
+            <option value="">All Reps</option>
+            {repOptions.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Trainer profile card — renders when a specific trainer is filtered */}
+        {adminTrainerFilter && (() => {
+          const trainerRep = reps.find((r) => r.id === adminTrainerFilter);
+          if (!trainerRep) return null;
+          const theirAssignments = trainerAssignments.filter((a) => a.trainerId === adminTrainerFilter);
+          const lifetimeEarned = payrollEntries
+            .filter((e) => e.repId === adminTrainerFilter && e.paymentStage === 'Trainer' && e.status === 'Paid')
+            .reduce((s, e) => s + e.amount, 0);
+          const pendingEarnings = payrollEntries
+            .filter((e) => e.repId === adminTrainerFilter && e.paymentStage === 'Trainer' && (e.status === 'Draft' || e.status === 'Pending'))
+            .reduce((s, e) => s + e.amount, 0);
+          const trainerRowsForTrainer = adminRows.filter((r) => r.assignment.trainerId === adminTrainerFilter);
+          const active = trainerRowsForTrainer.filter((r) => r.status === 'training').length;
+          const residuals = trainerRowsForTrainer.filter((r) => r.status === 'residuals').length;
+          const paused = trainerRowsForTrainer.filter((r) => r.status === 'paused').length;
+          const maxed = trainerRowsForTrainer.filter((r) => r.status === 'maxed').length;
+          return (
+            <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }}
+                >
+                  {getInitials(trainerRep.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link href={`/dashboard/users/${trainerRep.id}`} className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {trainerRep.name}
+                    </Link>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>Trainer</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{theirAssignments.length}</span> assignment{theirAssignments.length === 1 ? '' : 's'}</span>
+                    {active > 0 && <span><span className="font-semibold" style={{ color: 'var(--accent-amber-text)' }}>{active}</span> training</span>}
+                    {residuals > 0 && <span><span className="font-semibold" style={{ color: 'var(--accent-cyan-text)' }}>{residuals}</span> residuals</span>}
+                    {paused > 0 && <span><span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>{paused}</span> paused</span>}
+                    {maxed > 0 && <span><span className="font-semibold" style={{ color: 'var(--accent-emerald-text)' }}>{maxed}</span> maxed</span>}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--accent-amber-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                        ${lifetimeEarned.toLocaleString()}
+                      </p>
+                      {pendingEarnings > 0 && (
+                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>+${pendingEarnings.toLocaleString()} pending</p>
+                      )}
+                    </div>
+                    <Link
+                      href={`/dashboard/payroll?rep=${encodeURIComponent(trainerRep.id)}&type=Trainer`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                      style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}
+                    >
+                      View payments <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Result count */}
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
           {filteredAdminRows.length} of {adminRows.length} assignment{adminRows.length === 1 ? '' : 's'}
@@ -575,7 +712,7 @@ export default function MobileTraining({
             </MobileCard>
           </div>
         ) : (
-          <div key={`${adminStatusFilter}-${adminSearch}`} className="space-y-3">
+          <div key={`${adminStatusFilter}-${adminTrainerFilter}-${adminRepFilter}-${adminSearch}`} className="space-y-3">
             {groupedByTrainer.map((group, gIdx) => {
               const isExpanded = expandedTrainerIds.has(group.trainerId);
               return (
@@ -883,32 +1020,93 @@ export default function MobileTraining({
       </div>
 
       {/* ── Override Payments ────────────────────────────────────────────── */}
-      <MobileSection title="Override Payments" count={sortedOverrides.length} collapsible defaultOpen>
-        {sortedOverrides.length === 0 ? (
-          <MobileEmptyState icon={Banknote} title="No override payments yet" />
-        ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            {sortedOverrides.map((entry, idx) => (
-              <div
-                key={entry.id}
-                className="px-4 py-3 flex items-center justify-between gap-3
-                           motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]"
+      <MobileSection title="Override Payments" count={filteredPayments.length} collapsible defaultOpen>
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Search customer or trainee…"
+            value={paymentSearch}
+            onChange={(e) => setPaymentSearch(e.target.value)}
+            className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm focus:outline-none"
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+          />
+          <button
+            onClick={() => setPaymentSearch('')}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 motion-safe:transition-opacity motion-safe:duration-150 ${paymentSearch ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            aria-hidden={!paymentSearch}
+            tabIndex={paymentSearch ? 0 : -1}
+          >
+            <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          </button>
+        </div>
+        {/* Status filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-2 [-ms-overflow-style:none] [scrollbar-width:none]">
+          {(['all', 'Draft', 'Pending', 'Paid'] as const).map((s) => {
+            const isActive = paymentStatusFilter === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setPaymentStatusFilter(s)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
                 style={{
-                  borderBottom: idx < sortedOverrides.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                  animationDelay: `${Math.min(idx, 5) * 45}ms`,
+                  background: isActive ? 'var(--accent-amber-soft)' : 'var(--surface-card)',
+                  color: isActive ? 'var(--accent-amber-text)' : 'var(--text-muted)',
+                  border: `1px solid ${isActive ? 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)' : 'var(--border-subtle)'}`,
                 }}
               >
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {entry.customerName || entry.notes || 'Override'}
-                  </p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{entry.date}</p>
+                {s === 'all' ? 'All' : s}
+              </button>
+            );
+          })}
+        </div>
+        {filteredPayments.length === 0 ? (
+          <MobileEmptyState
+            icon={Banknote}
+            title={paymentSearch || paymentStatusFilter !== 'all' ? 'No payments match' : 'No override payments yet'}
+            subtitle={paymentSearch || paymentStatusFilter !== 'all' ? 'Try a different search or filter' : undefined}
+          />
+        ) : (
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            {filteredPayments.map((entry, idx) => {
+              const trainee = getTraineeForEntry(entry);
+              return (
+                <div
+                  key={entry.id}
+                  className="px-4 py-3 flex items-center justify-between gap-3
+                             motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                  style={{
+                    borderBottom: idx < filteredPayments.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                    animationDelay: `${Math.min(idx, 5) * 45}ms`,
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {entry.customerName || entry.notes || 'Override'}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {trainee ? `${trainee.name} · ` : ''}{entry.date}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                      {fmt$(entry.amount)}
+                    </span>
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: entry.status === 'Paid' ? 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' : entry.status === 'Pending' ? 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)' : 'var(--surface-card)',
+                        color: entry.status === 'Paid' ? 'var(--accent-emerald-text)' : entry.status === 'Pending' ? 'var(--accent-amber-text)' : 'var(--text-secondary)',
+                        border: `1px solid ${entry.status === 'Paid' ? 'color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' : entry.status === 'Pending' ? 'color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' : 'var(--border-subtle)'}`,
+                      }}
+                    >
+                      {entry.status}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-lg font-bold tabular-nums whitespace-nowrap" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                  {fmt$(entry.amount)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </MobileSection>

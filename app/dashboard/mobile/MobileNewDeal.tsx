@@ -1954,6 +1954,7 @@ export default function MobileNewDeal() {
                 placeholder="Add any notes about this deal..."
                 value={form.notes}
                 onChange={(e) => update('notes', e.target.value)}
+                maxLength={500}
                 className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`} style={v0InputStyle('')}
               />
               <div className="flex items-center justify-between mt-1">
@@ -2000,7 +2001,7 @@ export default function MobileNewDeal() {
                     update('blitzId', blitzId);
                     if (blitzId) {
                       const blitz = availableBlitzes.find((b) => b.id === blitzId);
-                      if (blitz?.startDate && blitz?.endDate) {
+                      if (blitz?.startDate && blitz?.endDate && !_touched.has('soldDate')) {
                         const today = new Date().toISOString().split('T')[0];
                         if (today >= blitz.startDate && today <= blitz.endDate) {
                           update('soldDate', today);

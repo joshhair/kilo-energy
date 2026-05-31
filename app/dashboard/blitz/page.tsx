@@ -102,6 +102,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const router = useRouter();
   const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
+  const pendingJoinCount = blitz.participants.filter((p) => p.joinStatus === 'pending').length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
@@ -204,25 +205,32 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Led by <span role="link" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); router.push(`/dashboard/users/${blitz.owner.id}`); } }} className="cursor-pointer hover:text-[var(--accent-cyan-text)] transition-colors" style={{ color: 'var(--text-secondary)' }}>{blitz.owner.firstName} {blitz.owner.lastName}</span>
           </div>
-          {isOwner && (
-            <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
-              <Tent className="w-3 h-3" /> Leading
-            </span>
-          )}
-          {canJoin && (
-            <button
-              disabled={joining}
-              onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
-            </button>
-          )}
-          {!isOwner && myParticipation && !canJoin && (
-            <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
-              <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {isOwner && (
+              <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
+                <Tent className="w-3 h-3" /> Leading
+              </span>
+            )}
+            {(isAdmin || isOwner) && pendingJoinCount > 0 && (
+              <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20">
+                <Clock className="w-3 h-3" /> {pendingJoinCount} Pending
+              </span>
+            )}
+            {canJoin && (
+              <button
+                disabled={joining}
+                onClick={async (e) => { e.preventDefault(); e.stopPropagation(); setJoining(true); try { await onJoin(blitz.id); } catch {} finally { setJoining(false); } }}
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-[var(--accent-emerald-solid)]/20 text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/30 rounded-lg hover:bg-[var(--accent-emerald-solid)]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {joining ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />} {joining ? 'Joining...' : 'Join'}
+              </button>
+            )}
+            {!isOwner && myParticipation && !canJoin && (
+              <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
+                <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Hover glow bar */}

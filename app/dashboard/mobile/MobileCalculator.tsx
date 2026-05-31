@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated, useCountUp } from '../../../lib/hooks';
 import {
@@ -88,9 +89,25 @@ export default function MobileCalculator() {
     projects,
   } = useApp();
   const isHydrated = useIsHydrated();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
+
+  // Pre-fill from URL search params (for shared URLs)
+  useEffect(() => {
+    const p = searchParams;
+    if (p.get('installer')) setInstaller(p.get('installer')!);
+    if (p.get('kW')) setKWSize(p.get('kW')!);
+    if (p.get('ppw')) setNetPPW(p.get('ppw')!);
+    if (p.get('stFamily')) setSolarTechFamily(p.get('stFamily')!);
+    if (p.get('stProduct')) setSolarTechProductId(p.get('stProduct')!);
+    if (p.get('pcFamily')) setPcSelectedFamily(p.get('pcFamily')!);
+    if (p.get('pcProduct')) setPcProductId(p.get('pcProduct')!);
+    if (p.get('setter') === '1') setIsPaired(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // ── Form state ───────────────────────────────────────────────────────────
   const [installer, setInstaller] = useState('');

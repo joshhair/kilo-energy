@@ -384,6 +384,7 @@ function ProjectsPageInner() {
           clearAllFilters={clearAllFilters}
           readOnly={isSubDealer}
           hideFinancials={isPM}
+          canEditPhase={effectiveRole === 'admin' || isPM || (isRep && !isSubDealer)}
         />
       )}
 

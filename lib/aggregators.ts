@@ -346,7 +346,7 @@ export function breakdownByType<T extends PayrollAggregable>(
   for (const e of filtered) {
     total += e.amount;
     if (isChargebackEntry(e)) chargebacks += e.amount;
-    if (e.type === 'Bonus') bonus += e.amount;
+    else if (e.type === 'Bonus') bonus += e.amount;
     else if (e.paymentStage === 'Trainer') trainer += e.amount;
     else deal += e.amount; // 'Deal' or null/undefined
   }

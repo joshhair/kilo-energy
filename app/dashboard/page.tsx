@@ -8,7 +8,7 @@ import MobileDashboard from './mobile/MobileDashboard';
 import { computeSparklineData, Sparkline } from '../../lib/sparkline';
 import {
   computeIncentiveProgress, formatIncentiveMetric,
-  ACTIVE_PHASES,
+  ACTIVE_PHASES, getTrainerOverrideRate, DEFAULT_INSTALL_PAY_PCT,
 } from '../../lib/data';
 import { fmt$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
@@ -825,9 +825,9 @@ export default function DashboardPage() {
 
   // Fetch @mentions for Needs Attention section (reps + sub-dealers)
   const [dashMentions, setDashMentions] = useState<MentionItem[]>([]);
-  const fetchMentions = useCallback(() => {
+  const fetchMentions = useCallback((signal?: AbortSignal) => {
     if (!effectiveRepId) return;
-    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`, { signal })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
@@ -867,9 +867,16 @@ export default function DashboardPage() {
         });
         setDashMentions(items);
       })
-      .catch(() => setDashMentions([]));
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setDashMentions([]);
+      });
   }, [effectiveRepId]);
-  useEffect(() => { fetchMentions(); }, [fetchMentions]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMentions(controller.signal);
+    return () => { controller.abort(); };
+  }, [fetchMentions]);
 
   if (!isHydrated || !dbReady) {
     return <DashboardSkeleton />;
@@ -1099,6 +1106,21 @@ export default function DashboardPage() {
   const totalKWSold = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);
 
+  // ── Period-scoped inPipeline for trend badge (apples-to-apples comparison) ──
+  // inPipeline above uses all active projects (all-time) so prior-period deals
+  // in-flight show in the tile. For the pctChange badge we need the same
+  // period-scoping as prevInPipeline so the delta is meaningful.
+  const periodActiveProjectsForBadge = myProjects.filter((p) => ACTIVE_PHASES.includes(p.phase));
+  const periodInPipeline = viewerPipelineRemaining(periodActiveProjectsForBadge, effectiveRepId, allMyPayroll, todayStr).total
+    + computeTrainerOverridePipeline({
+        trainerAssignments,
+        projects: periodProjects,
+        payroll: allMyPayroll,
+        installerPayConfigs,
+        repId: effectiveRepId,
+        today: todayStr,
+      });
+
   // ── Previous-period equivalents for trend-badge percentage changes ──────────
   // Mirrors the current-period inPipeline shape so the delta is comparing
   // apples to apples. Uses prevPeriodProjects for the trainer-override
@@ -1248,7 +1270,7 @@ export default function DashboardPage() {
       glowClass: 'stat-glow-blue',
       sparkData: pipelineSparkData,
       sparkStroke: 'var(--accent-cyan-solid)',
-      pctChange: computePctChange(inPipeline, prevInPipeline),
+      pctChange: computePctChange(periodInPipeline, prevInPipeline),
       href: '/dashboard/projects',
       tooltip: 'Expected commission from active projects minus amounts already paid',
     },
@@ -1796,10 +1818,32 @@ export default function DashboardPage() {
               const trainerEntries = proj.trainerId === effectiveRepId
                 ? payrollEntries.filter(e => e.projectId === proj.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer')
                 : [];
-              const _trainerPaid = trainerEntries.some(e => e.status === 'Paid');
+              const trainerPaid = trainerEntries.some(e => e.status === 'Paid');
+              // When the per-project trainerRate is absent, fall back to the chain
+              // assignment rate so the est. pay shows a real number instead of $0.
+              const effectiveTrainerRate = proj.trainerRate ?? (() => {
+                const chainAsgn = trainerAssignments.find(a =>
+                  a.trainerId === effectiveRepId && (
+                    a.traineeId === proj.repId ||
+                    a.traineeId === proj.setterId ||
+                    (proj.additionalClosers ?? []).some(c => c.userId === a.traineeId) ||
+                    (proj.additionalSetters ?? []).some(s => s.userId === a.traineeId)
+                  )
+                );
+                if (!chainAsgn) return 0;
+                const completedDeals = projects.filter(p => {
+                  const isParty = p.repId === chainAsgn.traineeId || p.setterId === chainAsgn.traineeId ||
+                    (p.additionalClosers ?? []).some(c => c.userId === chainAsgn.traineeId) ||
+                    (p.additionalSetters ?? []).some(s => s.userId === chainAsgn.traineeId);
+                  if (!isParty) return false;
+                  const installPct = installerPayConfigs[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
+                  return installPct < 100 ? p.m3Paid === true : p.m2Paid === true;
+                }).length;
+                return getTrainerOverrideRate(chainAsgn, completedDeals);
+              })();
               const trainerPayAmount = trainerEntries.length > 0
                 ? trainerEntries.reduce((s, e) => s + e.amount, 0)
-                : Math.round((proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000);
+                : Math.round(effectiveTrainerRate * (proj.kWSize ?? 0) * 1000);
               const estPay = proj.repId === effectiveRepId
                 ? closerM1 + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0)
                 : proj.setterId === effectiveRepId
@@ -1863,6 +1907,8 @@ export default function DashboardPage() {
                               <MilestoneDot label="M3" paid={coPartyM3Paid} amount={coSetterEntry.m3Amount ?? 0} />
                             )}
                           </>
+                        ) : proj.trainerId === effectiveRepId ? (
+                          <MilestoneDot label="T" paid={trainerPaid} amount={trainerPayAmount} />
                         ) : (
                           <>
                             <MilestoneDot label="M1" paid={closerM1Paid} amount={proj.m1Amount ?? 0} />

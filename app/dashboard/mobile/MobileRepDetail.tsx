@@ -541,6 +541,37 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   }, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Commission by Role — mirrors desktop users/[id] page classification logic
+  const projectById = new Map(projects.map((p) => [p.id, p]));
+  const classifyEntry = (e: typeof repPayroll[number]): 'Closer' | 'Co-closer' | 'Setter' | 'Co-setter' | 'Trainer' | 'Bonus' => {
+    if (e.paymentStage === 'Trainer') return 'Trainer';
+    if (e.type !== 'Deal') return 'Bonus';
+    if (!e.projectId) return 'Bonus';
+    const proj = projectById.get(e.projectId);
+    if (!proj) return 'Closer';
+    if (proj.repId === repId && proj.setterId === repId) {
+      return e.notes === 'Setter' ? 'Setter' : 'Closer';
+    }
+    if (proj.repId === repId) return 'Closer';
+    if (proj.setterId === repId) return 'Setter';
+    if (proj.additionalClosers?.some((c: { userId: string }) => c.userId === repId)) return 'Co-closer';
+    if (proj.additionalSetters?.some((c: { userId: string }) => c.userId === repId)) return 'Co-setter';
+    return 'Closer';
+  };
+  const roleCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Closer');
+  const roleCoCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Co-closer');
+  const roleSetterEntries = repPayroll.filter((e) => classifyEntry(e) === 'Setter' || classifyEntry(e) === 'Co-setter');
+  const roleTrainerEntries = repPayroll.filter((e) => classifyEntry(e) === 'Trainer');
+  const roleBonusEntries = repPayroll.filter((e) => classifyEntry(e) === 'Bonus');
+  const sumRolePay = (arr: typeof repPayroll) => arr.reduce((s, e) => s + e.amount, 0);
+  const roleCloserPay = sumRolePay(roleCloserEntries);
+  const roleCoCloserPay = sumRolePay(roleCoCloserEntries);
+  const roleSetterPay = sumRolePay(roleSetterEntries);
+  const roleTrainerPay = sumRolePay(roleTrainerEntries);
+  const roleBonusPay = sumRolePay(roleBonusEntries);
+  const roleCloserDealCount = projects.filter((p) => p.repId === repId && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
+  const roleTrainerDealCount = new Set(repPayroll.filter((e) => e.paymentStage === 'Trainer' && e.projectId !== null).map((e) => e.projectId as string)).size;
+
   const repType = REP_TYPE_LABELS[rep.repType ?? ''] ?? rep.repType ?? 'Rep';
   const isSubDealer = resolvedUser.role === 'sub-dealer';
 
@@ -981,6 +1012,34 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         </div>
       )}
 
+      {/* Commission by Role — admin only, mirrors desktop rep detail */}
+      {!isPM && isAdmin && repPayroll.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission by Role</p>
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {[
+              { label: 'Closer', deals: roleCloserDealCount, total: roleCloserPay, show: true },
+              { label: 'Co-closer', deals: new Set(roleCoCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleCoCloserPay, show: roleCoCloserPay > 0 },
+              { label: 'Setter', deals: new Set(roleSetterEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleSetterPay, show: true },
+              { label: 'Trainer', deals: roleTrainerDealCount, total: roleTrainerPay, show: true },
+              { label: 'Bonus / Other', deals: null as number | null, total: roleBonusPay, show: roleBonusPay > 0 },
+            ].filter(r => r.show).map((row) => (
+              <div key={row.label} className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{row.label}</span>
+                  <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                    {row.deals !== null ? `${row.deals} deal${row.deals !== 1 ? 's' : ''}` : '—'}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  ${row.total.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* All Projects */}
       <MobileSection title="Projects" count={repProjects.length}>
         {repProjects.length === 0 ? (
@@ -1097,7 +1156,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
               const hasClerk = userMeta?.hasClerkAccount ?? false;
               const hasPending = !!userMeta?.pendingInvitation;
               const isInactive = resolvedUser.active === false;
-              if (hasClerk && !isInactive) return null;
+              if (isInactive || hasClerk) return null;
               return (
                 <MobileBottomSheet.Item
                   label={hasPending ? 'Resend invite' : 'Send invite'}

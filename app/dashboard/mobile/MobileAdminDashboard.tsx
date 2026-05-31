@@ -80,6 +80,7 @@ export default function MobileAdminDashboard() {
     currentUserRepType,
     dbReady,
     setViewAsUser,
+    updateProject,
   } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>('all');
@@ -182,7 +183,7 @@ export default function MobileAdminDashboard() {
 
   const totalKW = useMemo(() => periodProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
   const totalKWInstalled = useMemo(() => periodProjects.filter((p) => p.phase === 'PTO' || p.phase === 'Installed' || p.phase === 'Completed').reduce((s, p) => s + p.kWSize, 0), [periodProjects]);
-  const flaggedCount = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed').length, [projects]);
+  const flaggedProjects = useMemo(() => projects.filter((p) => p.flagged && p.phase !== 'Cancelled' && p.phase !== 'Completed'), [projects]);
 
   // Stalled projects — uses phaseChangedAt with soldDate fallback, matching desktop AdminDashboard logic.
   // Uses full `projects` (not period-scoped) so Needs Attention matches desktop regardless of selected period.
@@ -205,7 +206,7 @@ export default function MobileAdminDashboard() {
   // Payroll — draft/pending counts use unfiltered payrollEntries so the Needs Attention badge
   // stays consistent with flagged/stalled counts, which are also period-independent.
   // Unflagged On Hold projects — mirrors desktop AdminDashboard.tsx lines 249-252.
-  const onHoldCount = useMemo(() => projects.filter((p) => p.phase === 'On Hold' && !p.flagged).length, [projects]);
+  const onHoldProjects = useMemo(() => projects.filter((p) => p.phase === 'On Hold' && !p.flagged), [projects]);
 
   const draftCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Draft').length, [payrollEntries]);
   const pendingCount = useMemo(() => payrollEntries.filter((e) => e.status === 'Pending').length, [payrollEntries]);
@@ -286,7 +287,7 @@ export default function MobileAdminDashboard() {
   const animatedProfit = useCountUp(Math.round(totalProfit), 300);
   const animatedPaid = useCountUp(Math.round(totalPaid), 300);
 
-  const needsAttention = flaggedCount + draftCount + pendingCount + stalledProjects.length + onHoldCount;
+  const needsAttention = flaggedProjects.length + draftCount + pendingCount + stalledProjects.length + onHoldProjects.length;
 
   // ── Skeleton while data hydrates (prevents stale-number flash) ──────────
   if (!dbReady) {
@@ -425,8 +426,8 @@ export default function MobileAdminDashboard() {
           {draftCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={pendingCount > 0 || flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${pendingCount > 0 || flaggedProjects.length > 0 || stalledProjects.length > 0 || onHoldProjects.length > 0 ? ' border-b' : ''}`}
+              style={pendingCount > 0 || flaggedProjects.length > 0 || stalledProjects.length > 0 || onHoldProjects.length > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-2.5">
                 <CreditCard className="w-3.5 h-3.5" style={{ color: MUTED }} />
@@ -439,8 +440,8 @@ export default function MobileAdminDashboard() {
           {pendingCount > 0 && (
             <button
               onClick={() => router.push('/dashboard/payroll')}
-              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={flaggedCount > 0 || stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
+              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${flaggedProjects.length > 0 || stalledProjects.length > 0 || onHoldProjects.length > 0 ? ' border-b' : ''}`}
+              style={flaggedProjects.length > 0 || stalledProjects.length > 0 || onHoldProjects.length > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
             >
               <div className="flex items-center gap-2.5">
                 <CreditCard className="w-3.5 h-3.5" style={{ color: 'var(--accent-amber-text)' }} />
@@ -450,46 +451,83 @@ export default function MobileAdminDashboard() {
             </button>
           )}
 
-          {flaggedCount > 0 && (
-            <button
-              onClick={() => router.push('/dashboard/projects')}
-              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${stalledProjects.length > 0 || onHoldCount > 0 ? ' border-b' : ''}`}
-              style={stalledProjects.length > 0 || onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
-            >
-              <div className="flex items-center gap-2.5">
-                <Flag className="w-3.5 h-3.5" style={{ color: 'var(--accent-red-text)' }} />
-                <span style={{ color: 'var(--accent-red-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{flaggedCount} flagged projects</span>
+          {flaggedProjects.map((fp, idx) => {
+            const isLastFlagged = idx === flaggedProjects.length - 1;
+            const hasBorder = !isLastFlagged || stalledProjects.length > 0 || onHoldProjects.length > 0;
+            return (
+              <div
+                key={fp.id}
+                className={`w-full flex items-center gap-2 min-h-[40px] py-1.5${hasBorder ? ' border-b' : ''}`}
+                style={hasBorder ? { borderColor: 'var(--border-subtle)' } : undefined}
+              >
+                <button
+                  onClick={() => router.push(`/dashboard/projects/${fp.id}`)}
+                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+                >
+                  <Flag className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent-red-text)' }} />
+                  <span className="truncate" style={{ color: 'var(--accent-red-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{fp.customerName}</span>
+                </button>
+                <button
+                  onClick={() => updateProject(fp.id, { flagged: false })}
+                  className="shrink-0 px-2 py-0.5 rounded text-xs font-medium active:opacity-70 transition-opacity"
+                  style={{ color: 'var(--accent-red-text)', background: 'color-mix(in srgb, var(--accent-red-solid) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)' }}
+                >
+                  Unflag
+                </button>
               </div>
-              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
-            </button>
-          )}
+            );
+          })}
 
-          {stalledProjects.length > 0 && (
-            <button
-              onClick={() => router.push('/dashboard/projects')}
-              className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${onHoldCount > 0 ? ' border-b' : ''}`}
-              style={onHoldCount > 0 ? { borderColor: 'var(--border-subtle)' } : undefined}
-            >
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-3.5 h-3.5" style={{ color: MUTED }} />
-                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{stalledProjects.length} stalled projects</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
-            </button>
-          )}
+          {stalledProjects.map((sp, idx) => {
+            const isLastStalled = idx === stalledProjects.length - 1;
+            const hasBorder = !isLastStalled || onHoldProjects.length > 0;
+            const phaseSince = sp.phaseChangedAt ? new Date(sp.phaseChangedAt) : (() => {
+              if (!sp.soldDate) return null;
+              const [y, m, d] = sp.soldDate.split('-').map(Number);
+              return new Date(y, m - 1, d);
+            })();
+            const now = new Date(); now.setHours(0, 0, 0, 0);
+            const staleDays = phaseSince ? Math.floor((now.getTime() - phaseSince.getTime()) / 86400000) : 0;
+            return (
+              <button
+                key={sp.id}
+                onClick={() => router.push(`/dashboard/projects/${sp.id}`)}
+                className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${hasBorder ? ' border-b' : ''}`}
+                style={hasBorder ? { borderColor: 'var(--border-subtle)' } : undefined}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: MUTED }} />
+                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{sp.customerName}</span>
+                </div>
+                <span className="shrink-0 ml-2" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '11px' }}>{staleDays}d · {sp.phase}</span>
+              </button>
+            );
+          })}
 
-          {onHoldCount > 0 && (
-            <button
-              onClick={() => router.push('/dashboard/projects')}
-              className="w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity"
-            >
-              <div className="flex items-center gap-2.5">
-                <PauseCircle className="w-3.5 h-3.5" style={{ color: MUTED }} />
-                <span style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{onHoldCount} on hold</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5" style={{ color: DIM }} />
-            </button>
-          )}
+          {onHoldProjects.map((hp, idx) => {
+            const isLastOnHold = idx === onHoldProjects.length - 1;
+            const holdSince = hp.phaseChangedAt ? new Date(hp.phaseChangedAt) : (() => {
+              if (!hp.soldDate) return new Date();
+              const [y, m, d] = hp.soldDate.split('-').map(Number);
+              return new Date(y, m - 1, d);
+            })();
+            const now = new Date(); now.setHours(0, 0, 0, 0);
+            const holdDays = Math.floor((now.getTime() - holdSince.getTime()) / 86400000);
+            return (
+              <button
+                key={hp.id}
+                onClick={() => router.push(`/dashboard/projects/${hp.id}`)}
+                className={`w-full flex items-center justify-between min-h-[40px] py-1.5 text-left active:opacity-70 transition-opacity${!isLastOnHold ? ' border-b' : ''}`}
+                style={!isLastOnHold ? { borderColor: 'var(--border-subtle)' } : undefined}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <PauseCircle className="w-3.5 h-3.5 shrink-0" style={{ color: MUTED }} />
+                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{hp.customerName}</span>
+                </div>
+                <span className="shrink-0 ml-2" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '11px' }}>{holdDays}d on hold</span>
+              </button>
+            );
+          })}
         </MobileCard>
       ) : (
         <MobileCard>

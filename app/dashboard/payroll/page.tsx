@@ -191,7 +191,7 @@ function PayrollPageInner() {
   const [showArchivedReim, setShowArchivedReim] = useState<false | true | 'only'>(false);
 
   // Rep-view filters (non-admin)
-  const [repTypeFilter, setRepTypeFilter] = useState<'All' | 'Deal' | 'Bonus'>('All');
+  const [repTypeFilter, setRepTypeFilter] = useState<'All' | 'Deal' | 'Bonus' | 'Trainer' | 'Charge'>('All');
   const [repStatusFilter, setRepStatusFilter] = useState<'All' | 'Draft' | 'Pending' | 'Paid'>('All');
 
   // Payroll entries date filter
@@ -218,7 +218,7 @@ function PayrollPageInner() {
     const from = searchParams.get('from') ?? '';
     const to = searchParams.get('to') ?? '';
     setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
-    setTypeTab(['Deal', 'Bonus', 'Trainer'].includes(t) ? t : 'Deal');
+    setTypeTab(['Deal', 'Bonus', 'Trainer', 'Charge'].includes(t) ? t : 'Deal');
     setFilterRepId(r);
     setPageView(v === 'reimbursements' ? 'reimbursements' : 'payroll');
     const parsedPage = pageStr ? Math.max(1, parseInt(pageStr, 10) || 1) : 1;
@@ -333,7 +333,7 @@ function PayrollPageInner() {
   // on the inputs that actually matter.
   const today = todayLocalDateStr();
 
-  const { filtered, filteredByDateRep, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount } = useMemo(() => {
+  const { filtered, filteredByDateRep, allTypesInScope, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount } = useMemo(() => {
     const filtered: typeof payrollEntries = [];
     const filteredByDateRep: typeof payrollEntries = [];
     const allTypesInScope: typeof payrollEntries = [];
@@ -367,7 +367,7 @@ function PayrollPageInner() {
     const draftCount = allTypesInScope.filter((p) => p.status === 'Draft').length;
     const combinedPendingCount = allTypesInScope.filter((p) => p.status === 'Pending').length;
 
-    return { filtered, filteredByDateRep, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount };
+    return { filtered, filteredByDateRep, allTypesInScope, combinedTotalPaid, combinedPaidCount, draftBreakdown, pendingBreakdown, paidBreakdown, draftCount, combinedPendingCount };
   }, [payrollEntries, statusTab, typeTab, payFilterFrom, payFilterTo, filterRepId, today]);
 
   // Derived selection state — used by the floating action bar.
@@ -404,11 +404,11 @@ function PayrollPageInner() {
       return;
     }
     const defaults = new Set<string>();
-    for (const p of filteredByDateRep) {
+    for (const p of allTypesInScope) {
       if (p.status === 'Pending' && p.date <= today) defaults.add(p.id);
     }
     setPublishSelectedIds(defaults);
-  }, [showPublishConfirm, filteredByDateRep, today]);
+  }, [showPublishConfirm, allTypesInScope, today]);
 
   if (effectiveRole === 'project_manager') {
     return (
@@ -474,7 +474,7 @@ function PayrollPageInner() {
     setPublishingPayroll(true);
     // Publish the entries the user explicitly checked in the modal.
     // Defaults exclude future-dated entries, but the user can opt them in.
-    const pendingVisible = filteredByDateRep.filter((e) => e.status === 'Pending' && publishSelectedIds.has(e.id));
+    const pendingVisible = allTypesInScope.filter((e) => e.status === 'Pending' && publishSelectedIds.has(e.id));
     const ids = pendingVisible.map((e) => e.id);
     const amount = pendingVisible.reduce((s, e) => s + e.amount, 0);
     setPayrollEntries((prev) =>
@@ -870,7 +870,7 @@ function PayrollPageInner() {
         {/* Type and status filters */}
         <div className="flex flex-wrap gap-3 mb-4">
           <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
-            {(['All', 'Deal', 'Bonus'] as const).map((t) => (
+            {(['All', 'Deal', 'Bonus', 'Trainer', 'Charge'] as const).map((t) => (
               <button key={t} onClick={() => setRepTypeFilter(t)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150"
                 style={repTypeFilter === t ? { background: 'var(--accent-blue-solid)', color: 'var(--text-on-accent)' } : { color: 'var(--text-muted)' }}>
@@ -1612,7 +1612,7 @@ function PayrollPageInner() {
         // display time). Default-checked are past+today (set in the
         // useEffect that watches showPublishConfirm); future-dated rows
         // are shown but unchecked so the admin can opt them in per row.
-        const pendingEntries = filteredByDateRep
+        const pendingEntries = allTypesInScope
           .filter((p) => p.status === 'Pending')
           .sort((a, b) => a.repName.localeCompare(b.repName) || a.date.localeCompare(b.date));
         const byRep = pendingEntries.reduce((map, e) => {

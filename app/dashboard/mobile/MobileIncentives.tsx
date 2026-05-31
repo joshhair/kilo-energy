@@ -47,6 +47,38 @@ function todayISO(): string {
   return todayLocalDateStr();
 }
 
+const MOBILE_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MOBILE_QUARTERS = [
+  { value: 'Q1', label: 'Q1 (Jan–Mar)', startMonth: 0, endMonth: 2 },
+  { value: 'Q2', label: 'Q2 (Apr–Jun)', startMonth: 3, endMonth: 5 },
+  { value: 'Q3', label: 'Q3 (Jul–Sep)', startMonth: 6, endMonth: 8 },
+  { value: 'Q4', label: 'Q4 (Oct–Dec)', startMonth: 9, endMonth: 11 },
+];
+
+function mobileLastDayOfMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function mobileComputeDatesForPeriod(period: IncentivePeriod, year: number, month: number, quarter: string): { startDate: string; endDate: string | null } {
+  if (period === 'alltime') return { startDate: '', endDate: null };
+  if (period === 'month') {
+    const lastDay = mobileLastDayOfMonth(year, month);
+    return {
+      startDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+      endDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+    };
+  }
+  if (period === 'quarter') {
+    const q = MOBILE_QUARTERS.find((qq) => qq.value === quarter) ?? MOBILE_QUARTERS[0];
+    const lastDay = mobileLastDayOfMonth(year, q.endMonth);
+    return {
+      startDate: `${year}-${String(q.startMonth + 1).padStart(2, '0')}-01`,
+      endDate: `${year}-${String(q.endMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+    };
+  }
+  return { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function MobileIncentives() {
@@ -595,18 +627,21 @@ function CreateIncentiveSheet({
   onError: (msg: string) => void;
 }) {
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [type, setType] = useState<IncentiveType>('company');
   const [metric, setMetric] = useState<IncentiveMetric>('deals');
   const [period, setPeriod] = useState<IncentivePeriod>('month');
-  const [startDate, setStartDate] = useState<string>(todayISO());
-  const [endDate, setEndDate] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => new Date().getMonth());
+  const [selectedQuarter, setSelectedQuarter] = useState<string>(() => MOBILE_QUARTERS[Math.floor(new Date().getMonth() / 3)].value);
   const [targetRepId, setTargetRepId] = useState<string>('');
   const [milestones, setMilestones] = useState<{ threshold: string; reward: string }[]>([{ threshold: '', reward: '' }]);
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
-    setTitle(''); setType('company'); setMetric('deals'); setPeriod('month');
-    setStartDate(todayISO()); setEndDate(''); setTargetRepId('');
+    const _now = new Date();
+    setTitle(''); setDescription(''); setType('company'); setMetric('deals'); setPeriod('month');
+    setSelectedYear(_now.getFullYear()); setSelectedMonth(_now.getMonth()); setSelectedQuarter(MOBILE_QUARTERS[Math.floor(_now.getMonth() / 3)].value); setTargetRepId('');
     setMilestones([{ threshold: '', reward: '' }]); setSubmitting(false);
   };
 
@@ -620,14 +655,15 @@ function CreateIncentiveSheet({
     if (!canSubmit || submitting) return;
     setSubmitting(true);
     try {
+      const { startDate: computedStart, endDate: computedEnd } = mobileComputeDatesForPeriod(period, selectedYear, selectedMonth, selectedQuarter);
       const payload = {
         title: title.trim(),
-        description: '',
+        description: description.trim(),
         type,
         metric,
         period,
-        startDate: period === 'alltime' ? todayISO() : startDate,
-        endDate: endDate || undefined,
+        startDate: period === 'alltime' ? todayISO() : computedStart,
+        endDate: computedEnd || undefined,
         targetRepId: type === 'personal' ? targetRepId : undefined,
         active: true,
         milestones: milestones.map((m) => ({ threshold: Number(m.threshold), reward: m.reward.trim() })),
@@ -704,6 +740,12 @@ function CreateIncentiveSheet({
           <input className={inputCls} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q2 Closer Bonus" />
         </div>
 
+        {/* Description */}
+        <div>
+          <label className={labelCls}>Description (optional)</label>
+          <textarea className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of this incentive" />
+        </div>
+
         {/* Type */}
         <div>
           <label className={labelCls}>Type</label>
@@ -754,18 +796,46 @@ function CreateIncentiveSheet({
           </select>
         </div>
 
-        {/* Dates (hide start when alltime) */}
+        {/* Period-based date selectors */}
         {period !== 'alltime' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelCls}>Start</label>
-              <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          period === 'month' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Month</label>
+                <select className={inputCls} style={inputStyle} value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+                  {MOBILE_MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Year</label>
+                <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>End (optional)</label>
-              <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          ) : period === 'quarter' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Quarter</label>
+                <select className={inputCls} style={inputStyle} value={selectedQuarter} onChange={(e) => setSelectedQuarter(e.target.value)}>
+                  {MOBILE_QUARTERS.map((q) => <option key={q.value} value={q.value}>{q.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Year</label>
+                <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className={labelCls}>Year</label>
+              <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )
         )}
 
         {/* Milestones */}
@@ -849,8 +919,12 @@ function EditIncentiveSheet({
   const [type, setType] = useState<IncentiveType>(incentive.type);
   const [metric, setMetric] = useState<IncentiveMetric>(incentive.metric);
   const [period, setPeriod] = useState<IncentivePeriod>(incentive.period);
-  const [startDate, setStartDate] = useState<string>(incentive.startDate ?? todayISO());
-  const [endDate, setEndDate] = useState<string>(incentive.endDate ?? '');
+  const [selectedYear, setSelectedYear] = useState<number>(() => incentive.startDate ? parseInt(incentive.startDate.split('-')[0]) : new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => incentive.startDate ? parseInt(incentive.startDate.split('-')[1]) - 1 : new Date().getMonth());
+  const [selectedQuarter, setSelectedQuarter] = useState<string>(() => {
+    const m = incentive.startDate ? parseInt(incentive.startDate.split('-')[1]) - 1 : new Date().getMonth();
+    return MOBILE_QUARTERS[Math.floor(m / 3)].value;
+  });
   const [targetRepId, setTargetRepId] = useState<string>(incentive.targetRepId ?? '');
   const [milestones, setMilestones] = useState<{ id?: string; threshold: string; reward: string; achieved: boolean }[]>(
     incentive.milestones.map((m) => ({ id: m.id, threshold: String(m.threshold), reward: m.reward, achieved: m.achieved }))
@@ -867,14 +941,15 @@ function EditIncentiveSheet({
     if (!canSubmit || submitting) return;
     setSubmitting(true);
     try {
+      const { startDate: computedStart, endDate: computedEnd } = mobileComputeDatesForPeriod(period, selectedYear, selectedMonth, selectedQuarter);
       const updated: Incentive = {
         ...incentive,
         title: title.trim(),
         type,
         metric,
         period,
-        startDate: period === 'alltime' ? (incentive.startDate ?? todayISO()) : startDate,
-        endDate: endDate || null,
+        startDate: period === 'alltime' ? (incentive.startDate ?? todayISO()) : computedStart,
+        endDate: computedEnd,
         targetRepId: type === 'personal' ? targetRepId : null,
         milestones: milestones.map((m) => ({
           id: m.id ?? '',
@@ -968,18 +1043,46 @@ function EditIncentiveSheet({
           </select>
         </div>
 
-        {/* Dates */}
+        {/* Period-based date selectors */}
         {period !== 'alltime' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelCls}>Start</label>
-              <input type="date" className={inputCls} style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          period === 'month' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Month</label>
+                <select className={inputCls} style={inputStyle} value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+                  {MOBILE_MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Year</label>
+                <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>End (optional)</label>
-              <input type="date" className={inputCls} style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          ) : period === 'quarter' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Quarter</label>
+                <select className={inputCls} style={inputStyle} value={selectedQuarter} onChange={(e) => setSelectedQuarter(e.target.value)}>
+                  {MOBILE_QUARTERS.map((q) => <option key={q.value} value={q.value}>{q.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Year</label>
+                <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className={labelCls}>Year</label>
+              <select className={inputCls} style={inputStyle} value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )
         )}
 
         {/* Milestones */}

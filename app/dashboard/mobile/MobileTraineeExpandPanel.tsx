@@ -42,29 +42,40 @@ export default function MobileTraineeExpandPanel({
       <table className="w-full text-base motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '140ms', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
         <thead>
           <tr style={{ color: 'var(--text-dim)' }}>
-            <th className="text-left py-1 font-semibold uppercase tracking-widest">Deals Up To</th>
-            <th className="text-right py-1 font-semibold uppercase tracking-widest">Rate ($/W)</th>
+            <th className="text-left py-1 font-semibold uppercase tracking-widest">Tier</th>
+            <th className="text-left py-1 font-semibold uppercase tracking-widest">Deal Range</th>
+            <th className="text-right py-1 font-semibold uppercase tracking-widest">Rate</th>
           </tr>
         </thead>
         <tbody>
-          {tiers.map((tier, i) => (
-            <tr
-              key={i}
-              className="motion-safe:animate-[fadeSlideIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]"
-              style={{ animationDelay: `${200 + i * 55}ms`, color: i === activeTierIndex ? 'var(--accent-emerald-solid)' : 'var(--text-muted)' }}
-            >
-              <td className="py-1">{tier.upToDeal === null ? 'Unlimited' : tier.upToDeal}</td>
-              <td className="py-1 text-right tabular-nums" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-                ${tier.ratePerW.toFixed(2)}
-                {i === activeTierIndex && (
-                  <span
-                    className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide leading-none"
-                    style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', color: 'var(--accent-emerald-text)' }}
-                  >ACTIVE</span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {tiers.map((tier, i) => {
+            const isActive = i === activeTierIndex;
+            const prevEnd = i > 0 ? (tiers[i - 1].upToDeal ?? 0) : 0;
+            const rangeLabel = tier.upToDeal === null
+              ? `${prevEnd + 1}+ deals`
+              : `${i === 0 ? 0 : prevEnd + 1} – ${tier.upToDeal} deals`;
+            return (
+              <tr
+                key={i}
+                className="motion-safe:animate-[fadeSlideIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                style={{ animationDelay: `${200 + i * 55}ms`, color: isActive ? 'var(--accent-amber-text)' : 'var(--text-muted)' }}
+              >
+                <td className="py-1 font-semibold">
+                  Tier {i + 1}
+                  {isActive && (
+                    <span
+                      className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide leading-none"
+                      style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 15%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}
+                    >ACTIVE</span>
+                  )}
+                </td>
+                <td className="py-1">{rangeLabel}</td>
+                <td className="py-1 text-right tabular-nums font-bold" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                  ${tier.ratePerW.toFixed(2)}/W
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

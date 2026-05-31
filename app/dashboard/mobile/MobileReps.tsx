@@ -99,6 +99,8 @@ export default function MobileReps() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [repTypeFilter, setRepTypeFilter] = useState<RepTypeFilter>('all');
+  const [sortBy, setSortBy] = useState<'paid' | 'deals' | 'kw' | 'name'>('paid');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
   const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
 
@@ -249,6 +251,19 @@ export default function MobileReps() {
       return true;
     });
   }, [reps, debouncedSearch, repTypeFilter]);
+
+  const sortedReps = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a, b) => {
+      if (sortBy === 'name') {
+        return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      }
+      const va = sortBy === 'paid' ? (paidByRep.get(a.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(a.id) ?? 0) : (activeDealsByRep.get(a.id) ?? 0);
+      const vb = sortBy === 'paid' ? (paidByRep.get(b.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(b.id) ?? 0) : (activeDealsByRep.get(b.id) ?? 0);
+      return sortDir === 'asc' ? va - vb : vb - va;
+    });
+    return arr;
+  }, [filtered, sortBy, sortDir, paidByRep, kwByRep, activeDealsByRep]);
 
   // Inactive lists — filtered by search, not by role pill
   const inactiveReps = reps.filter((r) => {
@@ -746,12 +761,40 @@ export default function MobileReps() {
         );
       })()}
 
+      {/* Sort controls — rep list only */}
+      {roleFilter === 'rep' && filtered.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto -mx-5 px-5" style={{ scrollbarWidth: 'none' }}>
+          {(['paid', 'deals', 'kw', 'name'] as const).map((key) => {
+            const labels: Record<string, string> = { paid: 'Paid', deals: 'Deals', kw: 'kW', name: 'Name' };
+            const active = sortBy === key;
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  if (active) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+                  else { setSortBy(key); setSortDir(key === 'name' ? 'asc' : 'desc'); }
+                }}
+                className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
+                style={{
+                  background: active ? 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)' : 'var(--surface-card)',
+                  color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                  border: active ? '1px solid color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)' : '1px solid var(--border-subtle)',
+                  fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                }}
+              >
+                {labels[key]}{active ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Rep list — shown only when the role filter is 'rep' */}
-      {roleFilter === 'rep' && (filtered.length === 0 ? (
+      {roleFilter === 'rep' && (sortedReps.length === 0 ? (
         <MobileEmptyState icon={Users} title="No reps found" subtitle="Try adjusting your search" />
       ) : (
         <div className="space-y-3">
-          {filtered.map((rep) => {
+          {sortedReps.map((rep) => {
             const deals = activeDealsByRep.get(rep.id) ?? 0;
             const kw = kwByRep.get(rep.id) ?? 0;
             const paid = paidByRep.get(rep.id) ?? 0;

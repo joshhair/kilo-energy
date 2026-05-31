@@ -378,7 +378,7 @@ export const PROJECTS: Project[] = [
     kWSize: 10.2,
     netPPW: 3.1,
     phase: 'Permitting',
-    m1Paid: false,
+    m1Paid: true,
     m1Amount: 1450,
     m2Paid: false,
     m2Amount: 1100,
@@ -910,14 +910,6 @@ export function getBaselineRate(financer: string, productType: string, kW: numbe
       (r.tierMaxKW === null || kW < r.tierMaxKW)
   );
   if (match) return { closerPerW: match.closerPerW, kiloPerW: match.kiloPerW };
-  // Generic fallback by product type, still respecting kW tier
-  const byType = BASELINE_RATES.find(
-    (r) =>
-      r.productType === productType &&
-      kW >= r.tierMinKW &&
-      (r.tierMaxKW === null || kW < r.tierMaxKW)
-  );
-  if (byType) return { closerPerW: byType.closerPerW, kiloPerW: byType.kiloPerW };
   return { closerPerW: 3.00, kiloPerW: 2.45 };
 }
 
@@ -1537,11 +1529,10 @@ export function computeIncentiveProgress(
 ): number {
   const inRange = (dateStr: string | null) => {
     if (!dateStr) return false;
-    const d = new Date(dateStr);
-    const end = incentive.endDate ? new Date(incentive.endDate) : new Date('2099-12-31');
+    const d = dateStr.slice(0, 10);
+    const end = incentive.endDate ? incentive.endDate : '2099-12-31';
     if (incentive.startDate === '') return d <= end;
-    const start = new Date(incentive.startDate);
-    return d >= start && d <= end;
+    return d >= incentive.startDate && d <= end;
   };
 
   let relevantProjects = projects.filter((p) => inRange(p.soldDate) && p.phase !== 'Cancelled' && p.phase !== 'On Hold');

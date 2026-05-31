@@ -289,6 +289,7 @@ export default function TableView({
   clearAllFilters,
   readOnly = false,
   hideFinancials = false,
+  canEditPhase: canEditPhaseProp,
 }: {
   projects: ProjectList;
   searchInput: string;
@@ -302,7 +303,9 @@ export default function TableView({
   clearAllFilters: () => void;
   readOnly?: boolean;
   hideFinancials?: boolean;
+  canEditPhase?: boolean;
 }) {
+  const canEditPhase = canEditPhaseProp ?? (isAdmin && !readOnly);
   const { reps, trainerAssignments, updateProject } = useApp();
   const { toast } = useToast();
   const tableRouter = useRouter();
@@ -764,7 +767,7 @@ export default function TableView({
                 <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')}>
                   Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                {isAdmin && !readOnly && (
+                {((isAdmin && !readOnly) || canEditPhase) && (
                   <th className="text-left px-5 py-3 font-medium text-[var(--text-secondary)] select-none whitespace-nowrap">
                     Actions
                   </th>
@@ -866,7 +869,7 @@ export default function TableView({
                     </td>
                   )}
                   <td className="px-5 py-3">
-                    {isAdmin && !readOnly ? (
+                    {canEditPhase ? (
                       <select
                         value={proj.phase}
                         onChange={(e) => onPhaseChange(proj.id, e.target.value as Phase)}
@@ -889,14 +892,14 @@ export default function TableView({
                     <div>{formatDate(proj.soldDate)}</div>
                     <div className="text-[10px] text-[var(--text-dim)]">{relativeTime(proj.soldDate)}</div>
                   </td>
-                  {isAdmin && !readOnly && (() => {
+                  {((isAdmin && !readOnly) || canEditPhase) && (() => {
                     const phaseIdx = PIPELINE_PHASES.indexOf(proj.phase);
                     const nextPhase = (phaseIdx >= 0 && phaseIdx < PIPELINE_PHASES.length - 1) ? PIPELINE_PHASES[phaseIdx + 1] : undefined;
                     return (
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {/* Phase-advance quick-action — fades in on row hover (identical to Kanban card behaviour) */}
-                          {nextPhase && (
+                          {canEditPhase && nextPhase && (
                             <button
                               onClick={(e) => { e.stopPropagation(); onPhaseChange(proj.id, nextPhase); }}
                               title={`Advance to ${nextPhase}`}
@@ -906,17 +909,19 @@ export default function TableView({
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          {/* Assign / Reassign Setter */}
-                          <SetterPopover
-                            projectId={proj.id}
-                            customerName={proj.customerName}
-                            currentSetterId={proj.setterId}
-                            currentSetterName={proj.setterName}
-                            reps={reps}
-                            trainerAssignments={trainerAssignments}
-                            setProjects={setProjects}
-                            updateProject={updateProject}
-                          />
+                          {/* Assign / Reassign Setter — admin only */}
+                          {isAdmin && !readOnly && (
+                            <SetterPopover
+                              projectId={proj.id}
+                              customerName={proj.customerName}
+                              currentSetterId={proj.setterId}
+                              currentSetterName={proj.setterName}
+                              reps={reps}
+                              trainerAssignments={trainerAssignments}
+                              setProjects={setProjects}
+                              updateProject={updateProject}
+                            />
+                          )}
                         </div>
                       </td>
                     );
@@ -926,7 +931,7 @@ export default function TableView({
               })}
               {pagedProjects.length === 0 && (
                 <tr>
-                  <td colSpan={(isAdmin ? 10 : dealScope === 'all' ? 8 : 7) - (hideFinancials ? 1 : 0)} className="px-5 py-12 text-center">
+                  <td colSpan={(isAdmin ? 10 : dealScope === 'all' ? (canEditPhase ? 9 : 8) : (canEditPhase ? 8 : 7)) - (hideFinancials ? 1 : 0)} className="px-5 py-12 text-center">
                     <div className="flex justify-center">
                       {hasActiveFilters ? (
                         /* ── Filtered: no results ─────────────────────────────────── */

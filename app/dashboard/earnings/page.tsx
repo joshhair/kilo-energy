@@ -78,11 +78,7 @@ function RepEarningsView() {
 
   const [showReimbModal, setShowReimbModal] = useState(false);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  // Period filter currently has no UI control — fixed to 'all'. The setter
-  // is preserved (renamed to satisfy the unused-vars allow-underscore rule)
-  // so the period filter can re-wire to a control without ripping out the
-  // state plumbing throughout this file.
-  const [period, _setPeriod] = useState<Period>('all');
+  const [period, setPeriod] = useState<Period>('all');
 
   const monthFilterLabel = useMemo(() => {
     if (!monthFilter) return null;
@@ -237,6 +233,7 @@ function RepEarningsView() {
 
   // Sliding tab indicator owned by SegmentedPills.
 
+  useEffect(() => { setMonthFilter(null); setDealPage(1); setBonusPage(1); setReimbPage(1); setDealRoleFilter(null); }, [period]);
   useEffect(() => { setDealPage(1); setBonusPage(1); setReimbPage(1); setDealRoleFilter(null); }, [monthFilter]);
   useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
 
@@ -476,6 +473,17 @@ function RepEarningsView() {
           <SparklineWithTooltip data={reimbMonthlyData} stroke="var(--accent-purple-solid)" />
         </div>
 
+      </div>
+
+      {/* ── Period filter ──────────────────────────────────────────────────── */}
+      <div className="mb-4">
+        <SegmentedPills<Period>
+          options={PERIODS}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          ariaLabel="Filter earnings by period"
+        />
       </div>
 
       {/* ── Monthly Earnings Bar Chart ──────────────────────────────────────── */}

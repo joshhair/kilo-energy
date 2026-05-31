@@ -13,6 +13,7 @@ import PayrollTypeTabs from './shared/PayrollTypeTabs';
 import PayrollStatusTabs from './shared/PayrollStatusTabs';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PaidCorrectionModal from '../components/PaidCorrectionModal';
 import { SegmentedPills } from '../../../components/ui';
 import { PaymentTypeBadge } from '../../../components/ui/PaymentTypeBadge';
 
@@ -68,6 +69,7 @@ export default function MobilePayroll() {
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback' | 'Charge', stage: 'M1' as string, chargeCategory: 'misc' as 'equipment_damage' | 'reimbursement_clawback' | 'customer_dispute' | 'misc' });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
+  const [paidCorrectionEntry, setPaidCorrectionEntry] = useState<PayrollEntry | null>(null);
 
   // ── Admin filters ─────────────────────────────────────────────────────────
   const [filterRepId, setFilterRepId] = useState(searchParams.get('rep') ?? '');
@@ -164,7 +166,7 @@ export default function MobilePayroll() {
   // the summary cards row. Cards stay honest about the total owed;
   // the type tab below still filters the row list for drill-down.
   // Mirrors the desktop payroll tab pattern (2026-04-23).
-  const { draftBreakdown, pendingBreakdown, paidBreakdown } = useMemo(() => {
+  const { draftBreakdown, pendingBreakdown, paidBreakdown, allTypesInScope } = useMemo(() => {
     const today = todayLocalDateStr();
     const scope = payrollEntries.filter(
       (e) => (effectiveRole === 'admin' || e.repId === effectiveRepId) &&
@@ -176,6 +178,7 @@ export default function MobilePayroll() {
       draftBreakdown: breakdownByType(scope, 'Draft', { asOf: today }),
       pendingBreakdown: breakdownByType(scope, 'Pending', { asOf: today }),
       paidBreakdown: breakdownByType(scope, 'Paid', { asOf: today }),
+      allTypesInScope: scope,
     };
   }, [payrollEntries, effectiveRole, effectiveRepId, filterRepId, filterFrom, filterTo]);
 
@@ -227,9 +230,8 @@ export default function MobilePayroll() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const handlePublishOrApproveAll = useCallback(async () => {
-    const today = todayLocalDateStr();
     const target = statusTab === 'Pending'
-      ? filtered.filter((e) => e.status === 'Pending' && e.date <= today)
+      ? allTypesInScope.filter((e) => e.status === 'Pending')
       : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
@@ -269,7 +271,7 @@ export default function MobilePayroll() {
         toast('Payroll failed to save — rolled back', 'error');
       }
     }
-  }, [filtered, payrollEntries, setPayrollEntries, toast, statusTab]);
+  }, [filtered, allTypesInScope, payrollEntries, setPayrollEntries, toast, statusTab]);
 
   const handleStatusChange = useCallback(
     async (entry: PayrollEntry, newStatus: 'Draft' | 'Pending' | 'Paid') => {
@@ -332,6 +334,11 @@ export default function MobilePayroll() {
       const isCharge = paymentForm.type === 'Charge';
       const project = (!isBonus && !isCharge) ? projects.find((p) => p.id === paymentForm.projectId) : undefined;
 
+      if (isChargeback && !paymentForm.projectId) {
+        toast('Select the deal to charge back', 'error');
+        return;
+      }
+
       if (!isBonus && !isCharge && paymentForm.stage === 'M3') {
         if (!paymentForm.projectId || !project) { toast('M3 payments require a linked project', 'error'); return; }
         const installerName = project.installer ?? '';
@@ -378,11 +385,37 @@ export default function MobilePayroll() {
   );
 
   const openEditEntry = useCallback((entry: PayrollEntry) => {
-    if (entry.status === 'Paid') { toast('Paid entries cannot be edited — add a negative adjustment entry instead', 'error'); return; }
+    if (entry.status === 'Paid') {
+      if (effectiveRole === 'admin') {
+        setSelectedEntry(null);
+        setPaidCorrectionEntry(entry);
+      } else {
+        toast('Paid entries cannot be edited — ask an admin to correct or add a chargeback.', 'error');
+      }
+      return;
+    }
     setEditEntryForm({ amount: String(entry.amount), date: entry.date, notes: entry.notes ?? '' });
     setSelectedEntry(null);
     setEditingEntry(entry);
-  }, [toast]);
+  }, [effectiveRole, toast]);
+
+  const handlePaidCorrected = useCallback((updated: PayrollEntry) => {
+    setPayrollEntries((prev) => prev.map((e) => e.id === updated.id ? updated : e));
+  }, [setPayrollEntries]);
+
+  const openChargebackForEntry = useCallback((entry: PayrollEntry) => {
+    setPaymentForm({
+      type: 'Chargeback',
+      repId: entry.repId,
+      projectId: entry.projectId ?? '',
+      amount: '',
+      stage: 'M1',
+      date: todayLocalDateStr(),
+      notes: `Correction for ${entry.paymentStage} paid ${entry.date}`,
+      chargeCategory: 'misc',
+    });
+    setShowAddPayment(true);
+  }, []);
 
   const handleSaveEditEntry = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -854,7 +887,7 @@ export default function MobilePayroll() {
       <ConfirmDialog
         open={showPublishConfirm}
         title="Publish Payroll?"
-        message={`This will mark ${filtered.filter((e) => e.date <= todayLocalDateStr()).length} pending ${filtered.filter((e) => e.date <= todayLocalDateStr()).length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone. Future-dated entries are excluded — use the desktop payroll page if you need to publish those early.`}
+        message={`This will mark ${filtered.filter((e) => e.status === 'Pending').length} pending ${filtered.filter((e) => e.status === 'Pending').length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone.`}
         confirmLabel="Publish Payroll"
         onConfirm={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
         onClose={() => setShowPublishConfirm(false)}
@@ -909,6 +942,13 @@ export default function MobilePayroll() {
                   onTap={() => handleStatusChange(selectedEntry, 'Draft')}
                 />
               </>
+            )}
+            {selectedEntry.status === 'Paid' && (
+              <MobileBottomSheet.Item
+                label="Edit Entry"
+                icon={Pencil}
+                onTap={() => openEditEntry(selectedEntry)}
+              />
             )}
             {selectedEntry.status !== 'Paid' && (
               <>
@@ -1161,6 +1201,13 @@ export default function MobilePayroll() {
         confirmLabel="Delete"
         onConfirm={() => confirmDeleteEntry && handleDelete(confirmDeleteEntry)}
         onClose={() => setConfirmDeleteEntry(null)}
+      />
+
+      <PaidCorrectionModal
+        entry={paidCorrectionEntry}
+        onClose={() => setPaidCorrectionEntry(null)}
+        onCorrected={handlePaidCorrected}
+        onOpenChargeback={openChargebackForEntry}
       />
       </div>
       )}
