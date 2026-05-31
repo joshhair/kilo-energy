@@ -90,7 +90,7 @@ export function CommissionPreview({
             <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1"><span>System value</span><span className="tabular-nums">${(kW * soldPPW * 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span></div>
             <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
               <span>Your redline</span>
-              <span>${closerPerW.toFixed(2)}/W</span>
+              <span>${(closerPerW + closerTrainerOverrideRate).toFixed(2)}/W</span>
             </div>
             {effectiveRole === 'admin' && (
               <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
@@ -145,7 +145,7 @@ export function CommissionPreview({
               <div className="flex justify-between border-t border-[var(--border)] pt-2">
                 <span className="text-[var(--text-secondary)]">Kilo margin</span>
                 <TickerAmount
-                  amount={Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal)}
+                  amount={Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal)}
                   className="text-[var(--text-secondary)] font-semibold"
                 />
               </div>

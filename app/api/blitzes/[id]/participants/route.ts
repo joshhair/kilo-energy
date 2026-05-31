@@ -250,7 +250,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     void (async () => {
       try {
         const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
-        const reviewUrl = `${appUrl}/dashboard/blitz/${blitzId}`;
+        const reviewUrl = `${appUrl}/dashboard`;
         const ownerName =
           `${caller.firstName ?? ''} ${caller.lastName ?? ''}`.trim() || caller.email;
         await notify({

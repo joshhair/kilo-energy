@@ -496,7 +496,6 @@ export default function MobileNewDeal() {
     ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null && _projects.some((p) => p.id === e.projectId && p.repId === closerId)).map((e) => e.projectId)).size
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
-
   const kW = parseFloat(form.kWSize) || 0;
   const soldPPW = parseFloat(form.netPPW) || 0;
 
@@ -530,8 +529,6 @@ export default function MobileNewDeal() {
 
   const trainerTotal = setterAssignment && trainerOverrideRate > 0
     ? Math.round(trainerOverrideRate * kW * 1000 * 100) / 100 : 0;
-  const closerTrainerTotal = closerAssignment && closerTrainerOverrideRate > 0
-    ? Math.round(closerTrainerOverrideRate * kW * 1000 * 100) / 100 : 0;
 
   // Use the canonical splitCloserSetterPay so mobile preview stays
   // exactly in sync with what POST /api/projects + PATCH /api/projects
@@ -1704,7 +1701,7 @@ export default function MobileNewDeal() {
                   <div className="space-y-1.5 text-base">
                     <div className="flex justify-between text-base" style={{ color: 'var(--text-muted)' }}>
                       <span>Your redline</span>
-                      <span>${closerPerW.toFixed(2)}/W</span>
+                      <span>${(closerPerW + closerTrainerOverrideRate).toFixed(2)}/W</span>
                     </div>
                     {effectiveRole === 'admin' && (
                       <div className="flex justify-between text-base" style={{ color: 'var(--text-muted)' }}>
@@ -1738,7 +1735,7 @@ export default function MobileNewDeal() {
                     {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Kilo margin</span>
-                        <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal).toLocaleString()}</span>
+                        <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1926,7 +1923,7 @@ export default function MobileNewDeal() {
                     {effectiveRole === 'admin' && (
                       <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Kilo margin</span>
-                        <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal).toLocaleString()}</span>
+                        <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
