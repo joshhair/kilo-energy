@@ -70,7 +70,7 @@ export default function ConfirmDialog({
           </div>
           <h3 className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)", fontSize: '1.125rem' }}>{title}</h3>
         </div>
-        <p className="text-[var(--text-secondary)] text-sm mb-5">{message}</p>
+        <p className="text-[var(--text-secondary)] text-sm mb-5" style={{ whiteSpace: 'pre-line' }}>{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onClose}

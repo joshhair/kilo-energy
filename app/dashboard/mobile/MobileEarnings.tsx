@@ -145,9 +145,10 @@ export default function MobileEarnings() {
   const reimbCount   = myReimbs.length;
 
   const currentYYYYMM   = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const monthFilterLabel = monthFilter ? `${MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} ${monthFilter.slice(0, 4)}` : null;
   const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
-  const approvedReimbs  = reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
+  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
   const filteredDeals = dealRoleFilter
     ? dealPayments.filter((p) => {
@@ -286,7 +287,7 @@ export default function MobileEarnings() {
           <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalPending)}</p>
         </div>
         <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>This Month</p>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{monthFilterLabel ?? 'This Month'}</p>
           <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(thisMonthEarned)}</p>
         </div>
         <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>

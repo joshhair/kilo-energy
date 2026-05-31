@@ -237,7 +237,7 @@ function RepEarningsView() {
 
   // Sliding tab indicator owned by SegmentedPills.
 
-  useEffect(() => { setDealPage(1); setBonusPage(1); setDealRoleFilter(null); }, [monthFilter]);
+  useEffect(() => { setDealPage(1); setBonusPage(1); setReimbPage(1); setDealRoleFilter(null); }, [monthFilter]);
   useEffect(() => { setDealPage(1); }, [dealRoleFilter]);
 
   // Gate on both client-hydrate AND /api/data ready so the fade-in
