@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { formatDate, formatCompactKWParts, fmtCompact$ } from '../../../lib/utils';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
-import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle, MapPin, Calendar, Users } from 'lucide-react';
+import { Plus, Tent, Inbox, AlertCircle, UserPlus, UserCheck, Loader2, Search, CheckCircle, XCircle, MapPin, Calendar, Users, Mail } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -166,6 +166,14 @@ export default function MobileBlitz() {
     return blitzes.filter((b) =>
       b.owner.id !== effectiveRepId &&
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
+    );
+  }, [blitzes, isAdmin, effectiveRepId]);
+
+  const invitedBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return blitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
     );
   }, [blitzes, isAdmin, effectiveRepId]);
 
@@ -691,9 +699,10 @@ export default function MobileBlitz() {
           ) : !isAdmin && effectiveRepId ? (
             // Rep segmented view
             (() => {
-              const myIds = new Set([...myBlitzes, ...pendingBlitzes].map((b) => b.id));
+              const myIds = new Set([...myBlitzes, ...pendingBlitzes, ...invitedBlitzes].map((b) => b.id));
               const myFiltered = filteredBlitzes.filter((b) => myBlitzes.some((m) => m.id === b.id));
               const pendingFiltered = filteredBlitzes.filter((b) => pendingBlitzes.some((p) => p.id === b.id));
+              const invitedFiltered = filteredBlitzes.filter((b) => invitedBlitzes.some((v) => v.id === b.id));
               const browseFiltered = filteredBlitzes.filter((b) => !myIds.has(b.id));
               const sectionLabelStyle = {
                 color: 'var(--text-muted)',
@@ -718,6 +727,16 @@ export default function MobileBlitz() {
                       <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>Pending Approval</p>
                       <div className="space-y-3">
                         {pendingFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
+                      </div>
+                    </div>
+                  )}
+                  {invitedFiltered.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5" style={{ ...sectionLabelStyle, color: 'var(--accent-cyan-solid)' }}>
+                        <Mail className="w-3.5 h-3.5" /> Invited
+                      </p>
+                      <div className="space-y-3">
+                        {invitedFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
                       </div>
                     </div>
                   )}

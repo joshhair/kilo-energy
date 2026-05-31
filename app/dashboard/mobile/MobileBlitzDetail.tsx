@@ -104,7 +104,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     () => (blitz?.participants ?? []).find((p: any) => p.user?.id === effectiveRepId) ?? null,
     [blitz?.participants, effectiveRepId],
   );
-  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | 'waitlist' | null = viewerParticipant?.joinStatus ?? null;
+  const viewerJoinStatus: 'approved' | 'pending' | 'declined' | 'waitlist' | 'invited' | null = viewerParticipant?.joinStatus ?? null;
   const canShowFomoBanner =
     blitz != null
     && !canManage
@@ -132,6 +132,29 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       toast('Network error', 'error');
     } finally {
       setRequestingJoin(false);
+    }
+  };
+  const [respondingInvite, setRespondingInvite] = useState<'accept' | 'decline' | null>(null);
+  const handleInviteResponse = async (action: 'accept' | 'decline') => {
+    if (!blitz || !effectiveRepId || respondingInvite) return;
+    setRespondingInvite(action);
+    try {
+      const res = await fetch(`/api/blitzes/${blitz.id}/participants`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: effectiveRepId, joinStatus: action === 'accept' ? 'approved' : 'declined' }),
+      });
+      if (res.ok) {
+        toast(action === 'accept' ? 'Invitation accepted' : 'Invitation declined');
+        loadBlitz();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || 'Failed to respond', 'error');
+      }
+    } catch {
+      toast('Network error', 'error');
+    } finally {
+      setRespondingInvite(null);
     }
   };
 
@@ -436,6 +459,55 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <p className="text-sm" style={{ color: 'var(--accent-cyan-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
             You&apos;re on the waitlist. {blitz?.owner?.firstName ?? 'The owner'} will promote you if a spot opens.
           </p>
+        </div>
+      )}
+      {/* Invited state — owner/admin sent an explicit invite; rep must
+          accept or decline. */}
+      {!canManage && !isPM && viewerJoinStatus === 'invited' && (
+        <div
+          className="rounded-2xl p-3 mb-4 flex items-center justify-between gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--accent-blue-solid) 6%, var(--surface-card))',
+            border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 24%, transparent)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--accent-blue-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            {blitz?.owner?.firstName ?? 'The owner'} invited you. Accept or decline?
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleInviteResponse('accept')}
+              disabled={respondingInvite !== null}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)',
+                color: 'var(--accent-emerald-text)',
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 40%, transparent)',
+              }}
+            >
+              {respondingInvite === 'accept' ? (
+                <><Loader2 className="w-3 h-3 animate-spin" /> Accepting…</>
+              ) : (
+                <><UserPlus className="w-3 h-3" /> Accept</>
+              )}
+            </button>
+            <button
+              onClick={() => handleInviteResponse('decline')}
+              disabled={respondingInvite !== null}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-red-solid) 10%, transparent)',
+                color: 'var(--accent-red-text)',
+                border: '1px solid color-mix(in srgb, var(--accent-red-solid) 35%, transparent)',
+              }}
+            >
+              {respondingInvite === 'decline' ? (
+                <><Loader2 className="w-3 h-3 animate-spin" /> Declining…</>
+              ) : (
+                <><XCircle className="w-3 h-3" /> Decline</>
+              )}
+            </button>
+          </div>
         </div>
       )}
 

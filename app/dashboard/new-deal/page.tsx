@@ -20,6 +20,7 @@ import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPart
 import { evenSplit } from '../../../lib/commission-split';
 import MobileNewDeal from '../mobile/MobileNewDeal';
 
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import { SubmittedDeal, DEAL_STEPS, validateField, genId, FieldError, PpwHint } from './components/shared';
 import { CommissionPreview } from './components/CommissionPreview';
 import { SuccessScreen } from './components/SuccessScreen';
@@ -434,7 +435,7 @@ function NewDealPage() {
   // M2/M3 split based on installer pay config
   const installPayPct = installerPayConfigs[form.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[form.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
   const hasM3 = installPayPct < 100;
-  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = splitCloserSetterPay(
+  const rawSplit = splitCloserSetterPay(
     soldPPW,
     closerPerW,
     !form.setterId ? 0 : setterBaselinePerW,
@@ -442,6 +443,7 @@ function NewDealPage() {
     kW,
     installPayPct,
   );
+  const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = applyCloserTrainerDeduction(rawSplit, closerTrainerOverrideRate, kW, installPayPct);
 
   const currentTierIndex = setterAssignment
     ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals < t.upToDeal)
@@ -935,6 +937,7 @@ function NewDealPage() {
           userNavigatedBack.current = false;
           setBviIntake(EMPTY_BVI_INTAKE);
           setUtilityBill(null);
+          setBviSendOnSubmit(true);
         }}
       />
     );

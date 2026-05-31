@@ -16,6 +16,7 @@ import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import { evenSplit } from '../../../lib/commission-split';
 import { splitCloserSetterPay } from '../../../lib/commission';
+import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import MobileCard from './shared/MobileCard';
 import { BviIntakePanel } from '../new-deal/components/BviIntakePanel';
 import { EMPTY_BVI_INTAKE, validateBviIntake, type BviIntake } from '../../../lib/installer-intakes/bvi';
@@ -539,7 +540,7 @@ export default function MobileNewDeal() {
   const hasM3 = installPayPct < 100;
   const isSelfGen = !form.setterId;
 
-  const split = splitCloserSetterPay(
+  const rawSplit = splitCloserSetterPay(
     soldPPW,
     closerPerW,
     isSelfGen ? 0 : setterBaselinePerW,
@@ -547,6 +548,7 @@ export default function MobileNewDeal() {
     kW,
     installPayPct,
   );
+  const split = applyCloserTrainerDeduction(rawSplit, closerTrainerOverrideRate, kW, installPayPct);
 
   const closerTotal = split.closerTotal;
   const setterTotal = split.setterTotal;
@@ -1047,6 +1049,7 @@ export default function MobileNewDeal() {
           setCurrentStep(0);
           setBviIntake(EMPTY_BVI_INTAKE);
           setUtilityBill(null);
+          setBviSendOnSubmit(true);
         }}
       />
     );

@@ -7,7 +7,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import MobileBlitz from '../mobile/MobileBlitz';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../lib/utils';
-import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck } from 'lucide-react';
+import { MapPin, Calendar, Users, Plus, ChevronRight, Tent, DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Search, Inbox, Loader2, Zap, UserPlus, UserCheck, Mail } from 'lucide-react';
 import { BlitzFilterBar } from './BlitzFilterBar';
 import { useToast } from '../../../lib/toast';
 import { PaginationBar } from '../components/PaginationBar';
@@ -678,12 +678,20 @@ function BlitzPageInner() {
     );
   }, [sortedBlitzes, isAdmin, effectiveRepId]);
 
+  const invitedBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [];
+    return sortedBlitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
+    );
+  }, [sortedBlitzes, isAdmin, effectiveRepId]);
+
   const browseBlitzes = useMemo(() => {
     if (isAdmin) return sortedBlitzes;
     if (!effectiveRepId) return sortedBlitzes;
-    const myIds = new Set([...myBlitzes, ...pendingBlitzes].map((b) => b.id));
+    const myIds = new Set([...myBlitzes, ...pendingBlitzes, ...invitedBlitzes].map((b) => b.id));
     return sortedBlitzes.filter((b) => !myIds.has(b.id));
-  }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes, pendingBlitzes]);
+  }, [sortedBlitzes, isAdmin, effectiveRepId, myBlitzes, pendingBlitzes, invitedBlitzes]);
 
   // Reset pages when filters change
   useEffect(() => { setBlitzPage(1); }, [statusFilter, search, sortBy, blitzPerPage]);
@@ -990,6 +998,18 @@ function BlitzPageInner() {
                 </div>
               )}
 
+              {/* Invited */}
+              {invitedBlitzes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[var(--accent-cyan-solid)]" /> Invited
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {invitedBlitzes.map((b, i) => <BlitzCard key={b.id} blitz={b} currentUserId={effectiveRepId} isAdmin={false} onJoin={handleJoinBlitz} index={i} />)}
+                  </div>
+                </div>
+              )}
+
               {/* Browse available */}
               {browseBlitzes.length > 0 && (
                 <div>
@@ -1002,7 +1022,7 @@ function BlitzPageInner() {
                 </div>
               )}
 
-              {myBlitzes.length === 0 && pendingBlitzes.length === 0 && browseBlitzes.length === 0 && (
+              {myBlitzes.length === 0 && pendingBlitzes.length === 0 && invitedBlitzes.length === 0 && browseBlitzes.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--surface-card) 50%, transparent)', border: '1px dashed var(--border-default)' }}>
                   <Tent className="w-16 h-16" style={{ color: 'var(--text-dim)' }} />
                   <div className="text-center">
