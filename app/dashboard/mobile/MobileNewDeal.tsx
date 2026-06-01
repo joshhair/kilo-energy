@@ -2019,7 +2019,7 @@ export default function MobileNewDeal() {
                     if (blitzId) {
                       const blitz = availableBlitzes.find((b) => b.id === blitzId);
                       if (blitz?.startDate && blitz?.endDate && !_touched.has('soldDate')) {
-                        const today = new Date().toISOString().split('T')[0];
+                        const today = new Date().toLocaleDateString('en-CA');
                         if (today >= blitz.startDate && today <= blitz.endDate) {
                           update('soldDate', today);
                         } else if (today < blitz.startDate) {

@@ -225,11 +225,9 @@ export function createInstallerActions(deps: InstallerDeps) {
       let updatedRates: InstallerRates;
       let patchTiers: { minKW: number; maxKW?: number | null; closerPerW: number; setterPerW: number | null; kiloPerW: number; subDealerPerW: number | null }[];
       if (existing.rates.type === 'tiered') {
-        const updatedBands = existing.rates.bands.map((band) =>
-          ({ ...band, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) }),
-        );
-        updatedRates = { type: 'tiered', bands: updatedBands };
-        patchTiers = updatedBands.map((b) => ({ minKW: b.minKW, maxKW: b.maxKW ?? null, closerPerW: b.closerPerW, setterPerW: b.setterPerW ?? null, kiloPerW: b.kiloPerW, subDealerPerW: b.subDealerPerW ?? null }));
+        // Flat-rate edit cannot safely update tiered pricing — each band has distinct rates.
+        // Admins must use the Versions panel to edit tiered installers.
+        return prev;
       } else {
         updatedRates = { type: 'flat' as const, closerPerW: baseline.closerPerW, kiloPerW: baseline.kiloPerW, ...(baseline.setterPerW != null ? { setterPerW: baseline.setterPerW } : {}), ...(baseline.subDealerPerW != null ? { subDealerPerW: baseline.subDealerPerW } : {}) };
         patchTiers = [{ minKW: 0, closerPerW: baseline.closerPerW, setterPerW: baseline.setterPerW ?? null, kiloPerW: baseline.kiloPerW, subDealerPerW: baseline.subDealerPerW ?? null }];

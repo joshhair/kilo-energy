@@ -460,9 +460,15 @@ export function BaselinesSection({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--border)] text-[var(--text-secondary)]">
-                            Standard
-                          </span>
+                          {activeVersion?.rates.type === 'tiered' ? (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-cyan-soft)] text-[var(--accent-cyan-solid)]">
+                              Tiered
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--border)] text-[var(--text-secondary)]">
+                              Standard
+                            </span>
+                          )}
                         </td>
                         {isEditing ? (
                           <>
@@ -551,8 +557,9 @@ export function BaselinesSection({
                                       subDealerPerW: rates.subDealerPerW != null ? String(rates.subDealerPerW) : '',
                                     });
                                   }}
-                                  title="Edit current rates"
-                                  className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors"
+                                  disabled={activeVersion?.rates.type === 'tiered'}
+                                  title={activeVersion?.rates.type === 'tiered' ? 'Edit individual tiers in the Versions panel' : 'Edit current rates'}
+                                  className={activeVersion?.rates.type === 'tiered' ? 'text-[var(--text-dim)] opacity-30 cursor-not-allowed' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors'}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>

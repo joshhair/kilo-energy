@@ -927,21 +927,18 @@ function AdminFinancialsView() {
   // the optimistic-state-rollback-on-failure pattern the primary actions
   // already use, so a failed undo reverts the undo rather than leaving
   // the UI stuck between two states.
-  const undoReimbStatus = (id: string, revertTo: 'Pending' | 'Approved' | 'Denied') => {
-    const currentRow = reimbursements.find((r) => r.id === id);
-    if (!currentRow) return;
-    const currentStatus = currentRow.status;
+  const undoReimbStatus = (id: string, revertTo: 'Pending' | 'Approved' | 'Denied', fallbackStatus: 'Pending' | 'Approved' | 'Denied') => {
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: revertTo } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: revertTo }) })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reverted', 'info'); })
-      .catch(() => { setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: currentStatus } : r)); toast('Undo failed — reload to see current state', 'error'); });
+      .catch(() => { setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: fallbackStatus } : r)); toast('Undo failed — reload to see current state', 'error'); });
   };
 
   const approveReim = (id: string) => {
     const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Approved' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Approved' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied') }); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement approved', 'success', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied', 'Approved') }); })
       .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to approve reimbursement', 'error'); });
   };
 
@@ -949,7 +946,7 @@ function AdminFinancialsView() {
     const originalStatus = reimbursements.find((r) => r.id === id)?.status ?? 'Pending';
     setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: 'Denied' } : r));
     fetch(`/api/reimbursements/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Denied' }) })
-      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement denied', 'info', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied') }); })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast('Reimbursement denied', 'info', { label: 'Undo', onClick: () => undoReimbStatus(id, originalStatus as 'Pending' | 'Approved' | 'Denied', 'Denied') }); })
       .catch((err) => { console.error(err); setReimbursements((prev) => prev.map((r) => r.id === id ? { ...r, status: originalStatus } : r)); toast('Failed to deny reimbursement', 'error'); });
   };
 

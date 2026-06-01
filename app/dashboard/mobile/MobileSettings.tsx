@@ -1065,7 +1065,7 @@ function MobileBaselinesSection({ onUnsavedChange }: { onUnsavedChange: (v: bool
 }
 
 function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) => void }) {
-  const { installerBaselines, updateInstallerBaseline, createNewInstallerVersion } = useApp();
+  const { installerBaselines, updateInstallerBaseline, createNewInstallerVersion, installerPricingVersions } = useApp();
   const { toast } = useToast();
   const [editingInstaller, setEditingInstaller] = useState<string | null>(null);
   const [editVals, setEditVals] = useState({ closerPerW: '', kiloPerW: '', setterPerW: '', subDealerPerW: '' });
@@ -1149,6 +1149,15 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
       {entries.map(([installer, baseline]) => {
         const isEditing = editingInstaller === installer;
         const setterAuto = Math.round((baseline.closerPerW + 0.10) * 100) / 100;
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const allVersions = installerPricingVersions.filter((v) => v.installer === installer);
+        const activeVersion = allVersions.reduce<typeof allVersions[0] | null>((best, v) => {
+          if (v.effectiveFrom > today || (v.effectiveTo !== null && v.effectiveTo < today)) return best;
+          if (!best || v.effectiveFrom >= best.effectiveFrom) return v;
+          return best;
+        }, null);
+        const isTiered = activeVersion?.rates.type === 'tiered';
         return (
           <MobileCard key={installer}>
             <div className="flex items-center justify-between mb-2">
@@ -1167,9 +1176,10 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
                   </button>
                   <button
                     onClick={() => startEdit(installer)}
-                    className="p-2 active:opacity-70 transition-colors"
-                    style={{ color: 'var(--text-muted)' }}
-                    title="Edit baseline"
+                    disabled={isTiered}
+                    className={isTiered ? 'p-2 cursor-not-allowed' : 'p-2 active:opacity-70 transition-colors'}
+                    style={{ color: 'var(--text-muted)', opacity: isTiered ? 0.3 : 1 }}
+                    title={isTiered ? 'Edit individual tiers in the Versions panel' : 'Edit baseline'}
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
