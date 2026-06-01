@@ -89,9 +89,9 @@ export default function MobileAdminDashboard() {
   const RECENT_PER_PAGE = 10;
 
   const [mentions, setMentions] = useState<MentionItem[]>([]);
-  const fetchMentions = useCallback(() => {
+  const fetchMentions = useCallback((signal?: AbortSignal) => {
     if (!effectiveRepId) return;
-    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`)
+    fetch(`/api/mentions?userId=${encodeURIComponent(effectiveRepId)}`, { signal })
       .then((res) => { if (!res.ok) throw new Error('Failed to fetch'); return res.json(); })
       .then((rawMentions: unknown[]) => {
         const items: MentionItem[] = (rawMentions ?? []).map((raw) => {
@@ -126,9 +126,16 @@ export default function MobileAdminDashboard() {
         });
         setMentions(items);
       })
-      .catch(() => setMentions([]));
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setMentions([]);
+      });
   }, [effectiveRepId]);
-  useEffect(() => { fetchMentions(); }, [fetchMentions]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMentions(controller.signal);
+    return () => { controller.abort(); };
+  }, [fetchMentions]);
 
   // Sliding indicator + scroll-into-view are now owned by SegmentedPills.
 
@@ -465,7 +472,7 @@ export default function MobileAdminDashboard() {
                   className="flex items-center gap-2.5 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
                 >
                   <Flag className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent-red-text)' }} />
-                  <span className="truncate" style={{ color: 'var(--accent-red-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{fp.customerName}</span>
+                  <span className="truncate" style={{ color: 'var(--accent-red-text)', fontFamily: FONT_BODY, fontSize: '13px' }}>{fp.customerName}{fp.repName ? ` · ${fp.repName}` : ''}</span>
                 </button>
                 <button
                   onClick={() => updateProject(fp.id, { flagged: false })}
@@ -497,7 +504,7 @@ export default function MobileAdminDashboard() {
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: MUTED }} />
-                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{sp.customerName}</span>
+                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{sp.customerName}{sp.repName ? ` · ${sp.repName}` : ''}</span>
                 </div>
                 <span className="shrink-0 ml-2" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '11px' }}>{staleDays}d · {sp.phase}</span>
               </button>
@@ -522,7 +529,7 @@ export default function MobileAdminDashboard() {
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <PauseCircle className="w-3.5 h-3.5 shrink-0" style={{ color: MUTED }} />
-                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{hp.customerName}</span>
+                  <span className="truncate" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '13px' }}>{hp.customerName}{hp.repName ? ` · ${hp.repName}` : ''}</span>
                 </div>
                 <span className="shrink-0 ml-2" style={{ color: DIM, fontFamily: FONT_BODY, fontSize: '11px' }}>{holdDays}d on hold</span>
               </button>

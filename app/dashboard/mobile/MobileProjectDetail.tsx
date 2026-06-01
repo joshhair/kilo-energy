@@ -168,11 +168,19 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- depend only on customerName to avoid re-fires on any project field change
   }, [project?.customerName]);
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/dashboard/projects');
+    }
+  };
+
   if (!project) {
     return (
       <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         Project not found.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back to Projects</button>
+        <button onClick={handleBack} className="text-[var(--accent-blue-text)] ml-1">Back to Projects</button>
       </div>
     );
   }
@@ -188,7 +196,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     return (
       <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
+        <button onClick={handleBack} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
@@ -197,7 +205,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     return (
       <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
-        <button onClick={() => router.push('/dashboard/projects')} className="text-[var(--accent-blue-text)] ml-1">Back</button>
+        <button onClick={handleBack} className="text-[var(--accent-blue-text)] ml-1">Back</button>
       </div>
     );
   }
@@ -503,7 +511,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     } as Partial<typeof project>);
     setShowCancelReasonModal(false);
     toast('Project cancelled', 'info');
-    router.push('/dashboard/projects');
+    handleBack();
   };
 
   const handleFlag = () => {
@@ -531,7 +539,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       if (res.ok) {
         setProjects(prev => prev.filter(p => p.id !== project.id));
         toast('Project deleted permanently');
-        router.push('/dashboard/projects');
+        handleBack();
       } else {
         toast('Failed to delete project', 'error');
       }
@@ -698,8 +706,9 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Back button */}
       <button
-        onClick={() => router.push('/dashboard/projects')}
-        className="flex items-center gap-1 text-base text-[var(--text-muted)] mb-4 min-h-[48px]"
+        onClick={handleBack}
+        className="flex items-center gap-1 text-base text-[var(--text-muted)] mb-4 min-h-[48px] active:opacity-50 transition-opacity duration-75"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Projects
