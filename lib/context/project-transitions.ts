@@ -434,6 +434,7 @@ export function handleChargebacks(
     status: 'Draft' as const,
     date: localDateString(new Date()),
     notes: 'Chargeback — project cancelled',
+    isChargeback: true,
   }));
 
   return { toAdd: chargebacks, toDeleteIds };
@@ -792,8 +793,11 @@ export function createM3Payroll(
   );
 
   // Guard: only draft M3 if M2 was previously created for this project.
+  // Also accept Trainer-stage entries: a trainer deduction that fully zeroes
+  // the closer's gross M2 removes their M2 entry (amount <= 0 is filtered),
+  // leaving only a Trainer-stage entry as evidence that M2 was processed.
   const hasM2Entry = prevEntries.some(
-    (e) => e.projectId === projectId && e.paymentStage === 'M2'
+    (e) => e.projectId === projectId && (e.paymentStage === 'M2' || e.paymentStage === 'Trainer')
   );
   if (!hasM2Entry) return [];
 

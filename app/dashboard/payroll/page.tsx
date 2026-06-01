@@ -840,7 +840,7 @@ function PayrollPageInner() {
   const isAdmin = effectiveRole === 'admin';
   if (!isAdmin) {
     const myEntries = payrollEntries.filter((p) => p.repId === effectiveRepId);
-    const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || p.type === repTypeFilter);
+    const myTypeFiltered = myEntries.filter((p) => repTypeFilter === 'All' || entryTypeTab(p) === repTypeFilter);
     const myDraft = sumDraft(myTypeFiltered, { asOf: today });
     const myPending = sumPending(myTypeFiltered, { asOf: today });
     const myPaid = sumPaid(myTypeFiltered, { asOf: today });
@@ -1386,8 +1386,8 @@ function PayrollPageInner() {
                   // Pre-select the form type from the active filter when it's
                   // unambiguous; otherwise default to Deal and let the user
                   // toggle inside the modal.
-                  const presetType: 'Deal' | 'Bonus' | 'Chargeback' =
-                    typeTab === 'Bonus' ? 'Bonus' : typeTab === 'Charge' ? 'Chargeback' : 'Deal';
+                  const presetType: 'Deal' | 'Bonus' | 'Charge' | 'Chargeback' =
+                    typeTab === 'Bonus' ? 'Bonus' : typeTab === 'Charge' ? 'Charge' : 'Deal';
                   setPaymentForm((p) => ({ ...p, type: presetType }));
                   setShowPaymentModal(true);
                 }}
