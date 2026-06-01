@@ -609,9 +609,13 @@ export default function TableView({
 
   function thClass(colKey: SortKey) {
     const active = sortKey === colKey;
-    return `text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] ${
-      active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
-    }`;
+    return [
+      'text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors',
+      'hover:text-[var(--text-primary)] relative',
+      active
+        ? "text-[var(--text-primary)] after:content-[''] after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:rounded-full after:bg-[var(--accent-emerald-solid)] after:transition-all after:duration-300"
+        : 'text-[var(--text-secondary)]',
+    ].join(' ');
   }
 
   return (
@@ -739,32 +743,32 @@ export default function TableView({
                     />
                   </th>
                 )}
-                <th className={thClass('customerName')} onClick={() => handleSort('customerName')}>
+                <th className={thClass('customerName')} onClick={() => handleSort('customerName')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('customerName'); } }} aria-sort={sortKey === 'customerName' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   Customer<SortIcon colKey="customerName" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
                 {(isAdmin || (!isAdmin && dealScope === 'all')) && (
-                  <th className={thClass('repName')} onClick={() => handleSort('repName')}>
+                  <th className={thClass('repName')} onClick={() => handleSort('repName')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('repName'); } }} aria-sort={sortKey === 'repName' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                     Rep<SortIcon colKey="repName" sortKey={sortKey} sortDirection={sortDirection} />
                   </th>
                 )}
-                <th className={thClass('phase')} onClick={() => handleSort('phase')}>
+                <th className={thClass('phase')} onClick={() => handleSort('phase')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('phase'); } }} aria-sort={sortKey === 'phase' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   Phase<SortIcon colKey="phase" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                <th className={thClass('installer')} onClick={() => handleSort('installer')}>
+                <th className={thClass('installer')} onClick={() => handleSort('installer')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('installer'); } }} aria-sort={sortKey === 'installer' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   Installer<SortIcon colKey="installer" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                <th className={thClass('financer')} onClick={() => handleSort('financer')}>
+                <th className={thClass('financer')} onClick={() => handleSort('financer')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('financer'); } }} aria-sort={sortKey === 'financer' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   Financer<SortIcon colKey="financer" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
-                <th className={thClass('kWSize')} onClick={() => handleSort('kWSize')}>
+                <th className={thClass('kWSize')} onClick={() => handleSort('kWSize')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('kWSize'); } }} aria-sort={sortKey === 'kWSize' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   kW<SortIcon colKey="kWSize" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
                 {!hideFinancials && (
-                  <th className={thClass('netPPW')} onClick={() => handleSort('netPPW')}>
+                  <th className={thClass('netPPW')} onClick={() => handleSort('netPPW')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('netPPW'); } }} aria-sort={sortKey === 'netPPW' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                     Net PPW<SortIcon colKey="netPPW" sortKey={sortKey} sortDirection={sortDirection} />
                   </th>
                 )}
-                <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')}>
+                <th className={thClass('soldDate')} onClick={() => handleSort('soldDate')} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort('soldDate'); } }} aria-sort={sortKey === 'soldDate' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                   Sold Date<SortIcon colKey="soldDate" sortKey={sortKey} sortDirection={sortDirection} />
                 </th>
                 {((isAdmin && !readOnly) || canEditPhase) && (
