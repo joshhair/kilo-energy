@@ -102,7 +102,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
   const router = useRouter();
   const style = STATUS_INLINE[blitz.status] ?? STATUS_INLINE.upcoming;
   const approvedParticipants = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
-  const pendingJoinCount = blitz.participants.filter((p) => p.joinStatus === 'pending').length;
+  const pendingJoinCount = blitz.participants.filter((p) => ['pending', 'invited', 'waitlist'].includes(p.joinStatus)).length;
   const totalCosts = blitz.costs.reduce((s, c) => s + c.amount, 0);
   const approvedIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.user.id));
   const activeProjects = blitz.projects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
@@ -227,7 +227,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
             )}
             {!isOwner && myParticipation && !canJoin && (
               <span className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg ${myParticipation.joinStatus === 'approved' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20' : myParticipation.joinStatus === 'declined' ? 'bg-[var(--accent-red-soft)] text-[var(--accent-red-text)] border border-red-500/20' : 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)] border border-amber-500/20'}`}>
-                <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : 'Pending'}
+                <UserCheck className="w-3 h-3" /> {myParticipation.joinStatus === 'approved' ? 'Joined' : myParticipation.joinStatus === 'declined' ? 'Declined' : myParticipation.joinStatus === 'invited' ? 'Invited' : myParticipation.joinStatus === 'waitlist' ? 'Waitlisted' : 'Pending'}
               </span>
             )}
           </div>
@@ -661,30 +661,32 @@ function BlitzPageInner() {
     return sorted;
   }, [filteredBlitzes, sortBy, isAdmin, effectiveRepId]);
 
-  // For reps: separate "My Blitzes" (participating/leading) from browseable ones
+  // For reps: separate "My Blitzes" (participating/leading) from browseable ones.
+  // These derive from searchOnlyBlitzes (not sortedBlitzes) so the status filter
+  // never hides a rep's own live blitzes — matching mobile behaviour.
   const myBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [];
-    return sortedBlitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id === effectiveRepId ||
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
     );
-  }, [sortedBlitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const pendingBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [];
-    return sortedBlitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id !== effectiveRepId &&
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
     );
-  }, [sortedBlitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const invitedBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [];
-    return sortedBlitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id !== effectiveRepId &&
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
     );
-  }, [sortedBlitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const browseBlitzes = useMemo(() => {
     if (isAdmin) return sortedBlitzes;

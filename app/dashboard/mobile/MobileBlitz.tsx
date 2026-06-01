@@ -443,7 +443,7 @@ export default function MobileBlitz() {
 
   const renderBlitzCard = (blitz: BlitzData, index: number) => {
     const approvedCount = blitz.participants.filter((p) => p.joinStatus === 'approved').length;
-    const pendingJoinCount = blitz.participants.filter((p) => p.joinStatus === 'pending').length;
+    const pendingJoinCount = blitz.participants.filter((p) => ['pending', 'invited', 'waitlist'].includes(p.joinStatus)).length;
     const dateLabel = blitzDateLabel(blitz.status, blitz.startDate, blitz.endDate);
     const details = [blitz.location, dateLabel, `${approvedCount} rep${approvedCount !== 1 ? 's' : ''}`]
       .filter(Boolean)
@@ -478,6 +478,8 @@ export default function MobileBlitz() {
     const participationLabel = myParticipation
       ? myParticipation.joinStatus === 'approved' ? 'Joined'
         : myParticipation.joinStatus === 'declined' ? 'Declined'
+        : myParticipation.joinStatus === 'invited' ? 'Invited'
+        : myParticipation.joinStatus === 'waitlist' ? 'Waitlisted'
         : 'Pending'
       : null;
     const joining = joiningBlitzId === blitz.id;

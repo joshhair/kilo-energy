@@ -194,6 +194,19 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                   </div>
                 )}
 
+                {p.joinStatus === 'invited' && canManage && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      disabled={processing.has(p.user.id)}
+                      onClick={() => handleDecision(p.user.id, 'approved')}
+                      className="flex-1 min-h-[40px] flex items-center justify-center gap-1.5 text-sm font-semibold text-black rounded-lg disabled:opacity-40"
+                      style={{ background: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                    >
+                      <Check className="w-3.5 h-3.5" /> Approve
+                    </button>
+                  </div>
+                )}
+
                 {/* Attendance pills + Remove on one row — compact, no
                     equal-width flex (label-driven width), single-line.
                     Active pill uses emerald soft-tint to read as a
