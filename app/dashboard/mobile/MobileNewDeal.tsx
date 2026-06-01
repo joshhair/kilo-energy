@@ -708,6 +708,15 @@ export default function MobileNewDeal() {
     }, 190);
   };
 
+  const jumpToStep = (target: number) => {
+    stepDirectionRef.current = target < currentStep ? 'back' : 'fwd';
+    setExitAnimClass(target < currentStep ? 'deal-step-exit-back' : 'deal-step-exit-fwd');
+    setTimeout(() => {
+      setExitAnimClass('');
+      setCurrentStep(target);
+    }, 190);
+  };
+
   // ── Submit (mirrors desktop exactly) ──────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1809,7 +1818,7 @@ export default function MobileNewDeal() {
               {/* People section — tap to jump back to Step 1 */}
               <button
                 type="button"
-                onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(0); }}
+                onClick={() => jumpToStep(0)}
                 className="w-full text-left pb-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
                 style={{ borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px' }}
               >
@@ -1843,7 +1852,7 @@ export default function MobileNewDeal() {
               {/* Deal Details section — tap to jump back to Step 2 */}
               <button
                 type="button"
-                onClick={() => { stepDirectionRef.current = 'back'; setCurrentStep(1); }}
+                onClick={() => jumpToStep(1)}
                 className="w-full text-left pt-2 mt-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
                 style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
               >

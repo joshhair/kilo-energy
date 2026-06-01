@@ -153,29 +153,35 @@ export default function MobileBlitz() {
       });
   }, [isAdmin, effectiveRepId]);
 
+  const searchOnlyBlitzes = useMemo(() => {
+    if (!search.trim()) return blitzes;
+    const q = search.toLowerCase();
+    return blitzes.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
+  }, [blitzes, search]);
+
   const myBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return blitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id === effectiveRepId ||
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
     );
-  }, [blitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const pendingBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return blitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id !== effectiveRepId &&
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
     );
-  }, [blitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const invitedBlitzes = useMemo(() => {
     if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return blitzes.filter((b) =>
+    return searchOnlyBlitzes.filter((b) =>
       b.owner.id !== effectiveRepId &&
       b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
     );
-  }, [blitzes, isAdmin, effectiveRepId]);
+  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
 
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
@@ -702,9 +708,9 @@ export default function MobileBlitz() {
             // Rep segmented view
             (() => {
               const myIds = new Set([...myBlitzes, ...pendingBlitzes, ...invitedBlitzes].map((b) => b.id));
-              const myFiltered = filteredBlitzes.filter((b) => myBlitzes.some((m) => m.id === b.id));
-              const pendingFiltered = filteredBlitzes.filter((b) => pendingBlitzes.some((p) => p.id === b.id));
-              const invitedFiltered = filteredBlitzes.filter((b) => invitedBlitzes.some((v) => v.id === b.id));
+              const myFiltered = myBlitzes;
+              const pendingFiltered = pendingBlitzes;
+              const invitedFiltered = invitedBlitzes;
               const browseFiltered = filteredBlitzes.filter((b) => !myIds.has(b.id));
               const sectionLabelStyle = {
                 color: 'var(--text-muted)',

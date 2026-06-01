@@ -51,11 +51,10 @@ export async function GET() {
     orderBy: { startDate: 'desc' },
   });
 
-  // Non-admins: hide costs for blitzes they don't own.
+  // Non-admins: hide costs unconditionally — matches the admin-only gate on GET /api/blitzes/[id].
   if (user.role !== 'admin') {
     for (const b of blitzes) {
-      const isBlitzOwner = b.ownerId === user.id || b.createdById === user.id;
-      if (!isBlitzOwner) (b as { costs: unknown[] }).costs = [];
+      (b as { costs: unknown[] }).costs = [];
     }
   }
 
