@@ -381,7 +381,7 @@ export default function MobileIncentives() {
           </select>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value as typeof sort)}
+            onChange={(e) => { setSort(e.target.value as typeof sort); clearSelection(); }}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >

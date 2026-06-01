@@ -779,15 +779,16 @@ function TrainingPageInner() {
     });
   }, []);
 
-  // Unique trainer + rep lists for filter dropdowns
+  // Unique trainer + rep lists for filter dropdowns — source from adminRows so
+  // direct-override-only trainers (directPseudoAssignments) are included.
   const trainerOptions = useMemo(() => {
-    const ids = new Set(trainerAssignments.map((a) => a.trainerId));
+    const ids = new Set(adminRows.map((r) => r.assignment.trainerId));
     return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
-  }, [trainerAssignments, reps]);
+  }, [adminRows, reps]);
   const repOptions = useMemo(() => {
-    const ids = new Set(trainerAssignments.map((a) => a.traineeId));
+    const ids = new Set(adminRows.map((r) => r.assignment.traineeId));
     return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
-  }, [trainerAssignments, reps]);
+  }, [adminRows, reps]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -1363,12 +1364,14 @@ function TrainingPageInner() {
                                 <Pencil className="w-3.5 h-3.5" /> Edit assignment
                               </button>
                             )}
-                            <button
-                              onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
-                            </button>
+                            {!a.id.startsWith('direct-') && (
+                              <button
+                                onClick={() => { setOpenMenuId(null); setBackfillAssignmentId(a.id); }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--text-primary)] transition-colors"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Run Backfill
+                              </button>
+                            )}
                             <div className="border-t border-[var(--border-subtle)] my-1" />
                             <button
                               onClick={() => { setOpenMenuId(null); deleteAssignment(a.id); }}

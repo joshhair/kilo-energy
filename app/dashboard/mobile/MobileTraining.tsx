@@ -213,14 +213,14 @@ export default function MobileTraining({
   }, [effectiveRole, trainerAssignments, adminRows, payrollEntries]);
 
   const trainerOptions = useMemo(() => {
-    const ids = new Set(trainerAssignments.map((a) => a.trainerId));
+    const ids = new Set(adminRows.map((r) => r.assignment.trainerId));
     return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
-  }, [trainerAssignments, reps]);
+  }, [adminRows, reps]);
 
   const repOptions = useMemo(() => {
-    const ids = new Set(trainerAssignments.map((a) => a.traineeId));
+    const ids = new Set(adminRows.map((r) => r.assignment.traineeId));
     return reps.filter((r) => ids.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
-  }, [trainerAssignments, reps]);
+  }, [adminRows, reps]);
 
   const patchAssignment = useCallback(async (
     id: string,
@@ -850,7 +850,7 @@ export default function MobileTraining({
                                   </button>
                                 )}
 
-                                {onBackfill && (
+                                {onBackfill && !row.assignment.id.startsWith('direct-') && (
                                   <button
                                     onClick={() => { setOpenActionMenuId(null); onBackfill(row.assignment.id); }}
                                     className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[36px]"

@@ -998,7 +998,8 @@ export default function BlitzDetailPage() {
         const _approvedIds = new Set((blitz?.participants ?? []).filter((pt: any) => pt.joinStatus === 'approved').map((pt: any) => pt.user.id));
 
         return (
-        <div className="space-y-4">
+        <div className="xl:grid xl:grid-cols-3 xl:gap-6 xl:items-start space-y-4 xl:space-y-0">
+          <div className="xl:col-span-2 space-y-4">
           {/* Stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="card-surface rounded-2xl p-4 animate-slide-in-scale stagger-0">
@@ -1078,8 +1079,8 @@ export default function BlitzDetailPage() {
           {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
             <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          </div>
+          <div className="xl:col-span-1 space-y-4">
             {/* Blitz details */}
             <div className="card-surface rounded-2xl p-4 space-y-3">
               <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Details</p>
@@ -1131,15 +1132,15 @@ export default function BlitzDetailPage() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Notes */}
-          {blitz.notes && (
-            <div className="card-surface rounded-2xl p-4">
-              <p className="text-xs text-[var(--text-muted)] mb-1 font-medium uppercase tracking-wider">Notes</p>
-              <p className="text-sm text-[var(--text-secondary)]">{blitz.notes}</p>
-            </div>
-          )}
+            {/* Notes */}
+            {blitz.notes && (
+              <div className="card-surface rounded-2xl p-4">
+                <p className="text-xs text-[var(--text-muted)] mb-1 font-medium uppercase tracking-wider">Notes</p>
+                <p className="text-sm text-[var(--text-secondary)]">{blitz.notes}</p>
+              </div>
+            )}
+          </div>
         </div>
         );
       })()}</div>)}
