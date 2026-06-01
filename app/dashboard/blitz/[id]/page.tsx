@@ -480,6 +480,8 @@ export default function BlitzDetailPage() {
       setShowAddParticipant(false);
       setSelectedRepId('');
       loadBlitz();
+    } catch {
+      toast('Failed to invite participant', 'error');
     } finally { setAddingParticipant(false); }
   };
 

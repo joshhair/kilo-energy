@@ -218,7 +218,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       if (!r.ok) { toast('Failed to delete blitz', 'error'); return; }
       toast('Blitz deleted');
       router.push('/dashboard/blitz');
-    } finally { setSubmittingAction(false); }
+    } catch { toast('Failed to delete blitz', 'error'); }
+    finally { setSubmittingAction(false); }
   };
 
   const handleCancelRequest = async () => {
@@ -242,7 +243,8 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       setShowCancelRequest(false);
       setCancelReason('');
       loadBlitz();
-    } finally { setSubmittingAction(false); }
+    } catch { toast('Failed to submit cancellation request', 'error'); }
+    finally { setSubmittingAction(false); }
   };
 
   if (!hydrated || loading) return <BlitzDetailSkeleton />;
