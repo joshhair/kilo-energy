@@ -454,6 +454,18 @@ body {
   [data-hero-card] { animation: none; }
 }
 
+/* ── Hero content fade-in-up on period switch ───────────────────────────── */
+.hero-content-enter {
+  animation: heroContentEnter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes heroContentEnter {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-content-enter { animation: none; }
+}
+
 /* ── Stat card stagger entrance ─────────────────────────────────────────── */
 @keyframes statCardEnter {
   from { opacity: 0; transform: translateY(10px); }

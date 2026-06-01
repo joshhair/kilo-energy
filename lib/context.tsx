@@ -1206,10 +1206,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const closerSelfTrainerWithSetter = closerRes.trainerId === old.repId && !!old.setterId;
           if (closerRes.rate > 0 && !closerSelfTrainerWithSetter) {
             if (updates.m2Amount !== undefined) {
-              closerM2TrainerDeduction = Math.round(closerRes.rate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+              closerM2TrainerDeduction = Math.round(closerRes.rate * (updates.kWSize ?? old.kWSize) * 1000 * (installPayPct / 100) * 100) / 100;
             }
             if (updates.m3Amount !== undefined && installPayPct < 100) {
-              closerM3TrainerDeduction = Math.round(closerRes.rate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+              closerM3TrainerDeduction = Math.round(closerRes.rate * (updates.kWSize ?? old.kWSize) * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
             }
           }
         }
@@ -1227,10 +1227,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const effectiveSetterRate = overrideMatchesSetter ? effectiveTrainerRate! : setterResRaw.rate;
           if (effectiveSetterRate > 0) {
             if (updates.setterM2Amount !== undefined) {
-              setterM2TrainerDeduction = Math.round(effectiveSetterRate * old.kWSize * 1000 * (installPayPct / 100) * 100) / 100;
+              setterM2TrainerDeduction = Math.round(effectiveSetterRate * (updates.kWSize ?? old.kWSize) * 1000 * (installPayPct / 100) * 100) / 100;
             }
             if (updates.setterM3Amount !== undefined && installPayPct < 100) {
-              setterM3TrainerDeduction = Math.round(effectiveSetterRate * old.kWSize * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
+              setterM3TrainerDeduction = Math.round(effectiveSetterRate * (updates.kWSize ?? old.kWSize) * 1000 * ((100 - installPayPct) / 100) * 100) / 100;
             }
           }
         }

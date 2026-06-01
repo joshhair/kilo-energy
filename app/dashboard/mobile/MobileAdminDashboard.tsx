@@ -674,7 +674,7 @@ export default function MobileAdminDashboard() {
           const searched = recentSearch.trim()
             ? recentDeals.filter((p) => {
                 const q = recentSearch.trim().toLowerCase();
-                return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q);
+                return p.customerName.toLowerCase().includes(q) || (p.repName ?? '').toLowerCase().includes(q) || (p.subDealerName ?? '').toLowerCase().includes(q) || (p.setterName ?? '').toLowerCase().includes(q);
               })
             : recentDeals;
           const totalPages = Math.max(1, Math.ceil(searched.length / RECENT_PER_PAGE));
