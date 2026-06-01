@@ -712,7 +712,7 @@ export default function MobileReps() {
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const dealsClosed = rp.length;
-                const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
+                const kwSold = rp.reduce((s, p) => s + (p.kWSize ?? 0), 0);
                 const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
                 const commissionEarned = ranges.current.from && ranges.current.to
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= todayStr).reduce((s, e) => s + e.amount, 0)

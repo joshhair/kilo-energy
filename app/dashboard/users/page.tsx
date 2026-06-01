@@ -1291,7 +1291,7 @@ function UsersPageInner() {
         />
         <GradCard
           label="kW Sold"
-          rawValue={projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0)}
+          rawValue={projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0)}
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 18%, transparent), color-mix(in srgb, var(--accent-amber-solid) 5%, transparent))"
           borderColor="color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)"
@@ -1456,7 +1456,7 @@ function UsersPageInner() {
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
                 const dealsClosed = rp.length;
-                const kwSold = rp.reduce((s, p) => s + p.kWSize, 0);
+                const kwSold = rp.reduce((s, p) => s + (p.kWSize ?? 0), 0);
                 const avgDealSize = dealsClosed > 0 ? kwSold / dealsClosed : 0;
                 const commissionEarned = ranges.current.from && ranges.current.to
                   ? payrollEntries.filter((e) => e.repId === rep.id && e.status === 'Paid' && isInRange(e.date, ranges.current.from, ranges.current.to) && e.date <= today).reduce((s, e) => s + e.amount, 0)
@@ -1518,7 +1518,7 @@ function UsersPageInner() {
           );
           const repPaid = repPaidAmounts.get(rep.id) ?? 0;
 
-          const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);
+          const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0);
           const initials = rep.name.split(' ').map((n) => n[0]).join('');
           const rank = rankMap.get(rep.id) ?? 999;
 

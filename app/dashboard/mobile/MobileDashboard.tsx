@@ -970,7 +970,7 @@ export default function MobileDashboard() {
             tile to read $275K and Josh's to read $394K while the hero's
             'paid' breakdown correctly showed YTD. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          <div key={statVersion} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both' }}>
+          <div key={`paid-${statVersion}`} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both', willChange: 'transform, opacity' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-emerald-text)', lineHeight: 1.15 }}>{fmtCompact$(period === 'all' ? animatedYearToDatePaid : animatedPaid)}</p>
             <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>{period === 'all' ? `Paid in ${new Date().getFullYear()}` : 'Paid'}</p>
           </div>
@@ -978,7 +978,7 @@ export default function MobileDashboard() {
               differentiates "in-flight" pipeline value from the locked-
               in "paid" emerald, while staying within the muted-text
               vocabulary (no neon). */}
-          <div key={statVersion} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both' }}>
+          <div key={`pipe-${statVersion}`} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both', willChange: 'transform, opacity' }}>
             <p className="tabular-nums break-words" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--accent-cyan-text)', lineHeight: 1.15 }}>
               {fmtCompact$(isHistorical ? animatedAddedToPipeline : animatedPipeline)}
             </p>
@@ -987,7 +987,7 @@ export default function MobileDashboard() {
             </p>
           </div>
           {(() => { const t = formatCompactKWParts(periodKW); return (
-            <div key={statVersion} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both' }}>
+            <div key={`kw-${statVersion}`} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both', willChange: 'transform, opacity' }}>
               <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>{t.value}</p>
               <p className="tracking-wide uppercase whitespace-nowrap" style={{ color: MUTED, fontFamily: FONT_BODY, fontSize: '0.7rem' }}>{t.unit} Sold</p>
             </div>
@@ -995,7 +995,7 @@ export default function MobileDashboard() {
           {/* Active / Deals Closed cell — current shows pipeline activity
               right now; historical shows total non-cancelled deals
               submitted in the period (matches the hero subtitle). */}
-          <div key={statVersion} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both' }}>
+          <div key={`active-${statVersion}`} className="stat-cell-stagger min-w-0" style={{ animation: 'statCellEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both', willChange: 'transform, opacity' }}>
             <p className="tabular-nums" style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.6rem, 7vw, 1.875rem)', color: 'var(--text-primary)', lineHeight: 1.15 }}>
               {isHistorical ? animatedDealsClosed : periodActive.length}
             </p>

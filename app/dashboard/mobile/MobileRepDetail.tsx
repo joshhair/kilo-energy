@@ -535,9 +535,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalEst = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase)).reduce((s, p) => {
     if (p.repId === repId) {
-      const closerM1 = p.setterId ? 0 : p.m1Amount;
+      const closerM1 = p.setterId ? 0 : (p.m1Amount ?? 0);
       const selfGenM1 = p.setterId === repId ? (p.m1Amount ?? 0) : 0;
-      return s + closerM1 + selfGenM1 + p.m2Amount + (p.m3Amount ?? 0) + (p.setterId === repId ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
+      return s + closerM1 + selfGenM1 + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterId === repId ? (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) : 0);
     } else if (p.setterId === repId) {
       return s + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0);
     } else {
