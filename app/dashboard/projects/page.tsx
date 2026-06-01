@@ -25,7 +25,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady, trainerAssignments, payrollEntries } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, installers, dbReady, trainerAssignments, payrollEntries } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
@@ -281,7 +281,7 @@ function ProjectsPageInner() {
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
         >
           <option value="">All Installers</option>
-          {activeInstallers.map((i) => <option key={i} value={i}>{i}</option>)}
+          {installers.map((i) => <option key={i.name} value={i.name}>{i.active ? i.name : `${i.name} (archived)`}</option>)}
         </select>
 
       </div>

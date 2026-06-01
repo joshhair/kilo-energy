@@ -423,8 +423,8 @@ export default function MobileNewDeal() {
   const handleSolarTechFamilyChange = (value: string) => {
     const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    // Loan deals must not inherit a 'Cash' financer from the family mapping
-    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    // Loan deals must not inherit a 'Cash' financer; Cash deals must keep 'Cash'
+    const effectiveFinancer = form.productType === 'Loan' ? '' : form.productType === 'Cash' ? 'Cash' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     const financerClearedST = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, solarTechFamily: validateField('solarTechFamily', value), solarTechProductId: '', financer: (_touched.has('financer') || financerClearedST) ? validateField('financer', effectiveFinancer) : '' }));
@@ -434,7 +434,8 @@ export default function MobileNewDeal() {
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
-    const effectiveFinancer = form.productType === 'Loan' ? '' : mappedFinancer;
+    // Loan deals must not inherit a financer; Cash deals must keep 'Cash'
+    const effectiveFinancer = form.productType === 'Loan' ? '' : form.productType === 'Cash' ? 'Cash' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
     const financerClearedPC = !effectiveFinancer && !!form.financer;
     setErrors((prev) => ({ ...prev, pcFamily: validateField('pcFamily', value), installerProductId: '', financer: (_touched.has('financer') || financerClearedPC) ? validateField('financer', effectiveFinancer) : '' }));

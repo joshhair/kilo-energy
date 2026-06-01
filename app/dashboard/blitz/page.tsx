@@ -207,7 +207,7 @@ function BlitzCard({ blitz, currentUserId, isAdmin, onJoin, index = 0 }: { blitz
           </div>
           <div className="flex items-center gap-1.5">
             {isOwner && (
-              <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-blue-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
+              <span className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border border-[var(--accent-emerald-solid)]/20">
                 <Tent className="w-3 h-3" /> Leading
               </span>
             )}

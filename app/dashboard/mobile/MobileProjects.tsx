@@ -51,7 +51,7 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
 
 
 export default function MobileProjects() {
-  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers, dbReady, trainerAssignments } = useApp();
+  const { effectiveRole, effectiveRepId, projects, payrollEntries, installers, dbReady, trainerAssignments } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
@@ -300,7 +300,7 @@ export default function MobileProjects() {
           on phone. Installer select only renders when there's more than one
           to choose from. */}
       <div className="flex gap-2">
-        {activeInstallers.length > 1 && (
+        {installers.length > 1 && (
           <select
             value={installerFilter}
             onChange={(e) => setInstallerFilter(e.target.value)}
@@ -312,7 +312,7 @@ export default function MobileProjects() {
             }}
           >
             <option value="">All installers</option>
-            {activeInstallers.map((n) => <option key={n} value={n}>{n}</option>)}
+            {installers.map((i) => <option key={i.name} value={i.name}>{i.active ? i.name : `${i.name} (archived)`}</option>)}
           </select>
         )}
         <select
