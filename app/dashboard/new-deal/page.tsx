@@ -539,10 +539,12 @@ function NewDealPage() {
       stepErrors[field] = error;
       if (error) hasStepErrors = true;
     }
-    // Mark all current-step fields as touched so error messages render
+    // Mark all current-step fields as touched so error messages render.
+    // Exclude soldDate — it is only marked touched via handleBlur (direct user
+    // interaction) so the blitz auto-date snap still fires on step 3.
     setTouched((prev) => {
       const next = new Set(prev);
-      stepFields.forEach((f) => next.add(f));
+      stepFields.forEach((f) => { if (f !== 'soldDate') next.add(f); });
       return next;
     });
     setErrors((prev) => ({ ...prev, ...stepErrors }));

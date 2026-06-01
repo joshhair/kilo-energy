@@ -16,6 +16,7 @@ import { deriveBlitzStatus } from '../../../lib/blitzStatus';
 import { computeBlitzLeaderboard, computeBlitzKiloMargin, computeCostsByCategory } from '../../../lib/blitzComputed';
 import { useToast } from '../../../lib/toast';
 import BlitzTabs, { BlitzTabKey, BlitzTab } from './blitz-detail/BlitzTabs';
+import BlitzDetailSkeleton from './blitz-detail/BlitzDetailSkeleton';
 import { BlitzEarningsForecast } from '../components/BlitzEarningsForecast';
 import BlitzOverview from './blitz-detail/BlitzOverview';
 import BlitzParticipants from './blitz-detail/BlitzParticipants';
@@ -244,15 +245,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
     } finally { setSubmittingAction(false); }
   };
 
-  if (!hydrated || loading) {
-    return (
-      <div className="px-5 pt-4 pb-28 space-y-4 animate-mobile-slide-in">
-        <div className="h-6 w-24 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
-        <div className="h-8 w-48 rounded animate-pulse" style={{ background: 'var(--surface-card)' }} />
-        <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--surface-card)', opacity: 0.6 }} />
-      </div>
-    );
-  }
+  if (!hydrated || loading) return <BlitzDetailSkeleton />;
 
   if (!blitz) {
     return (
@@ -576,7 +569,11 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 contest, paying it out). Regular reps see ranks/kW/deals
                 only — never other reps' commission. */}
             {(blitz.status === 'active' || blitz.status === 'completed') && leaderboard.length > 0 && (
-              <BlitzLeaderboard entries={leaderboard} showPayout={isAdmin || isOwner} />
+              <BlitzLeaderboard
+                  key={leaderboard.map(e => `${e.userId}:${e.deals}:${e.kW.toFixed(1)}`).join('|')}
+                  entries={leaderboard}
+                  showPayout={isAdmin || isOwner}
+                />
             )}
 
             {/* Progress bar */}

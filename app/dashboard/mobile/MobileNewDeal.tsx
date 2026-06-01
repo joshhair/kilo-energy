@@ -671,9 +671,11 @@ export default function MobileNewDeal() {
       stepErrors[field] = error;
       if (error) hasStepErrors = true;
     }
+    // Exclude soldDate — only marked touched via handleBlur so the blitz
+    // auto-date snap still fires on step 3 after pressing Next on step 1.
     setTouched((prev) => {
       const next = new Set(prev);
-      stepFields.forEach((f) => next.add(f));
+      stepFields.forEach((f) => { if (f !== 'soldDate') next.add(f); });
       return next;
     });
     setErrors((prev) => ({ ...prev, ...stepErrors }));
