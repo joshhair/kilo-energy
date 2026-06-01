@@ -477,7 +477,9 @@ export function AdminDashboard({
             activeProjects={attentionActiveProjects}
             isAdmin
             onUnflag={(projectId) => updateProject(projectId, { flagged: false })}
-            payrollAttentionCount={allPayroll.filter((e) => e.status === 'Draft' || e.status === 'Pending').length}
+            payrollDraftCount={allPayroll.filter((e) => e.status === 'Draft').length}
+            payrollPendingCount={allPayroll.filter((e) => e.status === 'Pending').length}
+            payrollPendingTotal={allPayroll.filter((e) => e.status === 'Pending').reduce((sum, e) => sum + e.amount, 0)}
           />
         </div>
       )}

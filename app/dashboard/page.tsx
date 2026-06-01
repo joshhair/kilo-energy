@@ -10,7 +10,7 @@ import {
   computeIncentiveProgress, formatIncentiveMetric,
   ACTIVE_PHASES, getTrainerOverrideRate, DEFAULT_INSTALL_PAY_PCT,
 } from '../../lib/data';
-import { fmt$, formatCompactKWParts } from '../../lib/utils';
+import { fmt$, fmtCompact$, formatCompactKWParts } from '../../lib/utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../lib/aggregators';
 import {
   viewerPipelineRemaining,
@@ -93,7 +93,9 @@ export function NeedsAttentionSection({
   activeProjects,
   isAdmin = false,
   onUnflag,
-  payrollAttentionCount = 0,
+  payrollDraftCount = 0,
+  payrollPendingCount = 0,
+  payrollPendingTotal = 0,
 }: {
   activeProjects: Array<{
     id: string;
@@ -108,7 +110,9 @@ export function NeedsAttentionSection({
   }>;
   isAdmin?: boolean;
   onUnflag?: (projectId: string) => void;
-  payrollAttentionCount?: number;
+  payrollDraftCount?: number;
+  payrollPendingCount?: number;
+  payrollPendingTotal?: number;
 }) {
   const [sectionRef, sectionVisible] = useScrollReveal<HTMLDivElement>();
   const PHASE_STUCK_THRESHOLDS = getPhaseStuckThresholds();
@@ -192,7 +196,8 @@ export function NeedsAttentionSection({
 
   const capped = items.slice(0, 5);
   const hasMore = items.length > 5;
-  const totalCount = items.length + payrollAttentionCount;
+  const payrollRowCount = (payrollDraftCount > 0 ? 1 : 0) + (payrollPendingCount > 0 ? 1 : 0);
+  const totalCount = items.length + payrollRowCount;
 
   return (
     <div
@@ -357,8 +362,8 @@ export function NeedsAttentionSection({
                 </div>
               )}
 
-              {/* Payroll attention row */}
-              {payrollAttentionCount > 0 && (
+              {/* Payroll draft row */}
+              {payrollDraftCount > 0 && (
                 <Link
                   href="/dashboard/payroll"
                   className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
@@ -367,8 +372,24 @@ export function NeedsAttentionSection({
                     <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">Payroll needs review</p>
-                    <p className="text-xs text-[var(--text-muted)]">{payrollAttentionCount} entr{payrollAttentionCount !== 1 ? 'ies' : 'y'} in Draft or Pending</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium truncate">Payroll drafts</p>
+                    <p className="text-xs text-[var(--text-muted)]">{payrollDraftCount} draft entr{payrollDraftCount !== 1 ? 'ies' : 'y'}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
+                </Link>
+              )}
+              {/* Payroll pending row */}
+              {payrollPendingCount > 0 && (
+                <Link
+                  href="/dashboard/payroll"
+                  className="flex items-center gap-4 px-6 py-3.5 min-h-[44px] hover:bg-[var(--surface-card)]/40 transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-500/15">
+                    <DollarSign className="w-4 h-4 text-[var(--accent-amber-text)]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[var(--accent-amber-text)] text-sm font-medium truncate">Payroll pending</p>
+                    <p className="text-xs text-[var(--text-muted)]">{payrollPendingCount} entr{payrollPendingCount !== 1 ? 'ies' : 'y'} · {fmtCompact$(payrollPendingTotal)}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors flex-shrink-0" />
                 </Link>
@@ -1295,7 +1316,7 @@ export default function DashboardPage() {
       const sold = formatCompactKWParts(totalKWSold);
       return {
         label: `${sold.unit} Sold`,
-        value: `${sold.value} ${sold.unit}`,
+        value: sold.value,
         sub: `${myProjects.length} projects this period`,
         icon: Zap,
         color: 'text-[var(--accent-amber-text)]',
@@ -1312,7 +1333,7 @@ export default function DashboardPage() {
       const installed = formatCompactKWParts(totalKWInstalled);
       return {
         label: `${installed.unit} Installed`,
-        value: `${installed.value} ${installed.unit}`,
+        value: installed.value,
         sub: `${myProjects.filter((p) => installedPhases.includes(p.phase)).length} installed`,
         icon: Zap,
         color: 'text-[var(--accent-emerald-text)]',
