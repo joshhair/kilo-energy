@@ -294,7 +294,7 @@ export default function MobileAdminDashboard() {
   const animatedProfit = useCountUp(Math.round(totalProfit), 300);
   const animatedPaid = useCountUp(Math.round(totalPaid), 300);
 
-  const needsAttention = flaggedProjects.length + draftCount + pendingCount + stalledProjects.length + onHoldProjects.length;
+  const needsAttention = flaggedProjects.length + (draftCount > 0 ? 1 : 0) + (pendingCount > 0 ? 1 : 0) + stalledProjects.length + onHoldProjects.length;
 
   // ── Skeleton while data hydrates (prevents stale-number flash) ──────────
   if (!dbReady) {

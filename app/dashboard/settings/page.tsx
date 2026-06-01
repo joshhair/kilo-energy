@@ -225,6 +225,23 @@ function SettingsPageInner() {
     router.replace(`/dashboard/settings?section=${s}`, { scroll: false });
   };
 
+  const handleNavKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, flatIdx: number) => {
+    const total = ALL_NAV_ITEMS.length;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navBtnRefs.current[(flatIdx + 1) % total]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navBtnRefs.current[(flatIdx - 1 + total) % total]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      navBtnRefs.current[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      navBtnRefs.current[total - 1]?.focus();
+    }
+  };
+
   /** Discard unsaved edits and navigate to the pending section */
   const discardAndNavigate = () => {
     setEditingInstaller(null);
@@ -401,7 +418,7 @@ function SettingsPageInner() {
           <p className="text-[var(--text-muted)] text-xs ml-8">App configuration</p>
         </div>
 
-        <nav ref={navRef} className="relative space-y-4">
+        <nav ref={navRef} role="listbox" aria-label="Settings sections" className="relative space-y-4">
           <div
             aria-hidden="true"
             style={{
@@ -426,6 +443,10 @@ function SettingsPageInner() {
                     key={id}
                     ref={el => { navBtnRefs.current[flatIdx] = el; }}
                     onClick={() => handleSetSection(id)}
+                    onKeyDown={(e) => handleNavKeyDown(e, flatIdx)}
+                    tabIndex={isActive ? 0 : -1}
+                    role="option"
+                    aria-selected={isActive}
                     className={`relative z-[1] w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group ${
                       isActive
                         ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full'

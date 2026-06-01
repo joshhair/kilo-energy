@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties } from 'react';
+import React, { type CSSProperties, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Zap, DollarSign, FolderKanban, PlusCircle } from 'lucide-react';
 import { formatCompactKW, fmt$, todayLocalDateStr } from '../../../lib/utils';
@@ -9,6 +9,51 @@ import type { useApp } from '../../../lib/context';
 import { type Period, getGreeting } from './dashboard-utils';
 import { MyTasksSection, PipelineOverview, PhaseBadge, MilestoneDot, type MentionItem, ACCENT_COLOR_MAP } from '../page';
 import { SegmentedPills } from '../../../components/ui';
+
+function useCountUp(target: number, duration = 600): number {
+  const [count, setCount] = useState(0);
+  const rafRef = useRef<number>(0);
+  useEffect(() => {
+    const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) { setCount(target); return; }
+    const start = performance.now();
+    const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      setCount(Math.round(ease(p) * target));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration]);
+  return count;
+}
+
+type SubStatItem = {
+  label: string;
+  rawValue: number;
+  format: (n: number) => string;
+  icon: (props: { className?: string }) => React.ReactNode;
+  color: string;
+  accentGradient: string;
+};
+
+function SubStatCard({ label, rawValue, format, icon: Icon, color, accentGradient, index }: SubStatItem & { index: number }) {
+  const displayVal = useCountUp(rawValue, 600);
+  return (
+    <div
+      className={`card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-${index + 1} hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default`}
+      style={{ '--card-accent': ACCENT_COLOR_MAP[accentGradient] ?? 'transparent' } as CSSProperties}
+    >
+      <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${accentGradient}`} />
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{label}</span>
+        <Icon className={`w-4 h-4 ${color}`} />
+      </div>
+      <p className={`stat-value text-3xl font-black tabular-nums tracking-tight ${color}`} style={{ fontFamily: "'DM Serif Display', serif" }}>{format(displayVal)}</p>
+    </div>
+  );
+}
 
 export function SubDealerDashboard({
   projects,
@@ -56,11 +101,11 @@ export function SubDealerDashboard({
     ))
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const stats = [
-    { label: 'Total Deals', value: totalDeals.toString(), icon: FolderKanban, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-blue-500 to-blue-400' },
-    { label: 'Active Pipeline', value: activePipeline.toString(), icon: TrendingUp, color: 'text-[var(--accent-purple-text)]', accentGradient: 'from-purple-500 to-purple-400' },
-    { label: 'Total kW', value: formatCompactKW(totalKW), icon: Zap, color: 'text-[var(--accent-amber-text)]', accentGradient: 'from-yellow-500 to-yellow-400' },
-    { label: 'Total Earned', value: fmt$(totalEarned), icon: DollarSign, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-emerald-500 to-emerald-400' },
+  const stats: SubStatItem[] = [
+    { label: 'Total Deals', rawValue: totalDeals, format: (n) => String(n), icon: FolderKanban, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-blue-500 to-blue-400' },
+    { label: 'Active Pipeline', rawValue: activePipeline, format: (n) => String(n), icon: TrendingUp, color: 'text-[var(--accent-purple-text)]', accentGradient: 'from-purple-500 to-purple-400' },
+    { label: 'Total kW', rawValue: Math.round(totalKW * 10), format: (n) => formatCompactKW(n / 10), icon: Zap, color: 'text-[var(--accent-amber-text)]', accentGradient: 'from-yellow-500 to-yellow-400' },
+    { label: 'Total Earned', rawValue: Math.round(totalEarned), format: (n) => fmt$(n), icon: DollarSign, color: 'text-[var(--accent-emerald-text)]', accentGradient: 'from-emerald-500 to-emerald-400' },
   ];
 
   return (
@@ -101,23 +146,9 @@ export function SubDealerDashboard({
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {stats.map((stat, i) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className={`card-surface card-surface-stat rounded-2xl p-5 h-full animate-slide-in-scale stagger-${i + 1}`}
-              style={{ '--card-accent': ACCENT_COLOR_MAP[stat.accentGradient] ?? 'transparent' } as CSSProperties}
-            >
-              <div className={`h-[2px] w-12 rounded-full bg-gradient-to-r mb-3 ${stat.accentGradient}`} />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{stat.label}</span>
-                <Icon className={`w-4 h-4 ${stat.color}`} />
-              </div>
-              <p className={`stat-value text-3xl font-black tabular-nums tracking-tight ${stat.color}`}>{stat.value}</p>
-            </div>
-          );
-        })}
+        {stats.map((stat, i) => (
+          <SubStatCard key={stat.label} {...stat} index={i} />
+        ))}
       </div>
 
       {/* My Tasks — chatter check items assigned to this sub-dealer */}

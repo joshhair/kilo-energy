@@ -292,7 +292,7 @@ export function AdminDashboard({
       if (proj.flagged) continue;
       if (proj.phase === 'On Hold') count++;
     }
-    count += allPayroll.filter((e) => e.status === 'Draft' || e.status === 'Pending').length;
+    count += (allPayroll.some((e) => e.status === 'Draft') ? 1 : 0) + (allPayroll.some((e) => e.status === 'Pending') ? 1 : 0);
     return count;
   })();
 

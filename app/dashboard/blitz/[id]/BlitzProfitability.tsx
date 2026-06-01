@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency } from '../../../../lib/utils';
@@ -31,6 +32,25 @@ interface BlitzProfitabilityProps {
   animKey: number;
 }
 
+function useCountUp(target: number, duration = 600): number {
+  const [count, setCount] = useState(0);
+  const rafRef = useRef<number>(0);
+  useEffect(() => {
+    const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) { setCount(target); return; }
+    const start = performance.now();
+    const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      setCount(Math.round(ease(p) * target));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration]);
+  return count;
+}
+
 export function BlitzProfitability({
   blitz,
   leaderboard,
@@ -45,28 +65,32 @@ export function BlitzProfitability({
   getBlitzProjectBaselines,
   animKey,
 }: BlitzProfitabilityProps) {
+  const kiloMarginAnim = useCountUp(Math.round(kiloMargin), 600);
+  const totalCostsAnim = useCountUp(Math.round(totalCosts), 600);
+  const netProfitAnim = useCountUp(Math.round(netProfit), 600);
+  const roiAnim = useCountUp(Math.round(roi), 600);
   return (
     <div key={animKey} className="animate-tab-enter space-y-6">
       {/* Top-level P&L */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-0" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-0 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default" style={{ '--card-accent': 'var(--accent-cyan-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">Kilo Margin</p>
-          <p className="text-2xl font-bold text-[var(--accent-emerald-text)]">{formatCurrency(Math.round(kiloMargin))}</p>
+          <p className="text-2xl font-black tabular-nums leading-none text-[var(--accent-emerald-text)]" style={{ fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(kiloMarginAnim)}</p>
           <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Baseline spread × kW</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-1" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-1 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default" style={{ '--card-accent': 'var(--accent-amber-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">Blitz Costs</p>
-          <p className="text-2xl font-bold text-[var(--accent-amber-text)]">{formatCurrency(totalCosts)}</p>
+          <p className="text-2xl font-black tabular-nums leading-none text-[var(--accent-amber-text)]" style={{ fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(totalCostsAnim)}</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-2" style={{ '--card-accent': 'var(--accent-emerald-solid)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default" style={{ '--card-accent': 'var(--accent-emerald-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">Net Profit</p>
-          <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>{formatCurrency(Math.round(netProfit))}</p>
+          <p className={`text-2xl font-black tabular-nums leading-none ${netProfit >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`} style={{ fontFamily: "'DM Serif Display', serif" }}>{formatCurrency(netProfitAnim)}</p>
           <p className="text-[10px] text-[var(--text-dim)] mt-0.5">Margin − Costs</p>
         </div>
-        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-3" style={{ '--card-accent': 'var(--accent-purple-solid)' } as React.CSSProperties}>
+        <div className="card-surface card-surface-stat rounded-2xl p-4 animate-slide-in-scale stagger-3 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default" style={{ '--card-accent': 'var(--accent-purple-solid)' } as React.CSSProperties}>
           <p className="text-xs text-[var(--text-muted)] mb-1">ROI</p>
-          <p className={`text-2xl font-bold flex items-center gap-1.5 ${roi > 100 ? 'text-[var(--accent-emerald-text)]' : roi >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
-            {roi.toFixed(0)}%
+          <p className={`text-2xl font-black tabular-nums leading-none flex items-center gap-1.5 ${roi > 100 ? 'text-[var(--accent-emerald-text)]' : roi >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
+            <span style={{ fontFamily: "'DM Serif Display', serif" }}>{roiAnim}%</span>
             {roi >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
           </p>
         </div>
