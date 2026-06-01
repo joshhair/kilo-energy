@@ -88,6 +88,9 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const [editingTiers, setEditingTiers] = useState(false);
   const [draftTiers, setDraftTiers] = useState<TrainerOverrideTier[]>([]);
   const [tierSaving, setTierSaving] = useState(false);
+  const [drillRole, setDrillRole] = useState<string | null>(null);
+  const [drillEntries, setDrillEntries] = useState<Array<{ id: string; customerName?: string; projectId?: string | null; amount: number; date: string; paymentStage: string; status: string; notes?: string }>>([]);
+  const [drillTotal, setDrillTotal] = useState(0);
 
   let rep = reps.find((r) => r.id === repId);
   const subDealer = !rep ? subDealers.find((s) => s.id === repId) : null;
@@ -1017,17 +1020,35 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         </div>
       )}
 
+      {/* Trainer Override (read-only) — shown to the trainee themselves while
+          isActiveTraining is true. Hidden once graduated to avoid surfacing
+          stale tier data. Mirrors the desktop TrainerOverrideCard guard:
+          !(effectiveRole !== 'admin' && id === effectiveRepId && isActiveTraining === false) */}
+      {!isAdmin && trainerAssignment && trainerRep && trainerAssignment.isActiveTraining !== false && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <UserPlus className="w-4 h-4" style={{ color: 'var(--accent-amber, #f5a623)' }} />
+            <span className="text-sm font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Trainer Override</span>
+          </div>
+          <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            Trainer: <span style={{ color: 'var(--accent-amber-text)' }}>{trainerRep.name}</span>
+            {' · '}
+            <span style={{ color: 'var(--accent-amber-text)', fontWeight: 600 }}>${currentOverrideRate.toFixed(2)}/W</span>
+          </p>
+        </div>
+      )}
+
       {/* Commission by Role — admin only, mirrors desktop rep detail */}
       {!isPM && isAdmin && repPayroll.length > 0 && (
         <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
           <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Commission by Role</p>
           <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
             {[
-              { label: 'Closer', deals: roleCloserDealCount, total: roleCloserPay, show: true },
-              { label: 'Co-closer', deals: new Set(roleCoCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleCoCloserPay, show: roleCoCloserPay > 0 },
-              { label: 'Setter', deals: new Set(roleSetterEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleSetterPay, show: true },
-              { label: 'Trainer', deals: roleTrainerDealCount, total: roleTrainerPay, show: true },
-              { label: 'Bonus / Other', deals: null as number | null, total: roleBonusPay, show: roleBonusPay > 0 },
+              { label: 'Closer', deals: roleCloserDealCount, total: roleCloserPay, entries: roleCloserEntries, show: true },
+              { label: 'Co-closer', deals: new Set(roleCoCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleCoCloserPay, entries: roleCoCloserEntries, show: roleCoCloserPay > 0 },
+              { label: 'Setter', deals: new Set(roleSetterEntries.filter(e => e.projectId).map(e => e.projectId)).size, total: roleSetterPay, entries: roleSetterEntries, show: true },
+              { label: 'Trainer', deals: roleTrainerDealCount, total: roleTrainerPay, entries: roleTrainerEntries, show: true },
+              { label: 'Bonus / Other', deals: null as number | null, total: roleBonusPay, entries: roleBonusEntries, show: roleBonusPay > 0 },
             ].filter(r => r.show).map((row) => (
               <div key={row.label} className="flex items-center justify-between py-2.5">
                 <div className="flex items-center gap-3">
@@ -1036,12 +1057,19 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
                     {row.deals !== null ? `${row.deals} deal${row.deals !== 1 ? 's' : ''}` : '—'}
                   </span>
                 </div>
-                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                <button
+                  onClick={() => { setDrillRole(row.label); setDrillEntries(row.entries); setDrillTotal(row.total); }}
+                  className="text-sm font-semibold tabular-nums min-h-[36px] px-1 active:opacity-70 transition-opacity underline decoration-dotted underline-offset-4"
+                  style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                >
                   ${row.total.toLocaleString()}
-                </span>
+                </button>
               </div>
             ))}
           </div>
+          <p className="text-[11px] mt-2" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            Tap any total to see the contributing payroll entries.
+          </p>
         </div>
       )}
 
@@ -1296,6 +1324,49 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         onConfirm={() => { setConfirmDelete(false); handleDeletePermanently(); }}
         onClose={() => setConfirmDelete(false)}
       />
+
+      {/* Commission drill-down — admin audit of what makes up each role total */}
+      <MobileBottomSheet
+        open={!!drillRole}
+        onClose={() => { setDrillRole(null); setDrillEntries([]); setDrillTotal(0); }}
+        title={drillRole ? `${drillRole} breakdown` : ''}
+      >
+        <div className="px-5 pb-6">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+            ${drillTotal.toLocaleString()} across {drillEntries.length} {drillEntries.length === 1 ? 'entry' : 'entries'}
+          </p>
+          {drillEntries.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>No entries for this role yet.</p>
+          ) : (
+            <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+              {[...drillEntries].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((e) => (
+                <div key={e.id} className="flex items-start justify-between py-3 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {e.customerName || e.notes || '—'}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                      {e.paymentStage} · {formatDate(e.date)}
+                    </p>
+                    <span
+                      className="inline-block text-[11px] px-1.5 py-0.5 rounded font-medium mt-1"
+                      style={{
+                        background: e.status === 'Paid' ? 'var(--accent-emerald-soft)' : e.status === 'Pending' ? 'var(--accent-amber-soft)' : 'var(--border-default)',
+                        color: e.status === 'Paid' ? 'var(--accent-emerald-text)' : e.status === 'Pending' ? 'var(--accent-amber-text)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {e.status}
+                    </span>
+                  </div>
+                  <span className="text-base font-bold tabular-nums shrink-0" style={{ color: 'var(--accent-emerald-solid)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
+                    ${e.amount.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </MobileBottomSheet>
     </div>
   );
 }

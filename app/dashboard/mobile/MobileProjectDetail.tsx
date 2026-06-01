@@ -1576,7 +1576,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             onTap={() => { setMoreSheetOpen(false); setShowRecordTrainerPayment(true); }}
           />
         )}
-        {(isAdmin && !isPM || effectiveRepId === project.repId) && (
+        {!isPM && (
           <MobileBottomSheet.Item
             label="Duplicate Deal"
             icon={Copy}
@@ -1910,8 +1910,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             disabledReason="Select a primary setter to add co-setters."
           />
 
-          {/* Per-project trainer override — admin only. */}
-          {isAdmin && (
+          {/* Per-project trainer override — admin and PM. */}
+          {(isAdmin || isPM) && (
             <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Per-project trainer</span>
@@ -1956,7 +1956,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           )}
 
           {/* Baseline Override */}
-          {isAdmin && (
+          {(isAdmin || isPM) && (
             <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
               <label className="flex items-center gap-2 cursor-pointer mb-3">
                 <input

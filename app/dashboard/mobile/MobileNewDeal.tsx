@@ -491,6 +491,11 @@ export default function MobileNewDeal() {
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
+  const currentTierIndex = setterAssignment
+    ? setterAssignment.tiers.findIndex((t) => t.upToDeal === null || setterCompletedDeals < t.upToDeal)
+    : -1;
+  const currentTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex] : null;
+  const nextTier = currentTierIndex >= 0 ? setterAssignment!.tiers[currentTierIndex + 1] : null;
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerAssignment
@@ -1132,7 +1137,7 @@ export default function MobileNewDeal() {
                 <label className={labelCls} style={labelStyle}>Closer (Rep)</label>
                 <select
                   value={form.repId}
-                  onChange={(e) => update('repId', e.target.value)}
+                  onChange={(e) => { update('repId', e.target.value); update('blitzId', ''); }}
                   onBlur={() => handleBlur('repId')}
                   className={selectCls('repId')} style={v0InputStyle('repId')}
                 >
@@ -1155,8 +1160,12 @@ export default function MobileNewDeal() {
                   excludeRepId={closerId || undefined}
                 />
                 {setterAssignment && trainerRep && (
-                  <p className="text-base text-[var(--accent-amber-text)] mt-1">
-                    Trainer: {trainerRep.name} -- ${trainerOverrideRate.toFixed(2)}/W
+                  <p className="text-xs text-[var(--accent-amber-text)] mt-1.5">
+                    ★ Trainer: {trainerRep.name} — override{' '}
+                    <span className="font-semibold">${trainerOverrideRate.toFixed(2)}/W</span>
+                    {currentTier?.upToDeal !== null && nextTier
+                      ? ` (${currentTier!.upToDeal! - setterCompletedDeals} deals until $${nextTier.ratePerW.toFixed(2)}/W)`
+                      : ' (perpetual)'}
                   </p>
                 )}
               </div>

@@ -12,7 +12,7 @@ import {
 } from '../../../lib/data';
 import { useToast } from '../../../lib/toast';
 import { todayLocalDateStr } from '../../../lib/utils';
-import { Trophy, Plus, Loader2, Zap, Trash2, Square, CheckSquare, Archive } from 'lucide-react';
+import { Trophy, Plus, Loader2, Zap, Trash2, Square, CheckSquare, Archive, Download } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileSection from './shared/MobileSection';
@@ -353,17 +353,66 @@ export default function MobileIncentives() {
       <MobilePageHeader
         title="Incentives"
         right={isAdmin ? (
-          <button
-            onClick={() => setShowCreate(true)}
-            aria-label="Add incentive"
-            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
-            style={{
-              background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, var(--surface-card))',
-              border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
-            }}
-          >
-            <Plus className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
+                const toCSV = (headers: string[], rows: string[][]) =>
+                  [headers.map(escape).join(','), ...rows.map((r) => r.map(escape).join(','))].join('\n');
+                const rows: string[][] = incentives.map((inc) => {
+                  const progress = computeIncentiveProgress(inc, projects, payrollEntries);
+                  const maxThreshold = inc.milestones.length > 0 ? Math.max(...inc.milestones.map((m) => m.threshold)) : 0;
+                  const pctComplete = maxThreshold > 0 ? Math.min(100, Math.round((progress / maxThreshold) * 100)) : 0;
+                  const milestonesAchieved = inc.milestones.filter((m) => m.achieved).length;
+                  const status = isExpired(inc.endDate) ? 'Expired' : isEndingSoon(inc.endDate) ? 'Ending Soon' : 'Active';
+                  return [
+                    inc.title,
+                    inc.type === 'company' ? 'Company' : 'Personal',
+                    inc.metric,
+                    inc.period,
+                    inc.startDate || '',
+                    inc.endDate || '',
+                    status,
+                    String(progress),
+                    String(maxThreshold),
+                    String(pctComplete),
+                    String(milestonesAchieved),
+                    String(inc.milestones.length),
+                  ];
+                });
+                const csv = toCSV(
+                  ['Title', 'Type', 'Metric', 'Period', 'Start Date', 'End Date', 'Status', 'Progress Value', 'Max Threshold', '% Complete', 'Milestones Achieved', 'Total Milestones'],
+                  rows,
+                );
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const _d = new Date(); const _ds = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+                a.href = url; a.download = `kilo_incentives_${_ds}.csv`; a.click();
+                URL.revokeObjectURL(url);
+                toast('Incentives CSV exported', 'info');
+              }}
+              aria-label="Export CSV"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-cyan-solid) 14%, var(--surface-card))',
+                border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 32%, transparent)',
+              }}
+            >
+              <Download className="w-4 h-4" style={{ color: 'var(--accent-cyan-text)' }} />
+            </button>
+            <button
+              onClick={() => setShowCreate(true)}
+              aria-label="Add incentive"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
+              style={{
+                background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, var(--surface-card))',
+                border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
+              }}
+            >
+              <Plus className="w-5 h-5" style={{ color: 'var(--accent-emerald-text)' }} />
+            </button>
+          </div>
         ) : undefined}
       />
 

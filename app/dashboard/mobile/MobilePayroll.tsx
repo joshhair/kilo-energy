@@ -70,6 +70,7 @@ export default function MobilePayroll() {
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
   const [paidCorrectionEntry, setPaidCorrectionEntry] = useState<PayrollEntry | null>(null);
+  const [publishSelectedIds, setPublishSelectedIds] = useState<Set<string>>(new Set());
 
   // ── Admin filters ─────────────────────────────────────────────────────────
   const [filterRepId, setFilterRepId] = useState(searchParams.get('rep') ?? '');
@@ -96,6 +97,8 @@ export default function MobilePayroll() {
 
   // ── Reimbursements state ──────────────────────────────────────────────────
   const [reimFilterStatus, setReimFilterStatus] = useState<ReimFilterStatus>('Pending');
+  const [reimFilterFrom, setReimFilterFrom] = useState('');
+  const [reimFilterTo, setReimFilterTo] = useState('');
   const [showArchivedReim, setShowArchivedReim] = useState<boolean | 'only'>(false);
   const [selectedReim, setSelectedReim] = useState<Reimbursement | null>(null);
   const [confirmDeleteReim, setConfirmDeleteReim] = useState<Reimbursement | null>(null);
@@ -113,9 +116,11 @@ export default function MobilePayroll() {
       if (!showArchivedReim && r.archivedAt) return false;
       if (showArchivedReim === 'only' && !r.archivedAt) return false;
       if (reimFilterStatus !== 'All' && r.status !== reimFilterStatus) return false;
+      if (reimFilterFrom && r.date < reimFilterFrom) return false;
+      if (reimFilterTo && r.date > reimFilterTo) return false;
       return true;
     });
-  }, [reimbursements, showArchivedReim, reimFilterStatus]);
+  }, [reimbursements, showArchivedReim, reimFilterStatus, reimFilterFrom, reimFilterTo]);
 
   // ── Reimbursement handlers ────────────────────────────────────────────────
 
@@ -212,13 +217,24 @@ export default function MobilePayroll() {
     }
   }, [shouldShowCta]);
 
+  // When publish modal opens, default-select past+today pending entries; reset on close.
+  useEffect(() => {
+    if (!showPublishConfirm) { setPublishSelectedIds(new Set()); return; }
+    const t = todayLocalDateStr();
+    const defaults = new Set<string>();
+    for (const p of allTypesInScope) {
+      if (p.status === 'Pending' && p.date <= t) defaults.add(p.id);
+    }
+    setPublishSelectedIds(defaults);
+  }, [showPublishConfirm, allTypesInScope]);
+
   // ── Group by rep ──────────────────────────────────────────────────────────
 
   const groupedByRep = useMemo(() => {
-    const map = new Map<string, { repName: string; entries: PayrollEntry[]; total: number }>();
+    const map = new Map<string, { repId: string; repName: string; entries: PayrollEntry[]; total: number }>();
     for (const entry of filtered) {
       if (!map.has(entry.repId)) {
-        map.set(entry.repId, { repName: entry.repName, entries: [], total: 0 });
+        map.set(entry.repId, { repId: entry.repId, repName: entry.repName, entries: [], total: 0 });
       }
       const group = map.get(entry.repId)!;
       group.entries.push(entry);
@@ -230,9 +246,8 @@ export default function MobilePayroll() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const handlePublishOrApproveAll = useCallback(async () => {
-    const today = todayLocalDateStr();
     const target = statusTab === 'Pending'
-      ? allTypesInScope.filter((e) => e.status === 'Pending' && e.date <= today)
+      ? allTypesInScope.filter((e) => e.status === 'Pending' && publishSelectedIds.has(e.id))
       : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
@@ -272,7 +287,7 @@ export default function MobilePayroll() {
         toast('Payroll failed to save — rolled back', 'error');
       }
     }
-  }, [filtered, allTypesInScope, payrollEntries, setPayrollEntries, toast, statusTab]);
+  }, [filtered, allTypesInScope, payrollEntries, setPayrollEntries, toast, statusTab, publishSelectedIds]);
 
   const handleStatusChange = useCallback(
     async (entry: PayrollEntry, newStatus: 'Draft' | 'Pending' | 'Paid') => {
@@ -519,28 +534,55 @@ export default function MobilePayroll() {
       {pageView === 'reimbursements' && (
         <div className="space-y-3">
           {/* Filters */}
-          <div className="flex gap-2">
-            <select
-              value={reimFilterStatus}
-              onChange={(e) => setReimFilterStatus(e.target.value as ReimFilterStatus)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-            >
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Denied">Denied</option>
-              <option value="All">All</option>
-            </select>
-            <select
-              value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
-              onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
-              className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-            >
-              <option value="active">Active only</option>
-              <option value="all">Inc. archived</option>
-              <option value="only">Archived only</option>
-            </select>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <select
+                value={reimFilterStatus}
+                onChange={(e) => setReimFilterStatus(e.target.value as ReimFilterStatus)}
+                className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Denied">Denied</option>
+                <option value="All">All</option>
+              </select>
+              <select
+                value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
+                onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
+                className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                <option value="active">Active only</option>
+                <option value="all">Inc. archived</option>
+                <option value="only">Archived only</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={reimFilterFrom}
+                onChange={(e) => setReimFilterFrom(e.target.value)}
+                className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: reimFilterFrom ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              />
+              <input
+                type="date"
+                value={reimFilterTo}
+                onChange={(e) => setReimFilterTo(e.target.value)}
+                className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: reimFilterTo ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              />
+              {(reimFilterFrom || reimFilterTo) && (
+                <button
+                  onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); }}
+                  className="min-h-[44px] px-3 rounded-xl text-sm"
+                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {/* List */}
@@ -810,7 +852,7 @@ export default function MobilePayroll() {
       ) : (
         <div className="space-y-6">
           {groupedByRep.map((group) => (
-            <div key={group.repName} className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+            <div key={`rep-${group.repId}`} className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
                 <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
@@ -885,22 +927,88 @@ export default function MobilePayroll() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={showPublishConfirm}
-        title="Publish Payroll?"
-        message={(() => {
-          const today = todayLocalDateStr();
-          const pending = allTypesInScope.filter((e) => e.status === 'Pending');
-          const toPublish = pending.filter((e) => e.date <= today);
-          const futureCount = pending.length - toPublish.length;
-          const base = `This will mark ${toPublish.length} pending ${toPublish.length === 1 ? 'entry' : 'entries'} as Paid.`;
-          const note = futureCount > 0 ? ` ${futureCount} future-dated ${futureCount === 1 ? 'entry' : 'entries'} will be skipped.` : '';
-          return `${base}${note} This action cannot be undone.`;
-        })()}
-        confirmLabel="Publish Payroll"
-        onConfirm={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
-        onClose={() => setShowPublishConfirm(false)}
-      />
+      {showPublishConfirm && (() => {
+        const today = todayLocalDateStr();
+        const pendingEntries = allTypesInScope
+          .filter((e) => e.status === 'Pending')
+          .sort((a, b) => a.repName.localeCompare(b.repName) || a.date.localeCompare(b.date));
+        const byRep = pendingEntries.reduce((map, e) => {
+          if (!map.has(e.repId)) map.set(e.repId, { name: e.repName, entries: [] as typeof pendingEntries });
+          map.get(e.repId)!.entries.push(e);
+          return map;
+        }, new Map<string, { name: string; entries: typeof pendingEntries }>());
+        const repGroups = [...byRep.entries()]
+          .map(([id, g]) => ({ id, name: g.name, entries: g.entries }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const selectedEntries = pendingEntries.filter((e) => publishSelectedIds.has(e.id));
+        const selectedTotal = selectedEntries.reduce((s, e) => s + e.amount, 0);
+        const allIds = pendingEntries.map((e) => e.id);
+        const pastIds = pendingEntries.filter((e) => e.date <= today).map((e) => e.id);
+        const futureCount = pendingEntries.length - pastIds.length;
+        return (
+          <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--surface-page)' }}>
+            <div className="flex items-center justify-between px-5 pt-6 pb-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Publish Payroll</h2>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                  <span style={{ color: 'var(--accent-emerald-text)', fontWeight: 600 }}>{selectedEntries.length}</span> of {pendingEntries.length} selected · {fmt$(selectedTotal)}
+                  {futureCount > 0 && <span style={{ color: 'var(--accent-amber-text)' }}> · {futureCount} future unchecked by default</span>}
+                </p>
+              </div>
+              <button onClick={() => setShowPublishConfirm(false)} className="p-2 rounded-xl" style={{ background: 'var(--surface-card)', color: 'var(--text-muted)' }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex gap-2 px-5 py-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <button type="button" onClick={() => setPublishSelectedIds(new Set(pastIds))} className="flex-1 min-h-[36px] rounded-xl text-xs font-medium" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Past + today ({pastIds.length})</button>
+              <button type="button" onClick={() => setPublishSelectedIds(new Set(allIds))} className="flex-1 min-h-[36px] rounded-xl text-xs font-medium" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>All ({allIds.length})</button>
+              <button type="button" onClick={() => setPublishSelectedIds(new Set())} className="flex-1 min-h-[36px] rounded-xl text-xs font-medium" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>None</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-3">
+              {repGroups.map((rep) => (
+                <div key={rep.id} className="mb-5">
+                  <p className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{rep.name}</p>
+                  {rep.entries.map((e) => {
+                    const isFuture = e.date > today;
+                    const checked = publishSelectedIds.has(e.id);
+                    return (
+                      <label key={e.id} className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <input type="checkbox" checked={checked} onChange={() => setPublishSelectedIds((prev) => { const next = new Set(prev); if (next.has(e.id)) next.delete(e.id); else next.add(e.id); return next; })} className="w-5 h-5 shrink-0 accent-[var(--accent-emerald-solid)]" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm truncate" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+                            {e.paymentStage}{e.customerName ? ` · ${e.customerName}` : ''}{e.notes ? ` · ${e.notes}` : ''}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            {e.date}{isFuture && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }}>Future</span>}
+                          </p>
+                        </div>
+                        <span className="text-base font-bold tabular-nums shrink-0" style={{ color: e.amount < 0 ? 'var(--accent-red-text)' : 'var(--accent-emerald-text)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(e.amount)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="px-5 pt-3 space-y-2" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border-subtle)' }}>
+              <button
+                disabled={selectedEntries.length === 0}
+                onClick={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
+                className="w-full min-h-[52px] rounded-2xl text-base font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)', color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Publish {selectedEntries.length} {selectedEntries.length === 1 ? 'Entry' : 'Entries'} · {fmt$(selectedTotal)}
+              </button>
+              <button
+                onClick={() => setShowPublishConfirm(false)}
+                className="w-full min-h-[44px] rounded-2xl text-sm font-medium"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       <ConfirmDialog
         open={showApproveAllConfirm}
@@ -937,20 +1045,11 @@ export default function MobilePayroll() {
               />
             )}
             {selectedEntry.status === 'Pending' && (
-              <>
-                <MobileBottomSheet.Item
-                  label="Mark as Paid"
-                  icon={Check}
-                  onTap={() => handleStatusChange(selectedEntry, 'Paid')}
-                />
-                {/* Reverse Pending → Draft — lets admin pull an entry out of
-                    the current batch before publish. Matches desktop parity. */}
-                <MobileBottomSheet.Item
-                  label="Move back to Draft"
-                  icon={Check}
-                  onTap={() => handleStatusChange(selectedEntry, 'Draft')}
-                />
-              </>
+              <MobileBottomSheet.Item
+                label="Move back to Draft"
+                icon={Check}
+                onTap={() => handleStatusChange(selectedEntry, 'Draft')}
+              />
             )}
             {selectedEntry.status === 'Paid' && (
               <MobileBottomSheet.Item

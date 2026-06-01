@@ -9,6 +9,7 @@ import MobileEarnings, { MobileAdminEarnings } from '../mobile/MobileEarnings';
 import { useToast } from '../../../lib/toast';
 import { Reimbursement } from '../../../lib/data';
 import { type Period, PERIODS, isInPeriod } from '../components/dashboard-utils';
+import { getPeriodLabel } from '../../../lib/period';
 import { formatDate, downloadCSV, fmt$, todayLocalDateStr, localDateString } from '../../../lib/utils';
 import { ReimbursementModal } from '../components/ReimbursementModal';
 import { RelativeDate } from '../components/RelativeDate';
@@ -105,8 +106,14 @@ function RepEarningsView() {
   const filteredReimbs = useMemo(() => monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs.filter((r) => isInPeriod(r.date, period)), [myReimbs, monthFilter, period]);
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
-  const approvedReimbs  = (monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter)) : myReimbs).filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const thisMonthEarned = monthFilter
+    ? sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter)))
+    : sumPaid(myPayroll.filter((p) => isInPeriod(p.date, period === 'all' ? 'this-month' : period)));
+  const approvedReimbs = (
+    monthFilter ? myReimbs.filter((r) => r.date.startsWith(monthFilter))
+    : period === 'all' ? myReimbs
+    : myReimbs.filter((r) => isInPeriod(r.date, period))
+  ).filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
 
@@ -448,7 +455,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ?? 'This Month'}</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ?? (period !== 'all' ? getPeriodLabel(period) : 'This Month')}</span>
             <DollarSign className="w-4 h-4 text-[var(--accent-emerald-text)] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-emerald-display)] animate-count-up">
@@ -464,7 +471,7 @@ function RepEarningsView() {
         >
           <div className="h-[2px] w-12 rounded-full bg-gradient-to-r from-violet-500 to-violet-400 mb-3" />
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ? `${monthFilterLabel} Reimbs` : 'Reimbursements'}</span>
+            <span className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider">{monthFilterLabel ? `${monthFilterLabel} Reimbs` : period !== 'all' ? `${getPeriodLabel(period)} Reimbs` : 'Reimbursements'}</span>
             <Receipt className="w-4 h-4 text-[var(--accent-purple-text)] shrink-0" />
           </div>
           <p className="stat-value text-3xl font-black tabular-nums tracking-tight text-[var(--accent-purple-display)] animate-count-up">

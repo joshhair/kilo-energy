@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
-import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery, useCountUp } from '../../../lib/hooks';
 import MobileCalculator from '../mobile/MobileCalculator';
 import { getSolarTechBaseline, calculateCommission, splitCloserSetterPay, getTrainerOverrideRate, SOLARTECH_FAMILIES, SOLARTECH_FAMILY_FINANCER, getInstallerRatesForDeal, getProductCatalogBaselineVersioned, DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS } from '../../../lib/data';
 import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
@@ -48,39 +48,6 @@ function saveCalcHistory(entries: CalcHistoryEntry[]) {
   try {
     localStorage.setItem(CALC_HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
   } catch { /* quota exceeded — silently ignore */ }
-}
-
-// ─── Count-Up Hook ─────────────────────────────────────────────────────────────
-function useCountUp(target: number, duration = 600): number {
-  const [display, setDisplay] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    let startTime: number | null = null;
-
-    const step = (ts: number) => {
-      if (startTime === null) startTime = ts;
-      const elapsed = ts - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // cubic ease-out
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(target * eased));
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        setDisplay(target);
-        rafRef.current = null;
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    };
-  }, [target, duration]);
-
-  return display;
 }
 
 // ─── Field Tooltip ─────────────────────────────────────────────────────────────
@@ -432,7 +399,7 @@ function CalculatorPage() {
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) : null;
-  const closerTrainerTotal = closerTrainerRate > 0 && kW > 0
+  const closerTrainerTotal = closerTrainerRate > 0 && kW > 0 && soldPPW > 0
     ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
     : 0;
 
@@ -443,7 +410,9 @@ function CalculatorPage() {
   // overrides. Server payroll (project-transitions.ts) carves the closer-
   // trainer slice out of M2/M3 after the split; we mirror that locally
   // via `applyCloserTrainerDeduction` so calc reflects actual paid amount.
-  const rawSplit = splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct);
+  const rawSplit = hasInput && soldPPW > 0
+    ? splitCloserSetterPay(soldPPW, closerPerW, isSelfGen ? 0 : setterBaselinePerW, trainerRate, kW, installPayPct)
+    : { closerTotal: 0, setterTotal: 0, closerM1: 0, closerM2: 0, closerM3: 0, setterM1: 0, setterM2: 0, setterM3: 0 };
   const adjustedSplit = applyCloserTrainerDeduction(rawSplit, closerTrainerRate, kW, installPayPct);
   const { closerTotal, setterTotal, closerM1, closerM2, closerM3, setterM1, setterM2, setterM3 } = adjustedSplit;
 
@@ -1014,7 +983,7 @@ function CalculatorPage() {
                 {/* Line items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                   {/* Closer */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="calc-row-1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald-solid)', flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Closer Pay</span>
@@ -1025,16 +994,16 @@ function CalculatorPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div className="calc-ms-1" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM1.toLocaleString()}</p>
                     </div>
-                    <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
+                    <div className="calc-ms-2" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-emerald-solid)', borderRadius: 7, padding: '5px 8px' }}>
                       <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM2.toLocaleString()}</p>
                     </div>
                     {hasM3Split && (
-                      <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
+                      <div className="calc-ms-3" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
                         <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
                         <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${closerM3.toLocaleString()}</p>
                       </div>
@@ -1044,7 +1013,7 @@ function CalculatorPage() {
                   {/* Setter */}
                   {hasSetter && setterTotal > 0 && (
                     <>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="calc-row-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan-solid)', flexShrink: 0 }} />
                           <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Setter Pay{selectedSetterRep ? ` -- ${selectedSetterRep.name}` : ''}</span>
@@ -1055,16 +1024,16 @@ function CalculatorPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 5, marginLeft: 16, marginTop: 4 }}>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div className="calc-ms-4" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M1 · Acceptance</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM1.toLocaleString()}</p>
                         </div>
-                        <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
+                        <div className="calc-ms-5" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--accent-cyan-solid)', borderRadius: 7, padding: '5px 8px' }}>
                           <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M2 · Installed</p>
                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM2.toLocaleString()}</p>
                         </div>
                         {hasM3Split && (
-                          <div style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
+                          <div className="calc-ms-6" style={{ flex: 1, background: 'var(--surface-card)', border: '1px solid var(--border)', borderLeft: '2px solid var(--text-muted)', borderRadius: 7, padding: '5px 8px' }}>
                             <p style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>M3 · PTO</p>
                             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: "'DM Serif Display', serif" }}>${setterM3.toLocaleString()}</p>
                           </div>
@@ -1075,7 +1044,7 @@ function CalculatorPage() {
 
                   {/* Setter Trainer */}
                   {trainerRep && trainerTotal > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="calc-row-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {trainerRep.name}</span>
@@ -1089,7 +1058,7 @@ function CalculatorPage() {
 
                   {/* Closer Trainer */}
                   {closerTrainerRep && closerTrainerTotal > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="calc-row-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-purple-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Trainer: {closerTrainerRep.name}</span>
@@ -1103,7 +1072,7 @@ function CalculatorPage() {
 
                   {/* Kilo Margin (admin) */}
                   {effectiveRole === 'admin' && kiloTotal > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="calc-row-5" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-amber-solid)', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Kilo Margin</span>

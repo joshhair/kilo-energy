@@ -89,7 +89,7 @@ export default function MobileTraining({
   // Rep view tab — mirrors desktop's Active / Residuals split. Defaults to
   // Active because the override-remaining number the rep wants to verify
   // (the one baked into their Pipeline headline) comes from active trainees.
-  const [repView, setRepView] = useState<'active' | 'residuals'>('active');
+  const [repView, setRepView] = useState<'active' | 'residuals' | 'rates'>('active');
 
   // ── Admin state (unconditional — rules of hooks) ──────────────────────────
   const [adminSearch, setAdminSearch] = useState('');
@@ -939,10 +939,11 @@ export default function MobileTraining({
           Matches the desktop /dashboard/training tabs so reps see the same
           mental model on either device. Active = isActiveTraining true
           (training, maxed, paused all live here); Residuals = graduated. */}
-      <SegmentedPills<'active' | 'residuals'>
+      <SegmentedPills<'active' | 'residuals' | 'rates'>
         options={[
           { value: 'active', label: 'Active', badge: activeTrainees.length || undefined },
           { value: 'residuals', label: 'Residuals', badge: residualTrainees.length || undefined },
+          { value: 'rates', label: 'Rates' },
         ]}
         value={repView}
         onChange={setRepView}
@@ -950,6 +951,7 @@ export default function MobileTraining({
       />
 
       {/* ── Trainees list (filtered by tab) ─────────────────────────────── */}
+      {repView !== 'rates' && (
       <div key={repView} className="motion-safe:animate-[fadeUpIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]">
       {visibleTrainees.length === 0 ? (
         <MobileCard>
@@ -1017,6 +1019,48 @@ export default function MobileTraining({
         </div>
       )}
       </div>
+      )}
+
+      {/* ── Rate Schedule view ───────────────────────────────────────────── */}
+      {repView === 'rates' && (
+        <div key="rates" className="space-y-3 motion-safe:animate-[fadeUpIn_200ms_cubic-bezier(0.16,1,0.3,1)_both]">
+          {traineeData.length === 0 ? (
+            <MobileCard>
+              <MobileEmptyState
+                icon={GraduationCap}
+                title="No trainees yet"
+                subtitle="You'll appear here once assigned a trainee"
+              />
+            </MobileCard>
+          ) : (
+            traineeData.map((td, idx) => (
+              <div
+                key={td.assignment.id}
+                className="rounded-2xl overflow-hidden motion-safe:animate-[fadeUpIn_280ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', animationDelay: `${Math.min(idx, 5) * 45}ms` }}
+              >
+                <div className="px-4 pt-3 pb-0 flex items-center gap-2.5">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                    style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)', color: 'var(--accent-amber-text)' }}
+                  >
+                    {getInitials(td.traineeName)}
+                  </div>
+                  <span className="flex-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{td.traineeName}</span>
+                  <StatusChip status={td.status} />
+                </div>
+                <MobileTraineeExpandPanel
+                  isOpen={true}
+                  tiers={td.assignment.tiers}
+                  activeTierIndex={td.activeTierIndex}
+                  consumedDeals={td.consumedDeals}
+                  earningsFromTrainee={td.earningsFromTrainee}
+                />
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* ── Override Payments ────────────────────────────────────────────── */}
       <MobileSection title="Override Payments" count={filteredPayments.length} collapsible defaultOpen>

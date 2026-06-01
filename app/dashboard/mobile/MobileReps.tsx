@@ -200,6 +200,20 @@ export default function MobileReps() {
     return map;
   }, [projects]);
 
+  // Total deals count per rep (includes Completed, excludes Cancelled + On Hold) — matches desktop 'deals' sort
+  const dealsByRep = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of projects) {
+      if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
+      const ids = new Set<string>([p.repId]);
+      if (p.setterId) ids.add(p.setterId);
+      p.additionalClosers?.forEach((c) => ids.add(c.userId));
+      p.additionalSetters?.forEach((c) => ids.add(c.userId));
+      for (const id of ids) map.set(id, (map.get(id) ?? 0) + 1);
+    }
+    return map;
+  }, [projects]);
+
   // kW sold per rep
   const kwByRep = useMemo(() => {
     const map = new Map<string, number>();
@@ -258,12 +272,12 @@ export default function MobileReps() {
       if (sortBy === 'name') {
         return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       }
-      const va = sortBy === 'paid' ? (paidByRep.get(a.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(a.id) ?? 0) : (activeDealsByRep.get(a.id) ?? 0);
-      const vb = sortBy === 'paid' ? (paidByRep.get(b.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(b.id) ?? 0) : (activeDealsByRep.get(b.id) ?? 0);
+      const va = sortBy === 'paid' ? (paidByRep.get(a.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(a.id) ?? 0) : sortBy === 'deals' ? (dealsByRep.get(a.id) ?? 0) : (activeDealsByRep.get(a.id) ?? 0);
+      const vb = sortBy === 'paid' ? (paidByRep.get(b.id) ?? 0) : sortBy === 'kw' ? (kwByRep.get(b.id) ?? 0) : sortBy === 'deals' ? (dealsByRep.get(b.id) ?? 0) : (activeDealsByRep.get(b.id) ?? 0);
       return sortDir === 'asc' ? va - vb : vb - va;
     });
     return arr;
-  }, [filtered, sortBy, sortDir, paidByRep, kwByRep, activeDealsByRep]);
+  }, [filtered, sortBy, sortDir, paidByRep, kwByRep, activeDealsByRep, dealsByRep]);
 
   // Inactive lists — filtered by search, not by role pill
   const inactiveReps = reps.filter((r) => {

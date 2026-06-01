@@ -337,12 +337,9 @@ export default function MobileMyPay() {
   }, [myEntries, payFilterFrom, payFilterTo]);
 
 
-  // ── Reimbursements — only show active ones ──
-  // Show all non-archived reimbursements (including Denied) so reps see
-  // rejection feedback, not just their in-flight requests. Archived rows
-  // are still hidden since admin explicitly hid them.
+  // ── Reimbursements ──
   const activeReimbs = useMemo(
-    () => reimbursements.filter((r) => r.repId === effectiveRepId && !r.archivedAt),
+    () => reimbursements.filter((r) => r.repId === effectiveRepId),
     [reimbursements, effectiveRepId],
   );
 
