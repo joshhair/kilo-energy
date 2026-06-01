@@ -25,7 +25,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageInner() {
-  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, updateProject, activeInstallers, dbReady, trainerAssignments, payrollEntries } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'Projects | Kilo Energy'; }, []);
   const searchParams = useSearchParams();
@@ -369,6 +369,8 @@ function ProjectsPageInner() {
           readOnly={isSubDealer}
           hideFinancials={isPM}
           resetKey={kanbanResetKey}
+          trainerAssignments={trainerAssignments}
+          payrollEntries={payrollEntries}
         />
       ) : (
         <TableView

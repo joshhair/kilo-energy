@@ -288,6 +288,7 @@ export default function MobileCalculator() {
     const hash = resultHash;
     if (hash === lastSavedHash.current) return;
     lastSavedHash.current = hash;
+    setStaggerKey((k) => k + 1);
 
     const entry: CalcHistoryEntry = {
       installer,
@@ -490,6 +491,7 @@ export default function MobileCalculator() {
   // ── Result card mount/unmount with exit animation ────────────────────────
   const [resultMounted, setResultMounted] = useState(false);
   const [resultExiting, setResultExiting] = useState(false);
+  const [staggerKey, setStaggerKey] = useState(0);
 
   useEffect(() => {
     if (hasInput && soldPPW > 0) {
@@ -755,6 +757,10 @@ export default function MobileCalculator() {
               placeholder="e.g. 8.4"
               value={kWSize}
               onChange={(e) => setKWSize(e.target.value)}
+              onBlur={() => {
+                if (hasInput && soldPPW > 0)
+                  setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+              }}
               className={inputCls + ' mt-auto'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
@@ -771,6 +777,10 @@ export default function MobileCalculator() {
               placeholder="e.g. 3.85"
               value={netPPW}
               onChange={(e) => setNetPPW(e.target.value)}
+              onBlur={() => {
+                if (hasInput && soldPPW > 0)
+                  setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+              }}
               className={inputCls + ' mt-auto'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
@@ -817,7 +827,7 @@ export default function MobileCalculator() {
             {fmt$(displayTotal)}
           </p>
 
-          <div className="mt-5 space-y-2.5">
+          <div key={staggerKey} className="mt-5 space-y-2.5">
             {/* Closer row + M1/M2/M3 breakdown */}
             <div className="calc-row-1 flex items-center justify-between">
               <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Closer</span>

@@ -8,7 +8,7 @@ interface CalcShareBarProps {
   onShareURL: () => void;
 }
 
-const btnBase = 'flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-100 active:scale-[0.93]';
+const btnBase = 'flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 ease-in-out active:scale-[0.93]';
 
 export default function CalcShareBar({ onCopy, onShare, onShareURL }: CalcShareBarProps) {
   const [flashedKey, setFlashedKey] = useState<'copy' | 'share' | 'link' | null>(null);
@@ -19,22 +19,22 @@ export default function CalcShareBar({ onCopy, onShare, onShareURL }: CalcShareB
     setTimeout(() => setFlashedKey(null), 1200);
   };
 
-  const activeStyle = { color: 'var(--accent-emerald-text)', borderColor: 'var(--accent-emerald-solid)', background: 'var(--accent-emerald-soft)' };
-  const idleStyle = { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' };
+  const activeStyle = { color: 'var(--accent-emerald-text)', borderColor: 'var(--accent-emerald-solid)', background: 'var(--accent-emerald-soft)', transition: 'background-color 150ms ease-in-out, color 150ms ease-in-out, border-color 150ms ease-in-out' };
+  const idleStyle = { background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', transition: 'background-color 150ms ease-in-out, color 150ms ease-in-out, border-color 150ms ease-in-out' };
 
   return (
     <div className="flex gap-2 mt-4">
       <button type="button" onClick={() => flash('copy', onCopy)} title="Copy deal summary"
         className={btnBase} style={flashedKey === 'copy' ? activeStyle : idleStyle}>
-        {flashedKey === 'copy' ? <Check className="w-4 h-4 flex-shrink-0" /> : <ClipboardCopy className="w-4 h-4 flex-shrink-0" />} Copy
+        {flashedKey === 'copy' ? <Check key="a" className="w-4 h-4 flex-shrink-0 calc-share-icon-pop" /> : <ClipboardCopy key="i" className="w-4 h-4 flex-shrink-0" />} Copy
       </button>
       <button type="button" onClick={() => flash('share', onShare)} title="Copy share summary"
         className={btnBase} style={flashedKey === 'share' ? activeStyle : idleStyle}>
-        {flashedKey === 'share' ? <Check className="w-4 h-4 flex-shrink-0" /> : <Share2 className="w-4 h-4 flex-shrink-0" />} Share
+        {flashedKey === 'share' ? <Check key="a" className="w-4 h-4 flex-shrink-0 calc-share-icon-pop" /> : <Share2 key="i" className="w-4 h-4 flex-shrink-0" />} Share
       </button>
       <button type="button" onClick={() => flash('link', onShareURL)} title="Copy shareable URL"
         className={btnBase} style={flashedKey === 'link' ? activeStyle : idleStyle}>
-        {flashedKey === 'link' ? <Check className="w-4 h-4 flex-shrink-0" /> : <Link2 className="w-4 h-4 flex-shrink-0" />} Link
+        {flashedKey === 'link' ? <Check key="a" className="w-4 h-4 flex-shrink-0 calc-share-icon-pop" /> : <Link2 key="i" className="w-4 h-4 flex-shrink-0" />} Link
       </button>
     </div>
   );

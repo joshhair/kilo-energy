@@ -243,7 +243,7 @@ export default function MobileIncentives() {
     });
   };
 
-  const activeIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => !isExpired(i.endDate) && i.active)) : [];
+  const activeIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => !isExpired(i.endDate))) : [];
   const expiredIncentives = filter === 'all' ? filterAndSort(visible.filter((i) => isExpired(i.endDate))) : [];
   const filteredList = filter !== 'all' ? filterAndSort(visible) : [];
 
