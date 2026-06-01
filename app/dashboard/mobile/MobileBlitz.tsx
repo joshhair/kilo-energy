@@ -25,7 +25,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'name', label: 'Name A–Z' },
 ];
 
-interface BlitzData {
+export interface BlitzData {
   id: string;
   name: string;
   location: string;
