@@ -5,6 +5,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
+import { Period, isInPeriod } from '../../../lib/period';
 import { CheckCircle2, XCircle, Archive, Download, Clock, Receipt } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import { ReimbursementModal } from '../components/ReimbursementModal';
@@ -23,36 +24,14 @@ type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
 
 // ── Period helpers ──────────────────────────────────────────────────────────
 
-type Period = 'all' | 'this_month' | 'last_month' | 'this_year';
-
-const PERIODS: { key: Period; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'this_month', label: 'This Month' },
-  { key: 'last_month', label: 'Last Month' },
-  { key: 'this_year', label: 'This Year' },
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'this-month', label: 'This Month' },
+  { value: 'this-quarter', label: 'This Quarter' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'this-year', label: 'This Year' },
+  { value: 'last-year', label: 'Last Year' },
 ];
-
-function matchesPeriod(dateStr: string, period: Period): boolean {
-  if (period === 'all') return true;
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth(); // 0-indexed
-  const ym = dateStr.slice(0, 7); // "YYYY-MM"
-  const dy = dateStr.slice(0, 4); // "YYYY"
-
-  if (period === 'this_month') {
-    return ym === `${y}-${String(m + 1).padStart(2, '0')}`;
-  }
-  if (period === 'last_month') {
-    const lm = m === 0 ? 11 : m - 1;
-    const ly = m === 0 ? y - 1 : y;
-    return ym === `${ly}-${String(lm + 1).padStart(2, '0')}`;
-  }
-  if (period === 'this_year') {
-    return dy === String(y);
-  }
-  return true;
-}
 
 // ── Status badge ───────────────────────────────────────────────────────────
 
@@ -94,7 +73,7 @@ export default function MobileEarnings() {
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [dealSortKey, setDealSortKey] = useState<DealSortKey>('date');
 
-  useEffect(() => { setMonthFilter(null); }, [period]);
+  useEffect(() => { setMonthFilter(null); setDealRoleFilter(null); }, [period]);
   useEffect(() => { setDealRoleFilter(null); }, [monthFilter]);
   const [dealSortDir, setDealSortDir] = useState<SortDir>('desc');
   const [bonusSortKey, setBonusSortKey] = useState<BonusSortKey>('date');
@@ -119,7 +98,7 @@ export default function MobileEarnings() {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const myPayroll = payrollEntries.filter((p) => p.repId === effectiveRepId);
-  const matchesFilter = (date: string) => monthFilter ? date.startsWith(monthFilter) : matchesPeriod(date, period);
+  const matchesFilter = (date: string) => monthFilter ? date.startsWith(monthFilter) : isInPeriod(date, period);
   const dealPayments = myPayroll.filter((p) => p.type === 'Deal' && matchesFilter(p.date));
   const bonusPayments = myPayroll.filter((p) => p.type === 'Bonus' && matchesFilter(p.date));
   const myReimbs = reimbursements.filter((r) => r.repId === effectiveRepId && matchesFilter(r.date));
@@ -147,6 +126,7 @@ export default function MobileEarnings() {
   const currentYYYYMM   = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const monthFilterLabel = monthFilter ? `${MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} ${monthFilter.slice(0, 4)}` : null;
   const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
+  const pendingCount    = myPayroll.filter((p) => p.status === 'Pending').length;
   const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
   const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
@@ -272,6 +252,18 @@ export default function MobileEarnings() {
         </MobileCard>
       )}
 
+      {/* ── Pending but not this Friday ─────────────────────────────────── */}
+      {nextPayoutTotal === 0 && totalPending > 0 && (
+        <MobileCard>
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4 shrink-0" style={{ color: 'var(--accent-amber-solid)' }} />
+            <p className="text-sm" style={{ color: 'var(--text-secondary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              {fmt$(totalPending)} pending across {pendingCount} {pendingCount === 1 ? 'entry' : 'entries'} — nothing due this Friday
+            </p>
+          </div>
+        </MobileCard>
+      )}
+
       {/* ── Hero total ──────────────────────────────────────────────────── */}
       <MobileCard hero>
         <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Total Earned</p>
@@ -298,7 +290,7 @@ export default function MobileEarnings() {
 
       {/* ── Period tabs — shared SegmentedPills ─────────────────────────── */}
       <SegmentedPills
-        options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
+        options={PERIODS}
         value={period}
         onChange={setPeriod}
         scrollable
@@ -626,11 +618,11 @@ export function MobileAdminEarnings() {
 
   const repSummary = useMemo(() => {
     return reps.map((rep) => {
-      const entries = payrollEntries.filter((e) => e.repId === rep.id && matchesPeriod(e.date, byRepPeriod));
+      const entries = payrollEntries.filter((e) => e.repId === rep.id && isInPeriod(e.date, byRepPeriod));
       const paid    = entries.filter((e) => e.status === 'Paid' && e.date <= todayStr).reduce((s, e) => s + e.amount, 0);
       const pending = entries.filter((e) => e.status === 'Pending').reduce((s, e) => s + e.amount, 0);
       const draft   = entries.filter((e) => e.status === 'Draft').reduce((s, e) => s + e.amount, 0);
-      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && matchesPeriod(r.date, byRepPeriod) && !r.archivedAt);
+      const reimbs  = reimbursements.filter((r) => r.repId === rep.id && isInPeriod(r.date, byRepPeriod) && !r.archivedAt);
       const reimbPending = reimbs.filter((r) => r.status === 'Pending').reduce((s, r) => s + r.amount, 0);
       return { rep, paid, pending, draft, reimbPending, total: paid + pending + draft };
     }).sort((a, b) => b.total - a.total);
@@ -879,7 +871,7 @@ export function MobileAdminEarnings() {
       {adminTab === 'by-rep' && (
         <div className="space-y-3">
           <SegmentedPills<Period>
-            options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
+            options={PERIODS}
             value={byRepPeriod}
             onChange={setByRepPeriod}
             scrollable
