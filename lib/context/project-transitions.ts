@@ -55,7 +55,7 @@ const PIPELINE: string[] = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permi
 //     existing single-trainer M3 behavior at line ~686.
 
 interface TrainerLegMilestoneInput {
-  project: { id: string; trainerId?: string | null; trainerRate?: number | null };
+  project: { id: string; trainerId?: string | null; trainerRate?: number | null; noChainTrainer?: boolean | null };
   closerParties: TrainerPartyInput[];
   setterParties: TrainerPartyInput[];
   trainerAssignments: readonly TrainerAssignment[];
@@ -570,7 +570,7 @@ export function createMilestonePayroll(
 
   const m2TrainerLegs = isInstalled
     ? computeTrainerLegsForMilestone({
-        project: { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate },
+        project: { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate, noChainTrainer: freshProject.noChainTrainer },
         closerParties: m2CloserParties,
         setterParties: m2SetterParties,
         trainerAssignments: deps.trainerAssignmentsRef.current,
@@ -861,7 +861,7 @@ export function createM3Payroll(
 
   const m3TrainerLegs = (m3 > 0 && !old.subDealerId)
     ? computeTrainerLegsForMilestone({
-        project: { id: projectId, trainerId: proj?.trainerId, trainerRate: proj?.trainerRate },
+        project: { id: projectId, trainerId: proj?.trainerId, trainerRate: proj?.trainerRate, noChainTrainer: proj?.noChainTrainer },
         closerParties: m3CloserParties,
         setterParties: m3SetterParties,
         trainerAssignments: deps.trainerAssignmentsRef.current,

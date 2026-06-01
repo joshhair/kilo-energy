@@ -31,6 +31,8 @@ export interface TrainerResolverProject {
   id: string;
   trainerId?: string | null;
   trainerRate?: number | null;
+  /** Admin's "remove all trainers" flag — suppresses chain trainer commission. */
+  noChainTrainer?: boolean | null;
 }
 
 /** Minimal shape of a tier. upToDeal is exclusive (tier covers 0..upToDeal-1). */
@@ -235,6 +237,9 @@ export function resolveTrainerLegs(
       reason: 'project-override',
     }];
   }
+
+  // Admin explicitly removed all chain trainers from this deal.
+  if (project.noChainTrainer) return [];
 
   const legs: TrainerLeg[] = [];
 

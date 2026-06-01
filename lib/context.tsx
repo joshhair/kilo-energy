@@ -755,7 +755,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // precedence stay consistent with the phase-transition path.
             let setterM2TrainerDeduction = 0;
             let setterM3TrainerDeduction = 0;
-            if (!old.subDealerId) {
+            if (!old.subDealerId && !old.noChainTrainer) {
               const earlyRes = resolveTrainerRate(
                 { id, trainerId: null, trainerRate: null },
                 newSetterId,
@@ -832,7 +832,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const setterName = newSetterRep?.name ?? '';
 
-              if (pastInstalled && !old.subDealerId) {
+              if (pastInstalled && !old.subDealerId && !old.noChainTrainer) {
                 const hasTrainerM2 = prevEntries.some((e) =>
                   e.projectId === id &&
                   e.repId === setterRes.trainerId &&
@@ -860,7 +860,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
               }
 
-              if (pastPTO && !old.subDealerId) {
+              if (pastPTO && !old.subDealerId && !old.noChainTrainer) {
                 const hasTrainerM3 = prevEntries.some((e) =>
                   e.projectId === id &&
                   e.repId === setterRes.trainerId &&

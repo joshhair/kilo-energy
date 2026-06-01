@@ -599,7 +599,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     }
     setSaving(true);
     try {
-      const endpoint = isSubDealer ? `/api/users/${repId}` : `/api/reps/${repId}`;
+      const endpoint = `/api/users/${repId}`;
       const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

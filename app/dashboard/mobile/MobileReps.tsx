@@ -99,7 +99,7 @@ export default function MobileReps() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [repTypeFilter, setRepTypeFilter] = useState<RepTypeFilter>('all');
-  const [sortBy, setSortBy] = useState<'paid' | 'deals' | 'kw' | 'name'>('paid');
+  const [sortBy, setSortBy] = useState<'paid' | 'active' | 'deals' | 'kw' | 'name'>('paid');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [adminUsers, setAdminUsers] = useState<SimpleUser[]>([]);
   const [pmUsers, setPmUsers] = useState<SimpleUser[]>([]);
@@ -764,8 +764,8 @@ export default function MobileReps() {
       {/* Sort controls — rep list only */}
       {roleFilter === 'rep' && filtered.length > 1 && (
         <div className="flex gap-2 overflow-x-auto -mx-5 px-5" style={{ scrollbarWidth: 'none' }}>
-          {(['paid', 'deals', 'kw', 'name'] as const).map((key) => {
-            const labels: Record<string, string> = { paid: 'Paid', deals: 'Deals', kw: 'kW', name: 'Name' };
+          {(['paid', 'active', 'deals', 'kw', 'name'] as const).map((key) => {
+            const labels: Record<string, string> = { paid: 'Paid', active: 'Active', deals: 'Deals', kw: 'kW', name: 'Name' };
             const active = sortBy === key;
             return (
               <button
