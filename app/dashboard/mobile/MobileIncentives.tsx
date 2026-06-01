@@ -304,7 +304,7 @@ export default function MobileIncentives() {
           startDate: source.startDate,
           endDate: source.endDate,
           targetRepId: source.targetRepId,
-          active: source.active,
+          active: true,
           milestones: source.milestones.map((m) => ({ threshold: m.threshold, reward: m.reward })),
         }),
       });
@@ -691,7 +691,7 @@ function CreateIncentiveSheet({
         type,
         metric,
         period,
-        startDate: period === 'alltime' ? todayISO() : computedStart,
+        startDate: computedStart,
         endDate: computedEnd || undefined,
         targetRepId: type === 'personal' ? targetRepId : undefined,
         active: true,

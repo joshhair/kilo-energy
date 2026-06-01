@@ -80,6 +80,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [drillRole, setDrillRole] = useState<'Closer' | 'Co-closer' | 'Setter' | 'Trainer' | 'Bonus' | null>(null);
   const [drillEntries, setDrillEntries] = useState<Array<{ id: string; customerName?: string; projectId?: string | null; amount: number; date: string; paymentStage: string; status: string; notes?: string }>>([]);
   const [drillTotal, setDrillTotal] = useState(0);
+  const [drillClosing, setDrillClosing] = useState(false);
 
   // ── Admin-only metadata for the action footer ─────────────────────────
   // The /api/users/[id] route exposes relationCount + pendingInvitation
@@ -1379,22 +1380,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             <col className="w-[15%]" />
             <col className="w-[20%]" />
           </colgroup>
-          <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+          <thead className="table-header-frost sticky top-0 z-10 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
             <tr className="border-b border-[var(--border-subtle)]">
-              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Customer / Notes</th>
-              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Type</th>
-              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium">Stage</th>
-              <th className="text-right px-5 py-3 font-medium">
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium border-b-2 border-transparent">Customer / Notes</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium border-b-2 border-transparent">Type</th>
+              <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium border-b-2 border-transparent">Stage</th>
+              <th className={`text-right px-5 py-3 font-medium border-b-2 transition-[border-color] duration-200 ${paySortCol === 'amount' ? 'border-[var(--accent-emerald-solid)]' : 'border-transparent'}`}>
                 <button onClick={() => togglePaySort('amount')} className={`flex items-center justify-end gap-1 w-full transition-colors duration-150 ${paySortCol === 'amount' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Amount <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'amount' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
-              <th className="text-left px-5 py-3 font-medium">
+              <th className={`text-left px-5 py-3 font-medium border-b-2 transition-[border-color] duration-200 ${paySortCol === 'status' ? 'border-[var(--accent-emerald-solid)]' : 'border-transparent'}`}>
                 <button onClick={() => togglePaySort('status')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'status' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Status <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'status' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
               </th>
-              <th className="text-left px-5 py-3 font-medium">
+              <th className={`text-left px-5 py-3 font-medium border-b-2 transition-[border-color] duration-200 ${paySortCol === 'date' ? 'border-[var(--accent-emerald-solid)]' : 'border-transparent'}`}>
                 <button onClick={() => togglePaySort('date')} className={`flex items-center gap-1 transition-colors duration-150 ${paySortCol === 'date' ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                   Date <ChevronDown className={`w-3.5 h-3.5 motion-safe:transition-transform motion-safe:duration-200 ${paySortCol === 'date' && paySortDir === 'asc' ? 'rotate-180' : ''}`} />
                 </button>
@@ -1633,16 +1634,17 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       {drillRole && (
         <>
           <div
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm motion-safe:animate-fade-in"
-            onClick={() => setDrillRole(null)}
+            className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm motion-safe:${drillClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={() => setDrillClosing(true)}
+            onAnimationEnd={() => { if (drillClosing) { setDrillClosing(false); setDrillRole(null); setDrillEntries([]); setDrillTotal(0); } }}
           />
-          <div className="fixed top-0 right-0 bottom-0 z-[70] w-full md:w-[560px] bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl overflow-y-auto motion-safe:animate-slide-in-right">
+          <div className={`fixed top-0 right-0 bottom-0 z-[70] w-full md:w-[560px] bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl overflow-y-auto motion-safe:${drillClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
             <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
               <div>
                 <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{drillRole} commission breakdown</p>
                 <h3 className="text-[var(--text-primary)] text-lg font-semibold mt-0.5">${drillTotal.toLocaleString()} <span className="text-[var(--text-muted)] text-sm font-normal">across {drillEntries.length} {drillEntries.length === 1 ? 'entry' : 'entries'}</span></h3>
               </div>
-              <button onClick={() => setDrillRole(null)} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <button onClick={() => setDrillClosing(true)} aria-label="Close" className="p-2 rounded-lg hover:bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
