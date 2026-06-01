@@ -5,7 +5,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
-import { Period, isInPeriod } from '../../../lib/period';
+import { Period, isInPeriod, PERIODS } from '../../../lib/period';
 import { CheckCircle2, XCircle, Archive, Download, Clock, Receipt } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import { ReimbursementModal } from '../components/ReimbursementModal';
@@ -15,23 +15,13 @@ import MobileCard from './shared/MobileCard';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { MonthlyEarningsBarChart, computeMonthlyBarData, MONTH_LABELS } from '../earnings/components/MonthlyEarningsBarChart';
 import { getNextFriday, formatPayoutDate, daysUntilDate } from '../earnings/components/primitives';
+import { sumPaid } from '../../../lib/aggregators';
 
 // ── Sort types ─────────────────────────────────────────────────────────────
 
 type SortDir = 'asc' | 'desc';
 type DealSortKey = 'customerName' | 'paymentStage' | 'notes' | 'amount' | 'status' | 'date';
 type BonusSortKey = 'notes' | 'amount' | 'status' | 'date';
-
-// ── Period helpers ──────────────────────────────────────────────────────────
-
-const PERIODS: { value: Period; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'this-month', label: 'This Month' },
-  { value: 'this-quarter', label: 'This Quarter' },
-  { value: 'last-month', label: 'Last Month' },
-  { value: 'this-year', label: 'This Year' },
-  { value: 'last-year', label: 'Last Year' },
-];
 
 // ── Status badge ───────────────────────────────────────────────────────────
 
@@ -127,7 +117,7 @@ export default function MobileEarnings() {
   const monthFilterLabel = monthFilter ? `${MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} ${monthFilter.slice(0, 4)}` : null;
   const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const pendingCount    = myPayroll.filter((p) => p.status === 'Pending').length;
-  const thisMonthEarned = myPayroll.filter((p) => p.status === 'Paid' && p.date.startsWith(monthFilter ?? currentYYYYMM)).reduce((s, p) => s + p.amount, 0);
+  const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
   const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
   const filteredDeals = dealRoleFilter

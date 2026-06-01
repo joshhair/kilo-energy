@@ -14,7 +14,7 @@ import {
   IncentivePeriod,
   IncentiveType,
 } from '../../../lib/data';
-import { Trophy, Plus, Trash2, X, ChevronDown, ChevronUp, CheckCircle, Clock, AlertTriangle, Pencil, Target, Calendar, Archive, Gift, Zap, Copy, Square, CheckSquare, Download } from 'lucide-react';
+import { Trophy, Plus, Trash2, X, ChevronDown, CheckCircle, Clock, AlertTriangle, Pencil, Target, Calendar, Archive, Gift, Zap, Copy, Square, CheckSquare, Download } from 'lucide-react';
 import { useToast } from '../../../lib/toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -1169,11 +1169,19 @@ function IncentiveCard({
               </button>
             </>
           )}
-          {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />}
+          <ChevronDown
+            className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+              expanded ? 'rotate-180' : ''
+            }`}
+          />
         </div>
       </div>
 
-      {expanded && (
+      <div
+        className="grid transition-[grid-template-rows] duration-[300ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+        style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
         <div className="px-5 pb-5">
           {/* Progress bar — prominent */}
           <div className="mb-5">
@@ -1301,7 +1309,8 @@ function IncentiveCard({
             </p>
           )}
         </div>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1728,14 +1737,35 @@ function IncentivesSkeleton() {
         />
       </div>
 
+      {/* Stat card row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="card-surface rounded-2xl p-5"
+            style={{ animationDelay: `${i * 75}ms` }}
+          >
+            <div className="h-[2px] w-12 rounded-full bg-[var(--surface-card)] animate-skeleton mb-3" />
+            <div
+              className="h-3 w-28 bg-[var(--surface-card)]/70 rounded animate-skeleton mb-2"
+              style={{ animationDelay: `${i * 75 + 40}ms` }}
+            />
+            <div
+              className="h-8 w-20 bg-[var(--surface-card)] rounded animate-skeleton"
+              style={{ animationDelay: `${i * 75 + 80}ms` }}
+            />
+          </div>
+        ))}
+      </div>
+
       {/* Section label */}
       <div
         className="h-3 w-24 bg-[var(--surface-card)]/70 rounded animate-skeleton mb-4"
         style={{ animationDelay: '75ms' }}
       />
 
-      {/* 3 incentive card skeletons, each with a progress bar placeholder */}
-      <div className="grid gap-4">
+      {/* 3 incentive card skeletons */}
+      <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
@@ -1765,43 +1795,10 @@ function IncentivesSkeleton() {
                 style={{ animationDelay: `${i * 75}ms` }}
               />
             </div>
-
-            {/* Progress section */}
-            <div className="px-5 pb-5">
-              {/* Progress label row */}
-              <div className="flex justify-between mb-1.5">
-                <div
-                  className="h-3 w-40 bg-[var(--surface-card)]/70 rounded animate-skeleton"
-                  style={{ animationDelay: `${i * 75 + 50}ms` }}
-                />
-                <div
-                  className="h-3 w-8 bg-[var(--surface-card)]/70 rounded animate-skeleton"
-                  style={{ animationDelay: `${i * 75 + 50}ms` }}
-                />
-              </div>
-              {/* Progress bar placeholder */}
-              <div
-                className="h-3.5 bg-[var(--surface-card)] rounded-full animate-skeleton"
-                style={{ animationDelay: `${i * 75 + 75}ms` }}
-              />
-              {/* Milestone placeholder row */}
-              <div className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 border border-[var(--border)]/50 bg-[var(--surface-card)]/30">
-                <div
-                  className="w-8 h-8 rounded-full bg-[var(--border)]/50 animate-skeleton flex-shrink-0"
-                  style={{ animationDelay: `${i * 75 + 100}ms` }}
-                />
-                <div className="space-y-1.5">
-                  <div
-                    className="h-3 w-28 bg-[var(--surface-card)] rounded animate-skeleton"
-                    style={{ animationDelay: `${i * 75 + 100}ms` }}
-                  />
-                  <div
-                    className="h-2.5 w-16 bg-[var(--surface-card)]/70 rounded animate-skeleton"
-                    style={{ animationDelay: `${i * 75 + 120}ms` }}
-                  />
-                </div>
-              </div>
-            </div>
+            <div
+              className="h-2 w-24 bg-[var(--surface-card)] rounded-full animate-skeleton ml-auto mr-5 mb-4"
+              style={{ animationDelay: `${i * 75 + 60}ms` }}
+            />
           </div>
         ))}
       </div>

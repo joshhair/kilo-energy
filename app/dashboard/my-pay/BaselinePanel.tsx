@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from 'react';
 import { GraduationCap, Award, Loader2, ChevronDown } from 'lucide-react';
+import { Collapse } from '../components/Collapse';
 
 interface BaselineChainEntry {
   assignmentId: string;
@@ -142,75 +143,77 @@ export default function BaselinePanel() {
         </div>
         {hasAnything && (
           <ChevronDown
-            className={`w-4 h-4 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`}
             style={{ color: 'var(--text-muted)' }}
           />
         )}
       </button>
 
-      {expanded && hasAnything && (
-        <div className="mt-3 pt-3 space-y-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          {hasChain && (
-            <div>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                <GraduationCap className="w-3 h-3" /> Trainers taking from your pay
-              </p>
-              <div className="space-y-1.5">
-                {data.trainerChain.map((c) => (
-                  <div
-                    key={c.assignmentId}
-                    className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
-                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-                  >
-                    <span style={{ color: 'var(--text-primary)' }}>{c.trainerName}</span>
-                    <span
-                      className="tabular-nums font-semibold"
-                      style={{ color: 'var(--accent-amber-text)' }}
+      {hasAnything && (
+        <Collapse open={expanded} durationMs={300}>
+          <div className="mt-3 pt-3 space-y-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            {hasChain && (
+              <div>
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <GraduationCap className="w-3 h-3" /> Trainers taking from your pay
+                </p>
+                <div className="space-y-1.5">
+                  {data.trainerChain.map((c) => (
+                    <div
+                      key={c.assignmentId}
+                      className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                     >
-                      {formatRate(c.activeRatePerW)}
-                    </span>
-                  </div>
-                ))}
+                      <span style={{ color: 'var(--text-primary)' }}>{c.trainerName}</span>
+                      <span
+                        className="tabular-nums font-semibold"
+                        style={{ color: 'var(--accent-amber-text)' }}
+                      >
+                        {formatRate(c.activeRatePerW)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-dim)' }}>
+                  Deducted from your M2 + M3 pay on each deal.
+                </p>
               </div>
-              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-dim)' }}>
-                Deducted from your M2 + M3 pay on each deal.
-              </p>
-            </div>
-          )}
-          {hasTrainees && (
-            <div>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                <GraduationCap className="w-3 h-3" /> Reps you train
-              </p>
-              <div className="space-y-1.5">
-                {data.trainees.map((t) => (
-                  <div
-                    key={t.assignmentId}
-                    className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
-                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
-                  >
-                    <span style={{ color: 'var(--text-primary)' }}>{t.traineeName}</span>
-                    <span
-                      className="tabular-nums font-semibold"
-                      style={{ color: 'var(--accent-emerald-text)' }}
+            )}
+            {hasTrainees && (
+              <div>
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <GraduationCap className="w-3 h-3" /> Reps you train
+                </p>
+                <div className="space-y-1.5">
+                  {data.trainees.map((t) => (
+                    <div
+                      key={t.assignmentId}
+                      className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
+                      style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}
                     >
-                      +{formatRate(t.activeRatePerW)}
-                    </span>
-                  </div>
-                ))}
+                      <span style={{ color: 'var(--text-primary)' }}>{t.traineeName}</span>
+                      <span
+                        className="tabular-nums font-semibold"
+                        style={{ color: 'var(--accent-emerald-text)' }}
+                      >
+                        +{formatRate(t.activeRatePerW)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-dim)' }}>
+                  You earn this slice on each of their M2 + M3 deals.
+                </p>
               </div>
-              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-dim)' }}>
-                You earn this slice on each of their M2 + M3 deals.
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </Collapse>
       )}
     </div>
   );

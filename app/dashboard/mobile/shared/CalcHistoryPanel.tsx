@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Clock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, ChevronDown, Trash2 } from 'lucide-react';
+import { Collapse } from '../../components/Collapse';
 import type { CalcHistoryEntry } from '../MobileCalculator';
 
 interface CalcHistoryPanelProps {
@@ -12,16 +13,6 @@ interface CalcHistoryPanelProps {
 
 export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handleClearHistory }: CalcHistoryPanelProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [bodyVisible, setBodyVisible] = useState(false);
-
-  useEffect(() => {
-    if (historyOpen) {
-      setBodyVisible(true);
-    } else {
-      const t = setTimeout(() => setBodyVisible(false), 240);
-      return () => clearTimeout(t);
-    }
-  }, [historyOpen]);
 
   if (calcHistory.length === 0) return null;
 
@@ -37,14 +28,14 @@ export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handl
           <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Recent Calcs</span>
           <span className="text-xs" style={{ color: 'var(--text-dim)' }}>({calcHistory.length})</span>
         </div>
-        {historyOpen
-          ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />
-          : <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />}
+        <ChevronDown
+          className={`w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${historyOpen ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--text-dim)' }}
+        />
       </button>
-      {bodyVisible && (
+      <Collapse open={historyOpen} durationMs={300}>
         <div
           className="px-4 pb-4 space-y-2"
-          style={{ opacity: historyOpen ? 1 : 0, transition: 'opacity 220ms ease' }}
         >
           {calcHistory.map((entry, i) => (
             <div
@@ -82,7 +73,7 @@ export default function CalcHistoryPanel({ calcHistory, handleLoadHistory, handl
             Clear History
           </button>
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }
