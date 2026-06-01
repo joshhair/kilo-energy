@@ -1807,7 +1807,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {/* Setter */}
               <div>
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Setter (optional)</label>
-                <select value={editVals.setterId} onChange={(e) => setEditVals((v) => ({ ...v, setterId: e.target.value }))}
+                <select value={editVals.setterId} onChange={(e) => { const s = e.target.value; setEditVals((v) => ({ ...v, setterId: s, repId: v.repId === s ? '' : v.repId })); }}
                   className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]">
                   <option value="">— None —</option>
                   {reps.filter((r) => (r.repType === 'setter' || r.repType === 'both') && (r.active || r.id === editVals.setterId) && r.id !== editVals.repId).map((r) => (
@@ -2259,9 +2259,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const trainerPayout = closerTrainerPayout + setterTrainerPayout;
               // Actual Kilo take on this deal: gross above wholesale, minus
               // all commission paid out (closer + setter + trainer override).
-              const kiloMargin = Math.max(0, Math.round(
+              const kiloMargin = Math.round(
                 ((previewPPW - previewBaseline.kiloPerW) * previewKW * 1000 - closerTotal - setterTotal - trainerPayout) * 100,
-              ) / 100);
+              ) / 100;
               // Kilo Margin is admin-internal (sensitive). Render the cell
               // only for admin viewers and adjust grid-cols accordingly so
               // non-admin layout doesn't have an empty column.

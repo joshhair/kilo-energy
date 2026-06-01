@@ -108,7 +108,6 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
   const [showRecordTrainerPayment, setShowRecordTrainerPayment] = useState(false);
-  const [, setEditErrors] = useState<Record<string, string>>({});
   const [editDraft, setEditDraft] = useState<{
     installer: string;
     financer: string;
@@ -297,7 +296,6 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       leadSource: project.leadSource ?? '',
       blitzId: project.blitzId ?? '',
     });
-    setEditErrors({});
     setMoreSheetOpen(false);
     setEditSheetOpen(true);
   };
@@ -307,6 +305,30 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       const n = parseFloat(v);
       return Number.isFinite(n) ? n : 0;
     };
+
+    // Validate required fields before saving — mirrors desktop saveEditModal validation.
+    // Only require SolarTech product when a baseline-affecting field actually changed
+    // (legacy projects may have a product that's no longer in the active catalog).
+    const baselineAffectingChanged =
+      parseFloat(editDraft.kWSize) !== project.kWSize ||
+      parseFloat(editDraft.netPPW) !== project.netPPW ||
+      editDraft.installer !== project.installer ||
+      editDraft.productType !== project.productType ||
+      editDraft.soldDate !== project.soldDate ||
+      editDraft.solarTechProductId !== (project.solarTechProductId ?? '') ||
+      editDraft.useBaselineOverride !== !!project.baselineOverride;
+    if (!editDraft.repId) { toast('Closer is required', 'error'); return; }
+    if (!editDraft.installer) { toast('Installer is required', 'error'); return; }
+    if (editDraft.installer === 'SolarTech' && !editDraft.solarTechProductId && baselineAffectingChanged) { toast('SolarTech requires a product — select a SolarTech product', 'error'); return; }
+    if (!editDraft.soldDate) { toast('Sold date is required', 'error'); return; }
+    if (!editDraft.kWSize || !(parseFloat(editDraft.kWSize) > 0)) { toast('System size must be greater than 0', 'error'); return; }
+    if (!editDraft.netPPW || !(parseFloat(editDraft.netPPW) > 0)) { toast('Net PPW must be greater than 0', 'error'); return; }
+    if (editDraft.productType !== 'Cash' && !editDraft.financer) { toast('Financer is required', 'error'); return; }
+    if (editDraft.useBaselineOverride) {
+      if (!editDraft.overrideCloserPerW || !(parseFloat(editDraft.overrideCloserPerW) > 0)) { toast('Override closer $/W must be greater than 0', 'error'); return; }
+      if (!editDraft.overrideKiloPerW || !(parseFloat(editDraft.overrideKiloPerW) > 0)) { toast('Override kilo $/W must be greater than 0', 'error'); return; }
+    }
+
     const cleanClosers = editDraft.additionalClosers
       .filter((c) => !!c.userId && c.userId !== (editDraft.repId || project.repId))
       .map((c, i) => ({
@@ -1759,7 +1781,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             </label>
             <select
               value={editDraft.setterId}
-              onChange={(e) => setEditDraft((d) => ({ ...d, setterId: e.target.value }))}
+              onChange={(e) => { const s = e.target.value; setEditDraft((d) => ({ ...d, setterId: s, repId: d.repId === s ? '' : d.repId })); }}
               className="w-full min-h-[48px] outline-none"
               style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >

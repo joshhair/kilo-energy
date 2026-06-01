@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useMediaQuery } from '../../../../lib/hooks';
-import { PHASES, Phase } from '../../../../lib/data';
+import { PHASES, Phase, TrainerAssignment, PayrollEntry } from '../../../../lib/data';
+import { resolveTrainerRate } from '../../../../lib/commission';
 import { Search, Flag, X, ChevronDown, FolderKanban, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
 import { PHASE_COLORS, PHASE_PILL, StaleBadge, type ProjectList } from './shared';
@@ -12,6 +13,8 @@ function calcProjectCommission(
   p: ProjectList[number],
   dealScope: 'mine' | 'all',
   currentRepId: string | null,
+  trainerAssignments: readonly TrainerAssignment[],
+  payrollEntries: readonly PayrollEntry[],
 ): number {
   if (dealScope === 'mine') {
     let mine = 0;
@@ -21,12 +24,13 @@ function calcProjectCommission(
     if (coCloser) mine += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
     const coSetter = p.additionalSetters?.find(s => s.userId === currentRepId);
     if (coSetter) mine += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-    if (p.trainerId === currentRepId) mine += (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
+    const trainerLeg = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+    if (currentRepId && trainerLeg.trainerId === currentRepId) mine += trainerLeg.rate * (p.kWSize ?? 0) * 1000;
     return mine;
   }
   const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
   const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-  const trainerTotal = (p.trainerRate ?? 0) * (p.kWSize ?? 0) * 1000;
+  const trainerTotal = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries).rate * (p.kWSize ?? 0) * 1000;
   return (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal + trainerTotal;
 }
 
@@ -40,6 +44,8 @@ export default function KanbanView({
   readOnly: _readOnly = false,
   hideFinancials = false,
   resetKey,
+  trainerAssignments = [],
+  payrollEntries = [],
 }: {
   projects: ProjectList;
   isAdmin: boolean;
@@ -50,6 +56,8 @@ export default function KanbanView({
   readOnly?: boolean;
   hideFinancials?: boolean;
   resetKey?: number;
+  trainerAssignments?: TrainerAssignment[];
+  payrollEntries?: PayrollEntry[];
 }) {
   const { toast: _toast } = useToast();
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -233,7 +241,7 @@ export default function KanbanView({
                     </div>
                     {!hideFinancials && (
                       <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                        ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
+                        ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId, trainerAssignments, payrollEntries), 0).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -481,7 +489,7 @@ export default function KanbanView({
                   </div>
                   {!hideFinancials && (
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
+                      ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId, trainerAssignments, payrollEntries), 0).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -675,7 +683,7 @@ export default function KanbanView({
                 </div>
                 {!hideFinancials && (
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId), 0).toLocaleString()}
+                    ${phaseProjects.reduce((sum, p) => sum + calcProjectCommission(p, dealScope, currentRepId, trainerAssignments, payrollEntries), 0).toLocaleString()}
                   </p>
                 )}
               </div>
