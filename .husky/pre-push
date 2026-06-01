@@ -1,0 +1,11 @@
+# Pre-push gate — "measure twice, cut once".
+#
+# Runs the full pre-push audit (CI gates + typecheck + vitest + diff-risk
+# scan) before any push reaches origin. A non-zero exit aborts the push.
+#
+# This is the enforced wall behind the standing rule (saved 2026-05-23 after
+# the 4th setter-drop regression): every push is audited BEFORE it leaves
+# local. Applies to ALL pushes, including the dev-agent loop's auto-push.
+#
+# Bypass with --no-verify ONLY in a genuine emergency; every bypass is tech debt.
+npm run audit:pre-push
