@@ -9,7 +9,7 @@ import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
-import { sumPaid, sumPending, sumDraft, breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
+import { sumPaid, sumPending, sumDraft, breakdownByType } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2, ChevronDown } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
@@ -22,6 +22,7 @@ import Link from 'next/link';
 import MobilePayroll from '../mobile/MobilePayroll';
 import { PayrollSkeleton } from './components/PayrollSkeleton';
 import { StatCard, ReimBadge } from './components/StatCard';
+import { GradCards } from './components/GradCards';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'All' | 'Deal' | 'Bonus' | 'Trainer' | 'Charge';
@@ -65,33 +66,21 @@ const PRINT_STYLES = `
   main::before { content: 'Kilo Energy — Payroll Summary'; display: block; text-align: center; font-size: 16px; font-weight: 700; padding: 12px 0; border-bottom: 2px solid #333; margin-bottom: 16px; }
   * { animation: none !important; transition: none !important; }
   @page { margin: 1cm; size: landscape; }
+}
+@keyframes slideInFromRight {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-tab-forward  { animation: slideInFromRight 220ms cubic-bezier(0.16,1,0.3,1) both; }
+.animate-tab-backward { animation: slideInFromLeft  220ms cubic-bezier(0.16,1,0.3,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-tab-forward, .animate-tab-backward { animation: none; }
 }`;
 
-/**
- * Renders the per-type breakdown sub-line for a payroll summary card.
- * Skips zero-dollar types to avoid noise ("Bonus $0" when there are no
- * bonuses this period). Shows an inline chargeback note when the
- * chargebacks component of the total is non-zero so the "Deals" figure
- * doesn't look anomalous vs payroll history.
- *
- * pending=true swaps "(−$X chargebacks)" note wording to "pending
- * chargebacks" since Draft/Pending chargebacks aren't actually clawed
- * back yet.
- */
-function renderBreakdownSubline(b: StatusBreakdown, pending: boolean): string {
-  const parts: string[] = [];
-  if (b.deal !== 0) {
-    let dealStr = `Deals $${Math.abs(b.deal).toLocaleString()}`;
-    if (b.deal < 0) dealStr = `Deals −$${Math.abs(b.deal).toLocaleString()}`;
-    if (b.chargebacks !== 0) {
-      dealStr += ` (−$${Math.abs(b.chargebacks).toLocaleString()} ${pending ? 'pending chargebacks' : 'chargebacks'})`;
-    }
-    parts.push(dealStr);
-  }
-  if (b.bonus !== 0) parts.push(`Bonus $${b.bonus.toLocaleString()}`);
-  if (b.trainer !== 0) parts.push(`Trainer $${b.trainer.toLocaleString()}`);
-  return parts.length > 0 ? parts.join(' · ') : '—';
-}
 
 export default function PayrollPage() {
   return (
@@ -101,6 +90,9 @@ export default function PayrollPage() {
     </Suspense>
   );
 }
+
+const TAB_IDX: Record<StatusTab, number> = { Draft: 0, Pending: 1, Paid: 2 };
+const PAGE_IDX: Record<PageView, number> = { payroll: 0, reimbursements: 1 };
 
 function PayrollPageInner() {
   const searchParams = useSearchParams();
@@ -123,6 +115,8 @@ function PayrollPageInner() {
   const initialTo = searchParams.get('to') ?? '';
 
   const [pageView, setPageView] = useState<PageView>(initialView);
+  const [tabDir, setTabDir] = useState<'forward' | 'backward'>('forward');
+  const [pageDir, setPageDir] = useState<'forward' | 'backward'>('forward');
   const [statusTab, setStatusTab] = useState<StatusTab>(['Draft', 'Pending', 'Paid'].includes(initialStatus) ? initialStatus : 'Draft');
   const [typeTab, setTypeTab] = useState<TypeTab>((['All', 'Deal', 'Bonus', 'Trainer', 'Charge'] as const).includes(initialType as TypeTab) ? (initialType as TypeTab) : 'All');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -131,6 +125,8 @@ function PayrollPageInner() {
   // table as overwhelming when a rep has many entries; clicking a
   // summary row expands into the per-entry breakdown.
   const [expandedRepIds, setExpandedRepIds] = useState<Set<string>>(new Set());
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
+  const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
   const [actionBarMounted, setActionBarMounted] = useState(false);
   const [actionBarVisible, setActionBarVisible] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -250,6 +246,7 @@ function PayrollPageInner() {
 
   // Wrappers that sync tab/filter state to URL params
   const changeStatusTab = (v: StatusTab) => {
+    setTabDir(TAB_IDX[v] >= TAB_IDX[statusTab] ? 'forward' : 'backward');
     setStatusTab(v);
     setSelectedIds(new Set());
     setAdminPage(1);
@@ -1109,7 +1106,7 @@ function PayrollPageInner() {
             { value: 'reimbursements', label: 'Reimbursements', badge: pendingReimCount > 0 ? pendingReimCount : undefined },
           ]}
           value={pageView}
-          onChange={setPageView}
+          onChange={(v) => { setPageDir(PAGE_IDX[v] >= PAGE_IDX[pageView] ? 'forward' : 'backward'); setPageView(v); }}
           size="sm"
           ariaLabel="Payroll page view"
         />
@@ -1117,7 +1114,7 @@ function PayrollPageInner() {
 
       {/* ── Reimbursements view ──────────────────────────────────────────────── */}
       {pageView === 'reimbursements' && (
-        <div key={pageView} className="animate-tab-enter">
+        <div key={pageView} className={pageDir === 'forward' ? 'animate-tab-forward' : 'animate-tab-backward'}>
           {/* Date + status filter */}
           <div className="flex items-center gap-3 mb-5">
             <Filter className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
@@ -1279,36 +1276,22 @@ function PayrollPageInner() {
         </div>
       )}
 
-      {pageView === 'payroll' && <div key={pageView} className="animate-tab-enter">
+      {pageView === 'payroll' && <div key={pageView} className={pageDir === 'forward' ? 'animate-tab-forward' : 'animate-tab-backward'}>
 
       {/* GradCards — all three now show COMBINED totals across Deal +
           Bonus + Trainer with a per-type sub-line so admins can see what
           they owe without swapping type tabs. Matches the Paid-card
           pattern. The per-type tab below still filters the row list for
           drill-down. 2026-04-23. */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-        {/* Draft */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-blue-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-blue-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Draft</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-blue-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' }}>${draftBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(draftBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'color-mix(in srgb, var(--accent-blue-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{draftCount} entries · all types</p>
-        </div>
-        {/* Pending */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-amber-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Pending</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-amber-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px color-mix(in srgb, var(--accent-amber-solid) 25%, transparent)' }}>${pendingBreakdown.total.toLocaleString()}</p>
-          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(pendingBreakdown, true /* isPending */)}</p>
-          <p style={{ color: 'color-mix(in srgb, var(--accent-amber-solid) 40%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPendingCount} entries · all types</p>
-        </div>
-        {/* Total Paid */}
-        <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-emerald-solid) 10%, var(--surface-card)) 0%, var(--surface-card) 100%)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 19%, transparent)', borderRadius: 14, padding: '18px 22px', flex: 1 }}>
-          <p style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in srgb, var(--accent-emerald-solid) 73%, transparent)', fontFamily: "'DM Sans',sans-serif", fontWeight: 700, marginBottom: 6 }}>Total Paid</p>
-          <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, color: 'var(--accent-emerald-display)', letterSpacing: '-0.03em', textShadow: '0 0 20px var(--accent-emerald-glow)' }}>${combinedTotalPaid.toLocaleString()}</p>
-          <p style={{ color: 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>{renderBreakdownSubline(paidBreakdown, false)}</p>
-          <p style={{ color: 'var(--accent-emerald-glow)', fontSize: 11, fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{combinedPaidCount} entries · all types</p>
-        </div>
-      </div>
+      <GradCards
+        draftBreakdown={draftBreakdown}
+        pendingBreakdown={pendingBreakdown}
+        paidBreakdown={paidBreakdown}
+        draftCount={draftCount}
+        combinedPendingCount={combinedPendingCount}
+        combinedPaidCount={combinedPaidCount}
+        combinedTotalPaid={combinedTotalPaid}
+      />
 
       {/* Status + Type tabs — shared SegmentedPills with per-tab counts */}
       <div className="mb-4">
@@ -1386,7 +1369,7 @@ function PayrollPageInner() {
       </div>
 
       {/* ── Data table ── */}
-      <div key={statusTab} className="animate-tab-enter">
+      <div key={statusTab} className={tabDir === 'forward' ? 'animate-tab-forward' : 'animate-tab-backward'}>
       {filtered.length === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
@@ -1443,10 +1426,18 @@ function PayrollPageInner() {
                 const summaryRow = (
                   <tr
                     key={`rep-${group.repId}`}
+                    onMouseEnter={() => setHoveredGroupId(group.repId)}
+                    onMouseLeave={() => setHoveredGroupId(null)}
                     style={{
-                      background: groupIdx % 2 === 0 ? 'var(--surface)' : 'var(--surface-pressed)',
+                      background: hoveredGroupId === group.repId
+                        ? 'color-mix(in srgb, var(--accent-emerald-solid) 6%, var(--surface-card))'
+                        : groupIdx % 2 === 0 ? 'var(--surface)' : 'var(--surface-pressed)',
                       borderBottom: '1px solid var(--border)',
+                      borderLeft: hoveredGroupId === group.repId
+                        ? '3px solid color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)'
+                        : '3px solid transparent',
                       cursor: 'pointer',
+                      transition: 'background-color 140ms ease, border-left-color 140ms ease',
                     }}
                     onClick={() => toggleRepExpanded(group.repId)}
                   >
@@ -1466,13 +1457,13 @@ function PayrollPageInner() {
                         <ChevronDown
                           className="w-3.5 h-3.5"
                           style={{
-                            color: 'var(--text-muted)',
-                            transition: 'transform 200ms',
+                            color: hoveredGroupId === group.repId ? 'var(--accent-emerald-solid)' : 'var(--text-muted)',
+                            transition: 'transform 200ms, color 140ms ease',
                             transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
                             flexShrink: 0,
                           }}
                         />
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{group.repName}</span>
+                        <span style={{ color: hoveredGroupId === group.repId ? 'var(--accent-emerald-text)' : 'var(--text-primary)', fontWeight: 700, transition: 'color 140ms ease' }}>{group.repName}</span>
                       </div>
                     </td>
                     <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", color: 'var(--text-muted)' }}>
@@ -1494,10 +1485,17 @@ function PayrollPageInner() {
                 <tr
                   key={entry.id}
                   className={`table-row-enter row-stagger-${Math.min(i, 24)}`}
+                  onMouseEnter={() => setHoveredEntryId(entry.id)}
+                  onMouseLeave={() => setHoveredEntryId(null)}
                   style={{
-                    background: selectedIds.has(entry.id) ? 'var(--accent-emerald-soft)' : i % 2 === 0 ? 'var(--surface-card)' : 'var(--surface-pressed)',
+                    background: selectedIds.has(entry.id)
+                      ? 'var(--accent-emerald-soft)'
+                      : hoveredEntryId === entry.id
+                      ? 'color-mix(in srgb, var(--accent-emerald-solid) 4%, var(--surface-card))'
+                      : i % 2 === 0 ? 'var(--surface-card)' : 'var(--surface-pressed)',
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
+                    transition: 'background-color 140ms ease',
                   }}
                   onClick={() => statusTab === 'Draft' && toggleEntry(entry.id)}
                 >
