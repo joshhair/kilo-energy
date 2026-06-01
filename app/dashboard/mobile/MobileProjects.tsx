@@ -51,7 +51,7 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
 
 
 export default function MobileProjects() {
-  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers, dbReady } = useApp();
+  const { effectiveRole, effectiveRepId, projects, payrollEntries, activeInstallers, dbReady, trainerAssignments } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isHydrated = useIsHydrated();
@@ -455,7 +455,7 @@ export default function MobileProjects() {
           filtered.slice(0, visibleCount).map((project, index) => {
             const showCommission = !isPM && (effectiveRole === 'rep' || effectiveRole === 'sub-dealer');
             const commission = showCommission
-              ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries)
+              ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries, trainerAssignments)
               : null;
             const pill = commission && commission.total > 0 ? COMMISSION_COLORS[commission.status] : null;
 

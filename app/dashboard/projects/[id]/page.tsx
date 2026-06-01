@@ -1236,7 +1236,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 Each card mirrors the primary closer/setter card so the
                 payroll picture is consistent at a glance. */}
             {(project.additionalClosers ?? []).map((co) => {
-              const coEntries = projectEntries.filter((e) => e.repId === co.userId);
+              const coEntries = projectEntries.filter((e) => e.repId === co.userId && e.paymentStage !== 'Trainer');
               return (
                 <div key={`cc-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -1288,7 +1288,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               );
             })}
             {(project.additionalSetters ?? []).map((co) => {
-              const coEntries = projectEntries.filter((e) => e.repId === co.userId);
+              const coEntries = projectEntries.filter((e) => e.repId === co.userId && e.paymentStage !== 'Trainer');
               return (
                 <div key={`cs-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -1364,7 +1364,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               : '';
                             const sharePct = Math.round((leg.share ?? 1) * 100);
                             return (
-                              <div key={leg.trainerId} className="flex items-center justify-between text-xs bg-[var(--surface-card)]/60 rounded-lg px-2.5 py-1.5">
+                              <div key={`${leg.leg}-${leg.trainerId}`} className="flex items-center justify-between text-xs bg-[var(--surface-card)]/60 rounded-lg px-2.5 py-1.5">
                                 <span className="text-[var(--text-primary)]">
                                   <span className="font-medium">{trainerName}</span>
                                   {traineeLabel && <span className="text-[var(--text-muted)]"> · via {traineeLabel}</span>}
