@@ -511,8 +511,8 @@ export function AdminDashboard({
           </button>
           <div className={`collapsible-panel ${topRepsExpanded ? 'open' : ''}`}>
             <div className="collapsible-inner">
-              <div className="mt-4 space-y-2">
-                {topReps.map((r) => {
+              <div key={period} className="mt-4 space-y-2">
+                {topReps.map((r, i) => {
                   const maxCount = topReps[0]?.count ?? 1;
                   return (
                     <div key={r.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
@@ -527,7 +527,7 @@ export function AdminDashboard({
                       </span>
                       <span className="flex-1 text-[var(--text-primary)] text-sm font-medium truncate">{r.name}</span>
                       <div className="w-24 shrink-0">
-                        <InlineBar value={r.count} max={maxCount} fillClass="bg-[var(--accent-emerald-solid)]/70" />
+                        <InlineBar value={r.count} max={maxCount} fillClass="bg-[var(--accent-emerald-solid)]/70" index={i} />
                       </div>
                       <span className="text-[var(--text-secondary)] text-sm font-semibold tabular-nums shrink-0">{r.count} deal{r.count === 1 ? '' : 's'}</span>
                     </div>
@@ -570,7 +570,7 @@ export function AdminDashboard({
                         <th className="text-left px-4 py-2 text-[var(--text-secondary)] font-medium text-xs w-40">Volume</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody key={period}>
                       {periodInstallerRanking.map((inst, i) => (
                         <tr key={inst.name} className="relative border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-amber-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                           <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium flex items-center gap-2">
@@ -587,7 +587,7 @@ export function AdminDashboard({
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <InlineBar value={inst.deals} max={maxDeals} fillClass="bg-amber-500/70" />
+                            <InlineBar value={inst.deals} max={maxDeals} fillClass="bg-amber-500/70" index={i} />
                           </td>
                         </tr>
                       ))}

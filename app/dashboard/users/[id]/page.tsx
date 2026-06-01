@@ -349,6 +349,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? 'Failed to deactivate');
         }
+        // Optimistically flip active so isInactive flips before the async
+        // meta-refetch resolves, preventing the stale-button flash.
+        setFetchedUser((p) => p ? { ...p, active: false } : p);
+        setUserMeta((prev) => prev ? { ...prev, active: false } : prev);
         // Invalidate the router cache so the users list page refetches
         // adminUsers/pmUsers when the user navigates back (they live in
         // local state there, not in the shared context).
@@ -380,6 +384,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? 'Failed to reactivate');
         }
+        // Optimistically flip active so isInactive flips before the async
+        // meta-refetch resolves, preventing the stale-button flash.
+        setFetchedUser((p) => p ? { ...p, active: true } : p);
+        setUserMeta((prev) => prev ? { ...prev, active: true } : prev);
         // Invalidate the router cache so the users list page refetches
         // adminUsers/pmUsers when the user navigates back (they live in
         // local state there, not in the shared context).
@@ -1820,7 +1828,7 @@ function TrainerOverrideCard({
 
           return (
             <div
-              key={tier.id}
+              key={tier.id ?? i}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
                 isActive && !editing
                   ? 'bg-amber-500/10 border border-amber-500/30'
