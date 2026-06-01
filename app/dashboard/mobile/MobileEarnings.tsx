@@ -118,7 +118,7 @@ export default function MobileEarnings() {
   const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const pendingCount    = myPayroll.filter((p) => p.status === 'Pending').length;
   const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
-  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const approvedReimbs  = reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
   const filteredDeals = dealRoleFilter
     ? dealPayments.filter((p) => {

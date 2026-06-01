@@ -106,7 +106,7 @@ function RepEarningsView() {
 
   const currentYYYYMM  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
-  const approvedReimbs  = filteredReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
   const nextFridayStr  = formatPayoutDate(nextFriday);
   const daysLeft       = daysUntilDate(nextFriday, today);
 
@@ -497,7 +497,7 @@ function RepEarningsView() {
       <div className="mb-5">
         <SegmentedPills<'deal' | 'bonus' | 'reimbursements'>
           options={[
-            { value: 'deal', label: 'Payroll Report', badge: sortedDealsBase.length - reimbCount },
+            { value: 'deal', label: 'Payroll Report', badge: sortedDeals.length },
             { value: 'bonus', label: 'Bonuses', badge: sortedBonuses.length },
             { value: 'reimbursements', label: 'Reimb. History', badge: filteredReimbs.length },
           ]}
@@ -1079,7 +1079,7 @@ function AdminFinancialsView() {
         <SegmentedPills<'payroll' | 'reimbursements' | 'by-rep'>
           options={[
             { value: 'payroll', label: 'Payroll', badge: filteredPayroll.length },
-            { value: 'reimbursements', label: 'Reimbursements', badge: filteredReimbs.length },
+            { value: 'reimbursements', label: 'Reimbursements', badge: repFilteredReimbs.filter((r) => r.status === 'Pending' && !r.archivedAt).length },
             { value: 'by-rep', label: 'By Rep' },
           ]}
           value={tab}
