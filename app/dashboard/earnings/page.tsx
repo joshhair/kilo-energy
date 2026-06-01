@@ -564,15 +564,15 @@ function RepEarningsView() {
                 <thead className="table-header-frost">
                   <tr className="border-b border-[var(--border-subtle)]">
                     {([
-                      { key: 'customerName' as DealSortKey, label: 'Customer' },
-                      { key: 'paymentStage' as DealSortKey, label: 'Stage' },
-                      { key: 'notes'        as DealSortKey, label: 'Role' },
-                      { key: 'amount'       as DealSortKey, label: 'Amount' },
-                      { key: 'status'       as DealSortKey, label: 'Status' },
-                      { key: 'date'         as DealSortKey, label: 'Date' },
-                    ] as { key: DealSortKey; label: string }[]).map(({ key, label }) => (
+                      { key: 'customerName' as DealSortKey, label: 'Customer', align: 'left' as const },
+                      { key: 'paymentStage' as DealSortKey, label: 'Stage',    align: 'left' as const },
+                      { key: 'notes'        as DealSortKey, label: 'Role',     align: 'left' as const },
+                      { key: 'amount'       as DealSortKey, label: 'Amount',   align: 'right' as const },
+                      { key: 'status'       as DealSortKey, label: 'Status',   align: 'left' as const },
+                      { key: 'date'         as DealSortKey, label: 'Date',     align: 'left' as const },
+                    ] as { key: DealSortKey; label: string; align: 'left' | 'right' }[]).map(({ key, label, align }) => (
                       <th key={key} onClick={() => handleDealSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${dealSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                        className={`${align === 'right' ? 'text-right' : 'text-left'} px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${dealSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={dealSortKey} sortDir={dealSortDir} />
                       </th>
                     ))}
@@ -603,7 +603,7 @@ function RepEarningsView() {
                             : role.startsWith('Trainer override') ? <span className="text-[var(--accent-amber-text)]">Trainer</span>
                             : <span className="text-[var(--accent-emerald-text)]">Closer</span>}
                         </td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${amt.toLocaleString()}</td>
                         <td className="px-5 py-3">{isReim ? <ReimbStatusBadge status={status} /> : <PayrollStatusBadge status={status} />}</td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap">{formatDate(date)}</td>
                       </tr>
@@ -662,13 +662,13 @@ function RepEarningsView() {
                 <thead className="table-header-frost">
                   <tr className="border-b border-[var(--border-subtle)]">
                     {([
-                      { key: 'notes'  as BonusSortKey, label: 'Description' },
-                      { key: 'amount' as BonusSortKey, label: 'Amount' },
-                      { key: 'status' as BonusSortKey, label: 'Status' },
-                      { key: 'date'   as BonusSortKey, label: 'Date' },
-                    ] as { key: BonusSortKey; label: string }[]).map(({ key, label }) => (
+                      { key: 'notes'  as BonusSortKey, label: 'Description', align: 'left' as const },
+                      { key: 'amount' as BonusSortKey, label: 'Amount',      align: 'right' as const },
+                      { key: 'status' as BonusSortKey, label: 'Status',      align: 'left' as const },
+                      { key: 'date'   as BonusSortKey, label: 'Date',        align: 'left' as const },
+                    ] as { key: BonusSortKey; label: string; align: 'left' | 'right' }[]).map(({ key, label, align }) => (
                       <th key={key} onClick={() => handleBonusSort(key)}
-                        className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${bonusSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                        className={`${align === 'right' ? 'text-right' : 'text-left'} px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${bonusSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                         {label}<SortIcon colKey={key} sortKey={bonusSortKey} sortDir={bonusSortDir} />
                       </th>
                     ))}
@@ -678,7 +678,7 @@ function RepEarningsView() {
                   {pagedBonuses.map((b, i) => (
                     <tr key={b.id} className={`table-row-enter row-stagger-${i % 25} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-blue-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-[var(--text-primary)]">{b.notes || '—'}</td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(b.amount)}</td>
                       <td className="px-5 py-3"><PayrollStatusBadge status={b.status} /></td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={b.date} /></td>
                     </tr>
@@ -742,7 +742,7 @@ function RepEarningsView() {
                 <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                   <tr className="border-b border-[var(--border-subtle)]">
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Description</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Date</th>
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Receipt</th>
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Status</th>
@@ -752,7 +752,7 @@ function RepEarningsView() {
                   {pagedReimbs.map((r, i) => (
                     <tr key={r.id} className={`table-row-enter row-stagger-${i % 25} animate-slide-in-scale stagger-${Math.min(i + 1, 6)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--surface-card)]/40 hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150 cursor-default`}>
                       <td className="px-5 py-3 text-[var(--text-primary)] max-w-md break-words align-top">{r.description}</td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                       <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                       <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                       <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
@@ -1129,15 +1129,15 @@ function AdminFinancialsView() {
                   <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                     <tr className="border-b border-[var(--border-subtle)]">
                       {([
-                        { key: 'repName' as const,      label: 'Rep' },
-                        { key: 'customerName' as const, label: 'Customer' },
-                        { key: 'paymentStage' as const, label: 'Stage' },
-                        { key: 'amount' as const,       label: 'Amount' },
-                        { key: 'status' as const,       label: 'Status' },
-                        { key: 'date' as const,         label: 'Date' },
-                      ]).map(({ key, label }) => (
+                        { key: 'repName' as const,      label: 'Rep',      align: 'left' as const },
+                        { key: 'customerName' as const, label: 'Customer', align: 'left' as const },
+                        { key: 'paymentStage' as const, label: 'Stage',    align: 'left' as const },
+                        { key: 'amount' as const,       label: 'Amount',   align: 'right' as const },
+                        { key: 'status' as const,       label: 'Status',   align: 'left' as const },
+                        { key: 'date' as const,         label: 'Date',     align: 'left' as const },
+                      ]).map(({ key, label, align }) => (
                         <th key={key} onClick={() => handlePayrollSort(key)}
-                          className={`text-left px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${payrollSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                          className={`${align === 'right' ? 'text-right' : 'text-left'} px-5 py-3 font-medium cursor-pointer select-none transition-colors hover:text-[var(--text-primary)] whitespace-nowrap ${payrollSortKey === key ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                           {label}<SortIcon colKey={key} sortKey={payrollSortKey} sortDir={payrollSortDir} />
                         </th>
                       ))}
@@ -1150,7 +1150,7 @@ function AdminFinancialsView() {
                         <td className="px-5 py-3 text-[var(--text-primary)] font-medium">{e.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)]">{e.customerName || '—'}</td>
                         <td className="px-5 py-3"><span className="bg-[var(--border)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded font-medium">{e.paymentStage || e.type}</span></td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(e.amount)}</td>
                         <td className="px-5 py-3"><PayrollStatusBadge status={e.status} /></td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={e.date} /></td>
                         <td className="px-5 py-3">
@@ -1230,7 +1230,7 @@ function AdminFinancialsView() {
                     <tr className="border-b border-[var(--border-subtle)]">
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Description</th>
-                      <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
+                      <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Amount</th>
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Date</th>
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Receipt</th>
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Status</th>
@@ -1242,7 +1242,7 @@ function AdminFinancialsView() {
                       <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 odd:bg-[var(--surface)]/30 even:bg-[var(--surface-card)]/30 hover:bg-[var(--accent-emerald-solid)]/[0.03] hover:shadow-[inset_3px_0_0_color-mix(in srgb, var(--accent-purple-solid) 50%, transparent)] transition-colors duration-150`}>
                         <td className="px-5 py-3 text-[var(--text-primary)] font-medium align-top">{r.repName}</td>
                         <td className="px-5 py-3 text-[var(--text-secondary)] max-w-md break-words align-top">{r.description}</td>
-                        <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">${r.amount.toFixed(2)}</td>
                         <td className="px-5 py-3 text-[var(--text-muted)] whitespace-nowrap"><RelativeDate date={r.date} /></td>
                         <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">{r.receiptName || '—'}</td>
                         <td className="px-5 py-3"><ReimbStatusBadge status={r.status} /></td>
@@ -1341,11 +1341,11 @@ function AdminFinancialsView() {
                 <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                   <tr className="border-b border-[var(--border-subtle)]">
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Paid</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Pending</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Draft</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Reimbs Pending</th>
-                    <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Total Pipeline</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Paid</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Pending</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Draft</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Reimbs Pending</th>
+                    <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Total Pipeline</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1357,11 +1357,11 @@ function AdminFinancialsView() {
                           <p className="text-[var(--text-muted)] text-xs capitalize">{s.rep.repType}</p>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
-                      <td className="px-5 py-3 text-[var(--accent-amber-text)] font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
-                      <td className="px-5 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmt$(s.draft)}</td>
-                      <td className="px-5 py-3 text-[var(--accent-purple-text)] whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
-                      <td className="px-5 py-3 text-[var(--text-primary)] font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold whitespace-nowrap">{fmt$(s.paid)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-amber-text)] font-medium whitespace-nowrap">{fmt$(s.pending)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--text-secondary)] whitespace-nowrap">{fmt$(s.draft)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--accent-purple-text)] whitespace-nowrap">{s.reimbPending > 0 ? fmt$(s.reimbPending) : '—'}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[var(--text-primary)] font-semibold whitespace-nowrap">{fmt$(s.total)}</td>
                     </tr>
                   ))}
                   {repSummary.length === 0 && (

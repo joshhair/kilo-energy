@@ -827,6 +827,13 @@ export default function MobileCalculator() {
             {fmt$(displayTotal)}
           </p>
 
+          {/* Below-baseline warning */}
+          {soldPPW <= closerPerW + closerTrainerRate && (
+            <div className="mt-3" style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--accent-red-display)' }}>
+              PPW is at or below baseline -- no commission earned at this price.
+            </div>
+          )}
+
           <div key={staggerKey} className="mt-5 space-y-2.5">
             {/* Closer row + M1/M2/M3 breakdown */}
             <div className="calc-row-1 flex items-center justify-between">

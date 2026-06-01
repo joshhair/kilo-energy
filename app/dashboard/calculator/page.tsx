@@ -941,7 +941,7 @@ function CalculatorPage() {
                 </p>
 
                 {/* Below-baseline warning */}
-                {soldPPW <= closerPerW && (
+                {soldPPW <= closerBaselineDisplay && (
                   <div style={{ background: 'color-mix(in srgb, var(--accent-red-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 25%, transparent)', borderLeft: '3px solid var(--accent-red-solid)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--accent-red-display)' }}>
                     PPW is at or below baseline -- no commission earned at this price.
                   </div>

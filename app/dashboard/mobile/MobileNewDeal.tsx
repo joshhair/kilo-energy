@@ -1040,7 +1040,7 @@ export default function MobileNewDeal() {
   const netPPWGlowStyle: React.CSSProperties = (() => {
     const base = v0InputStyle('netPPW');
     if (soldPPW > 0 && closerPerW > 0 && !errors.netPPW) {
-      const above = soldPPW >= closerPerW;
+      const above = soldPPW >= closerPerW + closerTrainerOverrideRate;
       return {
         ...base,
         border: above
