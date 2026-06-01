@@ -230,8 +230,9 @@ export default function MobilePayroll() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const handlePublishOrApproveAll = useCallback(async () => {
+    const today = todayLocalDateStr();
     const target = statusTab === 'Pending'
-      ? allTypesInScope.filter((e) => e.status === 'Pending')
+      ? allTypesInScope.filter((e) => e.status === 'Pending' && e.date <= today)
       : filtered;
     const ids = target.map((e) => e.id);
     const amount = target.reduce((s, e) => s + e.amount, 0);
@@ -887,7 +888,15 @@ export default function MobilePayroll() {
       <ConfirmDialog
         open={showPublishConfirm}
         title="Publish Payroll?"
-        message={`This will mark ${filtered.filter((e) => e.status === 'Pending').length} pending ${filtered.filter((e) => e.status === 'Pending').length === 1 ? 'entry' : 'entries'} as Paid. This action cannot be undone.`}
+        message={(() => {
+          const today = todayLocalDateStr();
+          const pending = allTypesInScope.filter((e) => e.status === 'Pending');
+          const toPublish = pending.filter((e) => e.date <= today);
+          const futureCount = pending.length - toPublish.length;
+          const base = `This will mark ${toPublish.length} pending ${toPublish.length === 1 ? 'entry' : 'entries'} as Paid.`;
+          const note = futureCount > 0 ? ` ${futureCount} future-dated ${futureCount === 1 ? 'entry' : 'entries'} will be skipped.` : '';
+          return `${base}${note} This action cannot be undone.`;
+        })()}
         confirmLabel="Publish Payroll"
         onConfirm={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
         onClose={() => setShowPublishConfirm(false)}

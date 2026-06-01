@@ -89,7 +89,7 @@ function InactiveSection({ open, onToggle, label, children }: {
 
 export default function MobileReps() {
   const router = useRouter();
-  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, convertUserRole } = useApp();
+  const { effectiveRole, projects, payrollEntries, reps, subDealers, addRep, addSubDealer, deactivateRep, reactivateRep, deactivateSubDealer, reactivateSubDealer, convertUserRole, setTrainerAssignments } = useApp();
   const { toast } = useToast();
 
   const isAdmin = effectiveRole === 'admin';
@@ -1106,8 +1106,22 @@ export default function MobileReps() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ trainerId: trainerIdSnapshot, traineeId: newRepId, tiers: [{ upToDeal: null, ratePerW: 0.05 }] }),
                 })
-                  .then((r) => { if (!r.ok) throw new Error(); })
-                  .then(() => toast('Trainer assigned', 'success'))
+                  .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+                  .then((assignment) => {
+                    setTrainerAssignments((prev) => [
+                      ...prev,
+                      {
+                        id: assignment.id,
+                        trainerId: assignment.trainerId,
+                        traineeId: assignment.traineeId,
+                        tiers: (assignment.tiers ?? []).map((t: { upToDeal: number | null; ratePerW: number }) => ({
+                          upToDeal: t.upToDeal,
+                          ratePerW: t.ratePerW,
+                        })),
+                      },
+                    ]);
+                    toast('Trainer assigned', 'success');
+                  })
                   .catch(() => toast('Failed to assign trainer', 'error'));
               }
               setShowAddRep(false);

@@ -214,7 +214,7 @@ function PayrollPageInner() {
     const from = searchParams.get('from') ?? '';
     const to = searchParams.get('to') ?? '';
     setStatusTab(['Draft', 'Pending', 'Paid'].includes(s) ? s : 'Draft');
-    setTypeTab(['Deal', 'Bonus', 'Trainer', 'Charge'].includes(t) ? t : 'Deal');
+    setTypeTab(['All', 'Deal', 'Bonus', 'Trainer', 'Charge'].includes(t) ? t : 'Deal');
     setFilterRepId(r);
     setPageView(v === 'reimbursements' ? 'reimbursements' : 'payroll');
     const parsedPage = pageStr ? Math.max(1, parseInt(pageStr, 10) || 1) : 1;
