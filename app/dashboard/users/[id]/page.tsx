@@ -956,12 +956,48 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <div>
           <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-          <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/15">
-              <UserCheck className="w-5 h-5 text-[var(--accent-emerald-text)]" />
-            </span>
-            <h1 className="text-3xl font-black tracking-tight text-gradient-brand">{rep.name}</h1>
-          </div>
+          {editingField === 'name' ? (
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <input
+                type="text"
+                value={editFirstName}
+                onChange={(e) => setEditFirstName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
+                className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', maxWidth: 180 }}
+                autoFocus
+              />
+              <input
+                type="text"
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') cancelEdit(); }}
+                className="rounded-xl px-3 py-1.5 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', maxWidth: 180 }}
+              />
+              <button onClick={saveEdit} disabled={savingEdit} className="flex items-center gap-1 text-[var(--accent-emerald-text)] hover:text-[var(--accent-cyan-text)] text-sm transition-colors disabled:opacity-50">
+                <Check className="w-4 h-4" /> Save
+              </button>
+              <button onClick={cancelEdit} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] text-sm transition-colors">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-lg bg-[var(--accent-emerald-solid)]/15">
+                <UserCheck className="w-5 h-5 text-[var(--accent-emerald-text)]" />
+              </span>
+              <h1 className="text-3xl font-black tracking-tight text-gradient-brand">{rep.name}</h1>
+              {isAdminViewer && (
+                <span className="group relative">
+                  <button onClick={() => startEdit('name')} className="text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" title="Edit name (E)">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-[var(--border)] text-[var(--text-secondary)] text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">Press E</span>
+                </span>
+              )}
+            </div>
+          )}
           {/* Email (editable for admin viewers) */}
           <div className="text-[var(--text-secondary)] text-sm mt-1">
             {editingField === 'email' ? (

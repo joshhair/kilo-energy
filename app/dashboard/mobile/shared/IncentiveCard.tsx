@@ -203,21 +203,21 @@ export default function IncentiveCard({
         <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
           <button
             onClick={onEdit}
-            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            className="flex-1 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 touch-manipulation motion-safe:transition-transform motion-safe:duration-[120ms] motion-safe:ease-out active:scale-[0.96]"
             style={{ background: 'var(--accent-cyan-soft)', color: 'var(--accent-cyan-text)' }}
           >
             <Pencil className="w-3.5 h-3.5" /> Edit
           </button>
           <button
             onClick={onDuplicate}
-            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            className="flex-1 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 touch-manipulation motion-safe:transition-transform motion-safe:duration-[120ms] motion-safe:ease-out active:scale-[0.96]"
             style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)' }}
           >
             <Copy className="w-3.5 h-3.5" /> Duplicate
           </button>
           <button
             onClick={onToggleActive}
-            className="flex-1 min-h-[36px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform"
+            className="flex-1 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 touch-manipulation motion-safe:transition-transform motion-safe:duration-[120ms] motion-safe:ease-out active:scale-[0.96]"
             style={incentive.active
               ? { background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)' }
               : { background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
@@ -226,7 +226,7 @@ export default function IncentiveCard({
           </button>
           <button
             onClick={onDelete}
-            className="w-9 min-h-[36px] rounded-lg flex items-center justify-center shrink-0 active:scale-[0.97] transition-transform"
+            className="w-[44px] min-h-[44px] rounded-lg flex items-center justify-center shrink-0 touch-manipulation motion-safe:transition-transform motion-safe:duration-[120ms] motion-safe:ease-out active:scale-[0.96]"
             style={{ background: 'var(--accent-red-soft)', color: 'var(--accent-red-text)' }}
           >
             <Trash2 className="w-3.5 h-3.5" />

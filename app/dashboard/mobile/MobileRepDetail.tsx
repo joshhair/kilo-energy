@@ -49,6 +49,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     projects,
     payrollEntries,
     effectiveRole,
+    effectiveRepId,
     reps,
     subDealers,
     trainerAssignments,
@@ -188,8 +189,12 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
     );
   }
 
-  if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager' && repId !== undefined) {
-    // Permission check handled by desktop page, but guard here too
+  if (effectiveRole !== 'admin' && effectiveRole !== 'project_manager' && repId !== effectiveRepId) {
+    return (
+      <div className="px-5 pt-4 pb-28 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+        You don&apos;t have permission to view this page.
+      </div>
+    );
   }
 
   // Still fetching — show skeleton
@@ -726,7 +731,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         className="flex items-center gap-1.5 text-base min-h-[48px]"
         style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
       >
-        <ArrowLeft className="w-4 h-4" /> Reps
+        <ArrowLeft className="w-4 h-4" /> Users
       </button>
 
       {/* Header */}
