@@ -149,11 +149,11 @@ export default function BottomNav({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center justify-center -mt-2.5 min-w-[56px]"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                className="flex flex-col items-center justify-center -mt-2.5 min-w-[56px] active:scale-95"
+                style={{ WebkitTapHighlightColor: 'transparent', transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)' }}
               >
                 <div
-                  className="card-surface w-12 h-12 rounded-2xl flex items-center justify-center relative active:scale-95 transition-transform"
+                  className="card-surface w-12 h-12 rounded-2xl flex items-center justify-center relative"
                   style={{
                     border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
                   }}
@@ -190,7 +190,7 @@ export default function BottomNav({
                     +
                   </span>
                 </div>
-                <span className="text-[10px] font-medium mt-1.5 tracking-wide" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
+                <span className="text-[10px] font-medium mt-1.5 tracking-wide" style={{ color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)', transition: 'color 200ms ease', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</span>
               </Link>
             );
           }

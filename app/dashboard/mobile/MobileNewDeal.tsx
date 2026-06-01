@@ -1405,6 +1405,7 @@ export default function MobileNewDeal() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
 
@@ -1527,6 +1528,7 @@ export default function MobileNewDeal() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
 
@@ -1621,6 +1623,7 @@ export default function MobileNewDeal() {
                           </button>
                         ))}
                       </div>
+                      <FieldError errors={errors} field="prepaidSubType" />
                     </div>
                   )}
                 </>
@@ -1636,7 +1639,7 @@ export default function MobileNewDeal() {
                 inputMode="decimal"
                 enterKeyHint="next"
                 step="0.1"
-                min="0.1"
+                min="1"
                 placeholder="8.4"
                 value={form.kWSize}
                 onChange={(e) => update('kWSize', e.target.value)}

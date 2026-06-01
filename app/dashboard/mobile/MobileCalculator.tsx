@@ -94,7 +94,10 @@ export default function MobileCalculator() {
 
   useEffect(() => { document.title = 'Calculator | Kilo Energy'; }, []);
 
-  // Pre-fill from URL search params (for shared URLs)
+  // Pre-fill from URL search params (for shared URLs) — runs once on mount
+  // only, matching desktop calculator/page.tsx behavior. Do NOT add
+  // searchParams to the dep array; that would re-fire on any route event and
+  // silently reset manually-typed values back to URL params.
   useEffect(() => {
     const p = searchParams;
     if (p.get('installer')) setInstaller(p.get('installer')!);
@@ -105,7 +108,8 @@ export default function MobileCalculator() {
     if (p.get('pcFamily')) setPcSelectedFamily(p.get('pcFamily')!);
     if (p.get('pcProduct')) setPcProductId(p.get('pcProduct')!);
     if (p.get('setter') === '1') setIsPaired(true);
-  }, [searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   // ── Form state ───────────────────────────────────────────────────────────

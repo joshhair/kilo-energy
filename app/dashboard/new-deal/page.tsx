@@ -1607,7 +1607,7 @@ function NewDealPage() {
                     <span className="inline-flex items-center gap-1">System Size (kW) {fieldCheck('kWSize')}</span>
                   </label>
                   <div className="relative">
-                    <input id="field-kWSize" type="number" step="0.1" min="0.1" placeholder="8.4"
+                    <input id="field-kWSize" type="number" step="0.1" min="1" placeholder="8.4"
                       value={form.kWSize} onChange={(e) => update('kWSize', e.target.value)}
                       onBlur={() => handleBlur('kWSize')} aria-invalid={!!errors.kWSize}
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
