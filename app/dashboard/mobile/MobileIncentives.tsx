@@ -98,9 +98,11 @@ export default function MobileIncentives() {
   const [editingIncentive, setEditingIncentive] = useState<Incentive | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'ending_soon'>('all');
   const [sort, setSort] = useState<'newest' | 'progress' | 'ending_soonest'>('newest');
+  const [listVersion, setListVersion] = useState(0);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [fulfillingKeys, setFulfillingKeys] = useState<Set<string>>(new Set());
 
   // Pending Rewards — admin-only. Milestones where progress crossed the
   // threshold but admin hasn't yet flipped achieved=true. Parity with
@@ -370,7 +372,7 @@ export default function MobileIncentives() {
         <div className="flex gap-2">
           <select
             value={filter}
-            onChange={(e) => { setFilter(e.target.value as typeof filter); clearSelection(); }}
+            onChange={(e) => { setFilter(e.target.value as typeof filter); clearSelection(); setListVersion(v => v + 1); }}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
@@ -381,7 +383,7 @@ export default function MobileIncentives() {
           </select>
           <select
             value={sort}
-            onChange={(e) => { setSort(e.target.value as typeof sort); clearSelection(); }}
+            onChange={(e) => { setSort(e.target.value as typeof sort); clearSelection(); setListVersion(v => v + 1); }}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
@@ -439,41 +441,50 @@ export default function MobileIncentives() {
       {isAdmin && pendingRewards.length > 0 && (
         <MobileSection title="Pending Rewards" count={pendingRewards.length} collapsible defaultOpen>
           <div className="space-y-2">
-            {pendingRewards.map(({ incentive, milestone }) => (
-              <div
-                key={`${incentive.id}-${milestone.id}`}
-                className="rounded-2xl px-4 py-3"
-                style={{
-                  background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)',
-                }}
-              >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
-                      <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber-text)' }} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words">{incentive.title}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                        At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
-                        <span style={{ color: 'var(--accent-amber-text)' }}> · {milestone.reward}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => markMilestoneFulfilled(incentive.id, milestone.id)}
-                  className="w-full min-h-[40px] rounded-lg text-xs font-semibold"
+            {pendingRewards.map(({ incentive, milestone }, idx) => {
+              const rowKey = `${incentive.id}-${milestone.id}`;
+              const isFulfilling = fulfillingKeys.has(rowKey);
+              return (
+                <div
+                  key={rowKey}
+                  className="animate-fade-in-up"
                   style={{
-                    background: 'var(--accent-emerald-soft)',
-                    color: 'var(--accent-emerald-text)',
+                    animationDelay: `${idx * 60}ms`,
+                    transition: 'opacity 280ms ease-out, transform 280ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    opacity: isFulfilling ? 0 : 1,
+                    transform: isFulfilling ? 'scale(0.95)' : 'scale(1)',
+                    pointerEvents: isFulfilling ? 'none' : undefined,
                   }}
                 >
-                  Mark Fulfilled
-                </button>
-              </div>
-            ))}
+                  <div className="rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 22%, transparent)' }}>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 20%, transparent)' }}>
+                          <Zap className="w-4 h-4" style={{ color: 'var(--accent-amber-text)' }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 break-words">{incentive.title}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                            At {formatIncentiveMetric(incentive.metric, milestone.threshold)}
+                            <span style={{ color: 'var(--accent-amber-text)' }}> · {milestone.reward}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFulfillingKeys(prev => new Set([...prev, rowKey]));
+                        markMilestoneFulfilled(incentive.id, milestone.id);
+                      }}
+                      className="w-full min-h-[44px] rounded-lg text-xs font-semibold touch-manipulation motion-safe:transition-transform motion-safe:duration-[120ms] motion-safe:ease-out active:scale-[0.96]"
+                      style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)' }}
+                    >
+                      Mark Fulfilled
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </MobileSection>
       )}
@@ -485,8 +496,14 @@ export default function MobileIncentives() {
             <MobileEmptyState icon={Trophy} title="No incentives match this filter" subtitle="Try a different filter." />
           ) : (
             <div className="space-y-3">
-              {filteredList.map((inc) => (
-                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired={isExpired(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              {filteredList.map((inc, idx) => (
+                <div
+                  key={`${inc.id}-${listVersion}`}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${idx * 45}ms` }}
+                >
+                  <IncentiveCard incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired={isExpired(inc.endDate)} endingSoon={isEndingSoon(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+                </div>
               ))}
             </div>
           )}
@@ -504,8 +521,14 @@ export default function MobileIncentives() {
             />
           ) : (
             <div className="space-y-3">
-              {activeIncentives.map((inc) => (
-                <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              {activeIncentives.map((inc, idx) => (
+                <div
+                  key={`${inc.id}-${listVersion}`}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${idx * 45}ms` }}
+                >
+                  <IncentiveCard incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} endingSoon={isEndingSoon(inc.endDate)} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+                </div>
               ))}
             </div>
           )}
@@ -516,8 +539,14 @@ export default function MobileIncentives() {
       {filter === 'all' && expiredIncentives.length > 0 && (
         <MobileSection title="Past Incentives" count={expiredIncentives.length} collapsible defaultOpen={false}>
           <div className="space-y-3">
-            {expiredIncentives.map((inc) => (
-              <IncentiveCard key={inc.id} incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+            {expiredIncentives.map((inc, idx) => (
+              <div
+                key={`${inc.id}-${listVersion}`}
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${idx * 45}ms` }}
+              >
+                <IncentiveCard incentive={inc} projects={projects} payrollEntries={payrollEntries} reps={reps} expired endingSoon={false} isAdmin={isAdmin} onEdit={() => setEditingIncentive(inc)} onDuplicate={() => handleDuplicate(inc)} onToggleActive={() => handleToggleActive(inc)} onDelete={() => handleDelete(inc)} selectMode={selectMode} selected={selectedIds.has(inc.id)} onToggleSelect={toggleSelect} />
+              </div>
             ))}
           </div>
         </MobileSection>

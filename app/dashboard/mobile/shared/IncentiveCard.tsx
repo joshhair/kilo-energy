@@ -52,6 +52,7 @@ export default function IncentiveCard({
   payrollEntries,
   reps,
   expired,
+  endingSoon,
   isAdmin,
   onEdit,
   onDuplicate,
@@ -66,6 +67,7 @@ export default function IncentiveCard({
   payrollEntries: PayrollEntry[];
   reps: Rep[];
   expired?: boolean;
+  endingSoon?: boolean;
   isAdmin?: boolean;
   onEdit?: () => void;
   onDuplicate?: () => void;
@@ -84,6 +86,18 @@ export default function IncentiveCard({
     ? Math.max(...incentive.milestones.map((m) => m.threshold))
     : 1;
   const pct = Math.min((progress / maxThreshold) * 100, 100);
+
+  const daysLeft: number | null =
+    endingSoon && incentive.endDate
+      ? (() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const [y, m, d] = incentive.endDate.split('-').map(Number);
+          return Math.ceil(
+            (new Date(y, m - 1, d).getTime() - today.getTime()) / 86400000
+          );
+        })()
+      : null;
 
   const targetRepName = incentive.targetRepId
     ? reps.find((r) => r.id === incentive.targetRepId)?.name ?? 'Unknown Rep'
@@ -118,12 +132,19 @@ export default function IncentiveCard({
           </div>
           <p className="text-base font-semibold leading-snug line-clamp-2 break-words" style={{ color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{incentive.title}</p>
         </div>
-        <span
-          className="inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg shrink-0"
-          style={typeBadgeStyle}
-        >
-          {incentive.type === 'company' ? 'Company' : 'Personal'}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {daysLeft !== null && (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold motion-safe:animate-pulse"
+              style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)' }}
+            >
+              {daysLeft === 0 ? 'Today' : `${daysLeft}d`}
+            </span>
+          )}
+          <span className="inline-flex items-center px-2.5 py-0.5 text-base font-semibold rounded-lg" style={typeBadgeStyle}>
+            {incentive.type === 'company' ? 'Company' : 'Personal'}
+          </span>
+        </div>
       </div>
 
       {/* Target rep for personal incentives */}
