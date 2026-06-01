@@ -416,7 +416,6 @@ export default function MobileTraining({
     return null;
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredPayments = useMemo(() => {
     let list = [...trainerEntries];
     if (paymentSearch) {
@@ -434,10 +433,7 @@ export default function MobileTraining({
       list = list.filter((e) => e.status === paymentStatusFilter);
     }
     return list.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-    // getTraineeForEntry is a closure over traineeData + projects — those are
-    // already listed, so depending on the function itself would double-add.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects]);
+  }, [trainerEntries, paymentSearch, paymentStatusFilter, traineeData, projects, getTraineeForEntry]);
 
   // Active / Residuals split (rep view). Matches desktop's filter rule: any
   // assignment with isActiveTraining === false belongs to Residuals; the rest

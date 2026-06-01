@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type StatusBreakdown } from '../../../../lib/aggregators';
 
 interface GradCardsProps {
@@ -30,12 +30,17 @@ function renderBreakdownSubline(b: StatusBreakdown, pending: boolean): string {
 
 function useCountUp(target: number, duration = 600): number {
   const [display, setDisplay] = useState(target);
+  // Mirror `display` into a ref so the animation can read its start value
+  // without listing `display` as an effect dep (which would restart the
+  // tween every frame). Ref reads/writes during render are safe here.
+  const displayRef = useRef(display);
+  displayRef.current = display;
   const reducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   useEffect(() => {
     if (reducedMotion) { setDisplay(target); return; }
     const start = performance.now();
-    const from = display; // capture at effect start
+    const from = displayRef.current; // capture at effect start
     let raf: number;
     const tick = (now: number) => {
       const p = Math.min((now - start) / duration, 1);
@@ -45,8 +50,7 @@ function useCountUp(target: number, duration = 600): number {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target]);
+  }, [target, duration, reducedMotion]);
   return display;
 }
 

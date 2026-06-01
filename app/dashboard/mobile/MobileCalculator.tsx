@@ -105,8 +105,7 @@ export default function MobileCalculator() {
     if (p.get('pcFamily')) setPcSelectedFamily(p.get('pcFamily')!);
     if (p.get('pcProduct')) setPcProductId(p.get('pcProduct')!);
     if (p.get('setter') === '1') setIsPaired(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
 
   // ── Form state ───────────────────────────────────────────────────────────

@@ -1,21 +1,21 @@
 {
   "$schema": "Allowlist for check-no-silent-rep-clears.mjs. Each entry: file:line that the gate would otherwise flag, with a written reason in `_reasons`. Adding an entry means you've verified the clear is intentional, cannot drop a user's picked value in a real submission flow, and has been reviewed by someone other than the author.",
   "entries": [
-    { "location": "app/dashboard/new-deal/page.tsx:268" },
-    { "location": "app/dashboard/new-deal/page.tsx:1066" },
-    { "location": "app/dashboard/new-deal/page.tsx:1798" },
-    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:306" },
-    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1981" },
-    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:133" },
-    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:137" }
+    { "location": "app/dashboard/new-deal/page.tsx:269" },
+    { "location": "app/dashboard/new-deal/page.tsx:1070" },
+    { "location": "app/dashboard/new-deal/page.tsx:1802" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:307" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1983" },
+    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:135" },
+    { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:139" }
   ],
   "_reasons": {
-    "app/dashboard/new-deal/page.tsx:268": "repId-change effect — blitz availability is rep-scoped (admin can only pick a blitz the chosen rep is approved for), so an old blitz must be cleared when the rep changes. Safe: blitz auto-selection on a new rep does not preserve stale state. setterId is preserved (validator catches mismatches).",
-    "app/dashboard/new-deal/page.tsx:1066": "Admin's closer picker — same rationale as :268. The chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared here (was the regression source).",
-    "app/dashboard/new-deal/page.tsx:1798": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved.",
-    "app/dashboard/mobile/MobileNewDeal.tsx:306": "Mobile equivalent of the desktop :268 repId-change effect. Same rationale.",
-    "app/dashboard/mobile/MobileNewDeal.tsx:1981": "Mobile equivalent of the desktop :1798 lead-source toggle. Same rationale.",
-    "app/dashboard/mobile/MobileProjectDetail.tsx:133": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (regex matches `setterId: ''` on a line that also has `repId: ''`). Added 2026-05-25 when repId was added to the editDraft schema for the closer-picker fix.",
-    "app/dashboard/mobile/MobileProjectDetail.tsx:137": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token on a line that starts with `leadSource: ''`). Line number shifted from :136 by the repId addition."
+    "app/dashboard/new-deal/page.tsx:269": "repId-change effect — blitz availability is rep-scoped (admin can only pick a blitz the chosen rep is approved for), so an old blitz must be cleared when the rep changes. Safe: blitz auto-selection on a new rep does not preserve stale state. setterId is preserved (validator catches mismatches). Re-pinned from :268 (line shift from agent edits above, 2026-06-01).",
+    "app/dashboard/new-deal/page.tsx:1070": "Admin's closer picker — same rationale as :269. The chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared here (was the regression source). Re-pinned from :1066.",
+    "app/dashboard/new-deal/page.tsx:1802": "Lead-source toggle off `blitz` — blitz <select> is conditionally rendered only when leadSource === 'blitz', so an orphan blitzId would persist invisibly. Safe to clear. setterId is preserved. Re-pinned from :1798.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:307": "Mobile equivalent of the desktop :269 repId-change effect. Same rationale. Re-pinned from :306.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:1983": "Mobile equivalent of the desktop :1802 lead-source toggle. Same rationale. Re-pinned from :1981.",
+    "app/dashboard/mobile/MobileProjectDetail.tsx:135": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (regex matches `setterId: ''` on a line that also has `repId: ''`). Re-pinned from :133.",
+    "app/dashboard/mobile/MobileProjectDetail.tsx:139": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (matches the bare `blitzId: ''` token on a line that starts with `leadSource: ''`). Re-pinned from :137."
   }
 }
