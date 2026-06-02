@@ -51,6 +51,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const isPM = effectiveRole === 'project_manager';
   const hydrated = useIsHydrated();
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const { toast } = useToast();
   const router = useRouter();
 
@@ -81,6 +82,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [drillEntries, setDrillEntries] = useState<Array<{ id: string; customerName?: string; projectId?: string | null; amount: number; date: string; paymentStage: string; status: string; notes?: string }>>([]);
   const [drillTotal, setDrillTotal] = useState(0);
   const [drillClosing, setDrillClosing] = useState(false);
+  const [drillMounted, setDrillMounted] = useState(false);
 
   // ── Admin-only metadata for the action footer ─────────────────────────
   // The /api/users/[id] route exposes relationCount + pendingInvitation
@@ -231,6 +233,21 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [editingField, isAdminViewer]);
+
+  // Delays row stagger until the 280ms slide-in panel animation completes
+  useEffect(() => {
+    if (!drillRole) { setDrillMounted(false); return; }
+    const t = setTimeout(() => setDrillMounted(true), prefersReducedMotion ? 0 : 290);
+    return () => clearTimeout(t);
+  }, [drillRole, prefersReducedMotion]);
+
+  // Escape key closes the drill-over
+  useEffect(() => {
+    if (!drillRole) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrillClosing(true); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [drillRole]);
 
   const [barsMounted, setBarsMounted] = useState(false);
   useEffect(() => { const t = setTimeout(() => setBarsMounted(true), 50); return () => clearTimeout(t); }, []);
@@ -1302,7 +1319,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           setDrillEntries(entries);
           setDrillTotal(total);
         };
-        const amountCls = `py-2.5 text-[var(--accent-emerald-text)] font-semibold${isAdminViewer ? ' cursor-pointer hover:underline decoration-dotted underline-offset-4' : ''}`;
+        const amountCls = `py-2.5 text-right tabular-nums text-[var(--accent-emerald-text)] font-semibold${isAdminViewer ? ' cursor-pointer group' : ''}`;
 
         return (
           <div className="card-surface rounded-2xl p-5 mb-6">
@@ -1311,38 +1328,73 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                 <tr className="border-b border-[var(--border-subtle)]">
                   <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Role</th>
-                  <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Deals</th>
-                  <th className="text-left py-2 text-[var(--text-secondary)] font-medium">Total Earned</th>
+                  <th className="text-right py-2 text-[var(--text-secondary)] font-medium">Deals</th>
+                  <th className="text-right tabular-nums py-2 text-[var(--text-secondary)] font-medium">Total Earned</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="table-row-enter row-stagger-0 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="py-2.5 text-[var(--text-primary)]">Closer</td>
-                  <td className="py-2.5 text-[var(--text-secondary)]">{closerDealCount}</td>
-                  <td className={amountCls} onClick={() => openDrill('Closer', closerEntries, closerPay)}>${closerPay.toLocaleString()}</td>
+                  <td className="py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{closerDealCount}</td>
+                  <td className={amountCls} onClick={() => openDrill('Closer', closerEntries, closerPay)}>
+                    <span className="inline-flex items-center justify-end gap-1">
+                      ${closerPay.toLocaleString()}
+                      {isAdminViewer && (
+                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+                      )}
+                    </span>
+                  </td>
                 </tr>
                 {coCloserPay > 0 && (
                   <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="py-2.5 text-[var(--text-primary)]">Co-closer</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">{new Set(coCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
-                    <td className={amountCls} onClick={() => openDrill('Co-closer', coCloserEntries, coCloserPay)}>${coCloserPay.toLocaleString()}</td>
+                    <td className="py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{new Set(coCloserEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
+                    <td className={amountCls} onClick={() => openDrill('Co-closer', coCloserEntries, coCloserPay)}>
+                      <span className="inline-flex items-center justify-end gap-1">
+                        ${coCloserPay.toLocaleString()}
+                        {isAdminViewer && (
+                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+                        )}
+                      </span>
+                    </td>
                   </tr>
                 )}
                 <tr className="table-row-enter row-stagger-1 relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   <td className="py-2.5 text-[var(--text-primary)]">Setter</td>
-                  <td className="py-2.5 text-[var(--text-secondary)]">{new Set(setterEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
-                  <td className={amountCls} onClick={() => openDrill('Setter', setterEntries, setterPay)}>${setterPay.toLocaleString()}</td>
+                  <td className="py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{new Set(setterEntries.filter(e => e.projectId).map(e => e.projectId)).size}</td>
+                  <td className={amountCls} onClick={() => openDrill('Setter', setterEntries, setterPay)}>
+                    <span className="inline-flex items-center justify-end gap-1">
+                      ${setterPay.toLocaleString()}
+                      {isAdminViewer && (
+                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+                      )}
+                    </span>
+                  </td>
                 </tr>
                 <tr className={`table-row-enter row-stagger-2 relative ${bonusPay > 0 ? 'border-b border-[var(--border-subtle)]/50' : ''} even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
                   <td className="py-2.5 text-[var(--text-primary)]">Trainer</td>
-                  <td className="py-2.5 text-[var(--text-secondary)]">{trainerDealCount}</td>
-                  <td className={amountCls} onClick={() => openDrill('Trainer', trainerEntries, trainerPay)}>${trainerPay.toLocaleString()}</td>
+                  <td className="py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{trainerDealCount}</td>
+                  <td className={amountCls} onClick={() => openDrill('Trainer', trainerEntries, trainerPay)}>
+                    <span className="inline-flex items-center justify-end gap-1">
+                      ${trainerPay.toLocaleString()}
+                      {isAdminViewer && (
+                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+                      )}
+                    </span>
+                  </td>
                 </tr>
                 {bonusPay > 0 && (
                   <tr className="table-row-enter row-stagger-3 relative even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                     <td className="py-2.5 text-[var(--text-primary)]">Bonus / Other</td>
-                    <td className="py-2.5 text-[var(--text-secondary)]">—</td>
-                    <td className={amountCls} onClick={() => openDrill('Bonus', bonusEntries, bonusPay)}>${bonusPay.toLocaleString()}</td>
+                    <td className="py-2.5 text-right tabular-nums text-[var(--text-secondary)]">—</td>
+                    <td className={amountCls} onClick={() => openDrill('Bonus', bonusEntries, bonusPay)}>
+                      <span className="inline-flex items-center justify-end gap-1">
+                        ${bonusPay.toLocaleString()}
+                        {isAdminViewer && (
+                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+                        )}
+                      </span>
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -1636,7 +1688,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div
             className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm motion-safe:${drillClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
             onClick={() => setDrillClosing(true)}
-            onAnimationEnd={() => { if (drillClosing) { setDrillClosing(false); setDrillRole(null); setDrillEntries([]); setDrillTotal(0); } }}
+            onAnimationEnd={() => { if (drillClosing) { setDrillClosing(false); setDrillRole(null); setDrillEntries([]); setDrillTotal(0); setDrillMounted(false); } }}
           />
           <div className={`fixed top-0 right-0 bottom-0 z-[70] w-full md:w-[560px] bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl overflow-y-auto motion-safe:${drillClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
             <div className="sticky top-0 z-10 bg-[var(--surface)]/95 backdrop-blur-sm border-b border-[var(--border-subtle)] px-5 py-4 flex items-center justify-between">
@@ -1664,7 +1716,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   </thead>
                   <tbody>
                     {[...drillEntries].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((e, i) => (
-                      <tr key={e.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150`}>
+                      <tr key={e.id} className="relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150" style={prefersReducedMotion ? undefined : {
+                          opacity: drillMounted ? 1 : 0,
+                          transform: drillMounted ? 'none' : 'translateY(6px)',
+                          transition: `opacity 200ms cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(i, 20) * 30}ms, transform 200ms cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(i, 20) * 30}ms`,
+                        }}>
                         <td className="py-2.5 text-[var(--text-primary)]">
                           {e.projectId ? (
                             <Link href={`/dashboard/projects/${e.projectId}`} className="hover:text-[var(--accent-emerald-text)] transition-colors">
