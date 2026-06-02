@@ -165,9 +165,21 @@ export default function MobileProjects() {
 
   const phaseCounts = useMemo(() => {
     const acc: Record<string, number> = {};
-    for (const p of applyStatusFilter(visibleProjects, statusFilter)) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
+    let base = applyStatusFilter(visibleProjects, statusFilter);
+    if (installerFilter) base = base.filter((p) => p.installer === installerFilter);
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      base = base.filter((p) =>
+        p.customerName.toLowerCase().includes(q) ||
+        (p.repName ?? '').toLowerCase().includes(q) ||
+        (p.setterName ?? '').toLowerCase().includes(q) ||
+        p.phase.toLowerCase().includes(q) ||
+        p.installer.toLowerCase().includes(q)
+      );
+    }
+    for (const p of base) acc[p.phase] = (acc[p.phase] ?? 0) + 1;
     return acc;
-  }, [visibleProjects, statusFilter]);
+  }, [visibleProjects, statusFilter, installerFilter, debouncedSearch]);
 
   const filtered = useMemo(() => {
     let result = visibleProjects;

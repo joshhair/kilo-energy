@@ -30,7 +30,33 @@ function calcProjectCommission(
   }
   const coCloserTotal = p.additionalClosers?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
   const coSetterTotal = p.additionalSetters?.reduce((s, c) => s + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0;
-  const trainerTotal = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries).rate * (p.kWSize ?? 0) * 1000;
+  const kW = p.kWSize ?? 0;
+  const closerTrainer = resolveTrainerRate(p, p.repId, trainerAssignments, payrollEntries);
+  const closerSelfTrainerWithSetter = closerTrainer.trainerId === p.repId && p.setterId != null;
+  const closerLegFires = closerTrainer.rate > 0 && !!closerTrainer.trainerId && !closerSelfTrainerWithSetter;
+  let setterTrainerRate = 0;
+  let setterTrainerId: string | null = null;
+  if (p.setterId) {
+    const setterResRaw = resolveTrainerRate(
+      { id: p.id, trainerId: null, trainerRate: null },
+      p.setterId,
+      trainerAssignments,
+      payrollEntries,
+    );
+    if (p.trainerId != null && p.trainerRate != null && setterResRaw.trainerId === p.trainerId) {
+      setterTrainerRate = p.trainerRate;
+      setterTrainerId = p.trainerId;
+    } else {
+      setterTrainerRate = setterResRaw.rate;
+      setterTrainerId = setterResRaw.trainerId;
+    }
+  }
+  const sameTrainerBothLegs =
+    !!closerTrainer.trainerId && closerTrainer.rate > 0 &&
+    !!setterTrainerId && setterTrainerRate > 0 &&
+    closerTrainer.trainerId === setterTrainerId;
+  const setterLegFires = !!p.setterId && !!setterTrainerId && setterTrainerRate > 0 && !(closerLegFires && sameTrainerBothLegs);
+  const trainerTotal = ((closerLegFires ? closerTrainer.rate : 0) + (setterLegFires ? setterTrainerRate : 0)) * kW * 1000;
   return (p.m1Amount ?? 0) + (p.m2Amount ?? 0) + (p.m3Amount ?? 0) + (p.setterM1Amount ?? 0) + (p.setterM2Amount ?? 0) + (p.setterM3Amount ?? 0) + coCloserTotal + coSetterTotal + trainerTotal;
 }
 
@@ -267,22 +293,7 @@ export default function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : proj.trainerId === currentRepId ? 'Trainer' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    let commissionTotal: number;
-                    if (dealScope === 'mine') {
-                      commissionTotal = 0;
-                      if (proj.repId === currentRepId) commissionTotal += (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
-                      if (proj.setterId === currentRepId) commissionTotal += (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
-                      const coCloser = proj.additionalClosers?.find(c => c.userId === currentRepId);
-                      if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
-                      const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
-                      if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-                      if (proj.trainerId === currentRepId) commissionTotal += (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
-                    } else {
-                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                        + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
-                    }
+                    const commissionTotal = calcProjectCommission(proj, dealScope, currentRepId, trainerAssignments, payrollEntries);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
@@ -532,22 +543,7 @@ export default function KanbanView({
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : proj.trainerId === currentRepId ? 'Trainer' : null)
                       : null;
                     const isMyCard = myRole !== null;
-                    let commissionTotal: number;
-                    if (dealScope === 'mine') {
-                      commissionTotal = 0;
-                      if (proj.repId === currentRepId) commissionTotal += (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0);
-                      if (proj.setterId === currentRepId) commissionTotal += (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0);
-                      const coCloser = proj.additionalClosers?.find(c => c.userId === currentRepId);
-                      if (coCloser) commissionTotal += coCloser.m1Amount + coCloser.m2Amount + (coCloser.m3Amount ?? 0);
-                      const coSetter = proj.additionalSetters?.find(s => s.userId === currentRepId);
-                      if (coSetter) commissionTotal += coSetter.m1Amount + coSetter.m2Amount + (coSetter.m3Amount ?? 0);
-                      if (proj.trainerId === currentRepId) commissionTotal += (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
-                    } else {
-                      commissionTotal = (proj.m1Amount ?? 0) + (proj.m2Amount ?? 0) + (proj.m3Amount ?? 0) + (proj.setterM1Amount ?? 0) + (proj.setterM2Amount ?? 0) + (proj.setterM3Amount ?? 0)
-                        + (proj.additionalClosers?.reduce((sum, c) => sum + c.m1Amount + c.m2Amount + (c.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.additionalSetters?.reduce((sum, s) => sum + s.m1Amount + s.m2Amount + (s.m3Amount ?? 0), 0) ?? 0)
-                        + (proj.trainerRate ?? 0) * (proj.kWSize ?? 0) * 1000;
-                    }
+                    const commissionTotal = calcProjectCommission(proj, dealScope, currentRepId, trainerAssignments, payrollEntries);
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div

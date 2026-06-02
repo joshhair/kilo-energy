@@ -123,6 +123,8 @@ export default function BottomNav({
               }}
             >
               <span
+                key={activeIdx}
+                className="pill-stretch"
                 style={{
                   width: '40%',
                   height: '2px',
