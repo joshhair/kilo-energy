@@ -43,20 +43,22 @@ export default function BlitzLeaderboard({ entries, showPayout }: Props) {
             <button
               key={rep.userId}
               onClick={() => router.push(`/dashboard/users/${rep.userId}`)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70 relative overflow-hidden"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg active:opacity-70 active:scale-[0.97] transition-[opacity,transform] duration-[120ms] relative overflow-hidden"
               style={{
                 background: isTop3 ? 'var(--surface-pressed)' : 'transparent',
                 animation: 'fadeUpIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both',
                 animationDelay: `${idx * 50}ms`,
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
               <span aria-hidden className="bar-grow-anim absolute inset-y-0 left-0 rounded-lg" style={{ '--bar-w': `${Math.max(8, Math.round((rep.kW / maxKW) * 100))}%`, '--bar-delay': `${idx * 70}ms`, background: isTop3 ? RANK_BG[rank - 1] : 'color-mix(in srgb, var(--text-primary) 4%, transparent)' } as React.CSSProperties} />
               <span
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0${isTop3 ? ' rank-badge-pop' : ''}`}
                 style={{
                   background: isTop3 ? RANK_GRAD[rank - 1] : 'var(--border-subtle)',
                   color: isTop3 ? '#000' : 'var(--text-muted)',
                   fontFamily: "var(--m-font-display, 'DM Serif Display', serif)",
+                  ...(isTop3 ? { '--rank-delay': `${idx * 90 + 200}ms` } as React.CSSProperties : {}),
                 }}
               >
                 {rank}

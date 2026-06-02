@@ -1915,7 +1915,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
             <div className="rounded-xl p-4" style={{ background: 'var(--surface-inset-subtle)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 12%, transparent)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Per-project trainer</span>
-                {editDraft.trainerId && (
+                {(editDraft.trainerId || !editDraft.noChainTrainer) && (
                   <button
                     type="button"
                     onClick={() => setEditDraft((d) => ({ ...d, trainerId: '', trainerRate: '', noChainTrainer: true }))}

@@ -101,6 +101,10 @@ export function createUserActions(deps: UserDeps) {
     });
   };
 
+  const dropRepFromContext = (id: string) => {
+    setReps((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const updateRepType = async (id: string, repType: 'closer' | 'setter' | 'both'): Promise<void> => {
     const reps = getReps();
     const snapshot = reps.find((r) => r.id === id);
@@ -296,6 +300,7 @@ export function createUserActions(deps: UserDeps) {
     reactivateRep,
     deleteRepPermanently,
     removeRep,
+    dropRepFromContext,
     updateRepType,
     updateRepContact,
     convertUserRole,

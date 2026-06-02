@@ -1598,6 +1598,19 @@ select {
   .mobile-list-item { animation: none; }
 }
 
+@keyframes rankBadgePop {
+  0%   { transform: scale(0.45); opacity: 0; }
+  55%  { transform: scale(1.2); opacity: 1; }
+  78%  { transform: scale(0.93); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.rank-badge-pop {
+  animation: rankBadgePop 450ms cubic-bezier(0.16, 1, 0.3, 1) var(--rank-delay, 0ms) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rank-badge-pop { animation: none; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes statCellFade {
     from { opacity: 0; transform: translateY(5px); }
@@ -1664,6 +1677,17 @@ select {
     animation: none;
     width: var(--bar-w, 0%);
   }
+}
+
+@keyframes statCellIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+.blitz-stat-0 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both; }
+.blitz-stat-1 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
+.blitz-stat-2 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both; }
+@media (prefers-reduced-motion: reduce) {
+  .blitz-stat-0, .blitz-stat-1, .blitz-stat-2 { animation: none; }
 }
 
 /* ─── Modal entrance animations ───────────────────────────────────────────
