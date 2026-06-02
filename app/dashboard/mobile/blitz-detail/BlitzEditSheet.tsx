@@ -217,7 +217,7 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
         <button
           onClick={handleSave}
           disabled={saving || !form.name.trim()}
-          className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-1.5 min-h-[48px] text-base font-semibold text-black rounded-lg disabled:opacity-40 transition-all duration-100 ease-out active:scale-[0.96] mt-2"
           style={{
             background: 'var(--accent-emerald-solid)',
             fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",

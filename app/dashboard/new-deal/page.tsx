@@ -629,6 +629,7 @@ function NewDealPage() {
     });
     if (hasErrors) {
       submittingRef.current = false;
+      toast('Please fill in the required fields before continuing.', 'error');
       // Navigate to the first step that contains an invalid field so the
       // error messages are visible (they live in step-specific JSX).
       const firstErrorField = fieldsToValidate.find((f) => newErrors[f]);

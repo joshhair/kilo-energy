@@ -154,7 +154,7 @@ export default function MobileBottomSheet({
         }}
       >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-subtle)' }} aria-hidden="true" />
+          <div className="w-9 h-[5px] rounded-full" style={{ background: 'var(--border-default)' }} aria-hidden="true" />
         </div>
         {title && (
           <div className="flex items-center justify-between px-5 py-2 shrink-0">

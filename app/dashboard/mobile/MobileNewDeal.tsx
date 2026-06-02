@@ -822,6 +822,7 @@ export default function MobileNewDeal() {
     setErrors(newErrors);
     if (hasErrors) {
       submittingRef.current = false;
+      toast('Please fill in the required fields before continuing.', 'error');
       const firstErrorField = fieldsToValidate.find((f) => newErrors[f]);
       if (firstErrorField) {
         const targetStep = s1Fields.includes(firstErrorField) ? 0

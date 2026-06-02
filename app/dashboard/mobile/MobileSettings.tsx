@@ -77,7 +77,7 @@ const SETTINGS_KEYFRAMES = `
   @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
   @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes ms-nav-group-in { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes ms-nav-item-in { from { transform: translateX(14px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes bs-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
   @keyframes bs-down { from { transform: translateY(0);    } to { transform: translateY(100%); } }
   @keyframes bs-backdrop-in  { from { opacity: 0; } to { opacity: 1; } }
@@ -86,7 +86,7 @@ const SETTINGS_KEYFRAMES = `
     .bs-panel, .bs-backdrop { animation: none !important; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .ms-slide-in, .ms-slide-out, .ms-slide-back { animation: none !important; }
+    .ms-slide-in, .ms-slide-out, .ms-slide-back, .ms-nav-item-in { animation: none !important; }
   }
   .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) both; }
   .ms-slide-out  { animation: ms-slide-out  240ms cubic-bezier(0.55,0,1,0.45) both; }
@@ -168,25 +168,32 @@ export default function MobileSettings() {
 
   if (activeSection) {
     return (
-      <div className={`px-5 pt-4 pb-28 space-y-6 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
+      <div className={`pb-28 ${leaving ? 'ms-slide-out' : 'ms-slide-in'}`}>
         <style>{SETTINGS_KEYFRAMES}</style>
-        {/* Back button */}
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-colors"
-          style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+        {/* Sticky back header — always in reach during scroll */}
+        <div
+          className="sticky top-0 z-10 px-5 pt-4 pb-3"
+          style={{ background: 'var(--surface-page)', borderBottom: '1px solid var(--border-subtle)' }}
         >
-          <ArrowLeft className="w-4 h-4" />
-          Settings
-        </button>
-
-        {/* Section title */}
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
-          {NAV.flatMap((g) => g.items).find((i) => i.id === activeSection)?.label ?? activeSection}
-        </h1>
-
-        {/* Section content */}
-        <SectionContent section={activeSection} onUnsavedChange={(v) => { unsavedRef.current = v; }} />
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 min-h-[48px] text-base font-medium active:opacity-70 transition-all duration-100 ease-out"
+            style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Settings
+          </button>
+        </div>
+        {/* Scrollable section content */}
+        <div className="px-5 pt-5 space-y-6">
+          <h1
+            className="text-2xl font-bold text-[var(--text-primary)]"
+            style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+          >
+            {NAV.flatMap((g) => g.items).find((i) => i.id === activeSection)?.label ?? activeSection}
+          </h1>
+          <SectionContent section={activeSection} onUnsavedChange={(v) => { unsavedRef.current = v; }} />
+        </div>
         <ConfirmDialog
           open={pendingBack}
           title="Discard Changes?"
@@ -206,17 +213,17 @@ export default function MobileSettings() {
       <MobilePageHeader title="Settings" />
 
       {NAV.map(({ group, items }, groupIdx) => (
-        <div
-          key={group}
-          style={{
-            animation: prefersReducedMotion ? 'none' : 'ms-nav-group-in 300ms cubic-bezier(0.16,1,0.3,1) both',
-            animationDelay: prefersReducedMotion ? undefined : `${groupIdx * 70}ms`,
-          }}
-        >
+        <div key={group}>
           <MobileSection title={group}>
             <MobileCard>
               {items.map((item, idx) => (
-                <div key={item.id}>
+                <div
+                  key={item.id}
+                  style={prefersReducedMotion ? undefined : {
+                    animation: 'ms-nav-item-in 270ms cubic-bezier(0.16,1,0.3,1) both',
+                    animationDelay: `${groupIdx * 80 + idx * 38}ms`,
+                  }}
+                >
                   {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
                   <div className="active:scale-[0.97] transition-transform duration-100 ease-out">
                     <MobileListItem title={item.label} onTap={() => setActiveSection(item.id)} />
@@ -1257,7 +1264,7 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
           }}
         >
           <div
-            className="bs-panel w-full max-w-lg rounded-t-3xl px-6 pt-6 space-y-4"
+            className="bs-panel w-full max-w-lg rounded-t-3xl px-6 pt-4 space-y-4"
             style={{
               background: 'var(--navy-card, var(--navy-base))',
               paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
@@ -1266,6 +1273,9 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
                 : 'bs-up 360ms cubic-bezier(0.16,1,0.3,1) both',
             }}
           >
+            <div className="flex justify-center mb-1">
+              <div className="w-9 h-[5px] rounded-full" style={{ background: 'var(--border-default)' }} />
+            </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>
               New Version — {newVersionFor}
             </h2>
@@ -1291,14 +1301,14 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={saveNewVersion}
-                className="flex-1 min-h-[48px] rounded-2xl font-semibold active:opacity-80"
+                className="flex-1 min-h-[48px] rounded-2xl font-semibold active:opacity-80 active:scale-[0.96] transition-all duration-100 ease-out"
                 style={{ background: 'var(--accent-emerald-solid)', color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Create Version
               </button>
               <button
                 onClick={closeSheet}
-                className="flex-1 min-h-[48px] rounded-2xl active:opacity-80"
+                className="flex-1 min-h-[48px] rounded-2xl active:opacity-80 active:scale-[0.96] transition-all duration-100 ease-out"
                 style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Cancel
