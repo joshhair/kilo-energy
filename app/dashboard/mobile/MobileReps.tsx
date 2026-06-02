@@ -439,7 +439,9 @@ export default function MobileReps() {
       {/* Role filter pills — shared SegmentedPills primitive */}
       <div className="-mx-5 px-5">
         <SegmentedPills<RoleFilter>
-          options={ROLE_FILTERS.map((rf) => ({ value: rf.value, label: rf.label }))}
+          options={ROLE_FILTERS.filter((rf) =>
+            isAdmin || isPM ? true : rf.value !== 'admin' && rf.value !== 'project_manager'
+          ).map((rf) => ({ value: rf.value, label: rf.label }))}
           value={roleFilter}
           onChange={(v) => { setRoleFilter(v); setRepTypeFilter('all'); }}
           scrollable

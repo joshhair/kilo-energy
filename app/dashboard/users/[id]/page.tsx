@@ -897,7 +897,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const projEnd = Math.min(projStart + projPageSize, projTotal);
   const pagedProjects = repProjects.slice(projStart, projEnd);
 
-  const totalKW = repProjects.filter(p => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = repProjects.filter(p => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0);
   const totalEst = repProjects.filter(p => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => {
     if (p.repId === id) {
       // Closer: gets $0 M1 when a setter exists (setter takes M1); otherwise earns m1Amount
@@ -943,8 +943,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
   const thisMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
   const prevMonthDeals = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').length;
-  const thisMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
-  const prevMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + p.kWSize, 0);
+  const thisMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(thisMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + (p.kWSize ?? 0), 0);
+  const prevMonthKW = repProjects.filter((p) => p.soldDate?.startsWith(prevMonthKey) && p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((s, p) => s + (p.kWSize ?? 0), 0);
   const dealsTrend = thisMonthDeals - prevMonthDeals; // positive = up, negative = down
   const kwTrend = thisMonthKW - prevMonthKW;
 
@@ -1553,7 +1553,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </td>
                 <td className="px-5 py-3 text-[var(--text-secondary)]">{proj.installer}</td>
                 <td className="hidden xl:table-cell text-right px-5 py-3 text-[var(--text-muted)] tabular-nums">{formatDate(proj.soldDate)}</td>
-                <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
+                <td className="px-5 py-3 text-right text-[var(--text-secondary)] tabular-nums">{proj.kWSize ?? '—'}</td>
                 {!isPM && (
                   <td className="px-5 py-3 text-right text-[var(--accent-emerald-text)] font-semibold tabular-nums">
                     {(proj.phase === 'Cancelled' || proj.phase === 'On Hold' || proj.phase === 'Completed') ? '$0' : `$${(proj.repId === id

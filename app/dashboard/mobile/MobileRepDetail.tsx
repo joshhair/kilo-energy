@@ -530,7 +530,7 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   const completedDeals = repProjects.filter((p) => p.phase === 'Installed' || p.phase === 'PTO' || p.phase === 'Completed').length;
   const currentOverrideRate = trainerAssignment ? getTrainerOverrideRate(trainerAssignment, completedDeals) : 0;
   const activeProjects = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase));
-  const totalKW = activeProjects.reduce((s, p) => s + p.kWSize, 0);
+  const totalKW = activeProjects.reduce((s, p) => s + (p.kWSize ?? 0), 0);
   const todayStr = todayLocalDateStr();
   const totalPaid = repPayroll.filter((p) => p.status === 'Paid' && p.date <= todayStr).reduce((s, p) => s + p.amount, 0);
   const totalEst = repProjects.filter((p) => !['Cancelled', 'On Hold', 'Completed'].includes(p.phase)).reduce((s, p) => {
