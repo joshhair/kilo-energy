@@ -91,7 +91,7 @@ export function SubDealerDashboard({
   const totalKW = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const today = todayLocalDateStr();
   // Sub-dealers earn M1 when acting as setter; include those entries too
-  const setterProjectIds = new Set(myProjects.filter((p) => p.setterId === currentRepId).map((p) => p.id));
+  const setterProjectIds = new Set(projects.filter((p) => p.setterId === currentRepId).map((p) => p.id));
   const closerProjectIds = new Set(myProjects.filter((p) => p.repId === currentRepId).map((p) => p.id));
   const totalEarned = myPayroll
     .filter((e) => e.status === 'Paid' && e.date <= today && (

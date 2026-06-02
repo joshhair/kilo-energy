@@ -1568,7 +1568,12 @@ export function computeIncentiveProgress(
           .reduce((s, e) => s + e.amount, 0);
       }
       const relevantProjectIds = new Set(relevantProjects.map((p) => p.id));
-      const primaryRepByProject = new Map(relevantProjects.map((p) => [p.id, p.repId]));
+      const closerRepsByProject = new Map(
+        relevantProjects.map((p) => [
+          p.id,
+          new Set([p.repId, ...(p.additionalClosers?.map((c) => c.userId) ?? [])]),
+        ])
+      );
       return payrollEntries
         .filter((e) =>
           e.projectId !== null &&
@@ -1576,7 +1581,7 @@ export function computeIncentiveProgress(
           isPaidAndEffective(e) &&
           e.type === 'Deal' &&
           e.paymentStage !== 'Trainer' &&
-          e.repId === primaryRepByProject.get(e.projectId) &&
+          (closerRepsByProject.get(e.projectId)?.has(e.repId) ?? false) &&
           e.notes !== 'Setter'
         )
         .reduce((s, e) => s + e.amount, 0);

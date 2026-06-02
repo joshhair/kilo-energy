@@ -145,7 +145,7 @@ export function CommissionPreview({
               <div className="flex justify-between border-t border-[var(--border)] pt-2">
                 <span className="text-[var(--text-secondary)]">Kilo margin</span>
                 <TickerAmount
-                  amount={Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal)}
+                  amount={Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal)}
                   className="text-[var(--text-secondary)] font-semibold"
                 />
               </div>
