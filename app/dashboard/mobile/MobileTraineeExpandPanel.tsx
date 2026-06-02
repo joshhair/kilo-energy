@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { fmt$ } from '../../../lib/utils';
 
 export default function MobileTraineeExpandPanel({
@@ -15,6 +16,11 @@ export default function MobileTraineeExpandPanel({
   consumedDeals: number;
   earningsFromTrainee: number;
 }) {
+  const [animKey, setAnimKey] = useState(0);
+  useEffect(() => {
+    if (isOpen) setAnimKey((k) => k + 1);
+  }, [isOpen]);
+
   const prevThreshold = activeTierIndex > 0
     ? (tiers[activeTierIndex - 1].upToDeal ?? 0) : 0;
   const nextThreshold = tiers[activeTierIndex]?.upToDeal ?? null;
@@ -23,6 +29,7 @@ export default function MobileTraineeExpandPanel({
 
   return (
     <div className="px-4 pb-3" aria-hidden={!isOpen || undefined}>
+      <div key={animKey}>
       <div className="mb-3 pt-1 motion-safe:animate-[fadeUpIn_240ms_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: '0ms' }}>
         <div className="flex justify-between text-[11px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
           <span>{consumedDeals} deals</span>
@@ -78,6 +85,7 @@ export default function MobileTraineeExpandPanel({
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -311,6 +311,36 @@ export default function MobileNewDeal() {
     setForm((prev) => ({ ...prev, additionalSetters: [] }));
   }, [form.setterId]);
 
+  const bviIntakeDirty =
+    bviIntake.customerPhone.trim() !== '' ||
+    bviIntake.customerEmail.trim() !== '' ||
+    bviIntake.customerAddress.trim() !== '' ||
+    bviIntake.exportType !== null ||
+    bviIntake.existingSystemInfo.trim() !== '' ||
+    bviIntake.siteSurveyNeeded !== null ||
+    bviIntake.batteryLocation !== null ||
+    bviIntake.batteryLocationOther.trim() !== '' ||
+    bviIntake.dogsOnProperty !== null ||
+    bviIntake.lockedGates !== null ||
+    bviIntake.gateCode.trim() !== '' ||
+    bviIntake.additionalNotes.trim() !== '';
+  const isFormDirty =
+    form.customerName.trim() !== '' || form.installer !== '' || form.financer !== '' ||
+    form.productType !== '' || form.kWSize !== '' || form.netPPW !== '' ||
+    form.notes.trim() !== '' || form.setterId !== '' || form.solarTechFamily !== '' ||
+    form.solarTechProductId !== '' || form.pcFamily !== '' || form.installerProductId !== '' || form.prepaidSubType !== '' ||
+    form.leadSource !== '' || form.blitzId !== '' ||
+    (effectiveRole === 'admin' && form.repId !== '') ||
+    form.additionalClosers.length > 0 || form.additionalSetters.length > 0 ||
+    bviIntakeDirty || utilityBill !== null;
+
+  useEffect(() => {
+    if (!isFormDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isFormDirty]);
+
   // Blitz list
   type BlitzListItem = {
     id: string;

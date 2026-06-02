@@ -1317,7 +1317,7 @@ export default function DashboardPage() {
       return {
         label: `${sold.unit} Sold`,
         value: sold.value,
-        sub: `${myProjects.length} projects this period`,
+        sub: `${myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length} projects this period`,
         icon: Zap,
         color: 'text-[var(--accent-amber-text)]',
         accentGradient: 'from-yellow-500 to-yellow-400',

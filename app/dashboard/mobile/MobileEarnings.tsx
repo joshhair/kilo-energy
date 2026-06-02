@@ -108,7 +108,7 @@ export default function MobileEarnings() {
   const nextPayoutCount  = nextPayoutItems.length;
 
   const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
-  const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override')).length;
+  const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Co-closer') && !(p.notes ?? '').startsWith('Trainer override')).length;
   const setterCount  = dealPayments.filter((p) => isSetterNote(p.notes)).length;
   const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = myReimbs.length;
@@ -125,7 +125,7 @@ export default function MobileEarnings() {
     ? dealPayments.filter((p) => {
         if (dealRoleFilter === 'Setter') return isSetterNote(p.notes);
         if (dealRoleFilter === 'Trainer') return (p.notes ?? '').startsWith('Trainer override');
-        return !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override'); // Closer
+        return !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Co-closer') && !(p.notes ?? '').startsWith('Trainer override'); // Closer
       })
     : dealPayments;
   const sortedDeals = [...filteredDeals].sort((a, b) => {
