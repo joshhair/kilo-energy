@@ -938,8 +938,8 @@ function TrainingPageInner() {
               effective rates across all assignments (completedDeals-aware
               via the adminRows enrichment computed further down). */}
           {(() => {
-            const totalAssignments = trainerAssignments.length;
-            const uniqueTrainerCount = new Set(trainerAssignments.map((a) => a.trainerId)).size;
+            const totalAssignments = adminRows.length;
+            const uniqueTrainerCount = new Set(adminRows.map((r) => r.assignment.trainerId)).size;
             const avgRate = adminRows.length > 0
               ? adminRows.reduce((s, r) => s + r.rate, 0) / adminRows.length
               : 0;
@@ -1558,6 +1558,7 @@ function TrainingPageInner() {
                   key={t.assignment.id}
                   data={t}
                   idx={idx}
+                  isPseudo={t.assignment.id.startsWith('direct-')}
                   onGraduate={() => markGraduated(t.assignment.id)}
                   onOpenProject={(id) => setSlideProjectId(id)}
                 />
@@ -1880,7 +1881,7 @@ function TraineeSearch({
 
 // Expandable active-trainee card. Lists projects when expanded — no $$.
 function ActiveTraineeCard({
-  data, idx, onGraduate, onOpenProject,
+  data, idx, isPseudo, onGraduate, onOpenProject,
 }: {
   data: {
     assignment: TrainerAssignment; traineeId: string; traineeName: string; traineeRole: string;
@@ -1888,6 +1889,7 @@ function ActiveTraineeCard({
     earningsFromTrainee: number; overrideRemaining: number; status: AdminStatus; projects: Project[];
   };
   idx: number;
+  isPseudo: boolean;
   onGraduate: () => void;
   onOpenProject: (id: string) => void;
 }) {
@@ -1934,14 +1936,16 @@ function ActiveTraineeCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={onGraduate}
-            title="Mark as graduated — moves this trainee to Residuals"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-emerald-text)] hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Mark Graduated
-          </button>
+          {!isPseudo && (
+            <button
+              onClick={onGraduate}
+              title="Mark as graduated — moves this trainee to Residuals"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--accent-emerald-text)] hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Mark Graduated
+            </button>
+          )}
           <button
             onClick={() => setExpanded((v) => !v)}
             className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]/60 transition-colors"

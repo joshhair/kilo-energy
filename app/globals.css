@@ -804,6 +804,14 @@ body {
   .animate-milestone-check-pop { animation: none; }
 }
 
+@keyframes slide-in-row {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-row { animation: none !important; }
+}
+
 @keyframes floatToolbarIn {
   from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.97); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
