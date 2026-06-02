@@ -1553,6 +1553,17 @@ function PayrollPageInner() {
                           Edit
                         </button>
                       )}
+                      {entry.status === 'Paid' && (
+                        <button
+                          disabled={processingEntryIds.has(entry.id)}
+                          onClick={() => openEditEntry(entry)}
+                          className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-40"
+                          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--accent-amber-text)' }}
+                          title="Correct paid amount or initiate chargeback"
+                        >
+                          Correct
+                        </button>
+                      )}
                       {entry.status === 'Pending' && (
                         <button
                           disabled={processingEntryIds.has(entry.id)}
@@ -1724,7 +1735,7 @@ function PayrollPageInner() {
                   </div>
                   <div className="px-4 py-2.5 border-t border-[var(--border)]/60 flex items-center justify-between bg-[var(--surface-card)]/40">
                     <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Selected total</span>
-                    <span className="text-[var(--text-primary)] font-black tabular-nums">${selectedTotal.toLocaleString()}</span>
+                    <span className="text-[var(--text-primary)] font-black tabular-nums">{selectedTotal < 0 ? '-' : ''}${Math.abs(selectedTotal).toLocaleString()}</span>
                   </div>
                 </div>
               )}

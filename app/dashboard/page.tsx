@@ -1122,7 +1122,7 @@ export default function DashboardPage() {
   // charged" and must surface on the tile.
   const totalChargebacks = Math.abs(sumPendingChargebacks(myPayroll));
   const chargebackCount = countPendingChargebacks(myPayroll);
-  const _totalKW = activeProjects.reduce((sum, p) => sum + p.kWSize, 0);
+  const _totalKW = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const installedPhases = ['Installed', 'PTO', 'Completed'];
   const totalKWSold = myProjects.filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold').reduce((sum, p) => sum + p.kWSize, 0);
   const totalKWInstalled = myProjects.filter((p) => installedPhases.includes(p.phase)).reduce((sum, p) => sum + p.kWSize, 0);

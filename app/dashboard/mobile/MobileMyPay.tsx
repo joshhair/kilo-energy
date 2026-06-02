@@ -875,6 +875,9 @@ export default function MobileMyPay() {
             <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontFamily: FONT_BODY, fontSize: '0.8rem', fontWeight: 500 }}>Amount</label>
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9.]*"
+              autoComplete="off"
               step="0.01"
               required
               value={reimbForm.amount}

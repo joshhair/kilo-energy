@@ -71,6 +71,8 @@ export default function MobilePayroll() {
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
   const [paidCorrectionEntry, setPaidCorrectionEntry] = useState<PayrollEntry | null>(null);
   const [publishSelectedIds, setPublishSelectedIds] = useState<Set<string>>(new Set());
+  const [publishMounted, setPublishMounted] = useState(false);
+  const [publishExiting, setPublishExiting] = useState(false);
 
   // ── Admin filters ─────────────────────────────────────────────────────────
   const [filterRepId, setFilterRepId] = useState(searchParams.get('rep') ?? '');
@@ -228,6 +230,11 @@ export default function MobilePayroll() {
     setPublishSelectedIds(defaults);
   }, [showPublishConfirm, allTypesInScope]);
 
+  useEffect(() => {
+    if (showPublishConfirm) { setPublishExiting(false); setPublishMounted(true); }
+    else { setPublishMounted(false); }
+  }, [showPublishConfirm]);
+
   // ── Group by rep ──────────────────────────────────────────────────────────
 
   const groupedByRep = useMemo(() => {
@@ -244,6 +251,11 @@ export default function MobilePayroll() {
   }, [filtered]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
+
+  const closePublish = useCallback(() => {
+    setPublishExiting(true);
+    setTimeout(() => setShowPublishConfirm(false), 210);
+  }, []);
 
   const handlePublishOrApproveAll = useCallback(async () => {
     const target = statusTab === 'Pending'
@@ -927,7 +939,7 @@ export default function MobilePayroll() {
         </div>
       )}
 
-      {showPublishConfirm && (() => {
+      {publishMounted && (() => {
         const today = todayLocalDateStr();
         const pendingEntries = allTypesInScope
           .filter((e) => e.status === 'Pending')
@@ -946,7 +958,7 @@ export default function MobilePayroll() {
         const pastIds = pendingEntries.filter((e) => e.date <= today).map((e) => e.id);
         const futureCount = pendingEntries.length - pastIds.length;
         return (
-          <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--surface-page)' }}>
+          <div className="fixed inset-0 z-50 flex flex-col publish-overlay" data-exiting={publishExiting ? '' : undefined} style={{ background: 'var(--surface-page)' }}>
             <div className="flex items-center justify-between px-5 pt-6 pb-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Publish Payroll</h2>
@@ -955,7 +967,7 @@ export default function MobilePayroll() {
                   {futureCount > 0 && <span style={{ color: 'var(--accent-amber-text)' }}> · {futureCount} future unchecked by default</span>}
                 </p>
               </div>
-              <button onClick={() => setShowPublishConfirm(false)} className="p-2 rounded-xl" style={{ background: 'var(--surface-card)', color: 'var(--text-muted)' }}>
+              <button onClick={() => closePublish()} className="p-2 rounded-xl" style={{ background: 'var(--surface-card)', color: 'var(--text-muted)' }}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -992,14 +1004,14 @@ export default function MobilePayroll() {
             <div className="px-5 pt-3 space-y-2" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border-subtle)' }}>
               <button
                 disabled={selectedEntries.length === 0}
-                onClick={() => { setShowPublishConfirm(false); handlePublishOrApproveAll(); }}
+                onClick={() => { closePublish(); handlePublishOrApproveAll(); }}
                 className="w-full min-h-[52px] rounded-2xl text-base font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)', color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
                 Publish {selectedEntries.length} {selectedEntries.length === 1 ? 'Entry' : 'Entries'} · {fmt$(selectedTotal)}
               </button>
               <button
-                onClick={() => setShowPublishConfirm(false)}
+                onClick={() => closePublish()}
                 className="w-full min-h-[44px] rounded-2xl text-sm font-medium"
                 style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -1196,6 +1208,9 @@ export default function MobilePayroll() {
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9.]*"
+              autoComplete="off"
               step="0.01"
               required
               value={paymentForm.amount}
@@ -1252,6 +1267,9 @@ export default function MobilePayroll() {
               <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
               <input
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9.]*"
+                autoComplete="off"
                 step="0.01"
                 min={editingEntry && editingEntry.amount < 0 ? undefined : "0.01"}
                 max={editingEntry && editingEntry.amount < 0 ? "-0.01" : undefined}

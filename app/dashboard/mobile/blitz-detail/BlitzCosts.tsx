@@ -161,6 +161,9 @@ export default function BlitzCosts({ blitzId, costs, onRefresh }: Props) {
             <label className="block text-xs mb-1 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Amount</label>
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9.]*"
+              autoComplete="off"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"

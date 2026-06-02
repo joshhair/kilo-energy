@@ -141,7 +141,7 @@ export function ReimbursementModal({ open, onClose, onSubmit, repId, repName }: 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="reimb-amount" className={labelCls}>Amount ($)</label>
-              <input ref={amountRef} id="reimb-amount" type="number" step="0.01" min="0.01" placeholder="0.00"
+              <input ref={amountRef} id="reimb-amount" type="number" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" step="0.01" min="0.01" placeholder="0.00"
                 value={form.amount} onChange={(e) => updateForm('amount', e.target.value)}
                 onBlur={() => handleBlur('amount')} aria-invalid={!!errors.amount}
                 className={inputCls('amount')} />
