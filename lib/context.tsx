@@ -951,20 +951,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!res.ok) return;
           try {
             const serverProject = await res.json();
-            if (!serverProject || !serverProject.id) return;
-            setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
-            // Log phase_change activity only if the server's returned
-            // phase differs from the pre-PATCH phase. This avoids the
-            // class of bug where a stripped phase update (rep blocked
-            // from a transition) left the activity feed claiming the
-            // transition happened.
-            if (old && serverProject.phase && serverProject.phase !== old.phase) {
-              logProjectActivity(
-                id,
-                'phase_change',
-                `Phase changed from ${old.phase} to ${serverProject.phase}`,
-                JSON.stringify({ oldPhase: old.phase, newPhase: serverProject.phase }),
-              );
+            if (serverProject?.id) {
+              setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverProject } : p)));
+              // Log phase_change activity only if the server's returned
+              // phase differs from the pre-PATCH phase. This avoids the
+              // class of bug where a stripped phase update (rep blocked
+              // from a transition) left the activity feed claiming the
+              // transition happened.
+              if (old && serverProject.phase && serverProject.phase !== old.phase) {
+                logProjectActivity(
+                  id,
+                  'phase_change',
+                  `Phase changed from ${old.phase} to ${serverProject.phase}`,
+                  JSON.stringify({ oldPhase: old.phase, newPhase: serverProject.phase }),
+                );
+              }
             }
           } catch (parseErr) {
             // Non-JSON response — re-fetch the project from the server to
@@ -980,15 +981,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               })
               .catch(() => {/* best-effort re-sync; original toast already fired */});
           }
+          pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
         })
         .catch((err) => {
           // Network failure on the server-state-sync PATCH. The optimistic
           // state already applied — toast is fired by persistFetch above.
-          // We swallow here to keep the .finally() running; log for diag.
           console.warn('[updateProject] server-sync fetch failed:', err instanceof Error ? err.message : err);
-        })
-        .finally(() => {
-          pendingMilestonePersists.forEach((entry) => persistPayrollEntry(entry));
         });
     }
 

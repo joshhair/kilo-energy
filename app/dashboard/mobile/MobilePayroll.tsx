@@ -148,10 +148,10 @@ export default function MobilePayroll() {
       const snapshot = [...reimbursements];
       setReimbursements((prev) => prev.filter((x) => x.id !== reim.id));
       setConfirmDeleteReim(null);
-      toast('Reimbursement deleted', 'success');
       try {
         const res = await fetch(`/api/reimbursements/${reim.id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        toast('Reimbursement deleted', 'success');
       } catch {
         setReimbursements(snapshot);
         toast('Failed to delete — rolled back', 'error');
@@ -165,9 +165,9 @@ export default function MobilePayroll() {
   const pendingTotal = useMemo(() => {
     const today = todayLocalDateStr();
     return payrollEntries
-      .filter((e) => e.status === 'Pending' && (typeTab === 'All' || entryTypeTab(e) === typeTab) && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId))
+      .filter((e) => e.status === 'Pending' && (typeTab === 'All' || entryTypeTab(e) === typeTab) && e.date <= today && (effectiveRole === 'admin' || e.repId === effectiveRepId) && (!filterRepId || e.repId === filterRepId) && (!filterFrom || e.date >= filterFrom) && (!filterTo || e.date <= filterTo))
       .reduce((s, e) => s + e.amount, 0);
-  }, [payrollEntries, typeTab, effectiveRole, effectiveRepId]);
+  }, [payrollEntries, typeTab, effectiveRole, effectiveRepId, filterRepId, filterFrom, filterTo]);
 
   // Combined breakdowns across ALL types (Deal + Bonus + Trainer) for
   // the summary cards row. Cards stay honest about the total owed;
@@ -296,6 +296,7 @@ export default function MobilePayroll() {
         } else {
           setPayrollEntries(snapshot);
         }
+        setStatusTab('Pending');
         toast('Payroll failed to save — rolled back', 'error');
       }
     }
@@ -459,7 +460,6 @@ export default function MobilePayroll() {
     const patch = { amount: amt, date: editEntryForm.date, notes: editEntryForm.notes };
     setPayrollEntries((prev) => prev.map((p) => p.id === editingEntry.id ? { ...p, ...patch } : p));
     setEditingEntry(null);
-    toast('Entry updated', 'success');
     try {
       const res = await fetch(`/api/payroll/${snapshot.id}`, {
         method: 'PATCH',
@@ -467,6 +467,7 @@ export default function MobilePayroll() {
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast('Entry updated', 'success');
     } catch {
       setPayrollEntries((prev) => prev.map((p) => p.id === snapshot.id ? snapshot : p));
       toast('Failed to save — reverting', 'error');

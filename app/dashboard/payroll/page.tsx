@@ -508,6 +508,7 @@ function PayrollPageInner() {
             prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
           );
         }
+        changeStatusTab('Pending');
         toast(`Payroll failed to save — rolled back`, 'error');
       } else {
         const data = await res.json();
@@ -542,6 +543,7 @@ function PayrollPageInner() {
           prev.map((p) => (ids.includes(p.id) ? { ...p, status: 'Pending' } : p))
         );
       }
+      changeStatusTab('Pending');
       toast(`Payroll failed to save — rolled back`, 'error');
     } finally {
       publishingPayrollRef.current = false;
