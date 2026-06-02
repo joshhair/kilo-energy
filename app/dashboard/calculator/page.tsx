@@ -948,7 +948,7 @@ function CalculatorPage() {
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
                 <p className="calc-hero-result" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
-                  ${animatedCloserTotal.toLocaleString()}
+                  ${((reps.find(r => r.id === effectiveCloserId)?.repType === 'setter' || reps.find(r => r.id === effectiveCloserId)?.repType === 'both') && selectedSetterId === effectiveCloserId && !isSelfGen ? animatedSetterTotal : animatedCloserTotal).toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
                   on ${Math.round(systemValue).toLocaleString()} system ({kW.toFixed(1)} kW × ${soldPPW.toFixed(2)}/W)

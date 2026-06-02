@@ -307,6 +307,7 @@ function NewDealPage() {
       setBviIntake(EMPTY_BVI_INTAKE);
       setUtilityBill(null);
       setBviSendOnSubmit(true);
+      setBviErrorsShown(false);
     }
   };
 
@@ -948,6 +949,7 @@ function NewDealPage() {
           setBviIntake(EMPTY_BVI_INTAKE);
           setUtilityBill(null);
           setBviSendOnSubmit(true);
+          setBviErrorsShown(false);
         }}
       />
     );

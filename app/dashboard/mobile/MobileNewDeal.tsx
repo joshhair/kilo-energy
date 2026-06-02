@@ -443,6 +443,7 @@ export default function MobileNewDeal() {
       setBviIntake(EMPTY_BVI_INTAKE);
       setUtilityBill(null);
       setBviSendOnSubmit(true);
+      setBviErrorsShown(false);
     }
   };
 
@@ -1163,6 +1164,7 @@ export default function MobileNewDeal() {
           setBviIntake(EMPTY_BVI_INTAKE);
           setUtilityBill(null);
           setBviSendOnSubmit(true);
+          setBviErrorsShown(false);
         }}
       />
     );

@@ -72,7 +72,8 @@ export async function GET() {
         additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
       if (user.role !== 'admin') {
-        const rel = relationshipToProject(user, {
+        const isBlitzOwner = b.ownerId === user.id;
+        const naturalRel = relationshipToProject(user, {
           closerId: p.closerId,
           setterId: p.setterId,
           subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,
@@ -80,6 +81,7 @@ export async function GET() {
           additionalClosers: withParties.additionalClosers.map((c) => ({ userId: c.userId })),
           additionalSetters: withParties.additionalSetters.map((sv) => ({ userId: sv.userId })),
         });
+        const rel = isBlitzOwner ? 'blitz_owner' : naturalRel;
         return scrubProjectForViewer(withParties, rel);
       }
       return withParties;
