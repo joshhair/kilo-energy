@@ -113,12 +113,13 @@ export default function MobileEarnings() {
   const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = myReimbs.length;
 
-  const currentYYYYMM   = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const monthFilterLabel = monthFilter ? `${MONTH_LABELS[parseInt(monthFilter.slice(5, 7), 10) - 1]} ${monthFilter.slice(0, 4)}` : null;
   const totalPending    = myPayroll.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0);
   const pendingCount    = myPayroll.filter((p) => p.status === 'Pending').length;
-  const thisMonthEarned = sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter ?? currentYYYYMM)));
-  const approvedReimbs  = reimbursements.filter((r) => r.repId === effectiveRepId && r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
+  const thisMonthEarned = monthFilter
+    ? sumPaid(myPayroll.filter((p) => p.date.startsWith(monthFilter)))
+    : sumPaid(myPayroll.filter((p) => isInPeriod(p.date, period === 'all' ? 'this-month' : period)));
+  const approvedReimbs  = myReimbs.filter((r) => r.status === 'Approved').reduce((s, r) => s + r.amount, 0);
 
   const filteredDeals = dealRoleFilter
     ? dealPayments.filter((p) => {

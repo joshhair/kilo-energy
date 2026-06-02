@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { DEFAULT_INSTALL_PAY_PCT, InstallerBaseline, InstallerRates, SOLARTECH_FAMILIES, TrainerAssignment } from '../../../lib/data';
+import { DEFAULT_INSTALL_PAY_PCT, InstallerBaseline, InstallerRates, SOLARTECH_FAMILIES } from '../../../lib/data';
 import {
   ArrowLeft, Tent, Users, Handshake,
   Building2, Landmark, BookOpen, Shield, Download,
-  Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus, Sun, Bell, GraduationCap,
+  Trash2, CheckSquare, Square, SlidersHorizontal, Pencil, Plus, Sun, Bell,
 } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBulkActionBar from './shared/MobileBulkActionBar';
@@ -25,7 +25,7 @@ import NotificationsSection from '../settings/sections/NotificationsSection';
 type SettingsSection =
   | 'blitz-permissions' | 'project-managers' | 'sub-dealers'
   | 'installers' | 'financers' | 'baselines'
-  | 'admin-users' | 'trainer-assignments' | 'export' | 'customization' | 'appearance' | 'notifications';
+  | 'admin-users' | 'export' | 'customization' | 'appearance' | 'notifications';
 
 interface NavItem {
   id: SettingsSection;
@@ -46,7 +46,6 @@ const NAV: NavGroup[] = [
       { id: 'sub-dealers', label: 'Sub-Dealers', icon: Handshake },
       { id: 'project-managers', label: 'Project Managers', icon: Users },
       { id: 'admin-users', label: 'Admin Users', icon: Shield },
-      { id: 'trainer-assignments', label: 'Trainer Assignments', icon: GraduationCap },
     ],
   },
   {
@@ -239,7 +238,6 @@ function SectionContent({ section, onUnsavedChange }: { section: SettingsSection
     case 'installers': return <InstallersSection />;
     case 'financers': return <FinancersSection />;
     case 'admin-users': return <AdminUsersSection />;
-    case 'trainer-assignments': return <TrainerAssignmentsSection />;
     case 'project-managers': return <ProjectManagersSection />;
     case 'blitz-permissions': return <BlitzPermissionsSection />;
     case 'export': return <ExportSection />;
@@ -647,95 +645,6 @@ function AdminUsersSection() {
         open={!!confirmDeleteId}
         title="Remove Admin User"
         message="Are you sure you want to remove this admin user? This cannot be undone."
-        confirmLabel="Remove"
-        onConfirm={handleDelete}
-        onClose={() => setConfirmDeleteId(null)}
-      />
-    </div>
-  );
-}
-
-// ─── Trainer Assignments Section ─────────────────────────────────────────────
-
-function TrainerAssignmentsSection() {
-  const { trainerAssignments, setTrainerAssignments, reps } = useApp();
-  const { toast } = useToast();
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  const handleDelete = () => {
-    if (!confirmDeleteId) return;
-    const id = confirmDeleteId;
-    const assignment = trainerAssignments.find((a) => a.id === id);
-    if (!assignment) { setConfirmDeleteId(null); return; }
-    const saved: TrainerAssignment = assignment;
-    setTrainerAssignments((prev) => prev.filter((a) => a.id !== id));
-    fetch('/api/trainer-assignments', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    }).catch(console.error);
-    toast('Trainer assignment removed', 'info', {
-      label: 'Undo',
-      onClick: () => {
-        setTrainerAssignments((prev) => [...prev, saved]);
-        fetch('/api/trainer-assignments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trainerId: saved.trainerId, traineeId: saved.traineeId, tiers: saved.tiers }),
-        })
-          .then((r) => r.json())
-          .then((created) => {
-            if (created?.id) {
-              setTrainerAssignments((prev) =>
-                prev.map((a) => (a.id === saved.id ? { ...a, id: created.id } : a))
-              );
-            }
-          })
-          .catch(console.error);
-      },
-    });
-    setConfirmDeleteId(null);
-  };
-
-  return (
-    <div className="space-y-3">
-      <p className="text-base mb-2" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        Trainer–trainee assignments. Full tier editing available on desktop.
-      </p>
-      {trainerAssignments.length === 0 ? (
-        <MobileEmptyState icon={GraduationCap} title="No trainer assignments" />
-      ) : (
-        trainerAssignments.map((assignment) => {
-          const trainer = reps.find((r) => r.id === assignment.trainerId);
-          const trainee = reps.find((r) => r.id === assignment.traineeId);
-          return (
-            <MobileCard key={assignment.id}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {trainer?.name ?? 'Unknown'} → {trainee?.name ?? 'Unknown'}
-                  </p>
-                  <p className="text-base mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {assignment.tiers.length} tier{assignment.tiers.length !== 1 ? 's' : ''}
-                    {assignment.isActiveTraining === false ? ' · Residuals' : ''}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setConfirmDeleteId(assignment.id)}
-                  className="p-3 rounded-xl active:scale-[0.82] active:text-[var(--accent-red-solid)] transition-all duration-150 ease-out shrink-0"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </MobileCard>
-          );
-        })
-      )}
-      <ConfirmDialog
-        open={!!confirmDeleteId}
-        title="Remove Assignment"
-        message="Remove this trainer assignment? You can undo via the toast notification."
         confirmLabel="Remove"
         onConfirm={handleDelete}
         onClose={() => setConfirmDeleteId(null)}
