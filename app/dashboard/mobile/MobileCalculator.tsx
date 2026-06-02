@@ -235,6 +235,8 @@ export default function MobileCalculator() {
     : 0;
   const closerTrainerRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerDealCount) : 0;
   const closerTrainerRep = closerAssignment ? reps.find((r) => r.id === closerAssignment.trainerId) ?? null : null;
+
+  const isBelowBaseline = soldPPW > 0 && closerPerW > 0 && soldPPW <= closerPerW + closerTrainerRate;
   const closerTrainerTotal = closerTrainerRate > 0 && kW > 0 && soldPPW > 0
     ? Math.round(closerTrainerRate * kW * 1000 * 100) / 100
     : 0;
@@ -764,6 +766,8 @@ export default function MobileCalculator() {
                 if (hasInput && soldPPW > 0)
                   setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
               }}
+              enterKeyHint="done"
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
               className={inputCls + ' mt-auto'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
             />
@@ -784,8 +788,17 @@ export default function MobileCalculator() {
                 if (hasInput && soldPPW > 0)
                   setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
               }}
+              enterKeyHint="done"
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
               className={inputCls + ' mt-auto'}
-              style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-emerald-solid)' } as React.CSSProperties}
+              style={{
+                ...inputStyle,
+                '--tw-ring-color': isBelowBaseline ? 'var(--accent-red-solid)' : 'var(--accent-emerald-solid)',
+                borderColor: isBelowBaseline
+                  ? 'color-mix(in srgb, var(--accent-red-solid) 45%, transparent)'
+                  : 'var(--border-subtle)',
+                transition: 'border-color 200ms ease, box-shadow 200ms ease',
+              } as React.CSSProperties}
             />
           </div>
         </div>
@@ -802,6 +815,8 @@ export default function MobileCalculator() {
               placeholder="Target $ (e.g. 2000)"
               value={targetEarning}
               onChange={(e) => setTargetEarning(e.target.value)}
+              enterKeyHint="go"
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
               className={inputCls + ' flex-1'}
               style={{ ...inputStyle, '--tw-ring-color': 'var(--accent-blue-solid)' } as React.CSSProperties}
             />
