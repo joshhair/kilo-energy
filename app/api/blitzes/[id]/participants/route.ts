@@ -133,8 +133,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
         });
         for (const project of coRoleProjects) {
-          const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
-          if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+          const isAdditionalCloser = project.additionalClosers.some(c => c.userId === body.userId);
+          const counterpartyId = isAdditionalCloser ? project.setterId : project.closerId;
+          if (counterpartyId !== null && thisBlitzParticipantIds.includes(counterpartyId)) {
             await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
           }
         }
@@ -180,8 +181,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
         });
         for (const project of coRoleProjects) {
-          const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
-          if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+          const isAdditionalCloser = project.additionalClosers.some(c => c.userId === body.userId);
+          const counterpartyId = isAdditionalCloser ? project.setterId : project.closerId;
+          if (counterpartyId !== null && thisBlitzParticipantIds.includes(counterpartyId)) {
             await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
           }
         }
@@ -438,9 +440,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       select: { id: true, closerId: true, setterId: true, additionalClosers: { select: { userId: true } }, additionalSetters: { select: { userId: true } } },
     });
     for (const project of coRoleProjects) {
-      // Only re-link if the primary closer or setter is a participant of this blitz
-      const primaryIds = [project.closerId, project.setterId].filter((id): id is string => id !== null);
-      if (primaryIds.some(id => thisBlitzParticipantIds.includes(id))) {
+      const isAdditionalCloser = project.additionalClosers.some(c => c.userId === body.userId);
+      const counterpartyId = isAdditionalCloser ? project.setterId : project.closerId;
+      if (counterpartyId !== null && thisBlitzParticipantIds.includes(counterpartyId)) {
         await prisma.project.update({ where: { id: project.id }, data: { blitzId } });
       }
     }

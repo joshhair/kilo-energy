@@ -514,7 +514,7 @@ function TrainingPageInner() {
       }
       const overrideRemaining = currentRate > 0
         ? traineeDeals.reduce((sum, p) => {
-            const expected = Math.round(currentRate * p.kWSize * 1000 * 100) / 100;
+            const expected = Math.round(currentRate * (p.kWSize ?? 0) * 1000 * 100) / 100;
             const paid = paidByProject.get(p.id) ?? 0;
             return sum + Math.max(0, expected - paid);
           }, 0)
@@ -2975,7 +2975,7 @@ function BackfillWizard({
       }
 
       const installPayPct = installerPayConfigs[p.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
-      const kW = p.kWSize;
+      const kW = p.kWSize ?? 0;
       const rate = resolution.rate;
 
       const entriesBefore = entries.length;

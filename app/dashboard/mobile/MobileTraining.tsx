@@ -378,7 +378,7 @@ export default function MobileTraining({
       }
       const overrideRemaining = currentRate > 0
         ? traineeDeals.reduce((sum, p) => {
-            const expected = Math.round(currentRate * p.kWSize * 1000 * 100) / 100;
+            const expected = Math.round(currentRate * (p.kWSize ?? 0) * 1000 * 100) / 100;
             const paid = paidByProject.get(p.id) ?? 0;
             return sum + Math.max(0, expected - paid);
           }, 0)

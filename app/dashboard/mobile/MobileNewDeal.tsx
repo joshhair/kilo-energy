@@ -591,13 +591,14 @@ export default function MobileNewDeal() {
   const prevShowPreviewRef = useRef(false);
   const [displayedTotal, setDisplayedTotal] = useState(0);
   const countUpRafRef = useRef<number | null>(null);
-  const [pillMount, setPillMount] = useState(false);
+  const [pillActive, setPillActive] = useState(false);
+  const [pillMounted, setPillMounted] = useState(false);
+  const pillExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const firstAppear = !prevShowPreviewRef.current && showPreview;
     prevShowPreviewRef.current = showPreview;
-    if (!showPreview) { setDisplayedTotal(0); setPillMount(false); return; }
-    setPillMount(currentStep === 1);
+    if (!showPreview) { setDisplayedTotal(0); return; }
     if (firstAppear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const start = performance.now();
       const duration = 480;
@@ -614,8 +615,21 @@ export default function MobileNewDeal() {
     } else {
       setDisplayedTotal(closerTotal);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentStep intentionally not a dep; count-up should only fire on closerTotal change
   }, [showPreview, closerTotal]);
+
+  useEffect(() => {
+    const shouldShow = currentStep === 1 && showPreview;
+    if (shouldShow) {
+      if (pillExitTimerRef.current) { clearTimeout(pillExitTimerRef.current); pillExitTimerRef.current = null; }
+      setPillActive(true);
+      setPillMounted(true);
+    } else {
+      setPillActive(false);
+      if (pillExitTimerRef.current) clearTimeout(pillExitTimerRef.current);
+      pillExitTimerRef.current = setTimeout(() => setPillMounted(false), 260);
+    }
+    return () => { if (pillExitTimerRef.current) clearTimeout(pillExitTimerRef.current); };
+  }, [currentStep, showPreview]);
 
   useEffect(() => {
     if (closerTotal !== prevCloserTotalRef.current && (closerTotal > 0 || prevCloserTotalRef.current > 0)) {
@@ -1068,6 +1082,48 @@ export default function MobileNewDeal() {
     return { ...base, transition: 'box-shadow 280ms ease, border-color 280ms ease' };
   })();
 
+  if (!dbReady) {
+    const sk: React.CSSProperties = {
+      background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)',
+      borderRadius: 14,
+    };
+    return (
+      <div className="px-6 pt-3 pb-28 space-y-7 animate-pulse">
+        {/* Step indicator skeleton */}
+        <div className="flex items-center gap-2 mb-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="w-2 h-2 rounded-full" style={sk} />
+          ))}
+          <div className="h-3 w-16 rounded-full" style={sk} />
+        </div>
+        {/* Title skeleton */}
+        <div className="mb-6 space-y-2">
+          <div className="h-2.5 w-14 rounded" style={sk} />
+          <div className="h-8 w-40 rounded-lg" style={sk} />
+        </div>
+        {/* 3 field skeletons matching Customer Name / Sold Date / Closer */}
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-2.5 w-28 rounded" style={sk} />
+            <div style={{ ...sk, height: 56, borderRadius: 14 }} />
+          </div>
+        ))}
+        {/* CTA skeleton */}
+        <div
+          className="fixed left-0 right-0 z-40 px-6"
+          style={{
+            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            paddingBottom: '12px',
+            paddingTop: '12px',
+            background: 'linear-gradient(to bottom, transparent 0%, var(--surface-page) 100%)',
+          }}
+        >
+          <div style={{ ...sk, height: 52, borderRadius: 14 }} />
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <MobileSuccessScreen
@@ -1311,7 +1367,7 @@ export default function MobileNewDeal() {
 
         {/* ── Step 2: Deal Details ── */}
         {currentStep === 1 && (
-          <div key={1} className={`space-y-7 flex-1 flex flex-col ${pillMount ? 'pb-[240px]' : 'pb-[176px]'} ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
+          <div key={1} className={`space-y-7 flex-1 flex flex-col ${pillActive ? 'pb-[240px]' : 'pb-[176px]'} ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
             {/* Installer */}
             <div>
               <label className={labelCls} style={labelStyle}>Installer</label>
@@ -1789,7 +1845,7 @@ export default function MobileNewDeal() {
               key={`cta-1`}
               className="cta-bar-enter cta-bar-lift-transition fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: pillMount
+                bottom: pillActive
                   ? 'calc(72px + 60px + env(safe-area-inset-bottom, 0px))'
                   : 'calc(72px + env(safe-area-inset-bottom, 0px))',
                 paddingBottom: '12px',
@@ -2095,15 +2151,17 @@ export default function MobileNewDeal() {
       {/* Floating commission pill — anchors directly above the bottom nav
           so it visually belongs to the bottom action band, not floating
           mid-screen. Slides up from nav when preview unlocks on Step 2. */}
-      {pillMount && (
+      {pillMounted && (
         <div
-          className="fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5"
+          className={`fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5${
+            !pillActive ? ' comm-pill-exit' : ''
+          }`}
           style={{
             bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
             background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent))',
             border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
             backdropFilter: 'blur(12px)',
-            animation: 'comm-pill-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            ...(pillActive ? { animation: 'comm-pill-enter 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both' } : {}),
           }}
         >
           <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Your Commission</span>

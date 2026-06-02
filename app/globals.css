@@ -1622,6 +1622,15 @@ select {
   .comm-pill-enter { animation: none; opacity: 1; }
 }
 
+@keyframes comm-pill-exit {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(14px) scale(0.97); opacity: 0; }
+}
+.comm-pill-exit { animation: comm-pill-exit 240ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .comm-pill-exit { animation: none; opacity: 0; transition: opacity 100ms ease; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-more-icon { transition: none !important; }
 }
