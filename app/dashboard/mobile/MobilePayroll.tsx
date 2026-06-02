@@ -4,7 +4,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr, formatDate, downloadCSV } from '../../../lib/utils';
-import { breakdownByType, type StatusBreakdown } from '../../../lib/aggregators';
+import { breakdownByType } from '../../../lib/aggregators';
+import { SummaryCard } from './shared/PayrollSummaryCard';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { Check, Trash2, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
@@ -254,7 +255,7 @@ export default function MobilePayroll() {
 
   const closePublish = useCallback(() => {
     setPublishExiting(true);
-    setTimeout(() => setShowPublishConfirm(false), 210);
+    setTimeout(() => setShowPublishConfirm(false), 270);
   }, []);
 
   const handlePublishOrApproveAll = useCallback(async () => {
@@ -720,9 +721,9 @@ export default function MobilePayroll() {
             amber (semantic). Paid = completed → refined Next-Payout
             green. The DRAFT bright-blue was reading as info/primary
             which the status doesn't warrant. */}
-        <SummaryCard label="Draft" total={draftBreakdown.total} tone="var(--text-secondary)" breakdown={draftBreakdown} pending />
-        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="var(--accent-amber-text)" breakdown={pendingBreakdown} pending />
-        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-text)" breakdown={paidBreakdown} />
+        <SummaryCard label="Draft" total={draftBreakdown.total} tone="var(--text-secondary)" breakdown={draftBreakdown} pending mountDelay={0} isActive={statusTab === 'Draft'} />
+        <SummaryCard label="Pending" total={pendingBreakdown.total} tone="var(--accent-amber-text)" breakdown={pendingBreakdown} pending mountDelay={70} isActive={statusTab === 'Pending'} />
+        <SummaryCard label="Paid" total={paidBreakdown.total} tone="var(--accent-emerald-text)" breakdown={paidBreakdown} mountDelay={140} isActive={statusTab === 'Paid'} />
       </div>
       {pendingTotal > 0 && (
         <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
@@ -860,12 +861,19 @@ export default function MobilePayroll() {
       )}
 
       {/* ── Grouped entry list ── */}
-      {groupedByRep.length === 0 ? (
-        <p className="text-base text-center py-8" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>No {statusTab.toLowerCase()} entries.</p>
-      ) : (
-        <div className="space-y-6">
-          {groupedByRep.map((group) => (
-            <div key={`rep-${group.repId}`} className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+      {(() => {
+        const tabKey = `${statusTab}-${typeTab}`;
+        return (
+          <div key={tabKey} className="payroll-list-enter">
+            {groupedByRep.length === 0 ? (
+              <p
+                className="payroll-group text-base text-center py-8"
+                style={{ '--stagger-i': 0, color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" } as React.CSSProperties}
+              >No {statusTab.toLowerCase()} entries.</p>
+            ) : (
+              <div className="space-y-6">
+                {groupedByRep.map((group, i) => (
+                  <div key={`rep-${group.repId}`} className="payroll-group rounded-2xl p-4" style={{ '--stagger-i': Math.min(i, 4), background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' } as React.CSSProperties}>
               {/* Rep group header */}
               <div className="flex items-center justify-between mb-2">
                 <p className="text-base font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{group.repName}</p>
@@ -906,9 +914,12 @@ export default function MobilePayroll() {
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Sticky bottom action (admin only) — premium glass bar with
           an outlined emerald CTA. The action stays prominent (sticky +
@@ -1338,77 +1349,6 @@ export default function MobilePayroll() {
       />
       </div>
       )}
-    </div>
-  );
-}
-
-/**
- * Compact mobile summary card. Top: label. Middle: combined total.
- * Bottom: per-type breakdown (Deals / Bonus / Trainer), each
- * suppressed when $0 to reduce noise. Inline chargeback note on the
- * Deals line when non-zero.
- */
-/** Compact currency for narrow mobile cards. The 3-up summary grid
- *  on a phone leaves ~80px of content width per tile, so anything
- *  with 4-digit-plus dollars + cents truncates ("$5,118.04" → "$5,11…").
- *  Tiered formatting:
- *    ≥ $1M  → $1.83M (1–2 sig figs)
- *    ≥ $10K → $15K
- *    ≥ $1K  → $5,118 (drop cents — cents are noise at the summary level)
- *    < $1K  → $128 (full precision)
- *  Full untruncated value stays available via the title= tooltip. */
-function compactCurrency(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2)}M`;
-  if (abs >= 10_000) return `${sign}$${Math.round(abs / 1_000)}K`;
-  if (abs >= 1_000) return `${sign}$${Math.round(abs).toLocaleString()}`;
-  return `${sign}$${abs.toLocaleString()}`;
-}
-
-function SummaryCard({ label, total, tone, breakdown, pending = false }: {
-  label: string;
-  total: number;
-  tone: string;
-  breakdown: StatusBreakdown;
-  pending?: boolean;
-}) {
-  // Use compact currency ($65.6K) for breakdown lines so multi-figure
-  // totals like "$65,556" don't get truncated at the 3-card grid width.
-  // Cents would be noise here regardless of formatting.
-  const fmtBreakdown = (n: number) => {
-    const abs = Math.abs(n);
-    const sign = n < 0 ? '−' : '';
-    return `${sign}${compactCurrency(abs)}`;
-  };
-  const lines: string[] = [];
-  if (breakdown.deal !== 0) {
-    let line = `Deals ${fmtBreakdown(breakdown.deal)}`;
-    if (breakdown.chargebacks !== 0) {
-      line += ` (−${compactCurrency(Math.abs(breakdown.chargebacks))} ${pending ? 'pending cb' : 'cb'})`;
-    }
-    lines.push(line);
-  }
-  if (breakdown.bonus !== 0) lines.push(`Bonus ${fmtBreakdown(breakdown.bonus)}`);
-  if (breakdown.trainer !== 0) lines.push(`Trainer ${fmtBreakdown(breakdown.trainer)}`);
-
-  return (
-    <div className="rounded-2xl p-3 min-w-0 overflow-hidden" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-      <p className="text-[10px] uppercase tracking-widest font-semibold truncate" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{label}</p>
-      <p
-        className="text-base font-bold tabular-nums mt-1 leading-none truncate"
-        title={`$${total.toLocaleString()}`}
-        style={{ color: tone, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
-      >
-        {compactCurrency(total)}
-      </p>
-      <div className="mt-2 space-y-0.5">
-        {lines.length === 0
-          ? <p className="text-[10px]" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>—</p>
-          : lines.map((l) => (
-              <p key={l} className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{l}</p>
-            ))}
-      </div>
     </div>
   );
 }

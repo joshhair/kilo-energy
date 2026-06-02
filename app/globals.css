@@ -366,6 +366,18 @@
   .cta-bar-exit { animation: none; }
 }
 
+@keyframes payroll-group-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.payroll-list-enter .payroll-group {
+  animation: payroll-group-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-i, 0) * 45ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .payroll-list-enter .payroll-group { animation: none; }
+}
+
 /* ── Scrollbar-gutter: prevents layout shift ────────────────────────────────
    Reserving space for the scrollbar before it appears stops the content
    area from reflowing when the page grows tall enough to need one.          */
@@ -1324,6 +1336,25 @@ select {
   -webkit-backdrop-filter: blur(12px);
 }
 
+@keyframes publish-overlay-in {
+  from { opacity: 0; transform: translateY(48px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes publish-overlay-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(20px) scale(0.99); }
+}
+.publish-overlay {
+  animation: publish-overlay-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+.publish-overlay[data-exiting] {
+  animation: publish-overlay-out 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .publish-overlay, .publish-overlay[data-exiting] { animation: none; }
+}
+
 /* ── Scroll-triggered reveal — useScrollReveal() hook companion classes ──────── */
 
 /* Initial hidden state: nudged down + blurred + invisible.
@@ -1863,5 +1894,25 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .calc-share-icon-pop { animation: none; }
+}
+
+/* ── PayrollSummaryCard mount stagger + active accent bar ───────────────── */
+@keyframes summary-card-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.summary-card-in {
+  animation: summary-card-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes accent-bar-scale {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.accent-bar-scale {
+  animation: accent-bar-scale 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left;
+}
+@media (prefers-reduced-motion: reduce) {
+  .summary-card-in, .accent-bar-scale { animation: none; }
 }
 
