@@ -12,7 +12,7 @@ import {
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileBulkActionBar from './shared/MobileBulkActionBar';
 import MobileCard from './shared/MobileCard';
-import MobileListItem from './shared/MobileListItem';
+import SettingsNavItem from './shared/SettingsNavItem';
 import MobileSection from './shared/MobileSection';
 import MobileEmptyState from './shared/MobileEmptyState';
 import { SegmentedPills, Switch } from '../../../components/ui';
@@ -30,7 +30,7 @@ type SettingsSection =
 interface NavItem {
   id: SettingsSection;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 interface NavGroup {
@@ -217,17 +217,15 @@ export default function MobileSettings() {
           <MobileSection title={group}>
             <MobileCard>
               {items.map((item, idx) => (
-                <div
-                  key={item.id}
-                  style={prefersReducedMotion ? undefined : {
-                    animation: 'ms-nav-item-in 270ms cubic-bezier(0.16,1,0.3,1) both',
-                    animationDelay: `${groupIdx * 80 + idx * 38}ms`,
-                  }}
-                >
+                <div key={item.id}>
                   {idx > 0 && <div className="mx-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />}
-                  <div className="active:scale-[0.97] transition-transform duration-100 ease-out">
-                    <MobileListItem title={item.label} onTap={() => setActiveSection(item.id)} />
-                  </div>
+                  <SettingsNavItem
+                    label={item.label}
+                    icon={item.icon}
+                    group={group}
+                    onTap={() => setActiveSection(item.id)}
+                    animationDelay={prefersReducedMotion ? undefined : groupIdx * 80 + idx * 38}
+                  />
                 </div>
               ))}
             </MobileCard>

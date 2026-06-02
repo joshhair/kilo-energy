@@ -12,11 +12,12 @@ import {
   PHASES, Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   splitCloserSetterPay, resolveTrainerRate,
-  DEFAULT_INSTALL_PAY_PCT, INSTALLER_PAY_CONFIGS,
+  DEFAULT_INSTALL_PAY_PCT,
   SOLARTECH_FAMILIES,
 } from '../../../../lib/data';
 import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-deduction';
 import { computeProjectedTrainerLegs } from '../../../../lib/trainer-projection';
+import { myCommissionOnProject } from '../../../../lib/commissionHelpers';
 import { formatDate } from '../../../../lib/utils';
 import { Flag, FlagOff, AlertTriangle, X, Pencil, Plus, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -70,7 +71,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // resulting field_edit entry in the activity feed so future readers
   // know why this number changed.
   const [editReason, setEditReason] = useState('');
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRecordChargeback, setShowRecordChargeback] = useState(false);
   // PaidCorrectionModal state — admin-only inline edit of a Paid payroll
@@ -167,7 +167,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   // ArrowLeft / ArrowRight keyboard shortcuts (only when no input is focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (showEditModal || showCancelConfirm || showDeleteConfirm || showCancelReasonModal || phaseConfirm) return;
+      if (showEditModal || showDeleteConfirm || showCancelReasonModal || phaseConfirm) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'ArrowLeft' && prevProjectId) {
@@ -181,7 +181,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- router is a stable singleton from Next; omitting is intentional
-  }, [prevProjectId, nextProjectId, showEditModal, showCancelConfirm, showDeleteConfirm, showCancelReasonModal, phaseConfirm]);
+  }, [prevProjectId, nextProjectId, showEditModal, showDeleteConfirm, showCancelReasonModal, phaseConfirm]);
 
   // Escape to close Edit Project modal
   useEffect(() => {
@@ -273,7 +273,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const handleCancel = () => {
-    setShowCancelConfirm(false);
     setCancelReason('');
     setCancelNotes('');
     setShowCancelReasonModal(true);
@@ -865,7 +864,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             )}
             {project.phase !== 'Cancelled' && (
               <button
-                onClick={() => setShowCancelConfirm(true)}
+                onClick={handleCancel}
                 className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
               >
                 Cancel
@@ -892,7 +891,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             )}
             {(effectiveRepId === project.repId) && project.phase !== 'Cancelled' && (
               <button
-                onClick={() => setShowCancelConfirm(true)}
+                onClick={handleCancel}
                 className="bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
               >
                 Cancel Project
@@ -970,7 +969,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             // MobileProjectDetail "Your Commission $X" hero — parity fix
             // so a rep sees one total on their phone and the same total
             // on desktop (previously desktop only showed milestone boxes).
-            const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
             const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
             const isSetterRep = project.setterId === effectiveRepId;
             const isCloserRep2 = project.repId === effectiveRepId;
@@ -1008,52 +1006,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               ) : null;
             }
 
-            const myExpM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
-            const myExpM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
-            const myExpM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
-            // Trainer-leg projection: fold in chain-trainer pay so a rep
-            // who's BOTH closer/setter AND the chain trainer (Hunter on
-            // McMorrow) sees combined pay in the hero number.
-            const projectedLegs = computeProjectedTrainerLegs(
-              {
-                id: project.id,
-                trainerId: project.trainerId ?? null,
-                trainerRate: project.trainerRate ?? null,
-                repId: project.repId,
-                setterId: project.setterId ?? null,
-                kWSize: project.kWSize ?? 0,
-                m2Amount: project.m2Amount,
-                setterM2Amount: project.setterM2Amount,
-                additionalClosers: (project.additionalClosers ?? []).map((c) => ({
-                  userId: c.userId,
-                  userName: c.userName ?? '',
-                  m2Amount: c.m2Amount ?? 0,
-                })),
-                additionalSetters: (project.additionalSetters ?? []).map((s) => ({
-                  userId: s.userId,
-                  userName: s.userName ?? '',
-                  m2Amount: s.m2Amount ?? 0,
-                })),
-              },
-              trainerAssignments,
-              payrollEntries,
-            );
-            const viewerTrainerPay = projectedLegs
-              .filter((l) => l.trainerId === effectiveRepId)
-              .reduce((s, l) => s + l.amount, 0);
-            const myTotal = myExpM1 + myExpM2 + (myExpM3 ?? 0) + viewerTrainerPay;
-            return myTotal > 0 ? (
+            const myCommission = myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries, trainerAssignments);
+            return myCommission.total > 0 ? (
               <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
                    style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
                      style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
                 <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
                 <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
-                  ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  ${myCommission.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[var(--text-secondary)] text-sm mt-1">
-                  Projected earnings on this deal
-                  {viewerTrainerPay > 0 && ` (includes $${viewerTrainerPay.toLocaleString(undefined, { maximumFractionDigits: 0 })} trainer override)`}
+                  {myCommission.status === 'paid'
+                    ? 'Fully paid'
+                    : myCommission.status === 'partial'
+                    ? 'Partially paid · see breakdown below'
+                    : 'Projected earnings on this deal'}
+                  {myCommission.trainerProjection > 0 && ` (includes $${myCommission.trainerProjection.toLocaleString(undefined, { maximumFractionDigits: 0 })} trainer override)`}
                 </p>
               </div>
             ) : null;
@@ -2423,19 +2392,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         projectKWSize={project.kWSize}
         defaultTrainerId={project.trainerId ?? effTrainerId ?? null}
         defaultTrainerRate={project.trainerRate ?? effectiveTrainerRate ?? null}
-        installPayPct={installerPayConfigs[project.installer]?.installPayPct ?? INSTALLER_PAY_CONFIGS[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT}
+        installPayPct={installerPayConfigs[project.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT}
         reps={reps}
-      />
-
-      {/* Cancel Confirm Modal */}
-      <ConfirmDialog
-        open={showCancelConfirm}
-        onClose={() => setShowCancelConfirm(false)}
-        onConfirm={handleCancel}
-        title="Cancel Project"
-        message={`This will mark ${project.customerName} as Cancelled. This can be reversed by an admin.`}
-        confirmLabel="Cancel Project"
-        danger={true}
       />
 
       {/* Delete Confirm Modal — Admin only */}
