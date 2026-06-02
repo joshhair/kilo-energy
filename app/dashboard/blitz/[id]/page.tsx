@@ -137,7 +137,7 @@ export default function BlitzDetailPage() {
         startDate: data.startDate,
         endDate: data.endDate,
         notes: data.notes,
-        status: data.status,
+        status: normalized.status,
         ownerId: data.owner?.id ?? '',
         confirmDeadline: data.confirmDeadline ? String(data.confirmDeadline).slice(0, 10) : '',
         maxParticipants: data.maxParticipants != null ? String(data.maxParticipants) : '',

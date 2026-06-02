@@ -67,7 +67,7 @@ export function createInstallerActions(deps: InstallerDeps) {
       fetch(`/api/installers?name=${encodeURIComponent(name)}`)
         .then((r) => r.ok ? r.json() as Promise<{ id: string }> : null)
         .then((data) => {
-          if (!data?.id) return;
+          if (!data?.id) return rollback();
           setIdMaps((prev) => ({ ...prev, installerNameToId: { ...prev.installerNameToId, [name]: data.id } }));
           doPatch(data.id);
         })
@@ -98,7 +98,7 @@ export function createInstallerActions(deps: InstallerDeps) {
       fetch(`/api/financers?name=${encodeURIComponent(name)}`)
         .then((r) => r.ok ? r.json() as Promise<{ id: string }> : null)
         .then((data) => {
-          if (!data?.id) return;
+          if (!data?.id) return rollback();
           setIdMaps((prev) => ({ ...prev, financerNameToId: { ...prev.financerNameToId, [name]: data.id } }));
           doPatch(data.id);
         })

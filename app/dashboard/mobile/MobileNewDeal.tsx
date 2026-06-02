@@ -453,6 +453,9 @@ export default function MobileNewDeal() {
   const handleSolarTechFamilyChange = (value: string) => {
     const rawMappedFinancer = SOLARTECH_FAMILY_FINANCER[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
+    if (rawMappedFinancer && !mappedFinancer && form.productType !== 'Loan' && form.productType !== 'Cash') {
+      toast(`"${rawMappedFinancer}" (auto-mapped financer for this family) is no longer available. Please select a financer manually.`, 'error');
+    }
     // Loan deals must not inherit a 'Cash' financer; Cash deals must keep 'Cash'
     const effectiveFinancer = form.productType === 'Loan' ? '' : form.productType === 'Cash' ? 'Cash' : mappedFinancer;
     setForm((prev) => ({ ...prev, solarTechFamily: value, solarTechProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));
@@ -464,6 +467,9 @@ export default function MobileNewDeal() {
   const handlePcFamilyChange = (value: string) => {
     const rawMappedFinancer = pcConfig?.familyFinancerMap?.[value] ?? '';
     const mappedFinancer = rawMappedFinancer && activeFinancers.includes(rawMappedFinancer) ? rawMappedFinancer : '';
+    if (rawMappedFinancer && !mappedFinancer && form.productType !== 'Loan' && form.productType !== 'Cash') {
+      toast(`"${rawMappedFinancer}" (auto-mapped financer for this family) is no longer available. Please select a financer manually.`, 'error');
+    }
     // Loan deals must not inherit a financer; Cash deals must keep 'Cash'
     const effectiveFinancer = form.productType === 'Loan' ? '' : form.productType === 'Cash' ? 'Cash' : mappedFinancer;
     setForm((prev) => ({ ...prev, pcFamily: value, installerProductId: '', financer: effectiveFinancer, prepaidSubType: '', additionalClosers: [], additionalSetters: [] }));

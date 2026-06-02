@@ -1796,3 +1796,15 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .calc-share-icon-pop { animation: none; }
 }
+
+/* ── Incentives list crossfade on filter/sort change ─────────────────────── */
+.incentives-list-transition {
+  transition: opacity 140ms ease-out, transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.incentives-list-transition.is-fading {
+  opacity: 0;
+  transform: translateY(5px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .incentives-list-transition { transition: none !important; }
+}

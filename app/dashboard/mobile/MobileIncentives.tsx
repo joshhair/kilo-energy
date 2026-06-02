@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useApp } from '../../../lib/context';
 import {
   computeIncentiveProgress,
@@ -103,6 +103,8 @@ export default function MobileIncentives() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [fulfillingKeys, setFulfillingKeys] = useState<Set<string>>(new Set());
+  const [listFading, setListFading] = useState(false);
+  const listFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pending Rewards — admin-only. Milestones where progress crossed the
   // threshold but admin hasn't yet flipped achieved=true. Parity with
@@ -148,6 +150,16 @@ export default function MobileIncentives() {
     : incentives.filter(
         (inc) => inc.active && (inc.type === 'company' || (effectiveRepId != null && inc.targetRepId === effectiveRepId))
       );
+
+  const triggerListSwitch = (action: () => void) => {
+    if (listFadeTimer.current) clearTimeout(listFadeTimer.current);
+    setListFading(true);
+    listFadeTimer.current = setTimeout(() => {
+      action();
+      setListFading(false);
+      listFadeTimer.current = null;
+    }, 140);
+  };
 
   const filterAndSort = (list: Incentive[]): Incentive[] => {
     let filtered = list;
@@ -421,7 +433,7 @@ export default function MobileIncentives() {
         <div className="flex gap-2">
           <select
             value={filter}
-            onChange={(e) => { setFilter(e.target.value as typeof filter); clearSelection(); setListVersion(v => v + 1); }}
+            onChange={(e) => triggerListSwitch(() => { setFilter(e.target.value as typeof filter); clearSelection(); setListVersion(v => v + 1); })}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
@@ -432,7 +444,7 @@ export default function MobileIncentives() {
           </select>
           <select
             value={sort}
-            onChange={(e) => { setSort(e.target.value as typeof sort); clearSelection(); setListVersion(v => v + 1); }}
+            onChange={(e) => triggerListSwitch(() => { setSort(e.target.value as typeof sort); clearSelection(); setListVersion(v => v + 1); })}
             className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
           >
@@ -484,6 +496,7 @@ export default function MobileIncentives() {
         )}
       </div>
 
+      <div className={`incentives-list-transition${listFading ? ' is-fading' : ''}`}>
       {/* Pending Rewards (admin only) — milestones whose progress crossed
           the threshold but haven't been marked achieved yet. One-tap
           "Mark Fulfilled" matches the desktop page. */}
@@ -600,6 +613,7 @@ export default function MobileIncentives() {
           </div>
         </MobileSection>
       )}
+      </div>
 
       {/* Admin: edit-incentive bottom sheet */}
       {isAdmin && editingIncentive && (
