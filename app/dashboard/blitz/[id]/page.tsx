@@ -26,7 +26,7 @@ import { BlitzEarningsForecast } from '../../components/BlitzEarningsForecast';
 import { SegmentedPills } from '../../../../components/ui';
 import { BlitzLeaderboard } from './BlitzLeaderboard';
 import { BlitzProfitability } from './BlitzProfitability';
-import { computeBlitzLeaderboard, LeaderboardEntry } from '../../../../lib/blitzComputed';
+import { computeBlitzLeaderboard, computeBlitzKiloMargin, LeaderboardEntry } from '../../../../lib/blitzComputed';
 import Link from 'next/link';
 
 const COST_CATEGORIES = ['housing', 'travel', 'gas', 'meals', 'incentives', 'swag', 'other'] as const;
@@ -234,7 +234,12 @@ export default function BlitzDetailPage() {
         body: JSON.stringify({ userId: effectiveRepId, joinStatus: action === 'accept' ? 'approved' : 'declined' }),
       });
       if (res.ok) {
-        toast(action === 'accept' ? 'Invitation accepted' : 'Invitation declined');
+        if (action === 'accept') {
+          const data = await res.json().catch(() => ({}));
+          toast(data.joinStatus === 'waitlist' ? "You've been added to the waitlist" : 'Invitation accepted');
+        } else {
+          toast('Invitation declined');
+        }
         loadBlitz();
       } else {
         const err = await res.json().catch(() => ({}));
@@ -348,19 +353,10 @@ export default function BlitzDetailPage() {
     }
   };
 
-  const kiloMargin = useMemo(() => {
-    return approvedVisibleProjects.reduce((s: number, p: any) => {
-      const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
-      const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
-      const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
-      if (isSelfGen && !approvedParticipantIds.has(p.closer.id)) return s;
-      if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) return s;
-      const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p);
-      const setterCost = ((p.setter?.id && p.setter?.id !== p.closer?.id) || (!p.setter?.id && (p.additionalSetters ?? []).length > 0)) ? 0.10 * p.kWSize * 1000 : 0;
-      return s + (closerPerW - kiloPerW) * p.kWSize * 1000 - setterCost;
-    }, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- getBlitzProjectBaselines is a local closure over the same deps; adding it causes duplicate re-runs
-  }, [approvedVisibleProjects, approvedParticipantIds, installerPricingVersions, productCatalogProducts, solarTechProducts]);
+  const kiloMargin = useMemo(
+    () => computeBlitzKiloMargin(approvedVisibleProjects, approvedParticipantIds, { solarTechProducts, productCatalogProducts, installerPricingVersions }),
+    [approvedVisibleProjects, approvedParticipantIds, installerPricingVersions, productCatalogProducts, solarTechProducts],
+  );
   const netProfit = kiloMargin - totalCosts;
   const roi = totalCosts > 0 ? ((netProfit / totalCosts) * 100) : 0;
 

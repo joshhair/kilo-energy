@@ -147,7 +147,12 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
         body: JSON.stringify({ userId: effectiveRepId, joinStatus: action === 'accept' ? 'approved' : 'declined' }),
       });
       if (res.ok) {
-        toast(action === 'accept' ? 'Invitation accepted' : 'Invitation declined');
+        if (action === 'accept') {
+          const data = await res.json().catch(() => ({}));
+          toast(data.joinStatus === 'waitlist' ? "You've been added to the waitlist" : 'Invitation accepted');
+        } else {
+          toast('Invitation declined');
+        }
         loadBlitz();
       } else {
         const err = await res.json().catch(() => ({}));
