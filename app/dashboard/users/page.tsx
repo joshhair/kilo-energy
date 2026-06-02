@@ -49,6 +49,7 @@ type SimpleUser = {
 };
 
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
+const KW_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold']);
 
 const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
 
@@ -1291,7 +1292,7 @@ function UsersPageInner() {
         />
         <GradCard
           label="kW Sold"
-          rawValue={projects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0)}
+          rawValue={projects.filter((p) => !KW_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0)}
           formatter={formatCompactKW}
           gradient="linear-gradient(135deg, color-mix(in srgb, var(--accent-amber-solid) 18%, transparent), color-mix(in srgb, var(--accent-amber-solid) 5%, transparent))"
           borderColor="color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)"
@@ -1518,7 +1519,7 @@ function UsersPageInner() {
           );
           const repPaid = repPaidAmounts.get(rep.id) ?? 0;
 
-          const totalKW = repProjects.filter((p) => !PIPELINE_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0);
+          const totalKW = repProjects.filter((p) => !KW_EXCLUDED.has(p.phase)).reduce((s, p) => s + (p.kWSize ?? 0), 0);
           const initials = rep.name.split(' ').map((n) => n[0]).join('');
           const rank = rankMap.get(rep.id) ?? 999;
 

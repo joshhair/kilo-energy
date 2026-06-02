@@ -158,6 +158,7 @@ function CalculatorPage() {
   // ── Recent Calc History (localStorage) ────────────────────────────────────
   const [calcHistory, setCalcHistory] = useState<CalcHistoryEntry[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [histOpenKey, setHistOpenKey] = useState(0);
   const lastSavedHash = useRef('');
 
   // Load history once on mount
@@ -863,7 +864,12 @@ function CalculatorPage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16 }}>
               <button
                 type="button"
-                onClick={() => setHistoryOpen((v) => !v)}
+                onClick={() => {
+                  setHistoryOpen((v) => {
+                    if (!v) setHistOpenKey((k) => k + 1);
+                    return !v;
+                  });
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-2">
@@ -877,12 +883,20 @@ function CalculatorPage() {
                   <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-dim)' }} />
                 )}
               </button>
-              {historyOpen && (
-                <div className="px-4 pb-3 space-y-2">
+              <div
+                style={{
+                  maxHeight: historyOpen ? `${calcHistory.length * 68 + 56}px` : '0px',
+                  overflow: 'hidden',
+                  transition: historyOpen
+                    ? 'max-height 300ms cubic-bezier(0.16, 1, 0.3, 1)'
+                    : 'max-height 180ms ease-in',
+                }}
+              >
+                <div key={histOpenKey} className="px-4 pb-3 space-y-2">
                   {calcHistory.map((entry, i) => (
                     <div
                       key={`${entry.timestamp}-${i}`}
-                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                      className={`hist-entry hist-entry-${Math.min(i, 4)} flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-[var(--surface-raised)] transition-colors`}
                       style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}
                     >
                       <div className="min-w-0 flex-1">
@@ -915,7 +929,7 @@ function CalculatorPage() {
                     Clear History
                   </button>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
@@ -933,8 +947,8 @@ function CalculatorPage() {
                 <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, marginBottom: 6 }}>
                   Your Earnings {hasSetter && setterTotal > 0 ? '(Closer)' : ''}
                 </p>
-                <p style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
-                  ${Math.round(closerTotal).toLocaleString()}
+                <p className="calc-hero-result" style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif", letterSpacing: '-0.03em', marginBottom: 4, textShadow: '0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
+                  ${animatedCloserTotal.toLocaleString()}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif", marginBottom: 20 }}>
                   on ${Math.round(systemValue).toLocaleString()} system ({kW.toFixed(1)} kW × ${soldPPW.toFixed(2)}/W)

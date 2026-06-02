@@ -178,12 +178,12 @@ function RepEarningsView() {
       const role = row.kind === 'payroll' ? (row.entry.notes ?? '') : '';
       if (dealRoleFilter === 'Setter')  return role === 'Setter' || role.startsWith('Co-setter');
       if (dealRoleFilter === 'Trainer') return role.startsWith('Trainer override');
-      return role !== 'Setter' && !role.startsWith('Co-setter') && !role.startsWith('Co-closer') && !role.startsWith('Trainer override') && row.kind !== 'reimb'; // Closer
+      return role !== 'Setter' && !role.startsWith('Co-setter') && !role.startsWith('Trainer override') && row.kind !== 'reimb'; // Closer (includes Co-closer)
     }),
   [sortedDealsBase, dealRoleFilter]);
 
   const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
-  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && !isSetterNote(r.entry.notes) && !(r.entry.notes ?? '').startsWith('Co-closer') && !(r.entry.notes ?? '').startsWith('Trainer override')).length;
+  const closerCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && !isSetterNote(r.entry.notes) && !(r.entry.notes ?? '').startsWith('Trainer override')).length;
   const setterCount  = sortedDealsBase.filter(r => r.kind === 'payroll' && isSetterNote(r.entry.notes)).length;
   const trainerCount = sortedDealsBase.filter(r => r.kind === 'payroll' && (r.entry.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = sortedDealsBase.filter(r => r.kind === 'reimb').length;
@@ -1124,9 +1124,9 @@ function AdminFinancialsView() {
             </div>
             <div className="relative card-surface rounded-2xl overflow-hidden">
               <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
-              <div className="overflow-x-auto scroll-smooth">
+              <div className="overflow-x-auto scroll-smooth md:overflow-auto md:max-h-[calc(100vh-400px)]">
                 <table className="w-full text-sm">
-                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                  <thead className="table-header-frost sticky top-0 z-20 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                     <tr className="border-b border-[var(--border-subtle)]">
                       {([
                         { key: 'repName' as const,      label: 'Rep',      align: 'left' as const },
@@ -1224,9 +1224,9 @@ function AdminFinancialsView() {
             </div>
             <div className="relative card-surface rounded-2xl overflow-hidden">
               <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-slate-900/90 to-transparent z-10 rounded-r-2xl" />
-              <div className="overflow-x-auto scroll-smooth">
+              <div className="overflow-x-auto scroll-smooth md:overflow-auto md:max-h-[calc(100vh-400px)]">
                 <table className="w-full text-sm">
-                  <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                  <thead className="table-header-frost sticky top-0 z-20 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                     <tr className="border-b border-[var(--border-subtle)]">
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
                       <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Description</th>
@@ -1336,9 +1336,9 @@ function AdminFinancialsView() {
               </span>
             </div>
             <div className="card-surface rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto scroll-smooth">
+            <div className="overflow-x-auto scroll-smooth md:overflow-auto md:max-h-[calc(100vh-400px)]">
               <table className="w-full text-sm">
-                <thead className="table-header-frost after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
+                <thead className="table-header-frost sticky top-0 z-20 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-slate-700/50 after:to-transparent">
                   <tr className="border-b border-[var(--border-subtle)]">
                     <th className="text-left px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Rep</th>
                     <th className="text-right px-5 py-3 text-[var(--text-secondary)] font-medium whitespace-nowrap">Paid</th>

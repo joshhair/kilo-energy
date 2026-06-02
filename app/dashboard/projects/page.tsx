@@ -358,37 +358,39 @@ function ProjectsPageInner() {
         </div>
       )}
 
-      {tab === 'phase' ? (
-        <KanbanView
-          projects={filtered}
-          isAdmin={effectiveRole === 'admin'}
-          canEditPhase={effectiveRole === 'admin' || isPM || (isRep && !isSubDealer)}
-          currentRepId={effectiveRepId}
-          dealScope={dealScope}
-          onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
-          readOnly={isSubDealer}
-          hideFinancials={isPM}
-          resetKey={kanbanResetKey}
-          trainerAssignments={trainerAssignments}
-          payrollEntries={payrollEntries}
-        />
-      ) : (
-        <TableView
-          projects={filtered}
-          searchInput={searchInput}
-          setSearchInput={setSearchInput}
-          isAdmin={effectiveRole === 'admin'}
-          currentRepId={effectiveRepId}
-          dealScope={dealScope}
-          onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
-          setProjects={setProjects}
-          hasActiveFilters={hasActiveFilters}
-          clearAllFilters={clearAllFilters}
-          readOnly={isSubDealer}
-          hideFinancials={isPM}
-          canEditPhase={effectiveRole === 'admin' || isPM || (isRep && !isSubDealer)}
-        />
-      )}
+      <div key={tab} className="animate-view-enter">
+        {tab === 'phase' ? (
+          <KanbanView
+            projects={filtered}
+            isAdmin={effectiveRole === 'admin'}
+            canEditPhase={effectiveRole === 'admin' || isPM || (isRep && !isSubDealer)}
+            currentRepId={effectiveRepId}
+            dealScope={dealScope}
+            onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
+            readOnly={isSubDealer}
+            hideFinancials={isPM}
+            resetKey={kanbanResetKey}
+            trainerAssignments={trainerAssignments}
+            payrollEntries={payrollEntries}
+          />
+        ) : (
+          <TableView
+            projects={filtered}
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            isAdmin={effectiveRole === 'admin'}
+            currentRepId={effectiveRepId}
+            dealScope={dealScope}
+            onPhaseChange={isSubDealer ? () => {} : handlePhaseChange}
+            setProjects={setProjects}
+            hasActiveFilters={hasActiveFilters}
+            clearAllFilters={clearAllFilters}
+            readOnly={isSubDealer}
+            hideFinancials={isPM}
+            canEditPhase={effectiveRole === 'admin' || isPM || (isRep && !isSubDealer)}
+          />
+        )}
+      </div>
 
       {/* Destructive phase change confirmation */}
       <ConfirmDialog

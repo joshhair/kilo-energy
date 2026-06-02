@@ -217,7 +217,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
 export default function MobileNewDeal() {
   const {
     dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName,
-    addDeal, projects, trainerAssignments,
+    addDeal, projects, payrollEntries, trainerAssignments,
     activeInstallers, activeFinancers, reps,
     installerPricingVersions, productCatalogInstallerConfigs,
     productCatalogProducts, productCatalogPricingVersions,
@@ -442,6 +442,7 @@ export default function MobileNewDeal() {
     if (value !== 'BVI') {
       setBviIntake(EMPTY_BVI_INTAKE);
       setUtilityBill(null);
+      setBviSendOnSubmit(true);
     }
   };
 
@@ -524,13 +525,7 @@ export default function MobileNewDeal() {
 
   const setterAssignment = form.setterId ? trainerAssignments.find((a) => a.traineeId === form.setterId) : null;
   const setterCompletedDeals = setterAssignment
-    ? projects.filter((p) => {
-        if (p.setterId !== setterAssignment.traineeId) return false;
-        const installPct = installerPayConfigs[p.installer]?.installPayPct
-          ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct
-          ?? DEFAULT_INSTALL_PAY_PCT;
-        return installPct < 100 ? p.m3Paid === true : p.m2Paid === true;
-      }).length
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === setterAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.setterId === setterAssignment.traineeId)).map((e) => e.projectId)).size
     : 0;
   const trainerOverrideRate = setterAssignment ? getTrainerOverrideRate(setterAssignment, setterCompletedDeals) : 0;
   const trainerRep = setterAssignment ? reps.find((r) => r.id === setterAssignment.trainerId) : null;
@@ -542,13 +537,7 @@ export default function MobileNewDeal() {
 
   const closerAssignment = closerId ? trainerAssignments.find((a) => a.traineeId === closerId) : null;
   const closerCompletedDeals = closerAssignment
-    ? projects.filter((p) => {
-        if (p.repId !== closerAssignment.traineeId) return false;
-        const installPct = installerPayConfigs[p.installer]?.installPayPct
-          ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct
-          ?? DEFAULT_INSTALL_PAY_PCT;
-        return installPct < 100 ? p.m3Paid === true : p.m2Paid === true;
-      }).length
+    ? new Set(payrollEntries.filter((e) => e.paymentStage === 'Trainer' && e.repId === closerAssignment.trainerId && e.projectId != null && projects.some((p) => p.id === e.projectId && p.repId === closerAssignment.traineeId)).map((e) => e.projectId)).size
     : 0;
   const closerTrainerOverrideRate = closerAssignment ? getTrainerOverrideRate(closerAssignment, closerCompletedDeals) : 0;
   const kW = parseFloat(form.kWSize) || 0;

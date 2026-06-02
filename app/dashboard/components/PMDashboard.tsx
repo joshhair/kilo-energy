@@ -55,8 +55,8 @@ export function PMDashboard({
           { label: 'Total Projects', value: projects.length, color: 'text-[var(--text-secondary)]' },
           { label: 'Total kW', value: formatCompactKW(totalKW), color: 'text-[var(--accent-emerald-text)]' },
           { label: 'Flagged', value: flaggedCount, color: flaggedCount > 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--text-muted)]' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card-surface rounded-2xl p-5">
+        ].map(({ label, value, color }, i) => (
+          <div key={label} className="card-surface rounded-2xl p-5 kanban-card-enter" style={{ ['--card-index' as string]: i }}>
             <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
             <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
           </div>

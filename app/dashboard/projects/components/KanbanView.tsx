@@ -107,6 +107,7 @@ export default function KanbanView({
     if (resetKey === undefined || resetKey === 0) return;
     setKanbanSearchInput('');
     setKanbanDebouncedSearch('');
+    setExpandedColumns(new Set());
   }, [resetKey]);
 
   const kanbanFiltered = kanbanDebouncedSearch
@@ -538,7 +539,7 @@ export default function KanbanView({
                       <p className="text-[var(--text-dim)] text-xs mt-0.5">No projects here</p>
                     </div>
                   )}
-                  {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj) => {
+                  {(expandedColumns.has(phase) ? phaseProjects.slice(0, KANBAN_EXPANDED_MAX) : phaseProjects.slice(0, KANBAN_CARD_LIMIT)).map((proj, cardIdx) => {
                     const myRole = !isAdmin
                       ? (proj.repId === currentRepId ? 'Closer' : proj.setterId === currentRepId ? 'Setter' : proj.additionalClosers?.some(c => c.userId === currentRepId) ? 'Co-Closer' : proj.additionalSetters?.some(s => s.userId === currentRepId) ? 'Co-Setter' : proj.trainerId === currentRepId ? 'Trainer' : null)
                       : null;
@@ -547,7 +548,7 @@ export default function KanbanView({
                     return (
                       <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} onClick={saveProjectNav}>
                       <div
-                        className={`relative overflow-hidden rounded-xl p-3 cursor-pointer transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none ${
+                        className={`kanban-card-enter relative overflow-hidden rounded-xl p-3 cursor-pointer transition-all duration-200 group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] active:shadow-none ${
                           proj.flagged ? '' : ''
                         }`}
                         style={{
@@ -558,6 +559,7 @@ export default function KanbanView({
                             : isMyCard && dealScope === 'all'
                               ? '3px solid var(--accent-blue-solid)'
                               : `3px solid ${PHASE_COLORS[proj.phase] ?? 'var(--border)'}`,
+                          ['--card-index' as string]: Math.min(cardIdx, 14),
                         }}
                       >
                         <div className={`kanban-accent-bar absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r ${PHASE_PILL[proj.phase]?.gradient || ''}`} />

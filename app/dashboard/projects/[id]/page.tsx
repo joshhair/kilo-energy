@@ -1797,7 +1797,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Closer</label>
                 <select value={editVals.repId} onChange={(e) => setEditVals((v) => ({ ...v, repId: e.target.value }))}
                   className={`w-full bg-[var(--surface-card)] border ${editErrors.repId ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}>
-                  {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editVals.repId) && r.id !== editVals.setterId).map((r) => (
+                  {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editVals.repId) && r.id !== editVals.setterId && !editVals.additionalClosers.some((c) => c.userId === r.id)).map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>

@@ -228,7 +228,7 @@ export function SubDealerDashboard({
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj) => {
+            {[...myProjects].sort((a, b) => (b.soldDate ?? '').localeCompare(a.soldDate ?? '')).slice(0, 8).map((proj, cardIdx) => {
               const isSubDealerSourced = proj.subDealerId === currentRepId && proj.repId !== currentRepId && proj.setterId !== currentRepId;
               const subDealerPayroll = isSubDealerSourced
                 ? myPayroll.filter((e) => e.projectId === proj.id && (e.paymentStage === 'M2' || e.paymentStage === 'M3'))
@@ -251,7 +251,7 @@ export function SubDealerDashboard({
               })();
               return (
                 <Link key={proj.id} href={`/dashboard/projects/${proj.id}`} className="block group">
-                  <div className="px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors">
+                  <div className="kanban-card-enter px-5 py-3.5 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors" style={{ ['--card-index' as string]: Math.min(cardIdx, 14) }}>
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <span className="text-[var(--text-primary)] font-medium text-sm line-clamp-2 break-words group-hover:text-[var(--accent-cyan-text)] transition-colors">{proj.customerName}</span>

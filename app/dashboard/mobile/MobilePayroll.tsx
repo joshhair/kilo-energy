@@ -1026,14 +1026,14 @@ export default function MobilePayroll() {
       <ConfirmDialog
         open={showApproveAllConfirm}
         title="Approve All Draft Entries"
-        message={`Move all ${filtered.length} draft ${filtered.length === 1 ? 'entry' : 'entries'} to Pending? This will queue them for the next payroll run.`}
+        message={`Move ${filterRepId || filterFrom || filterTo ? `these ${filtered.length} filtered` : `all ${filtered.length}`} draft ${filtered.length === 1 ? 'entry' : 'entries'} to Pending? This will queue them for the next payroll run.`}
         confirmLabel="Approve All"
         onConfirm={async () => {
           setShowApproveAllConfirm(false);
           const ids = filtered.map((e) => e.id);
           try {
             await markForPayroll(ids);
-            toast('All draft entries moved to Pending', 'success');
+            toast(`${filterRepId || filterFrom || filterTo ? 'Filtered' : 'All'} draft entries moved to Pending`, 'success');
             setStatusTab('Pending');
           } catch {
             toast('Failed to approve entries', 'error');

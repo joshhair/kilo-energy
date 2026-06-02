@@ -478,19 +478,6 @@ body {
   .animate-stat-card-enter { animation: none; }
 }
 
-/* ── Rep detail hero stat cell entrance ─────────────────────────────────── */
-@keyframes stat-cell-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-stat-cell-in {
-  animation: stat-cell-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  will-change: transform, opacity;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-stat-cell-in { animation: none; opacity: 1; transform: none; }
-}
-
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 
@@ -814,6 +801,19 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-float-toolbar-in { animation: none; }
+}
+
+@keyframes viewEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-view-enter,
+.animate-tab-enter {
+  animation: viewEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-view-enter,
+  .animate-tab-enter { animation: none; }
 }
 
 /* CSS @property counter roll-up — animates the displayed stat number with a
@@ -1282,6 +1282,36 @@ select {
   transition: filter 200ms ease, box-shadow 200ms ease;
 }
 
+/* ── Kanban column enter — wires the existing kanban-col-enter class ──────── */
+@keyframes kanbanColEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kanban-col-enter {
+  animation: kanbanColEnter 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--col-index, 0) * 50ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kanban-col-enter { animation: none; }
+}
+
+/* ── Kanban card stagger within each column ───────────────────────────────── */
+/* Uses transform-only (no opacity) so it composes cleanly with the parent
+   column's opacity fade without multiplied-opacity artifacts.               */
+@keyframes kanbanCardEnter {
+  from { transform: translateY(6px) scale(0.97); }
+  to   { transform: translateY(0) scale(1); }
+}
+.kanban-card-enter {
+  animation: kanbanCardEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--col-index, 0) * 50ms + var(--card-index, 0) * 22ms);
+  /* --col-index is inherited from the parent .kanban-col-N column wrapper,
+     creating the diagonal stagger: col 4 card 0 = 200ms, col 0 card 4 = 88ms */
+}
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card-enter { animation: none; }
+}
+
 /* ── Payroll floating batch-action bar ──────────────────────────────────────── */
 
 /* Frosted-glass surface for the fixed bottom selection bar.
@@ -1547,6 +1577,18 @@ select {
   .result-enter { animation: none; }
 }
 
+@keyframes calcHeroGlow {
+  0%   { text-shadow: 0 0 0px transparent; }
+  35%  { text-shadow: 0 0 48px color-mix(in srgb, var(--accent-emerald-solid) 58%, transparent); }
+  100% { text-shadow: 0 0 20px color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent); }
+}
+.calc-hero-result {
+  animation: calcHeroGlow 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calc-hero-result { animation: none; }
+}
+
 @keyframes fieldAppear {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -1579,6 +1621,19 @@ select {
   .calc-ms-1,.calc-ms-2,.calc-ms-3,.calc-ms-4,.calc-ms-5,.calc-ms-6 { animation: none; }
 }
 
+@keyframes histEntryIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hist-entry-0 { animation: histEntryIn 200ms cubic-bezier(0.16,1,0.3,1)  40ms both; }
+.hist-entry-1 { animation: histEntryIn 200ms cubic-bezier(0.16,1,0.3,1)  90ms both; }
+.hist-entry-2 { animation: histEntryIn 200ms cubic-bezier(0.16,1,0.3,1) 140ms both; }
+.hist-entry-3 { animation: histEntryIn 200ms cubic-bezier(0.16,1,0.3,1) 190ms both; }
+.hist-entry-4 { animation: histEntryIn 200ms cubic-bezier(0.16,1,0.3,1) 240ms both; }
+@media (prefers-reduced-motion: reduce) {
+  .hist-entry-0,.hist-entry-1,.hist-entry-2,.hist-entry-3,.hist-entry-4 { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-pill { transition-duration: 1ms !important; }
 }
@@ -1596,19 +1651,6 @@ select {
 .mobile-list-item { animation: fadeUpIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) {
   .mobile-list-item { animation: none; }
-}
-
-@keyframes rankBadgePop {
-  0%   { transform: scale(0.45); opacity: 0; }
-  55%  { transform: scale(1.2); opacity: 1; }
-  78%  { transform: scale(0.93); }
-  100% { transform: scale(1); opacity: 1; }
-}
-.rank-badge-pop {
-  animation: rankBadgePop 450ms cubic-bezier(0.16, 1, 0.3, 1) var(--rank-delay, 0ms) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .rank-badge-pop { animation: none; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1677,17 +1719,6 @@ select {
     animation: none;
     width: var(--bar-w, 0%);
   }
-}
-
-@keyframes statCellIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.94); }
-  to   { opacity: 1; transform: none; }
-}
-.blitz-stat-0 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both; }
-.blitz-stat-1 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
-.blitz-stat-2 { animation: statCellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both; }
-@media (prefers-reduced-motion: reduce) {
-  .blitz-stat-0, .blitz-stat-1, .blitz-stat-2 { animation: none; }
 }
 
 /* ─── Modal entrance animations ───────────────────────────────────────────
@@ -1834,36 +1865,3 @@ select {
   .calc-share-icon-pop { animation: none; }
 }
 
-/* ── Compare panel spring entrance + per-column stagger ─────────────────── */
-@keyframes compare-panel-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-compare-panel-in {
-  animation: compare-panel-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  will-change: transform, opacity;
-}
-@keyframes compare-card-in {
-  from { opacity: 0; transform: scale(0.88) translateY(10px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-.animate-compare-card-in {
-  animation: compare-card-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  will-change: transform, opacity;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-compare-panel-in,
-  .animate-compare-card-in { animation: none; opacity: 1; transform: none; }
-}
-
-/* ── Incentives list crossfade on filter/sort change ─────────────────────── */
-.incentives-list-transition {
-  transition: opacity 140ms ease-out, transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.incentives-list-transition.is-fading {
-  opacity: 0;
-  transform: translateY(5px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .incentives-list-transition { transition: none !important; }
-}

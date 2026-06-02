@@ -465,7 +465,7 @@ export default function MobileProjects() {
           </div>
         ) : (
           filtered.slice(0, visibleCount).map((project, index) => {
-            const showCommission = !isPM && (effectiveRole === 'rep' || effectiveRole === 'sub-dealer');
+            const showCommission = !isPM;
             const commission = showCommission
               ? myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries, trainerAssignments)
               : null;

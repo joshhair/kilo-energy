@@ -463,9 +463,10 @@ export function handlePhaseRollback(
   newPhase: Phase,
   prevEntries: PayrollEntry[],
 ): string[] {
+  // On Hold is a pause state, not a milestone progression — never roll back from it.
+  if (oldPhase === 'On Hold') return [];
   const oldIdx = PIPELINE.indexOf(oldPhase);
-  // 'On Hold' is not in PIPELINE; treat it as beyond all milestones
-  const effectiveOldIdx = oldIdx >= 0 ? oldIdx : (oldPhase === 'On Hold' ? PIPELINE.length : -1);
+  const effectiveOldIdx = oldIdx >= 0 ? oldIdx : -1;
   const newIdx = PIPELINE.indexOf(newPhase);
   if (effectiveOldIdx < 0 || newIdx < 0 || newIdx >= effectiveOldIdx) return [];
 
@@ -731,7 +732,7 @@ export function createMilestonePayroll(
   if (isInstalled) {
     for (const entry of m2TrainerLegs.entries) {
       if (entry.amount <= 0 || !entry.trainerId) continue;
-      const notesPrefix = `Trainer override M2 —`;
+      const notesPrefix = `Trainer override M2`;
       // The same-trainer dedup is handled INSIDE computeTrainerLegsForMilestone,
       // but we still need to skip if a prior persisted entry already covers
       // this trainer on this project (idempotency on phase re-entry).
@@ -996,7 +997,7 @@ export function createM3Payroll(
   if (m3 > 0 && !old.subDealerId) {
     for (const entry of m3TrainerLegs.entries) {
       if (entry.amount <= 0 || !entry.trainerId) continue;
-      const notesPrefix = `Trainer override M3 —`;
+      const notesPrefix = `Trainer override M3`;
       const alreadyExists = [...prevEntries, ...newEntries].some(
         (e) =>
           e.projectId === projectId &&

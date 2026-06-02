@@ -1777,7 +1777,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               className="w-full min-h-[48px] outline-none"
               style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
             >
-              {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editDraft.repId) && r.id !== editDraft.setterId).map((r) => (
+              {reps.filter((r) => (r.repType === 'closer' || r.repType === 'both') && (r.active || r.id === editDraft.repId) && r.id !== editDraft.setterId && !editDraft.additionalClosers.some((c) => c.userId === r.id)).map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>

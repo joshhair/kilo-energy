@@ -79,6 +79,17 @@ const PRINT_STYLES = `
 .animate-tab-backward { animation: slideInFromLeft  220ms cubic-bezier(0.16,1,0.3,1) both; }
 @media (prefers-reduced-motion: reduce) {
   .animate-tab-forward, .animate-tab-backward { animation: none; }
+}
+@keyframes rowExitFade {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-3px); }
+}
+.animate-row-exit {
+  animation: rowExitFade 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-row-exit { animation: none; opacity: 0; }
 }`;
 
 
@@ -125,6 +136,7 @@ function PayrollPageInner() {
   // table as overwhelming when a rep has many entries; clicking a
   // summary row expands into the per-entry breakdown.
   const [expandedRepIds, setExpandedRepIds] = useState<Set<string>>(new Set());
+  const [collapsingRepIds, setCollapsingRepIds] = useState<Set<string>>(new Set());
   const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
   const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
   const [actionBarMounted, setActionBarMounted] = useState(false);
@@ -249,6 +261,7 @@ function PayrollPageInner() {
     setTabDir(TAB_IDX[v] >= TAB_IDX[statusTab] ? 'forward' : 'backward');
     setStatusTab(v);
     setSelectedIds(new Set());
+    setExpandedRepIds(new Set());
     setAdminPage(1);
     const params = new URLSearchParams(searchParams.toString());
     params.set('status', v);
@@ -257,6 +270,7 @@ function PayrollPageInner() {
   const changeTypeTab = (v: TypeTab) => {
     setTypeTab(v);
     setSelectedIds(new Set());
+    setExpandedRepIds(new Set());
     setAdminPage(1);
     const params = new URLSearchParams(searchParams.toString());
     params.set('type', v);
@@ -265,6 +279,7 @@ function PayrollPageInner() {
   const changeFilterRepId = (v: string) => {
     setFilterRepId(v);
     setSelectedIds(new Set());
+    setExpandedRepIds(new Set());
     setAdminPage(1);
     const params = new URLSearchParams(searchParams.toString());
     if (v) params.set('rep', v); else params.delete('rep');
@@ -447,11 +462,15 @@ function PayrollPageInner() {
   })();
 
   const toggleRepExpanded = (repId: string) => {
-    setExpandedRepIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(repId)) next.delete(repId); else next.add(repId);
-      return next;
-    });
+    if (expandedRepIds.has(repId)) {
+      setCollapsingRepIds((prev) => new Set(prev).add(repId));
+      setTimeout(() => {
+        setExpandedRepIds((prev) => { const s = new Set(prev); s.delete(repId); return s; });
+        setCollapsingRepIds((prev) => { const s = new Set(prev); s.delete(repId); return s; });
+      }, 120);
+    } else {
+      setExpandedRepIds((prev) => new Set(prev).add(repId));
+    }
   };
   const allGroupEntrySelected = (entries: typeof paginatedFiltered): boolean =>
     entries.length > 0 && entries.every((e) => selectedIds.has(e.id));
@@ -1482,11 +1501,12 @@ function PayrollPageInner() {
                     <td style={{ padding: '12px 14px' }}></td>
                   </tr>
                 );
-                if (!expanded) return [summaryRow];
+                const isCollapsing = collapsingRepIds.has(group.repId);
+                if (!expanded && !isCollapsing) return [summaryRow];
                 const detailRows = group.entries.map((entry, i) => (
                 <tr
                   key={entry.id}
-                  className={`table-row-enter row-stagger-${Math.min(i, 24)}`}
+                  className={isCollapsing ? 'animate-row-exit' : `table-row-enter row-stagger-${Math.min(i, 24)}`}
                   onMouseEnter={() => setHoveredEntryId(entry.id)}
                   onMouseLeave={() => setHoveredEntryId(null)}
                   style={{

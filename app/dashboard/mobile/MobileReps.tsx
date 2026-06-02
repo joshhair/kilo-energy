@@ -25,6 +25,7 @@ const REP_TYPE_FILTERS = [
 ] as const;
 type RepTypeFilter = typeof REP_TYPE_FILTERS[number]['value'];
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
+const KW_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold']);
 
 // Top-level role filter — matches the desktop Users page.
 const ROLE_FILTERS = [
@@ -218,7 +219,7 @@ export default function MobileReps() {
   const kwByRep = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of projects) {
-      if (PIPELINE_EXCLUDED.has(p.phase)) continue;
+      if (KW_EXCLUDED.has(p.phase)) continue;
       const kw = p.kWSize ?? 0;
       const ids = new Set<string>([p.repId]);
       if (p.setterId) ids.add(p.setterId);
@@ -821,7 +822,7 @@ export default function MobileReps() {
       ) : (
         <div className="space-y-3">
           {sortedReps.map((rep) => {
-            const deals = activeDealsByRep.get(rep.id) ?? 0;
+            const deals = dealsByRep.get(rep.id) ?? 0;
             const kw = kwByRep.get(rep.id) ?? 0;
             const paid = paidByRep.get(rep.id) ?? 0;
 
@@ -1111,6 +1112,10 @@ export default function MobileReps() {
                   addRep(fn, ln, em, ph, addForm.repType, data.user.id);
                 }
                 toast(`Invitation sent to ${em}`, 'success');
+                fetch('/api/users/invitations')
+                  .then((r) => r.ok ? r.json() : { invitations: [] })
+                  .then((data) => setPendingInvitations(data.invitations ?? []))
+                  .catch(() => {});
               } else if (addForm.userRole === 'sub-dealer') {
                 await addSubDealer(fn, ln, em, ph);
                 toast(`${fn} ${ln} added`, 'success');

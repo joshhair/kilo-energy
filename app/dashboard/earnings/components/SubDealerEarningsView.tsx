@@ -55,9 +55,9 @@ export function SubDealerEarningsView() {
             <p className="text-[var(--text-muted)] text-xs">Earnings will appear once your deals reach the Installed phase.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto md:overflow-auto md:max-h-[calc(100vh-400px)]">
             <table className="w-full text-sm">
-              <thead className="table-header-frost">
+              <thead className="table-header-frost sticky top-0 z-20">
                 <tr className="border-b border-[var(--border-subtle)]">
                   <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Customer</th>
                   <th className="text-left px-6 py-3 text-[var(--text-secondary)] font-medium text-xs">Stage</th>
