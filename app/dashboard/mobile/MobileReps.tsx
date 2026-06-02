@@ -450,8 +450,8 @@ export default function MobileReps() {
       </div>
 
       {/* Rep-type sub-filter — only shown when viewing reps */}
-      {roleFilter === 'rep' && (
-        <div className="-mx-5 px-5">
+      <Collapse open={roleFilter === 'rep'} durationMs={200}>
+        <div className="-mx-5 px-5 pb-0.5">
           <SegmentedPills
             options={REP_TYPE_FILTERS.map((rt) => ({ value: rt.value, label: rt.label }))}
             value={repTypeFilter}
@@ -461,7 +461,7 @@ export default function MobileReps() {
             ariaLabel="Filter reps by type"
           />
         </div>
-      )}
+      </Collapse>
 
       {/* Search */}
       <div className="relative">

@@ -5,7 +5,7 @@ import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString, downloadCSV } from '../../../lib/utils';
-import { Period, isInPeriod, PERIODS } from '../../../lib/period';
+import { Period, isInPeriod, PERIODS, getPeriodLabel } from '../../../lib/period';
 import { CheckCircle2, XCircle, Archive, Download, Clock, Receipt } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import { ReimbursementModal } from '../components/ReimbursementModal';
@@ -108,7 +108,7 @@ export default function MobileEarnings() {
   const nextPayoutCount  = nextPayoutItems.length;
 
   const isSetterNote = (notes: string | null | undefined) => notes === 'Setter' || (notes ?? '').startsWith('Co-setter');
-  const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Co-closer') && !(p.notes ?? '').startsWith('Trainer override')).length;
+  const closerCount  = dealPayments.filter((p) => !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override')).length;
   const setterCount  = dealPayments.filter((p) => isSetterNote(p.notes)).length;
   const trainerCount = dealPayments.filter((p) => (p.notes ?? '').startsWith('Trainer override')).length;
   const reimbCount   = myReimbs.length;
@@ -125,7 +125,7 @@ export default function MobileEarnings() {
     ? dealPayments.filter((p) => {
         if (dealRoleFilter === 'Setter') return isSetterNote(p.notes);
         if (dealRoleFilter === 'Trainer') return (p.notes ?? '').startsWith('Trainer override');
-        return !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Co-closer') && !(p.notes ?? '').startsWith('Trainer override'); // Closer
+        return !isSetterNote(p.notes) && !(p.notes ?? '').startsWith('Trainer override'); // Closer (includes Co-closer)
       })
     : dealPayments;
   const sortedDeals = [...filteredDeals].sort((a, b) => {
@@ -270,7 +270,7 @@ export default function MobileEarnings() {
           <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-amber-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(totalPending)}</p>
         </div>
         <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{monthFilterLabel ?? 'This Month'}</p>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{monthFilterLabel ?? (period !== 'all' ? getPeriodLabel(period) : 'This Month')}</p>
           <p className="text-base font-black tabular-nums" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{fmt$(thisMonthEarned)}</p>
         </div>
         <div className="rounded-2xl p-3 flex flex-col gap-0.5" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
