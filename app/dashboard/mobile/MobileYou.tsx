@@ -304,7 +304,7 @@ export default function MobileYou() {
           {viewAsOpen && (
             <div
               ref={viewAsPanelRef}
-              className="mt-2 rounded-xl overflow-hidden"
+              className="mt-2 rounded-xl overflow-hidden animate-compare-panel-in"
               style={{ background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}
             >
               <div className="relative">

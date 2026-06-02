@@ -314,6 +314,7 @@ export default function MobileReps() {
   // ── Compare mode ──────────────────────────────────────────────────────
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+  const compareKey = [...compareIds].sort().join('-');
   type ComparePeriod = 'this-week' | 'this-month' | 'last-month' | 'this-quarter' | 'last-quarter' | 'this-year' | 'custom';
   const PERIOD_OPTIONS: { value: ComparePeriod; label: string }[] = [
     { value: 'this-week', label: 'This Week' },
@@ -544,7 +545,7 @@ export default function MobileReps() {
                       },
                     });
                   }}
-                  className="shrink-0 text-xs font-medium px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                  className="shrink-0 text-xs font-medium px-2.5 min-h-[44px] rounded-xl disabled:opacity-50 active:scale-[0.93] touch-manipulation"
                   style={{ color: 'var(--accent-red-text)', border: '1px solid color-mix(in srgb, var(--accent-red-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >
                   {revokingInvitationId === inv.id ? 'Revoking…' : 'Revoke'}
@@ -619,8 +620,8 @@ export default function MobileReps() {
                             });
                           }}
                           title="Deactivate sub-dealer"
-                          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                          style={{ color: 'var(--text-muted)' }}
+                          className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
+                          style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -640,8 +641,8 @@ export default function MobileReps() {
                             });
                           }}
                           title="Convert to Rep"
-                          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                          style={{ color: 'var(--text-muted)' }}
+                          className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
+                          style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
                         >
                           <UserCog className="w-4 h-4" />
                         </button>
@@ -673,7 +674,7 @@ export default function MobileReps() {
           </div>
         );
         return (
-          <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+          <div key={compareKey} className="rounded-2xl p-4 animate-compare-panel-in" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Rep Comparison</span>
               {ranges.prev && <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>vs {ranges.prev.label}</span>}
@@ -683,12 +684,13 @@ export default function MobileReps() {
                 <button
                   key={opt.value}
                   onClick={() => setComparePeriod(opt.value)}
-                  className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold transition-colors"
+                  className="shrink-0 min-h-[32px] px-3 rounded-xl text-xs font-semibold active:scale-[0.92] touch-manipulation"
                   style={{
                     background: comparePeriod === opt.value ? 'color-mix(in srgb, var(--accent-cyan-solid) 20%, transparent)' : 'var(--surface-pressed)',
                     color: comparePeriod === opt.value ? 'var(--accent-cyan-solid)' : 'var(--text-muted)',
                     border: comparePeriod === opt.value ? '1px solid color-mix(in srgb, var(--accent-cyan-solid) 40%, transparent)' : '1px solid var(--border-subtle)',
                     fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                    transition: 'background-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
                 >
                   {opt.label}
@@ -707,7 +709,7 @@ export default function MobileReps() {
               </div>
             )}
             <div className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
-              {compareReps.map((rep) => {
+              {compareReps.map((rep, colIdx) => {
                 const rp = ranges.current.from && ranges.current.to
                   ? projects.filter((p) => (p.repId === rep.id || p.setterId === rep.id || p.additionalClosers?.some((c) => c.userId === rep.id) || p.additionalSetters?.some((c) => c.userId === rep.id)) && p.phase !== 'Cancelled' && p.phase !== 'On Hold' && isInRange(p.soldDate, ranges.current.from, ranges.current.to))
                   : [];
@@ -726,7 +728,17 @@ export default function MobileReps() {
                   : null;
                 const deltaDeals = prevDeals !== null ? dealsClosed - prevDeals : null;
                 return (
-                  <div key={rep.id} className="shrink-0 rounded-2xl p-3 text-center" style={{ minWidth: 140, background: 'var(--surface-pressed)', border: '1px solid var(--border-subtle)' }}>
+                  <div
+                    key={rep.id}
+                    className="shrink-0 rounded-2xl p-3 text-center animate-compare-card-in"
+                    style={{
+                      minWidth: 140,
+                      background: 'var(--surface-pressed)',
+                      border: '1px solid var(--border-subtle)',
+                      animationDelay: `${colIdx * 85}ms`,
+                      animationFillMode: 'both',
+                    }}
+                  >
                     <div
                       className="card-surface w-8 h-8 rounded-full flex items-center justify-center text-xs mx-auto mb-1.5"
                       style={{
@@ -863,8 +875,8 @@ export default function MobileReps() {
                         });
                       }}
                       title="Deactivate rep"
-                      className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                      style={{ color: 'var(--text-muted)' }}
+                      className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
+                      style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

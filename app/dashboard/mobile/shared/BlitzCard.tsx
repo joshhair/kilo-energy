@@ -173,7 +173,7 @@ export default function BlitzCard({ blitz, index, effectiveRepId, isAdmin, joini
                     if (!joining) onJoin(blitz.id);
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold rounded-full transition-opacity active:opacity-70 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] text-xs font-semibold rounded-full transition-all active:scale-[0.93] touch-manipulation cursor-pointer"
                 style={{
                   color: 'var(--accent-emerald-text)',
                   border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',

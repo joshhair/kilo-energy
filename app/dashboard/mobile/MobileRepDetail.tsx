@@ -773,20 +773,49 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
         )}
       </div>
 
-      {/* Inline stats */}
-      <p className="text-base" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length}</span> deal{repProjects.filter(p => p.phase !== 'Cancelled' && p.phase !== 'On Hold').length !== 1 ? 's' : ''}
-        {' \u00B7 '}
-        <span className="text-lg font-bold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>{formatCompactKW(totalKW)}</span>
-        {!isPM && (
-          <>
-            {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${totalPaid.toLocaleString()}</span> paid
-            {' \u00B7 '}
-            <span className="text-lg font-bold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${Math.round(totalEst).toLocaleString()}</span> est.
-          </>
-        )}
-      </p>
+      {/* Hero stat grid */}
+      {(() => {
+        const dealCount = repProjects.filter(
+          (p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold'
+        ).length;
+        const cells = [
+          { label: 'Deals', value: String(dealCount), color: 'var(--text-primary)' },
+          { label: 'Active kW', value: formatCompactKW(totalKW), color: 'var(--text-primary)' },
+          ...(!isPM ? [
+            { label: 'Total Paid', value: `$${totalPaid.toLocaleString()}`, color: 'var(--accent-emerald-display)' },
+            { label: 'Est. Remaining', value: `$${Math.round(totalEst).toLocaleString()}`, color: 'var(--accent-emerald-display)' },
+          ] : []),
+        ];
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {cells.map((cell, i) => (
+              <div
+                key={cell.label}
+                className="rounded-2xl p-3 flex flex-col gap-0.5 animate-stat-cell-in"
+                style={{
+                  animationDelay: `${i * 70}ms`,
+                  animationFillMode: 'both',
+                  background: 'var(--surface-card)',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <span
+                  className="text-[10px] uppercase tracking-widest font-medium"
+                  style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
+                >
+                  {cell.label}
+                </span>
+                <span
+                  className="text-xl font-bold tabular-nums"
+                  style={{ color: cell.color, fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
+                >
+                  {cell.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Trainer Assignment — admin only */}
       {isAdmin && (

@@ -478,6 +478,19 @@ body {
   .animate-stat-card-enter { animation: none; }
 }
 
+/* ── Rep detail hero stat cell entrance ─────────────────────────────────── */
+@keyframes stat-cell-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-stat-cell-in {
+  animation: stat-cell-in 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-stat-cell-in { animation: none; opacity: 1; transform: none; }
+}
+
 /* ── Mobile premium design system ──────────────────────────────────────────
    All rules scoped to max-width: 767px so desktop is completely unaffected. */
 
@@ -1795,6 +1808,28 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .calc-share-icon-pop { animation: none; }
+}
+
+/* ── Compare panel spring entrance + per-column stagger ─────────────────── */
+@keyframes compare-panel-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-compare-panel-in {
+  animation: compare-panel-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+@keyframes compare-card-in {
+  from { opacity: 0; transform: scale(0.88) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-compare-card-in {
+  animation: compare-card-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-compare-panel-in,
+  .animate-compare-card-in { animation: none; opacity: 1; transform: none; }
 }
 
 /* ── Incentives list crossfade on filter/sort change ─────────────────────── */
