@@ -14,6 +14,7 @@ import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
 import { SegmentedPills } from '../../../components/ui';
 import { GradCard } from './components/GradCard';
+import { InactiveExpander } from './components/InactiveExpander';
 import { RepsSkeleton } from './components/RepsSkeleton';
 import { TopPerformersPodium } from './components/TopPerformersPodium';
 
@@ -953,308 +954,216 @@ function UsersPageInner() {
 
             {/* ── Inactive reps expander ──────────────────────────────── */}
             {canManageReps && roleFilter === 'all' && inactiveReps.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
-                <button
-                  type="button"
-                  onClick={() => setShowInactive((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
-                      style={{ color: 'var(--text-dim)' }}
-                    />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                      Show inactive reps ({inactiveReps.length})
-                    </span>
-                  </div>
-                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                    Deactivated reps — click to {showInactive ? 'hide' : 'view'}
-                  </span>
-                </button>
-                {showInactive && (
-                  <div className="mt-3 space-y-2">
-                    {inactiveReps.map((rep) => (
+              <InactiveExpander label="Show inactive reps" count={inactiveReps.length} isOpen={showInactive} onToggle={() => setShowInactive((v) => !v)}>
+                {inactiveReps.map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                  >
+                    <Link
+                      href={`/dashboard/users/${rep.id}`}
+                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                    >
                       <div
-                        key={rep.id}
-                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                       >
-                        <Link
-                          href={`/dashboard/users/${rep.id}`}
-                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                        >
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                          >
-                            {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                              {rep.name}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                                (inactive)
-                              </span>
-                            </div>
-                            <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                              {ROLE_LABELS[rep.repType]}
-                            </div>
-                          </div>
-                        </Link>
-                        <button
-                          disabled={reactivatingId === rep.id}
-                          onClick={async () => {
-                            setReactivatingId(rep.id);
-                            try {
-                              await reactivateRep(rep.id);
-                              toast(`${rep.name} reactivated`, 'success');
-                            } catch {
-                              toast('Failed to reactivate rep', 'error');
-                            } finally {
-                              setReactivatingId(null);
-                            }
-                          }}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
-                        >
-                          {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
-                        </button>
+                        {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                       </div>
-                    ))}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                          {rep.name}
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                            (inactive)
+                          </span>
+                        </div>
+                        <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                          {ROLE_LABELS[rep.repType]}
+                        </div>
+                      </div>
+                    </Link>
+                    <button
+                      disabled={reactivatingId === rep.id}
+                      onClick={async () => {
+                        setReactivatingId(rep.id);
+                        try {
+                          await reactivateRep(rep.id);
+                          toast(`${rep.name} reactivated`, 'success');
+                        } catch {
+                          toast('Failed to reactivate rep', 'error');
+                        } finally {
+                          setReactivatingId(null);
+                        }
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
+                    >
+                      {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
+                    </button>
                   </div>
-                )}
-              </div>
+                ))}
+              </InactiveExpander>
             )}
 
             {/* ── Inactive sub-dealers expander ───────────────────────── */}
             {canManageReps && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
-                <button
-                  type="button"
-                  onClick={() => setShowInactiveSubDealers((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${showInactiveSubDealers ? 'rotate-90' : ''}`}
-                      style={{ color: 'var(--text-dim)' }}
-                    />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                      Show inactive sub-dealers ({inactiveSubDealers.length})
-                    </span>
-                  </div>
-                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                    Deactivated sub-dealers — click to {showInactiveSubDealers ? 'hide' : 'view'}
-                  </span>
-                </button>
-                {showInactiveSubDealers && (
-                  <div className="mt-3 space-y-2">
-                    {inactiveSubDealers.map((sd) => (
+              <InactiveExpander label="Show inactive sub-dealers" count={inactiveSubDealers.length} isOpen={showInactiveSubDealers} onToggle={() => setShowInactiveSubDealers((v) => !v)}>
+                {inactiveSubDealers.map((sd) => (
+                  <div
+                    key={sd.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                  >
+                    <Link
+                      href={`/dashboard/users/${sd.id}`}
+                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                    >
                       <div
-                        key={sd.id}
-                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                       >
-                        <Link
-                          href={`/dashboard/users/${sd.id}`}
-                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                        >
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                          >
-                            {sd.firstName[0] ?? ''}{sd.lastName[0] ?? ''}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                              {sd.firstName} {sd.lastName}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                                (inactive)
-                              </span>
-                            </div>
-                            {sd.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{sd.email}</div>}
-                          </div>
-                        </Link>
-                        <button
-                          disabled={reactivatingSubDealerId === sd.id}
-                          onClick={async () => {
-                            setReactivatingSubDealerId(sd.id);
-                            try {
-                              await reactivateSubDealer(sd.id);
-                              toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
-                            } catch {
-                              toast('Failed to reactivate sub-dealer', 'error');
-                            } finally {
-                              setReactivatingSubDealerId(null);
-                            }
-                          }}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}
-                        >
-                          {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
-                        </button>
+                        {sd.firstName[0] ?? ''}{sd.lastName[0] ?? ''}
                       </div>
-                    ))}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                          {sd.firstName} {sd.lastName}
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                            (inactive)
+                          </span>
+                        </div>
+                        {sd.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{sd.email}</div>}
+                      </div>
+                    </Link>
+                    <button
+                      disabled={reactivatingSubDealerId === sd.id}
+                      onClick={async () => {
+                        setReactivatingSubDealerId(sd.id);
+                        try {
+                          await reactivateSubDealer(sd.id);
+                          toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                        } catch {
+                          toast('Failed to reactivate sub-dealer', 'error');
+                        } finally {
+                          setReactivatingSubDealerId(null);
+                        }
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}
+                    >
+                      {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
+                    </button>
                   </div>
-                )}
-              </div>
+                ))}
+              </InactiveExpander>
             )}
 
             {/* ── Inactive PMs expander ───────────────────────────────── */}
             {canManageReps && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
-                <button
-                  type="button"
-                  onClick={() => setShowInactivePMs((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${showInactivePMs ? 'rotate-90' : ''}`}
-                      style={{ color: 'var(--text-dim)' }}
-                    />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                      Show inactive project managers ({inactivePMs.length})
-                    </span>
-                  </div>
-                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                    Deactivated PMs — click to {showInactivePMs ? 'hide' : 'view'}
-                  </span>
-                </button>
-                {showInactivePMs && (
-                  <div className="mt-3 space-y-2">
-                    {inactivePMs.map((u) => (
+              <InactiveExpander label="Show inactive project managers" count={inactivePMs.length} isOpen={showInactivePMs} onToggle={() => setShowInactivePMs((v) => !v)}>
+                {inactivePMs.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                  >
+                    <Link
+                      href={`/dashboard/users/${u.id}`}
+                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                    >
                       <div
-                        key={u.id}
-                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                       >
-                        <Link
-                          href={`/dashboard/users/${u.id}`}
-                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                        >
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                          >
-                            {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                              {u.firstName} {u.lastName}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                                (inactive)
-                              </span>
-                            </div>
-                            {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
-                          </div>
-                        </Link>
-                        <button
-                          disabled={reactivatingPmId === u.id}
-                          onClick={async () => {
-                            setReactivatingPmId(u.id);
-                            try {
-                              const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                              if (!res.ok) throw new Error();
-                              setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
-                              toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                            } catch {
-                              toast('Failed to reactivate project manager', 'error');
-                            } finally {
-                              setReactivatingPmId(null);
-                            }
-                          }}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
-                        >
-                          {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
-                        </button>
+                        {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
                       </div>
-                    ))}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                          {u.firstName} {u.lastName}
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                            (inactive)
+                          </span>
+                        </div>
+                        {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
+                      </div>
+                    </Link>
+                    <button
+                      disabled={reactivatingPmId === u.id}
+                      onClick={async () => {
+                        setReactivatingPmId(u.id);
+                        try {
+                          const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                          if (!res.ok) throw new Error();
+                          setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                          toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                        } catch {
+                          toast('Failed to reactivate project manager', 'error');
+                        } finally {
+                          setReactivatingPmId(null);
+                        }
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
+                    >
+                      {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
+                    </button>
                   </div>
-                )}
-              </div>
+                ))}
+              </InactiveExpander>
             )}
 
             {/* ── Inactive admins expander ─────────────────────────────── */}
             {canManageReps && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
-                <button
-                  type="button"
-                  onClick={() => setShowInactiveAdmins((v) => !v)}
-                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform ${showInactiveAdmins ? 'rotate-90' : ''}`}
-                      style={{ color: 'var(--text-dim)' }}
-                    />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                      Show inactive admins ({inactiveAdmins.length})
-                    </span>
-                  </div>
-                  <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                    Deactivated admins — click to {showInactiveAdmins ? 'hide' : 'view'}
-                  </span>
-                </button>
-                {showInactiveAdmins && (
-                  <div className="mt-3 space-y-2">
-                    {inactiveAdmins.map((u) => (
+              <InactiveExpander label="Show inactive admins" count={inactiveAdmins.length} isOpen={showInactiveAdmins} onToggle={() => setShowInactiveAdmins((v) => !v)}>
+                {inactiveAdmins.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                  >
+                    <Link
+                      href={`/dashboard/users/${u.id}`}
+                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                    >
                       <div
-                        key={u.id}
-                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                       >
-                        <Link
-                          href={`/dashboard/users/${u.id}`}
-                          className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                        >
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                          >
-                            {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                              {u.firstName} {u.lastName}
-                              <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                                (inactive)
-                              </span>
-                            </div>
-                            {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
-                          </div>
-                        </Link>
-                        <button
-                          disabled={reactivatingAdminId === u.id}
-                          onClick={async () => {
-                            setReactivatingAdminId(u.id);
-                            try {
-                              const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                              if (!res.ok) throw new Error();
-                              setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
-                              toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                            } catch {
-                              toast('Failed to reactivate admin', 'error');
-                            } finally {
-                              setReactivatingAdminId(null);
-                            }
-                          }}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
-                        >
-                          {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
-                        </button>
+                        {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
                       </div>
-                    ))}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                          {u.firstName} {u.lastName}
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                            (inactive)
+                          </span>
+                        </div>
+                        {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
+                      </div>
+                    </Link>
+                    <button
+                      disabled={reactivatingAdminId === u.id}
+                      onClick={async () => {
+                        setReactivatingAdminId(u.id);
+                        try {
+                          const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                          if (!res.ok) throw new Error();
+                          setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                          toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                        } catch {
+                          toast('Failed to reactivate admin', 'error');
+                        } finally {
+                          setReactivatingAdminId(null);
+                        }
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
+                    >
+                      {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
+                    </button>
                   </div>
-                )}
-              </div>
+                ))}
+              </InactiveExpander>
             )}
           </div>
         );
@@ -1787,79 +1696,56 @@ function UsersPageInner() {
         {/* ── Inactive reps expander ──────────────────────────────────── */}
         {/* Admins only — non-admins never see deactivated users at all.  */}
         {canManageReps && inactiveReps.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-dashed border-[var(--border)]">
-            <button
-              type="button"
-              onClick={() => setShowInactive((v) => !v)}
-              className="w-full flex items-center justify-between text-left px-4 py-3 rounded-xl transition-colors hover:bg-[var(--surface-card)]/60"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center gap-3">
-                <ChevronRight
-                  className={`w-4 h-4 transition-transform ${showInactive ? 'rotate-90' : ''}`}
-                  style={{ color: 'var(--text-dim)' }}
-                />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Show inactive ({inactiveReps.length})
-                </span>
-              </div>
-              <span className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                Deactivated reps — click to {showInactive ? 'hide' : 'view'}
-              </span>
-            </button>
-            {showInactive && (
-              <div className="mt-3 space-y-2">
-                {inactiveReps.map((rep) => (
+          <InactiveExpander label="Show inactive" count={inactiveReps.length} isOpen={showInactive} onToggle={() => setShowInactive((v) => !v)}>
+            {inactiveReps.map((rep) => (
+              <div
+                key={rep.id}
+                className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+              >
+                <Link
+                  href={`/dashboard/users/${rep.id}`}
+                  className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
+                >
                   <div
-                    key={rep.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
                   >
-                    <Link
-                      href={`/dashboard/users/${rep.id}`}
-                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {rep.name}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                            (inactive)
-                          </span>
-                        </div>
-                        <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                          {ROLE_LABELS[rep.repType]}
-                        </div>
-                      </div>
-                    </Link>
-                    <button
-                      disabled={reactivatingId === rep.id}
-                      onClick={async () => {
-                        setReactivatingId(rep.id);
-                        try {
-                          await reactivateRep(rep.id);
-                          toast(`${rep.name} reactivated`, 'success');
-                        } catch {
-                          toast('Failed to reactivate rep', 'error');
-                        } finally {
-                          setReactivatingId(null);
-                        }
-                      }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
-                    >
-                      {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
-                    </button>
+                    {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
                   </div>
-                ))}
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
+                      {rep.name}
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+                        (inactive)
+                      </span>
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                      {ROLE_LABELS[rep.repType]}
+                    </div>
+                  </div>
+                </Link>
+                <button
+                  disabled={reactivatingId === rep.id}
+                  onClick={async () => {
+                    setReactivatingId(rep.id);
+                    try {
+                      await reactivateRep(rep.id);
+                      toast(`${rep.name} reactivated`, 'success');
+                    } catch {
+                      toast('Failed to reactivate rep', 'error');
+                    } finally {
+                      setReactivatingId(null);
+                    }
+                  }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
+                >
+                  {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
+                </button>
               </div>
-            )}
-          </div>
+            ))}
+          </InactiveExpander>
         )}
       </div>
       </>)}
