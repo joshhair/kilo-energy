@@ -131,7 +131,7 @@ export function PayrollTableBody({
               </td>
               <td style={{ padding: '12px 14px' }}></td>
               <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}>
-                <span style={{ color: group.total < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
+                <span style={{ color: group.total < 0 ? 'var(--accent-red-display)' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>
                   {fmt$(group.total)}
                 </span>
               </td>
@@ -187,7 +187,7 @@ export function PayrollTableBody({
                 <span style={{ color: 'var(--text-muted)' }}>{entry.notes || '—'}</span>
               )}
             </td>
-            <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? '#ef4444' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
+            <td style={{ padding: '12px 14px', fontSize: 18, fontFamily: "'DM Sans',sans-serif", textAlign: 'right' }}><span style={{ color: entry.amount < 0 ? 'var(--accent-red-display)' : 'var(--accent-emerald-display)', fontWeight: 700, fontFamily: "'DM Serif Display',serif" }}>{fmt$(entry.amount)}</span></td>
             <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}><span style={{ color: 'var(--text-muted)' }}><RelativeDate date={entry.date} /></span></td>
             <td style={{ padding: '12px 14px', fontSize: 14, fontFamily: "'DM Sans',sans-serif" }}>
               <span style={

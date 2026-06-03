@@ -3,9 +3,9 @@
 
   "whiteText": [],
   "textColorAsBackground": [
-    "app/dashboard/components/BottomNav.tsx:130"
+    "app/dashboard/components/BottomNav.tsx:132"
   ],
   "_reasons": {
-    "app/dashboard/components/BottomNav.tsx:130": "2px-tall nav indicator pill — no text rendered on top, only a hairline marker that picks up the brand emerald color. Background:--accent-emerald-text is intentional here as a color reference."
+    "app/dashboard/components/BottomNav.tsx:132": "2px-tall nav indicator pill — no text rendered on top, only a hairline marker that picks up the brand emerald color. Background:--accent-emerald-text is intentional here as a color reference."
   }
 }

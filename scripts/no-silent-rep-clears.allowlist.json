@@ -2,21 +2,21 @@
   "$schema": "Allowlist for check-no-silent-rep-clears.mjs. Each entry: file:line that the gate would otherwise flag, with a written reason in `_reasons`. Adding an entry means you've verified the clear is intentional, cannot drop a user's picked value in a real submission flow, and has been reviewed by someone other than the author.",
   "entries": [
     { "location": "app/dashboard/new-deal/page.tsx:269" },
-    { "location": "app/dashboard/new-deal/page.tsx:1083" },
-    { "location": "app/dashboard/new-deal/page.tsx:1815" },
+    { "location": "app/dashboard/new-deal/page.tsx:1081" },
+    { "location": "app/dashboard/new-deal/page.tsx:1813" },
     { "location": "app/dashboard/mobile/MobileNewDeal.tsx:307" },
-    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1153" },
-    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:2020" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:1238" },
+    { "location": "app/dashboard/mobile/MobileNewDeal.tsx:2105" },
     { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:135" },
     { "location": "app/dashboard/mobile/MobileProjectDetail.tsx:139" }
   ],
   "_reasons": {
     "app/dashboard/new-deal/page.tsx:269": "repId-change effect — blitz availability is rep-scoped, so an old blitz must be cleared when the rep changes. setterId is preserved (validator catches mismatches).",
-    "app/dashboard/new-deal/page.tsx:1083": "Admin's closer picker — the chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared (was the regression source). Re-pinned from :1069 (line drift from cycle 1153-1176 edits).",
-    "app/dashboard/new-deal/page.tsx:1815": "Lead-source toggle off `blitz` — the blitz <select> only renders when leadSource === 'blitz', so an orphan blitzId would persist invisibly. setterId preserved. Re-pinned from :1801.",
+    "app/dashboard/new-deal/page.tsx:1081": "Admin's closer picker — the chosen blitz may no longer match the new closer's blitz list. setterId is explicitly NOT cleared (was the regression source). Re-pinned from :1083 (line drift from cycle 1177-1215 batch).",
+    "app/dashboard/new-deal/page.tsx:1813": "Lead-source toggle off `blitz` — the blitz <select> only renders when leadSource === 'blitz', so an orphan blitzId would persist invisibly. setterId preserved. Re-pinned from :1815 (line drift from cycle 1177-1215 batch).",
     "app/dashboard/mobile/MobileNewDeal.tsx:307": "Mobile equivalent of the desktop :269 repId-change effect. Same rationale.",
-    "app/dashboard/mobile/MobileNewDeal.tsx:1153": "Mobile admin Closer (Rep) picker — clears blitzId when the closer changes because blitz availability is rep-scoped; the new closer may not be approved for the prior blitz. setterId is NOT cleared (picker even filters the setter out of closer options). Mobile twin of the desktop :1083 closer-picker clear. Added cycle 1153-1176.",
-    "app/dashboard/mobile/MobileNewDeal.tsx:2020": "Mobile lead-source toggle off `blitz`. Same rationale as desktop :1815. Re-pinned from :1982.",
+    "app/dashboard/mobile/MobileNewDeal.tsx:1238": "Mobile admin Closer (Rep) picker — clears blitzId when the closer changes because blitz availability is rep-scoped; the new closer may not be approved for the prior blitz. setterId is NOT cleared (picker even filters the setter out of closer options). Mobile twin of the desktop :1081 closer-picker clear. Re-pinned from :1153 (line drift from cycle 1177-1215 batch).",
+    "app/dashboard/mobile/MobileNewDeal.tsx:2105": "Mobile lead-source toggle off `blitz`. Same rationale as desktop :1813. Re-pinned from :2020 (line drift from cycle 1177-1215 batch).",
     "app/dashboard/mobile/MobileProjectDetail.tsx:135": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (regex matches `setterId: ''` on a line that also has `repId: ''`).",
     "app/dashboard/mobile/MobileProjectDetail.tsx:139": "useState initializer for editDraft — first-render default empty values, not a reactive clear. Gate false-positive (matches bare `blitzId: ''`)."
   }
