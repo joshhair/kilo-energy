@@ -430,25 +430,22 @@ function PayrollPageInner() {
     );
   }
 
+  // Hold the skeleton until both client-hydrate AND the API's first
+  // /api/data round-trip resolve. Otherwise the page mounts with empty
+  // arrays, runs its fade-in on a blank surface, and real data pops in
+  // without animation — same flash behavior Dashboard + Projects
+  // already avoid with this pattern.
+  if (!isHydrated || !dbReady) {
+    return <PayrollSkeleton />;
+  }
+
   if (isMobile) return <MobilePayroll />;
 
-  // Paginate the flat filtered list, then re-group by rep for display
-  const adminTotalPages = Math.max(1, Math.ceil(filtered.length / adminRowsPerPage));
-  const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
-  const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, filtered.length);
-  const paginatedFiltered = filtered.slice(adminStartIdx, adminEndIdx);
-  // Header checkbox state: considers only the visible page entries.
-  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
-
-  // Group the current page's entries by rep so the table renders as one
-  // summary row per rep with an expand chevron; detail rows (the prior
-  // flat entries) render beneath when expanded. Not memoized because
-  // the early returns above a useMemo here would break Rules of Hooks
-  // — the computation is O(paginatedFiltered.length), cheap enough to
-  // run every render.
+  // Group ALL filtered entries by rep so each rep shows their full total
+  // regardless of how many pages their entries would have spanned before.
   const groupedByRep = (() => {
-    const map = new Map<string, { repId: string; repName: string; entries: typeof paginatedFiltered; total: number }>();
-    for (const entry of paginatedFiltered) {
+    const map = new Map<string, { repId: string; repName: string; entries: typeof filtered; total: number }>();
+    for (const entry of filtered) {
       const key = entry.repId;
       const existing = map.get(key);
       if (existing) {
@@ -460,6 +457,16 @@ function PayrollPageInner() {
     }
     return Array.from(map.values()).sort((a, b) => b.entries.length - a.entries.length || a.repName.localeCompare(b.repName));
   })();
+
+  // Paginate the groups (one summary row per rep) rather than raw entries.
+  const adminTotalPages = Math.max(1, Math.ceil(groupedByRep.length / adminRowsPerPage));
+  const adminStartIdx = (adminPage - 1) * adminRowsPerPage;
+  const adminEndIdx = Math.min(adminStartIdx + adminRowsPerPage, groupedByRep.length);
+  const paginatedGroups = groupedByRep.slice(adminStartIdx, adminEndIdx);
+  // Flat entry list for the visible groups — drives header checkbox and Shift+A.
+  const paginatedFiltered = paginatedGroups.flatMap((g) => g.entries);
+  // Header checkbox state: considers only the visible page entries.
+  const allPageSelected = paginatedFiltered.length > 0 && paginatedFiltered.every((e) => selectedIds.has(e.id));
 
   const toggleRepExpanded = (repId: string) => {
     if (expandedRepIds.has(repId)) {
@@ -846,15 +853,6 @@ function PayrollPageInner() {
   const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
 
   const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
-
-  // Hold the skeleton until both client-hydrate AND the API's first
-  // /api/data round-trip resolve. Otherwise the page mounts with empty
-  // arrays, runs its fade-in on a blank surface, and real data pops in
-  // without animation — same flash behavior Dashboard + Projects
-  // already avoid with this pattern.
-  if (!isHydrated || !dbReady) {
-    return <PayrollSkeleton />;
-  }
 
   // ── Non-admin guard ──────────────────────────────────────────────────────────
   // Reps can view only their own entries in a read-only mode; no admin actions.
@@ -1441,7 +1439,7 @@ function PayrollPageInner() {
               </tr>
             </thead>
             <tbody>
-              {groupedByRep.flatMap((group, groupIdx) => {
+              {paginatedGroups.flatMap((group, groupIdx) => {
                 const expanded = expandedRepIds.has(group.repId);
                 const groupAllSelected = allGroupEntrySelected(group.entries);
                 const summaryRow = (
@@ -1617,10 +1615,10 @@ function PayrollPageInner() {
             </tbody>
           </table>
         </div>
-        {filtered.length > adminRowsPerPage && (
+        {groupedByRep.length > adminRowsPerPage && (
           <div className="card-surface rounded-2xl overflow-hidden mt-4">
             <PaginationBar
-              totalResults={filtered.length}
+              totalResults={groupedByRep.length}
               startIdx={adminStartIdx}
               endIdx={adminEndIdx}
               currentPage={adminPage}

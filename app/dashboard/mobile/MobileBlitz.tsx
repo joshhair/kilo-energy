@@ -14,10 +14,10 @@ import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { SegmentedPills } from '../../../components/ui';
 
-type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
-type SortKey = 'newest' | 'oldest' | 'deals' | 'kw' | 'name';
+export type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
+export type SortKey = 'newest' | 'oldest' | 'deals' | 'kw' | 'name';
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'newest', label: 'Newest' },
   { key: 'oldest', label: 'Oldest' },
   { key: 'deals', label: 'Most Deals' },
@@ -62,7 +62,7 @@ interface BlitzRequestData {
   requestedBy: { id: string; firstName: string; lastName: string };
 }
 
-const STATUS_PILLS: { value: BlitzStatus | 'all'; label: string }[] = [
+export const STATUS_PILLS: { value: BlitzStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'upcoming', label: 'Upcoming' },
   { value: 'active', label: 'Active' },
