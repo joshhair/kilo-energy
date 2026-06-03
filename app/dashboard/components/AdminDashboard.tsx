@@ -96,8 +96,17 @@ export function AdminDashboard({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [recentPage, setRecentPage] = useState(1);
   const [recentRowsPerPage, setRecentRowsPerPage] = useState(10);
+  const [pipelineMounted, setPipelineMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => { setRecentPage(1); setRecentSearch(''); }, [period]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
+    const id = requestAnimationFrame(() => setPipelineMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -110,10 +119,17 @@ export function AdminDashboard({
   };
 
   const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ChevronDown className="w-3 h-3 text-[var(--text-dim)] inline ml-1" />;
-    return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-[var(--accent-emerald-text)] inline ml-1" />
-      : <ChevronDown className="w-3 h-3 text-[var(--accent-emerald-text)] inline ml-1" />;
+    const isActive = sortKey === col;
+    const isAsc = sortDir === 'asc';
+    return (
+      <ChevronDown
+        className={`w-3 h-3 inline ml-1 motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out ${
+          isActive
+            ? `text-[var(--accent-emerald-text)] ${isAsc ? 'rotate-180' : 'rotate-0'}`
+            : 'text-[var(--text-dim)] rotate-0 opacity-50'
+        }`}
+      />
+    );
   };
 
   // Sliding pill behaviour owned by SegmentedPills.
@@ -434,9 +450,9 @@ export function AdminDashboard({
                 <div
                   key={phase}
                   style={{
-                    width: `${(periodPipelinePhaseCounts[phase] / periodPipelineTotal) * 100}%`,
+                    width: pipelineMounted ? `${(periodPipelinePhaseCounts[phase] / periodPipelineTotal) * 100}%` : '0%',
                     background: PHASE_HEX[phase] ?? 'var(--text-dim)',
-                    transition: 'width 0.7s ease-out',
+                    transition: prefersReducedMotion ? 'none' : 'width 700ms cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
                 />
               ))}
@@ -515,7 +531,7 @@ export function AdminDashboard({
                 {topReps.map((r, i) => {
                   const maxCount = topReps[0]?.count ?? 1;
                   return (
-                    <div key={r.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors">
+                    <div key={r.id} className="animate-admin-row-enter flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-card)]/30 transition-colors" style={{ '--admin-row-delay': `${i * 60}ms` } as CSSProperties}>
                       <span
                         className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums shrink-0"
                         style={{
@@ -572,7 +588,7 @@ export function AdminDashboard({
                     </thead>
                     <tbody key={period}>
                       {periodInstallerRanking.map((inst, i) => (
-                        <tr key={inst.name} className="relative border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-amber-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
+                        <tr key={inst.name} className="animate-admin-row-enter relative border-b border-[var(--border-subtle)]/50 hover:bg-[var(--surface-card)]/30 transition-colors before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-amber-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center" style={{ '--admin-row-delay': `${i * 60}ms` } as CSSProperties}>
                           <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium flex items-center gap-2">
                             {i < 3 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-br ${i === 0 ? 'from-yellow-400 to-amber-600' : i === 1 ? 'from-slate-300 to-slate-500' : 'from-amber-600 to-amber-800'} text-[var(--text-primary)]`}>#{i + 1}</span>}
                             {inst.name}
@@ -629,8 +645,8 @@ export function AdminDashboard({
             <div className={`collapsible-panel ${cancellationExpanded ? 'open' : ''}`}>
               <div className="collapsible-inner">
                 <div className="space-y-2 mt-4">
-                  {reasonList.map(([reason, count]) => (
-                    <div key={reason} className="flex items-center justify-between bg-[var(--surface-card)]/40 rounded-lg px-4 py-2">
+                  {reasonList.map(([reason, count], i) => (
+                    <div key={reason} className="animate-admin-row-enter flex items-center justify-between bg-[var(--surface-card)]/40 rounded-lg px-4 py-2" style={{ '--admin-row-delay': `${i * 60}ms` } as CSSProperties}>
                       <span className="text-[var(--text-secondary)] text-sm">{reason}</span>
                       <span className="text-[var(--accent-red-text)] text-sm font-semibold tabular-nums">{count}</span>
                     </div>
@@ -738,15 +754,15 @@ export function AdminDashboard({
                         {/* 3 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{proj.installer}</td>
                         {/* 4 */}<td className="px-6 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{formatDate(proj.soldDate)}</td>
                         {/* 5 */}<td className="px-6 py-3"><PhaseBadge phase={proj.phase} /></td>
-                        {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)]">{proj.kWSize}</td>
-                        {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)]">${(proj.netPPW ?? 0).toFixed(2)}</td>
-                        {/* 8 */}<td className="px-6 py-3">
+                        {/* 6 */}<td className="px-6 py-3 text-[var(--text-secondary)] tabular-nums">{proj.kWSize}</td>
+                        {/* 7 */}<td className="px-6 py-3 text-[var(--text-secondary)] tabular-nums">${(proj.netPPW ?? 0).toFixed(2)}</td>
+                        {/* 8 */}<td className="px-6 py-3 tabular-nums">
                           <span className="text-[var(--accent-emerald-text)] font-medium">${closerPay.toLocaleString()}</span>
                           {setterPay > 0 && <span className="block text-[var(--text-dim)] text-xs">+${setterPay.toLocaleString()} setter</span>}
                         </td>
-                        {/* 9 */}<td className="px-6 py-3"><StatusDot paid={proj.m1Paid} amount={isCancelled ? 0 : (proj.m1Amount ?? 0)} /></td>
-                        {/* 10 */}<td className="px-6 py-3"><StatusDot paid={proj.m2Paid} amount={isCancelled ? 0 : (proj.m2Amount ?? 0)} /></td>
-                        {/* 11 */}{showM3 && <td className="px-6 py-3"><StatusDot paid={proj.m3Paid} amount={isCancelled ? 0 : (proj.m3Amount ?? 0)} /></td>}
+                        {/* 9 */}<td className="px-6 py-3 tabular-nums"><StatusDot paid={proj.m1Paid} amount={isCancelled ? 0 : (proj.m1Amount ?? 0)} /></td>
+                        {/* 10 */}<td className="px-6 py-3 tabular-nums"><StatusDot paid={proj.m2Paid} amount={isCancelled ? 0 : (proj.m2Amount ?? 0)} /></td>
+                        {/* 11 */}{showM3 && <td className="px-6 py-3 tabular-nums"><StatusDot paid={proj.m3Paid} amount={isCancelled ? 0 : (proj.m3Amount ?? 0)} /></td>}
                       </tr>
                       );
                     })}
