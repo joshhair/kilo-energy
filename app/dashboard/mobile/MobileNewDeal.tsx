@@ -749,6 +749,7 @@ export default function MobileNewDeal() {
           el.addEventListener('animationend', () => el.classList.remove('field-error-pulse'), { once: true });
         }
       }
+      toast('Please fill in the required fields before continuing.', 'error');
       return;
     }
     stepDirectionRef.current = 'fwd';
@@ -1788,10 +1789,10 @@ export default function MobileNewDeal() {
               />
               <FieldError errors={errors} field="netPPW" />
               {!errors.netPPW && soldPPW > 0 && closerPerW > 0 && (
-                <p className={`text-base mt-1 ${soldPPW >= closerPerW ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}`}>
-                  {soldPPW >= closerPerW
-                    ? `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W above baseline`
-                    : `$${Math.abs(soldPPW - closerPerW).toFixed(2)}/W below baseline -- no commission`}
+                <p className={`text-base mt-1 ${soldPPW >= closerPerW + closerTrainerOverrideRate ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}`}>
+                  {soldPPW >= closerPerW + closerTrainerOverrideRate
+                    ? `$${Math.abs(soldPPW - (closerPerW + closerTrainerOverrideRate)).toFixed(2)}/W above baseline`
+                    : `$${Math.abs(soldPPW - (closerPerW + closerTrainerOverrideRate)).toFixed(2)}/W below baseline -- no commission`}
                 </p>
               )}
             </div>

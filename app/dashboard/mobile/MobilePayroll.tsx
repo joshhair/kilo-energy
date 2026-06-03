@@ -549,29 +549,29 @@ export default function MobilePayroll() {
         <div className="space-y-3">
           {/* Filters */}
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <select
-                value={reimFilterStatus}
-                onChange={(e) => setReimFilterStatus(e.target.value as ReimFilterStatus)}
-                className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Denied">Denied</option>
-                <option value="All">All</option>
-              </select>
-              <select
-                value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
-                onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
-                className="flex-1 min-h-[44px] rounded-xl px-3 text-sm focus:outline-none"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-              >
-                <option value="active">Active only</option>
-                <option value="all">Inc. archived</option>
-                <option value="only">Archived only</option>
-              </select>
-            </div>
+            <SegmentedPills
+              options={[
+                { value: 'Pending' as ReimFilterStatus, label: 'Pending' },
+                { value: 'Approved' as ReimFilterStatus, label: 'Approved' },
+                { value: 'Denied' as ReimFilterStatus, label: 'Denied' },
+                { value: 'All' as ReimFilterStatus, label: 'All' },
+              ]}
+              value={reimFilterStatus}
+              onChange={setReimFilterStatus}
+              variant="pill"
+              ariaLabel="Reimbursement status filter"
+            />
+            <SegmentedPills
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'all', label: 'Inc. Archived' },
+                { value: 'only', label: 'Archived Only' },
+              ]}
+              value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
+              onChange={(v) => setShowArchivedReim(v === 'only' ? 'only' : v === 'all' ? true : false)}
+              variant="pill"
+              ariaLabel="Reimbursement archive filter"
+            />
             <div className="flex gap-2">
               <input
                 type="date"

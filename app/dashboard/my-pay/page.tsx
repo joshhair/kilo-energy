@@ -9,6 +9,7 @@ import MobileMyPay from '../mobile/MobileMyPay';
 import BaselinePanel from './BaselinePanel';
 import { useToast } from '../../../lib/toast';
 import { fmt$, localDateString } from '../../../lib/utils';
+import { getNextFriday, getFridayForDate } from '../../../lib/my-pay-utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
@@ -22,28 +23,6 @@ import {
 import { buildPageRange } from '../components/PaginationBar';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getNextFriday(): Date {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = (5 - day + 7) % 7;
-  const nf = new Date(d);
-  nf.setDate(d.getDate() + diff);
-  return nf;
-}
-
-function getFridayForDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00');
-  const day = d.getDay();
-  const diff = ((5 - day + 7) % 7) || 7;
-  if (day === 5) return dateStr;
-  const nf = new Date(d);
-  nf.setDate(d.getDate() + diff);
-  const y = nf.getFullYear();
-  const m = String(nf.getMonth() + 1).padStart(2, '0');
-  const dd = String(nf.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
-}
 
 function formatFridayLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');

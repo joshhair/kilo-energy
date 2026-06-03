@@ -653,8 +653,8 @@ export default function MobileBlitz() {
 
 
       {/* Search + Sort */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      <div className="space-y-2">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
           <input
             value={search}
@@ -669,21 +669,14 @@ export default function MobileBlitz() {
             } as React.CSSProperties}
           />
         </div>
-        <select
+        <SegmentedPills
+          options={SORT_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
           value={sortKey}
-          onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1"
-          style={{
-            background: 'var(--surface-card)',
-            border: '1px solid var(--border-subtle)',
-            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            '--tw-ring-color': 'var(--accent-emerald-solid)',
-          } as React.CSSProperties}
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.key} value={o.key}>{o.label}</option>
-          ))}
-        </select>
+          onChange={(v) => setSortKey(v as SortKey)}
+          variant="pill"
+          scrollable
+          ariaLabel="Sort blitzes"
+        />
       </div>
 
       {/* Admin tabs: Blitzes / Requests */}

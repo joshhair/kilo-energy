@@ -1647,7 +1647,7 @@ function NewDealPage() {
                     )}
                   </div>
                   <FieldError errors={errors} field="netPPW" />
-                  {!isSubDealer && <PpwHint soldPPW={soldPPW} closerPerW={closerPerW} hasError={!!errors.netPPW} />}
+                  {!isSubDealer && <PpwHint soldPPW={soldPPW} closerPerW={closerPerW} closerTrainerOverrideRate={closerTrainerOverrideRate} hasError={!!errors.netPPW} />}
                 </div>
               </div>
 

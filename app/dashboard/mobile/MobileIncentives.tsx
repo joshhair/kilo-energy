@@ -16,6 +16,7 @@ import MobileEmptyState from './shared/MobileEmptyState';
 import IncentiveCard from './shared/IncentiveCard';
 import CreateIncentiveSheet from './shared/CreateIncentiveSheet';
 import EditIncentiveSheet from './shared/EditIncentiveSheet';
+import { SegmentedPills } from '../../../components/ui';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -390,32 +391,37 @@ export default function MobileIncentives() {
 
       {/* Filter / Sort / Select toolbar */}
       <div className="space-y-2">
-        <div className="flex gap-2">
-          <select
-            value={filter}
-            onChange={(e) => triggerListSwitch(() => { setFilter(e.target.value as typeof filter); clearSelection(); setListVersion(v => v + 1); })}
-            className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
-            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="expired">Expired</option>
-            <option value="ending_soon">Ending Soon</option>
-          </select>
-          <select
-            value={sort}
-            onChange={(e) => triggerListSwitch(() => { setSort(e.target.value as typeof sort); clearSelection(); setListVersion(v => v + 1); })}
-            className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
-            style={{ background: 'var(--m-surface, var(--surface))', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          >
-            <option value="newest">Newest</option>
-            <option value="progress">Progress %</option>
-            <option value="ending_soonest">Ending Soonest</option>
-          </select>
+        <SegmentedPills
+          options={[
+            { value: 'all' as typeof filter, label: 'All' },
+            { value: 'active' as typeof filter, label: 'Active' },
+            { value: 'expired' as typeof filter, label: 'Expired' },
+            { value: 'ending_soon' as typeof filter, label: 'Ending Soon' },
+          ]}
+          value={filter}
+          onChange={(val) => triggerListSwitch(() => { setFilter(val as typeof filter); clearSelection(); setListVersion(n => n + 1); })}
+          variant="pill"
+          scrollable
+          ariaLabel="Incentive filter"
+        />
+        <div className="flex gap-2 items-center">
+          <div className="flex-1">
+            <SegmentedPills
+              options={[
+                { value: 'newest' as typeof sort, label: 'Newest' },
+                { value: 'progress' as typeof sort, label: 'Progress' },
+                { value: 'ending_soonest' as typeof sort, label: 'Ending Soon' },
+              ]}
+              value={sort}
+              onChange={(val) => triggerListSwitch(() => { setSort(val as typeof sort); clearSelection(); setListVersion(n => n + 1); })}
+              variant="pill"
+              ariaLabel="Incentive sort"
+            />
+          </div>
           {isAdmin && (
             <button
               onClick={() => { if (selectMode) clearSelection(); else setSelectMode(true); }}
-              className="flex items-center justify-center w-10 shrink-0 rounded-lg"
+              className="flex items-center justify-center w-10 h-10 shrink-0 rounded-lg"
               style={selectMode
                 ? { background: 'color-mix(in srgb, var(--accent-cyan-solid) 15%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }
                 : { background: 'var(--m-surface, var(--surface))', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }

@@ -71,10 +71,11 @@ export function FieldError({ field, errors }: { field: string; errors: Record<st
   ) : null;
 }
 
-export function PpwHint({ soldPPW, closerPerW, hasError }: { soldPPW: number; closerPerW: number; hasError: boolean }) {
+export function PpwHint({ soldPPW, closerPerW, closerTrainerOverrideRate = 0, hasError }: { soldPPW: number; closerPerW: number; closerTrainerOverrideRate?: number; hasError: boolean }) {
   if (hasError || soldPPW <= 0 || closerPerW <= 0) return null;
-  const above = soldPPW >= closerPerW;
-  const diff = Math.abs(soldPPW - closerPerW).toFixed(2);
+  const effectiveBaseline = closerPerW + closerTrainerOverrideRate;
+  const above = soldPPW >= effectiveBaseline;
+  const diff = Math.abs(soldPPW - effectiveBaseline).toFixed(2);
   return (
     <p id="netPPW-hint" className={`text-xs mt-1 ${above ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}`}>
       {above ? `$${diff}/W above baseline \u2713` : `$${diff}/W below baseline \u2014 no commission`}

@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import { fmt$, formatDate, localDateString } from '../../../lib/utils';
+import { getNextFriday, getFridayForDate } from '../../../lib/my-pay-utils';
 import { sumPaid, sumPendingChargebacks, countPendingChargebacks } from '../../../lib/aggregators';
 import { PayrollEntry } from '../../../lib/data';
 import { computeOnPace, viewerFullCommission, viewerPipelineRemaining, computeTrainerOverridePipeline } from '../../../lib/period-projection';
 import { getPeriodDaysRemaining } from '../../../lib/period';
 import { Banknote, Receipt, ChevronRight, Search, X, TrendingUp } from 'lucide-react';
+import { SegmentedPills } from '../../../components/ui';
 import MobilePageHeader from './shared/MobilePageHeader';
 import BaselinePanel from '../my-pay/BaselinePanel';
 import MobileSection from './shared/MobileSection';
@@ -31,25 +33,6 @@ const WARNING_DISP = 'var(--accent-amber-display)';
 const HERO_NUM = 'var(--text-primary)';                // BIG hero numbers — near-black for max readability
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getNextFriday(): Date {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = (5 - day + 7) % 7;
-  const nf = new Date(d);
-  nf.setDate(d.getDate() + diff);
-  return nf;
-}
-
-function getFridayForDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00');
-  const day = d.getDay();
-  const diff = ((5 - day + 7) % 7) || 7;
-  if (day === 5) return dateStr;
-  const nf = new Date(d);
-  nf.setDate(d.getDate() + diff);
-  return localDateString(nf);
-}
 
 function formatFridayLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
@@ -309,6 +292,17 @@ export default function MobileMyPay() {
 
   const daysLabel =
     daysUntilFriday === 0 ? 'Today' : daysUntilFriday === 1 ? '1 day' : `${daysUntilFriday} days`;
+
+  const typeOptions = useMemo(() => [
+    { value: 'all' as typeof filterType, label: 'All' },
+    ...(effectiveRole !== 'sub-dealer' ? [{ value: 'M1' as typeof filterType, label: 'M1' }] : []),
+    { value: 'M2' as typeof filterType, label: 'M2' },
+    { value: 'M3' as typeof filterType, label: 'M3' },
+    ...(effectiveRole !== 'sub-dealer' ? [
+      { value: 'Bonus' as typeof filterType, label: 'Bonus' },
+      { value: 'Trainer' as typeof filterType, label: 'Trainer' },
+    ] : []),
+  ], [effectiveRole]);
 
   // ── Group entries into pay periods ──
   // Drafts are EXCLUDED — they aren't actually scheduled. Renders as a
@@ -727,30 +721,26 @@ export default function MobileMyPay() {
             </button>
           )}
         </div>
-        <div className="flex gap-2">
-          <select
+        <div className="space-y-2">
+          <SegmentedPills
+            options={typeOptions}
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-            className="flex-1 outline-none"
-            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterType !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
-          >
-            <option value="all">All Types</option>
-            {effectiveRole !== 'sub-dealer' && <option value="M1">M1</option>}
-            <option value="M2">M2</option>
-            <option value="M3">M3</option>
-            {effectiveRole !== 'sub-dealer' && <option value="Bonus">Bonus</option>}
-            {effectiveRole !== 'sub-dealer' && <option value="Trainer">Trainer</option>}
-          </select>
-          <select
+            onChange={setFilterType}
+            variant="pill"
+            scrollable
+            ariaLabel="Payment type filter"
+          />
+          <SegmentedPills
+            options={[
+              { value: 'all' as typeof filterStatus, label: 'All' },
+              { value: 'Pending' as typeof filterStatus, label: 'Pending' },
+              { value: 'Paid' as typeof filterStatus, label: 'Paid' },
+            ]}
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-            className="flex-1 outline-none"
-            style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '10px 12px', color: filterStatus !== 'all' ? 'var(--text-primary)' : MUTED, fontFamily: FONT_BODY, fontSize: '0.9rem', minHeight: '44px' }}
-          >
-            <option value="all">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Paid">Paid</option>
-          </select>
+            onChange={setFilterStatus}
+            variant="pill"
+            ariaLabel="Payment status filter"
+          />
         </div>
         <div className="flex gap-2">
           <label className="flex-1 min-w-0 flex flex-col gap-1">
