@@ -203,7 +203,12 @@ if (!base) {
     }
     if (!currentFile) continue;
     // Skip the audit script itself + tests that intentionally exercise patterns
-    if (currentFile.includes('scripts/check-') || currentFile.includes('scripts/pre-push-audit')) {
+    if (
+      currentFile.includes('scripts/check-') ||
+      currentFile.includes('scripts/pre-push-audit') ||
+      /(^|\/)tests\//.test(currentFile) ||
+      /\.(test|spec)\.[cm]?[jt]sx?$/.test(currentFile)
+    ) {
       // still tracks added lines from this file but don't risk-scan them
       if (line.startsWith('+') && !line.startsWith('+++')) currentNewLine++;
       continue;

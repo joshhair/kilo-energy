@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 // Seed-data imports (PROJECTS, REPS, PAYROLL_ENTRIES, …) were removed
 // when the initial React state switched to empty arrays — see the
 // comment near the useState calls below. We now import only the type
@@ -283,6 +284,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dataError, setDataError] = useState(false);
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
   const [viewAsUser, setViewAsUserState] = useState<ViewAsUser | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
   const [viewAsCandidates, setViewAsCandidates] = useState<ViewAsCandidate[]>([]);
   const [pmPermissions, setPmPermissions] = useState<{ canExport: boolean; canCreateDeals: boolean; canAccessBlitz: boolean } | null>(null);
 
@@ -294,10 +297,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // addProductCatalogProduct awaits this when the installer ID isn't in idMaps yet.
   const pendingInstallerIdRef = useRef<Map<string, Promise<string>>>(new Map());
 
+  // On entering/exiting View-As, route to the dashboard. This lands every role
+  // on a valid page (an admin viewing-as-rep must not stay on an admin-only
+  // route like /dashboard/users — the stale/overbroad-preview bug) AND resets
+  // role-incompatible filters for free, since navigating away unmounts the
+  // filtered list pages and they remount clean. EXCEPTION: the New Deal form,
+  // so an in-progress deal entry isn't silently discarded on an identity switch.
+  const goToValidLanding = useCallback(() => {
+    if (!pathname?.startsWith('/dashboard/new-deal')) router.push('/dashboard');
+  }, [router, pathname]);
   const setViewAsUser = useCallback((user: ViewAsUser) => {
     setViewAsUserState(user);
-  }, []);
-  const clearViewAs = useCallback(() => { setViewAsUserState(null); }, []);
+    goToValidLanding();
+  }, [goToValidLanding]);
+  const clearViewAs = useCallback(() => {
+    setViewAsUserState(null);
+    goToValidLanding();
+  }, [goToValidLanding]);
   const isViewingAs = currentRole === 'admin' && viewAsUser !== null;
   const effectiveRole: Role = isViewingAs ? viewAsUser!.role : currentRole;
   const effectiveRepId = isViewingAs ? viewAsUser!.id : currentRepId;

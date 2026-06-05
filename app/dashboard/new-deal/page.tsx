@@ -40,7 +40,7 @@ export default function NewDealPageWrapper() {
 }
 
 function NewDealPage() {
-  const { dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName, addDeal, projects, payrollEntries, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
+  const { dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName, effectiveRepName, addDeal, projects, payrollEntries, trainerAssignments, activeInstallers, activeFinancers, reps, installerPricingVersions, productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, getInstallerPrepaidOptions, installerBaselines, installerPayConfigs, solarTechProducts } = useApp();
   const { toast } = useToast();
   useEffect(() => { document.title = 'New Deal | Kilo Energy'; }, []);
   const isHydrated = useIsHydrated();
@@ -753,8 +753,8 @@ function NewDealPage() {
       id: projectId,
       customerId: genId('cust'),
       customerName: form.customerName,
-      repId: isSubDealer ? (currentRepId ?? '') : closerId,
-      repName: isSubDealer ? (currentRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
+      repId: isSubDealer ? (effectiveRepId ?? '') : closerId,
+      repName: isSubDealer ? (effectiveRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
       // Use form.setterId as source of truth, not setter?.id — the reps
       // lookup can momentarily miss the rep during hydration, which would
       // silently drop the setter from the POST payload (Trevor Schauwecker
@@ -789,8 +789,8 @@ function NewDealPage() {
       prepaidSubType: form.prepaidSubType || undefined,
       leadSource: form.leadSource || undefined,
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
-      subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
-      subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
+      subDealerId: isSubDealer ? effectiveRepId ?? undefined : undefined,
+      subDealerName: isSubDealer ? effectiveRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
       // Defer the auto-send when a utility bill is attached. The bill
       // uploads AFTER POST /api/projects returns, and the in-route
@@ -898,7 +898,7 @@ function NewDealPage() {
       setterM2: isSubDealer ? 0 : setterM2,
       setterM3: isSubDealer ? 0 : setterM3,
       setterName: setter?.name ?? '',
-      repName: rep?.name ?? currentRepName ?? 'You',
+      repName: rep?.name ?? effectiveRepName ?? 'You',
     });
     setSubmitting(false);
     submittingRef.current = false;
@@ -1837,27 +1837,10 @@ function NewDealPage() {
                     onChange={(e) => {
                       const blitzId = e.target.value;
                       update('blitzId', blitzId);
-                      // Smart default sold date based on blitz date range (#15)
-                      // Only apply if user hasn't manually entered a date (still on the default today value)
-                      if (blitzId) {
-                        const blitz = availableBlitzes.find((b) => b.id === blitzId);
-                        if (blitz?.startDate && blitz?.endDate) {
-                          const today = new Date().toLocaleDateString('en-CA');
-                          if (!touched.has('soldDate')) {
-                            if (today >= blitz.startDate && today <= blitz.endDate) {
-                              // Today is within the blitz range — keep today
-                              update('soldDate', today);
-                            } else if (today < blitz.startDate) {
-                              // Before blitz — set to blitz start
-                              update('soldDate', blitz.startDate);
-                            } else {
-                              // After blitz — set to blitz end
-                              update('soldDate', blitz.endDate);
-                            }
-                          }
-                        }
-                      }
-                      // Blitz deselected — leave soldDate as-is to preserve any manually entered date.
+                      // Sold date is intentionally NOT snapped to the blitz window
+                      // (removed 2026-06-05). A deal can attach to the blitz it
+                      // originated on even when it closes outside the blitz dates,
+                      // so the rep's real sold date is preserved as entered. Per Josh.
                       // DO NOT clear setterId here. Setter is independent of
                       // blitz attribution — see project_kilo_setter_regression.
                       // Silent clears on blitz change dropped real setters from

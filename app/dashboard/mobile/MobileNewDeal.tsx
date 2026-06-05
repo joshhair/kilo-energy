@@ -216,7 +216,7 @@ function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: 
 
 export default function MobileNewDeal() {
   const {
-    dbReady, effectiveRole, currentRepId, effectiveRepId, currentRepName,
+    dbReady, effectiveRole, effectiveRepId, currentRepName, effectiveRepName,
     addDeal, projects, payrollEntries, trainerAssignments,
     activeInstallers, activeFinancers, reps,
     installerPricingVersions, productCatalogInstallerConfigs,
@@ -933,8 +933,8 @@ export default function MobileNewDeal() {
       id: projectId,
       customerId: genId('cust'),
       customerName: form.customerName,
-      repId: isSubDealer ? (currentRepId ?? '') : closerId,
-      repName: isSubDealer ? (currentRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
+      repId: isSubDealer ? (effectiveRepId ?? '') : closerId,
+      repName: isSubDealer ? (effectiveRepName ?? '') : (rep?.name ?? currentRepName ?? ''),
       // form.setterId is the source of truth — see desktop page.tsx
       // comment. Prevents reps-lookup miss from dropping the setter.
       setterId: isSubDealer ? undefined : (form.setterId || undefined),
@@ -966,8 +966,8 @@ export default function MobileNewDeal() {
       prepaidSubType: form.prepaidSubType || undefined,
       leadSource: form.leadSource || undefined,
       blitzId: form.leadSource === 'blitz' && form.blitzId ? form.blitzId : undefined,
-      subDealerId: isSubDealer ? currentRepId ?? undefined : undefined,
-      subDealerName: isSubDealer ? currentRepName ?? undefined : undefined,
+      subDealerId: isSubDealer ? effectiveRepId ?? undefined : undefined,
+      subDealerName: isSubDealer ? effectiveRepName ?? undefined : undefined,
       installerIntakeJson: isBviInstaller ? JSON.stringify(bviIntake) : undefined,
       // Defer the auto-send when a utility bill is attached. Bill uploads
       // AFTER POST /api/projects returns; in-route auto-send fires BEFORE
@@ -1056,7 +1056,7 @@ export default function MobileNewDeal() {
       setterM2: isSubDealer ? 0 : setterM2,
       setterM3: isSubDealer ? 0 : setterM3,
       setterName: setter?.name ?? '',
-      repName: rep?.name ?? currentRepName ?? 'You',
+      repName: rep?.name ?? effectiveRepName ?? 'You',
     });
     setSubmitting(false);
     submittingRef.current = false;
@@ -2125,19 +2125,9 @@ export default function MobileNewDeal() {
                   onChange={(e) => {
                     const blitzId = e.target.value;
                     update('blitzId', blitzId);
-                    if (blitzId) {
-                      const blitz = availableBlitzes.find((b) => b.id === blitzId);
-                      if (blitz?.startDate && blitz?.endDate && !_touched.has('soldDate')) {
-                        const today = new Date().toLocaleDateString('en-CA');
-                        if (today >= blitz.startDate && today <= blitz.endDate) {
-                          update('soldDate', today);
-                        } else if (today < blitz.startDate) {
-                          update('soldDate', blitz.startDate);
-                        } else {
-                          update('soldDate', blitz.endDate);
-                        }
-                      }
-                    }
+                    // Sold date is intentionally NOT snapped to the blitz window
+                    // (removed 2026-06-05) — deals attach to the blitz they originated
+                    // on even when they close outside the blitz dates. Per Josh.
                   }}
                   onBlur={() => handleBlur('blitzId')}
                   className={selectCls('blitzId')} style={v0InputStyle('blitzId')}

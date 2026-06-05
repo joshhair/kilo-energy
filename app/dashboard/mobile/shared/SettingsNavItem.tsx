@@ -20,7 +20,7 @@ export default function SettingsNavItem({ label, icon: Icon, group, onTap, anima
   return (
     <button
       onClick={onTap}
-      className="w-full flex items-center gap-3 min-h-[52px] px-4 text-left active:scale-[0.97] transition-transform duration-100 ease-out"
+      className="w-full flex items-center gap-2.5 min-h-[52px] px-1 text-left active:scale-[0.97] transition-transform duration-100 ease-out"
       style={animationDelay !== undefined ? {
         animation: 'ms-nav-item-in 270ms cubic-bezier(0.16,1,0.3,1) both',
         animationDelay: `${animationDelay}ms`,
