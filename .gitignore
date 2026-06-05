@@ -115,3 +115,12 @@ scripts/check-hunter.mts
 scripts/check-prod-counts.mts
 scripts/check-role-counts.mts
 scripts/check-site-survey.mts
+
+# Local staging DB (holds a copy of prod data — never commit)
+state/*.db
+state/staging.db
+
+# stray libSQL test artifact
+/db
+/db-wal
+/db-shm
