@@ -9,6 +9,15 @@ const isPublicRoute = createRouteMatcher([
   // Legal pages must be readable without auth — linked from the sign-in
   // footer; people need to read privacy/terms before creating an account.
   '/legal/(.*)',
+  // PWA install assets must be fetchable before the user authenticates —
+  // the browser requests the manifest while still on the sign-in page.
+  // `/manifest.json` is NOT covered by the static-asset matcher bypass
+  // below because `.json` is deliberately excluded there (API routes
+  // return JSON), so it reaches middleware and must be allowlisted here.
+  // The icons (`.png`/`.svg`) ARE already bypassed by the matcher; listing
+  // `/icons(.*)` documents the intent and covers any extensionless probe.
+  '/manifest.json',
+  '/icons(.*)',
 ]);
 
 const isApiRoute = createRouteMatcher(['/api/:path*']);
