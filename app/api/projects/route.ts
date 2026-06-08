@@ -83,26 +83,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Validate blitz window and participation before writing
+  // Validate blitz existence + participation before writing.
+  // (soldDate-vs-window gate removed 2026-06-05 — Kilo attributes CLOSED deals
+  // that ORIGINATED on a blitz, and those routinely close AFTER the blitz dates.
+  // The sold date must therefore NOT gate attachment. Per Josh. Closer/co-closer
+  // participation + cancelled-blitz checks stay.)
   if (body.blitzId) {
     if (!body.soldDate) {
       return NextResponse.json({ error: 'soldDate is required when blitzId is provided' }, { status: 400 });
     }
     const blitz = await prisma.blitz.findUnique({
       where: { id: body.blitzId },
-      select: { startDate: true, endDate: true, status: true },
+      select: { status: true },
     });
     if (!blitz) {
       return NextResponse.json({ error: 'Blitz not found' }, { status: 400 });
     }
     if (blitz.status === 'cancelled') {
       return NextResponse.json({ error: 'Cannot attribute a deal to a cancelled blitz' }, { status: 400 });
-    }
-    const sold = new Date(body.soldDate);
-    const start = new Date(blitz.startDate);
-    const end = blitz.endDate ? new Date(blitz.endDate) : null;
-    if (sold < start || (end !== null && sold > end)) {
-      return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
     }
 
     if (body.closerId) {

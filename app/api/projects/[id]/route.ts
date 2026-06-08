@@ -97,27 +97,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  // Validate blitz participation and window before writing (mirrors POST /api/projects validation)
+  // Validate blitz participation before writing (mirrors POST /api/projects validation).
   // Also runs when only setterId/closerId/soldDate changes — the project may already have a blitzId.
+  // (soldDate-vs-window gate removed 2026-06-05 — see POST counterpart. A deal that
+  // originated on a blitz can close after the blitz dates, so the sold date never
+  // gates the link. Cancelled-blitz + closer-participation checks stay.)
   if (body.blitzId || body.setterId !== undefined || body.closerId !== undefined || body.soldDate !== undefined) {
     const existing = await prisma.project.findUnique({ where: { id }, select: { closerId: true, setterId: true, blitzId: true, soldDate: true } });
     const effectiveBlitzId = body.blitzId !== undefined ? body.blitzId : existing?.blitzId;
     if (effectiveBlitzId) {
       const blitz = await prisma.blitz.findUnique({
         where: { id: effectiveBlitzId },
-        select: { startDate: true, endDate: true, status: true },
+        select: { status: true },
       });
       if (blitz) {
         if (blitz.status === 'cancelled') {
           return NextResponse.json({ error: 'Cannot link a project to a cancelled blitz' }, { status: 400 });
-        }
-        const effectiveSoldDate = body.soldDate ?? existing?.soldDate;
-        if (effectiveSoldDate) {
-          const sold = new Date(effectiveSoldDate);
-          const end = blitz.endDate !== null ? new Date(blitz.endDate) : null;
-          if (sold < new Date(blitz.startDate) || (end !== null && sold > end)) {
-            return NextResponse.json({ error: 'soldDate is outside the blitz window' }, { status: 400 });
-          }
         }
       }
       const closerId = body.closerId !== undefined ? body.closerId : (existing?.closerId ?? null);

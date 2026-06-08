@@ -163,21 +163,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
-  // Unlink projects whose soldDate falls outside the updated date window
-  let unlinkedCount = 0;
+  // Deals are intentionally NOT unlinked when the window changes. Attachment is a
+  // deliberate act and stays durable even if the deal's sold date later falls
+  // outside the blitz dates (2026-06-05, per Josh — pairs with the soldDate-window
+  // gate removal in POST/PATCH /api/projects). unlinkedCount stays 0; the field is
+  // kept in the response for backwards compatibility.
+  const unlinkedCount = 0;
   if (body.startDate !== undefined || body.endDate !== undefined) {
-    const unlinkResult = await prisma.project.updateMany({
-      where: {
-        blitzId: id,
-        OR: [
-          ...(blitz.startDate ? [{ soldDate: { lt: blitz.startDate } }] : []),
-          ...(blitz.endDate ? [{ soldDate: { gt: blitz.endDate } }] : []),
-        ],
-      },
-      data: { blitzId: null },
-    });
-    unlinkedCount = unlinkResult.count;
-
     // Re-link deals that now fall within the expanded date window
     const approvedParticipants = await prisma.blitzParticipant.findMany({
       where: { blitzId: id, joinStatus: 'approved' },
