@@ -92,5 +92,12 @@
     "tsx": "^4.22.1",
     "typescript": "^5",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "@clerk/themes": {
+      "@clerk/shared": "3.47.7"
+    },
+    "fast-uri": "3.1.2",
+    "vite": "8.0.16"
   }
 }
