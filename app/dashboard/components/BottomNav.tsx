@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useApp } from '../../../lib/context';
+import { usePublishHeightVar } from '../../../lib/hooks';
 
 type BottomNavItem = {
   href: string;
@@ -93,8 +95,15 @@ export default function BottomNav({
     return pathname.startsWith(href);
   };
 
+  // Publish the nav's real height (incl. safe-area) so sticky CTA bars and
+  // the floating feedback button can stack above it instead of colliding
+  // (T1.3). On desktop the nav is display:none → height 0 → vars collapse.
+  const navRef = useRef<HTMLElement>(null);
+  usePublishHeightVar(navRef, '--kilo-bottom-nav-h');
+
   return (
     <nav
+      ref={navRef}
       className="fixed left-0 right-0 z-50 md:hidden"
       style={{ bottom: 'var(--install-prompt-offset, 0px)', background: 'linear-gradient(to top, var(--surface-page) 80%, transparent)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >

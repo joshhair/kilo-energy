@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useIsHydrated, useMediaQuery } from '../../../lib/hooks';
+import { useIsHydrated, useMediaQuery, usePublishHeightVar } from '../../../lib/hooks';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
@@ -482,6 +482,13 @@ function NewDealPage() {
   const subDealerCommission = isSubDealer && kW > 0 && subDealerRate > 0 && subDealerRate > kiloPerW
     ? Math.round((subDealerRate - kiloPerW) * kW * 1000 * 100) / 100
     : 0;
+
+  // Sticky mobile commission-preview bar (step 2). It must sit ABOVE the
+  // bottom nav (was fixed bottom-0 z-40, hidden behind the z-50 nav) and the
+  // feedback button must clear it — same bottom-stack as Payroll's CTA (T1.3).
+  const showCommissionBar = currentStep === 1 && (showPreview || (isSubDealer && subDealerCommission > 0));
+  const commissionBarRef = useRef<HTMLDivElement>(null);
+  usePublishHeightVar(commissionBarRef, '--kilo-cta-h', showCommissionBar);
 
   // ── Stepper: section completion & progress ────────────────────────────────
 
@@ -1926,8 +1933,12 @@ function NewDealPage() {
       </div> {/* end split layout */}
 
       {/* ── Sticky mobile commission preview bar (step 2 only) ── */}
-      {currentStep === 1 && (showPreview || (isSubDealer && subDealerCommission > 0)) && (
-        <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-[var(--surface)]/95 backdrop-blur-sm border-t border-[var(--border-subtle)] px-4 py-3">
+      {showCommissionBar && (
+        <div
+          ref={commissionBarRef}
+          className="fixed left-0 right-0 md:hidden z-40 bg-[var(--surface)]/95 backdrop-blur-sm border-t border-[var(--border-subtle)] px-4 py-3"
+          style={{ bottom: 'var(--kilo-bottom-nav-h, 5rem)' }}
+        >
           <div className="flex items-center justify-between max-w-2xl mx-auto">
             <div className="flex flex-col">
               <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider leading-none mb-0.5">

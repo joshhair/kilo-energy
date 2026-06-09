@@ -11,6 +11,42 @@ function subscribe(_cb: () => void): () => void {
   return () => {};
 }
 
+/**
+ * Publishes a fixed element's live height to a CSS custom property on
+ * <html>, so OTHER fixed elements (which aren't its DOM children) can stack
+ * above it without hardcoding magic pixel offsets.
+ *
+ * Used for the mobile bottom-stack: the bottom nav publishes its height,
+ * a sticky action/CTA bar publishes its own, and the floating feedback
+ * button reads both to sit clear of every actionable control (T1.3).
+ *
+ * `enabled=false` (e.g. a CTA that isn't mounted) resets the var to 0px so
+ * consumers collapse that slot. While unset (first paint), consumers should
+ * supply their own fallback via `var(--name, <fallback>)`.
+ */
+export function usePublishHeightVar(
+  ref: RefObject<HTMLElement | null>,
+  varName: string,
+  enabled = true,
+): void {
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = ref.current;
+    if (!enabled || !el) {
+      root.style.setProperty(varName, '0px');
+      return () => root.style.setProperty(varName, '0px');
+    }
+    const update = () => root.style.setProperty(varName, `${el.offsetHeight}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty(varName, '0px');
+    };
+  }, [ref, varName, enabled]);
+}
+
 export function useIsHydrated(): boolean {
   return useSyncExternalStore(
     subscribe,

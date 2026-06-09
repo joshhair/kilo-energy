@@ -175,7 +175,12 @@ export function FeedbackButton() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Send feedback"
-        className="fixed right-4 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-sm font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-6"
+        // Always tappable on every screen (it captures the active screen),
+        // so it must never sit ON TOP of an action. It stacks above the bottom
+        // nav AND any sticky CTA bar via the heights they publish (T1.3):
+        // bottom = nav height + CTA height + gap. Desktop (no bottom nav) keeps
+        // the fixed md offset. Fallback 5rem ≈ nav height before the var sets.
+        className="fixed right-4 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-sm font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bottom-[calc(var(--kilo-bottom-nav-h,5rem)+var(--kilo-cta-h,0px)+0.75rem)] md:bottom-6"
         style={{
           background: 'color-mix(in srgb, var(--accent-emerald-solid) 18%, var(--surface-card))',
           color: 'var(--accent-emerald-text)',

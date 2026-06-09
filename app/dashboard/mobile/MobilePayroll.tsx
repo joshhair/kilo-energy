@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, todayLocalDateStr, formatDate, downloadCSV } from '../../../lib/utils';
@@ -16,6 +16,7 @@ import MobileBottomSheet from './shared/MobileBottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PaidCorrectionModal from '../components/PaidCorrectionModal';
 import { SegmentedPills } from '../../../components/ui';
+import { usePublishHeightVar } from '../../../lib/hooks';
 import { PaymentTypeBadge } from '../../../components/ui/PaymentTypeBadge';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
@@ -209,6 +210,10 @@ export default function MobilePayroll() {
   const shouldShowCta = (statusTab === 'Pending' || statusTab === 'Draft') && filtered.length > 0;
   const [ctaMounted, setCtaMounted] = useState(shouldShowCta);
   const [ctaExiting, setCtaExiting] = useState(false);
+  // Publish the CTA height so the floating feedback button lifts above it,
+  // and so page content can reserve room for nav + CTA (T1.3).
+  const ctaRef = useRef<HTMLDivElement>(null);
+  usePublishHeightVar(ctaRef, '--kilo-cta-h', ctaMounted);
   useEffect(() => {
     if (shouldShowCta) {
       setCtaExiting(false);
@@ -489,7 +494,12 @@ export default function MobilePayroll() {
     'w-full rounded-xl px-3 py-2.5 text-base text-[var(--text-primary)] focus:outline-none transition-colors';
 
   return (
-    <div className="px-5 pt-4 pb-28 space-y-4">
+    <div
+      className="px-5 pt-4 space-y-4"
+      // Reserve room for the bottom nav + the sticky CTA bar (when shown) so
+      // the last rows never rest under either (T1.3). Falls back to ~7rem.
+      style={{ paddingBottom: 'calc(var(--kilo-bottom-nav-h, 5rem) + var(--kilo-cta-h, 0px) + 1.5rem)' }}
+    >
       <MobilePageHeader
         title="Payroll"
         right={
@@ -926,10 +936,15 @@ export default function MobilePayroll() {
           centered + full-width) but the chrome no longer screams. */}
       {effectiveRole === 'admin' && ctaMounted && (
         <div
-          className={`fixed bottom-0 left-0 right-0 px-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
+          ref={ctaRef}
+          className={`fixed left-0 right-0 px-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
           style={{
+            // Sit directly ABOVE the bottom nav, not behind it (the nav is
+            // z-50 at bottom:0; this was previously bottom:0 z-40 and hid the
+            // Publish/Approve action behind the nav). nav-h includes safe-area.
+            bottom: 'var(--kilo-bottom-nav-h, 5rem)',
             paddingTop: '12px',
-            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+            paddingBottom: '12px',
             background: 'color-mix(in srgb, var(--surface-page) 88%, transparent)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',

@@ -168,6 +168,31 @@ test.describe('Visual regression — mobile safety surfaces', () => {
   // We use a VIEWPORT screenshot (fullPage: false) on purpose: the entire
   // point is to prove the drawer + candidate list sit within what the user
   // can actually see, not somewhere down a tall scrolled page.
+  // T1.3 — the admin Payroll "Approve All" / "Publish Payroll" CTA must sit
+  // ABOVE the bottom nav (was fixed bottom-0 z-40, hidden behind the z-50 nav),
+  // and the feedback bubble must clear it. Viewport screenshot of the bottom.
+  test('mobile Payroll — admin CTA + feedback clear the bottom nav', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile-only surface');
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Payroll', exact: true }).click();
+    await page.waitForURL('**/dashboard/payroll');
+    await page.waitForLoadState('networkidle');
+    // Pending tab → the "Publish Payroll" CTA renders. Then scroll to the
+    // bottom so the last list row + the fixed CTA + nav are all in frame.
+    await page.getByRole('tab', { name: 'Pending', exact: true }).click();
+    await page.waitForTimeout(400);
+    await page.evaluate(() => document.getElementById('main-content')?.scrollTo(0, 99999));
+    await page.waitForTimeout(300);
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    await page.waitForTimeout(500);
+    await expect(page).toHaveScreenshot('mobile-payroll-cta.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    });
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.
