@@ -193,6 +193,26 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     });
   });
 
+  // T1.4 — Payroll utility actions (Add Payment / CSV / ADP / Print) live in a
+  // single header "Actions" sheet, out of the browse path. Open it and snapshot.
+  test('mobile Payroll — Actions sheet', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile-only surface');
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Payroll', exact: true }).click();
+    await page.waitForURL('**/dashboard/payroll');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Payroll actions' }).click();
+    await page.getByText('Export CSV', { exact: true }).waitFor({ state: 'visible' });
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    await page.waitForTimeout(400);
+    await expect(page).toHaveScreenshot('mobile-payroll-actions.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    });
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

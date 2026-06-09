@@ -8,7 +8,7 @@ import { breakdownByType } from '../../../lib/aggregators';
 import { SummaryCard } from './shared/PayrollSummaryCard';
 import { useToast } from '../../../lib/toast';
 import { PayrollEntry, Reimbursement } from '../../../lib/data';
-import { Check, Trash2, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer } from 'lucide-react';
+import { Check, Trash2, Pencil, X, Receipt, Archive, ArchiveRestore, Download, Printer, MoreHorizontal, Plus } from 'lucide-react';
 import MobilePageHeader from './shared/MobilePageHeader';
 import PayrollTypeTabs from './shared/PayrollTypeTabs';
 import PayrollStatusTabs from './shared/PayrollStatusTabs';
@@ -68,6 +68,11 @@ export default function MobilePayroll() {
   const [showApproveAllConfirm, setShowApproveAllConfirm] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  // T1.4 — utility actions (Add Payment / CSV / ADP / Print) live in a single
+  // header "Actions" sheet, out of the browse/scroll path, so they can't be
+  // mis-tapped while reviewing entries. The Publish/Approve commit stays a
+  // prominent, separately-confirmed CTA (Josh, 2026-06-08).
+  const [showActions, setShowActions] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ repId: '', projectId: '', amount: '', notes: '', date: '', type: 'Deal' as 'Deal' | 'Bonus' | 'Chargeback' | 'Charge', stage: 'M1' as string, chargeCategory: 'misc' as 'equipment_damage' | 'reimbursement_clawback' | 'customer_dispute' | 'misc' });
   const [editingEntry, setEditingEntry] = useState<PayrollEntry | null>(null);
   const [editEntryForm, setEditEntryForm] = useState({ amount: '', date: '', notes: '' });
@@ -480,6 +485,51 @@ export default function MobilePayroll() {
     }
   }, [editingEntry, editEntryForm, setPayrollEntries, toast]);
 
+  // ── Export handlers (T1.4: invoked from the Actions sheet) ────────────────
+  const handleExportCSV = useCallback(() => {
+    const headers = ['Rep', 'Customer', 'Type', 'Stage', 'Amount', 'Status', 'Date', 'Notes'];
+    const rows = filtered.map((e) => [
+      e.repName,
+      e.customerName || '',
+      e.type,
+      e.paymentStage,
+      `$${e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+      e.status,
+      formatDate(e.date),
+      e.notes ?? '',
+    ]);
+    downloadCSV(`payroll-${statusTab.toLowerCase()}-${todayLocalDateStr()}.csv`, headers, rows);
+  }, [filtered, statusTab]);
+
+  const handleExportADP = useCallback(() => {
+    const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+    const periodFrom = sorted[0]?.date ?? '';
+    const periodTo = sorted[sorted.length - 1]?.date ?? '';
+    const byRep = new Map<string, { repName: string; gross: number; chargebacks: number; count: number }>();
+    for (const e of filtered) {
+      const key = e.repId;
+      const row = byRep.get(key) ?? { repName: e.repName, gross: 0, chargebacks: 0, count: 0 };
+      if (e.amount < 0) row.chargebacks += Math.abs(e.amount);
+      else row.gross += e.amount;
+      row.count += 1;
+      byRep.set(key, row);
+    }
+    const adpHeaders = ['Employee Name', 'Gross Pay', 'Deductions', 'Net Pay', 'Pay Period From', 'Pay Period To', 'Entry Count'];
+    const adpRows = Array.from(byRep.values())
+      .sort((a, b) => a.repName.localeCompare(b.repName))
+      .map(({ repName, gross, chargebacks, count }) => [
+        repName,
+        gross.toFixed(2),
+        chargebacks.toFixed(2),
+        (gross - chargebacks).toFixed(2),
+        periodFrom,
+        periodTo,
+        String(count),
+      ]);
+    const filename = `adp-payroll-${periodFrom || todayLocalDateStr()}-to-${periodTo || todayLocalDateStr()}.csv`;
+    downloadCSV(filename, adpHeaders, adpRows);
+  }, [filtered]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (effectiveRole === 'project_manager') {
@@ -505,37 +555,15 @@ export default function MobilePayroll() {
         right={
           effectiveRole === 'admin' && pageView === 'payroll' ? (
             <button
-              onClick={() => setShowAddPayment(true)}
+              onClick={() => setShowActions(true)}
               className="card-surface flex items-center justify-center w-10 h-10 rounded-2xl relative active:scale-95 transition-transform"
               style={{
                 border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 32%, transparent)',
+                color: 'var(--accent-emerald-text)',
               }}
-              aria-label="Add payment"
+              aria-label="Payroll actions"
             >
-              <span
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  width: 3,
-                  height: 3,
-                  borderRadius: '50%',
-                  background: 'var(--accent-emerald-solid)',
-                  boxShadow: '0 0 4px color-mix(in srgb, var(--accent-emerald-solid) 65%, transparent)',
-                }}
-              />
-              <span
-                className="leading-none"
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: 22,
-                  color: 'var(--accent-emerald-text)',
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1,
-                  transform: 'translateY(-1px)',
-                }}
-              >+</span>
+              <MoreHorizontal className="w-5 h-5" />
             </button>
           ) : null
         }
@@ -800,75 +828,8 @@ export default function MobilePayroll() {
         </div>
       )}
 
-      {/* ── Export buttons (admin only) ── */}
-      {effectiveRole === 'admin' && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const headers = ['Rep', 'Customer', 'Type', 'Stage', 'Amount', 'Status', 'Date', 'Notes'];
-              const rows = filtered.map((e) => [
-                e.repName,
-                e.customerName || '',
-                e.type,
-                e.paymentStage,
-                `$${e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-                e.status,
-                formatDate(e.date),
-                e.notes ?? '',
-              ]);
-              downloadCSV(`payroll-${statusTab.toLowerCase()}-${todayLocalDateStr()}.csv`, headers, rows);
-            }}
-            disabled={filtered.length === 0}
-            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-          >
-            <Download className="w-4 h-4" /> CSV
-          </button>
-          <button
-            onClick={() => {
-              const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
-              const periodFrom = sorted[0]?.date ?? '';
-              const periodTo = sorted[sorted.length - 1]?.date ?? '';
-              const byRep = new Map<string, { repName: string; gross: number; chargebacks: number; count: number }>();
-              for (const e of filtered) {
-                const key = e.repId;
-                const row = byRep.get(key) ?? { repName: e.repName, gross: 0, chargebacks: 0, count: 0 };
-                if (e.amount < 0) row.chargebacks += Math.abs(e.amount);
-                else row.gross += e.amount;
-                row.count += 1;
-                byRep.set(key, row);
-              }
-              const adpHeaders = ['Employee Name', 'Gross Pay', 'Deductions', 'Net Pay', 'Pay Period From', 'Pay Period To', 'Entry Count'];
-              const adpRows = Array.from(byRep.values())
-                .sort((a, b) => a.repName.localeCompare(b.repName))
-                .map(({ repName, gross, chargebacks, count }) => [
-                  repName,
-                  gross.toFixed(2),
-                  chargebacks.toFixed(2),
-                  (gross - chargebacks).toFixed(2),
-                  periodFrom,
-                  periodTo,
-                  String(count),
-                ]);
-              const filename = `adp-payroll-${periodFrom || todayLocalDateStr()}-to-${periodTo || todayLocalDateStr()}.csv`;
-              downloadCSV(filename, adpHeaders, adpRows);
-            }}
-            disabled={filtered.length === 0}
-            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-          >
-            <Download className="w-4 h-4" /> ADP
-          </button>
-          <button
-            onClick={() => window.print()}
-            disabled={filtered.length === 0}
-            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-          >
-            <Printer className="w-4 h-4" /> Print
-          </button>
-        </div>
-      )}
+      {/* Export/utility actions (CSV / ADP / Print / Add Payment) live in the
+          header "Actions" sheet now (T1.4) — keeps them out of the browse path. */}
 
       {/* ── Grouped entry list ── */}
       {(() => {
@@ -1114,6 +1075,58 @@ export default function MobilePayroll() {
             )}
           </div>
         )}
+      </MobileBottomSheet>
+
+      {/* ── Actions sheet (T1.4) — utilities grouped out of the browse path ── */}
+      <MobileBottomSheet
+        open={showActions}
+        onClose={() => setShowActions(false)}
+        title="Payroll actions"
+      >
+        {(() => {
+          const noEntries = filtered.length === 0;
+          const ROW = 'w-full flex items-center gap-3 min-h-[52px] px-5 text-left text-[15px] active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+          return (
+            <div className="pb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
+              <button
+                className={ROW}
+                style={{ color: 'var(--accent-emerald-text)', borderBottom: '1px solid var(--border-subtle)' }}
+                onClick={() => { setShowActions(false); setShowAddPayment(true); }}
+              >
+                <Plus className="w-[18px] h-[18px] shrink-0" /> Add payment
+              </button>
+              <button
+                className={ROW}
+                style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)' }}
+                disabled={noEntries}
+                onClick={() => { setShowActions(false); handleExportCSV(); }}
+              >
+                <Download className="w-[18px] h-[18px] shrink-0" /> Export CSV
+              </button>
+              <button
+                className={ROW}
+                style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-subtle)' }}
+                disabled={noEntries}
+                onClick={() => { setShowActions(false); handleExportADP(); }}
+              >
+                <Download className="w-[18px] h-[18px] shrink-0" /> Export ADP
+              </button>
+              <button
+                className={ROW}
+                style={{ color: 'var(--text-primary)' }}
+                disabled={noEntries}
+                onClick={() => { setShowActions(false); window.print(); }}
+              >
+                <Printer className="w-[18px] h-[18px] shrink-0" /> Print
+              </button>
+              {noEntries && (
+                <p className="px-5 pt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  Export &amp; print are available once there are entries in this view.
+                </p>
+              )}
+            </div>
+          );
+        })()}
       </MobileBottomSheet>
 
       {/* ── Add Payment sheet ── */}
