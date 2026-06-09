@@ -217,7 +217,7 @@ function ViewAsSelector({ reps, subDealers, candidates, onSelect, self }: {
     : allUsers;
 
   return (
-    <div ref={containerRef} className="px-3 pb-2">
+    <div ref={containerRef} className="relative px-3 pb-2">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 text-xs transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-card)]"
@@ -227,8 +227,13 @@ function ViewAsSelector({ reps, subDealers, candidates, onSelect, self }: {
         <span>{open ? 'Close' : 'View As...'}</span>
       </button>
       {open && (
-        <div className="mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg overflow-hidden shadow-xl">
-          <div className="flex items-center border-b border-[var(--border-subtle)]">
+        // Opens UPWARD as an overlay into the roomy nav space above, not
+        // downward in-flow — the selector sits in the sidebar's non-scrolling
+        // footer, so a downward dropdown pushed the candidate list + footer
+        // below the fold on mobile with nothing to scroll to reach them.
+        // Height is capped to the viewport with its own internal scroll.
+        <div className="absolute bottom-full left-0 right-0 mb-1 z-50 flex flex-col max-h-[min(20rem,60vh)] bg-[var(--surface)] border border-[var(--border)] rounded-lg overflow-hidden shadow-xl">
+          <div className="flex items-center border-b border-[var(--border-subtle)] flex-shrink-0">
             <input
               autoFocus
               value={search}
@@ -244,7 +249,7 @@ function ViewAsSelector({ reps, subDealers, candidates, onSelect, self }: {
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="max-h-48 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {self && !search.trim() && (
               <button
                 onClick={() => { onSelect({ id: self.id, name: self.name, role: 'rep' }); close(); }}
