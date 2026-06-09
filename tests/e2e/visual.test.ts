@@ -107,6 +107,29 @@ test.describe('Visual regression — desktop admin', () => {
     await page.waitForLoadState('networkidle');
     await stableScreenshot(page, 'payroll-list.png');
   });
+
+  // Desktop sidebar View-As dropdown. The selector sits in the sidebar's
+  // non-scrolling footer; it now opens UPWARD as a height-capped overlay so
+  // the candidate list can't overflow below the viewport (downward in-flow
+  // pushed the list + footer off the bottom on shorter desktop heights).
+  // Desktop-only: the mobile sidebar stays off-screen (never opened), so the
+  // "View As..." button isn't reachable there — mobile uses the You page.
+  test('admin sidebar — View As dropdown opens on-screen', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'sidebar selector is desktop-only; mobile uses the You page');
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    const trigger = page.getByRole('button', { name: 'View As...' });
+    await trigger.waitFor({ state: 'visible' });
+    await trigger.click();
+    await page.getByPlaceholder('Search users...').waitFor({ state: 'visible' });
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    await page.waitForTimeout(300);
+    await expect(page).toHaveScreenshot('admin-sidebar-view-as.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    });
+  });
 });
 
 // Mobile-only safety surfaces (Tier 1). These run under the `visual-mobile`
