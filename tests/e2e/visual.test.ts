@@ -162,6 +162,30 @@ test.describe('Deep-link redirect (T1.2)', () => {
 });
 
 test.describe('Visual regression — mobile safety surfaces', () => {
+  // T1.8 — New Deal fixed bottom CTA must be VIEWPORT-pinned (portaled out of
+  // the transformed step wrapper), not anchored to the wrapper. Asserts it's a
+  // direct child of <body> and its bottom edge sits at the intended offset
+  // (~72px above the viewport bottom), then snapshots step 0.
+  test('mobile New Deal — CTA is viewport-pinned (portaled)', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile-only surface');
+    await page.goto('/dashboard/new-deal');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: /^Next/ }).waitFor({ state: 'visible' });
+    const box = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find((b) => /^Next/.test(b.textContent || ''));
+      const bar = btn?.closest('div');
+      const r = bar?.getBoundingClientRect();
+      return { vh: window.innerHeight, barBottom: r ? Math.round(r.bottom) : null, portaledToBody: bar?.parentElement === document.body };
+    });
+    expect(box.portaledToBody).toBe(true);
+    // bottom edge ≈ viewport bottom − 72px offset (allow safe-area slack).
+    expect(box.vh - (box.barBottom ?? 0)).toBeGreaterThan(40);
+    expect(box.vh - (box.barBottom ?? 0)).toBeLessThan(120);
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    await page.waitForTimeout(400);
+    await expect(page).toHaveScreenshot('newdeal-step0.png', { fullPage: false, maxDiffPixelRatio: 0.01, animations: 'disabled' });
+  });
+
   // T1.1 — the mobile View-As drawer must stay fully on-screen when opened.
   // It lives in the "You" page (MobileYou), opens an inline candidate panel,
   // and previously could render below the fold / behind the fixed bottom nav.

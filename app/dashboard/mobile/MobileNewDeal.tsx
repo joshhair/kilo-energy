@@ -18,6 +18,7 @@ import { evenSplit } from '../../../lib/commission-split';
 import { splitCloserSetterPay } from '../../../lib/commission';
 import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import MobileCard from './shared/MobileCard';
+import ViewportPortal from './shared/ViewportPortal';
 import { BviIntakePanel } from '../new-deal/components/BviIntakePanel';
 import { EMPTY_BVI_INTAKE, validateBviIntake, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
@@ -1136,7 +1137,8 @@ export default function MobileNewDeal() {
             <div style={{ ...sk, height: 56, borderRadius: 14 }} />
           </div>
         ))}
-        {/* CTA skeleton */}
+        {/* CTA skeleton (portaled — T1.8) */}
+        <ViewportPortal>
         <div
           className="fixed left-0 right-0 z-40 px-6"
           style={{
@@ -1148,6 +1150,7 @@ export default function MobileNewDeal() {
         >
           <div style={{ ...sk, height: 52, borderRadius: 14 }} />
         </div>
+        </ViewportPortal>
       </div>
     );
   }
@@ -1197,7 +1200,7 @@ export default function MobileNewDeal() {
         </span>
       </div>
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col">
+      <form id="mobile-new-deal-form" ref={formRef} onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col">
 
         {/* ── Step 1: People ── */}
         {currentStep === 0 && (
@@ -1361,7 +1364,9 @@ export default function MobileNewDeal() {
               </>
             )}
 
-            {/* Fixed CTA bar — Next */}
+            {/* Fixed CTA bar — Next (portaled to <body> so it pins to the
+                viewport, not the transformed step wrapper — T1.8) */}
+            <ViewportPortal>
             <div
               key={`cta-0`}
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
@@ -1391,6 +1396,7 @@ export default function MobileNewDeal() {
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            </ViewportPortal>
           </div>
         )}
 
@@ -1869,7 +1875,8 @@ export default function MobileNewDeal() {
               </MobileCard>
             )}
 
-            {/* Fixed CTA bar — Back + Next */}
+            {/* Fixed CTA bar — Back + Next (portaled to <body> — T1.8) */}
+            <ViewportPortal>
             <div
               key={`cta-1`}
               className="cta-bar-enter cta-bar-lift-transition fixed left-0 right-0 z-40 px-6"
@@ -1917,6 +1924,7 @@ export default function MobileNewDeal() {
                 </button>
               </div>
             </div>
+            </ViewportPortal>
           </div>
         )}
 
@@ -2141,6 +2149,10 @@ export default function MobileNewDeal() {
               </div>
             )}
 
+            {/* Portaled to <body> so it pins to the viewport, not the
+                transformed step wrapper (T1.8). The submit button is no longer
+                a DOM descendant of the form, so it links back via form="...". */}
+            <ViewportPortal>
             <div
               key="cta-2"
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
@@ -2157,12 +2169,13 @@ export default function MobileNewDeal() {
                   className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
                   style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-secondary)' }}
                 ><ChevronLeft className="w-4 h-4" /> Back</button>
-                <button type="submit" disabled={submitting}
+                <button type="submit" form="mobile-new-deal-form" disabled={submitting}
                   className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
                   style={{ background: 'var(--accent-emerald-solid)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
                 >{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Check className="w-4 h-4" /> Submit Deal</>}</button>
               </div>
             </div>
+            </ViewportPortal>
           </div>
         )}
       </form>
@@ -2171,6 +2184,7 @@ export default function MobileNewDeal() {
           so it visually belongs to the bottom action band, not floating
           mid-screen. Slides up from nav when preview unlocks on Step 2. */}
       {pillMounted && (
+        <ViewportPortal>
         <div
           className={`fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5${
             !pillActive ? ' comm-pill-exit' : ''
@@ -2190,6 +2204,7 @@ export default function MobileNewDeal() {
             style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
           >${displayedTotal.toLocaleString()}</span>
         </div>
+        </ViewportPortal>
       )}
     </div>
   );
