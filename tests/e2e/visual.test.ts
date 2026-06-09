@@ -55,6 +55,12 @@ test.use({ storageState: 'tests/e2e/.auth/admin.json' });
 // it in every test body.
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: FROZEN_TIME });
+  // Suppress the PWA "Add to home screen" prompt — it overlays the bottom
+  // nav on mobile and is volatile run-to-run. InstallPrompt checks this
+  // localStorage flag on mount. addInitScript applies before every nav.
+  await page.addInitScript(() => {
+    try { localStorage.setItem('kilo-install-dismissed', '1'); } catch { /* noop */ }
+  });
 });
 
 async function stableScreenshot(page: Page, name: string) {
@@ -100,5 +106,44 @@ test.describe('Visual regression — desktop admin', () => {
     await page.goto('/dashboard/payroll');
     await page.waitForLoadState('networkidle');
     await stableScreenshot(page, 'payroll-list.png');
+  });
+});
+
+// Mobile-only safety surfaces (Tier 1). These run under the `visual-mobile`
+// project (393×852, iPhone UA, admin storage state). They are skipped on
+// desktop because the routes are mobile-only (/dashboard/you redirects to
+// /dashboard above 767px).
+test.describe('Visual regression — mobile safety surfaces', () => {
+  // T1.1 — the mobile View-As drawer must stay fully on-screen when opened.
+  // It lives in the "You" page (MobileYou), opens an inline candidate panel,
+  // and previously could render below the fold / behind the fixed bottom nav.
+  // We use a VIEWPORT screenshot (fullPage: false) on purpose: the entire
+  // point is to prove the drawer + candidate list sit within what the user
+  // can actually see, not somewhere down a tall scrolled page.
+  test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
+    // Reach the You page the way a mobile user does — tap the bottom-nav tab.
+    // (Direct deep-linking to /dashboard/you bounces to /dashboard on a
+    // hydration-timing race — that's the separate T1.2 bug; client-side nav
+    // via the tab is the real user path and doesn't bounce.)
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await page.locator('a[href="/dashboard/you"]').click();
+    await page.waitForURL('**/dashboard/you');
+
+    const trigger = page.getByRole('button', { name: /view as user/i });
+    await trigger.waitFor({ state: 'visible' });
+    await trigger.click();
+    await page.getByPlaceholder('Search users...').waitFor({ state: 'visible' });
+
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    // Let the open animation + scrollIntoView settle onto a stable frame.
+    await page.waitForTimeout(400);
+
+    await expect(page).toHaveScreenshot('mobile-view-as-drawer.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    });
   });
 });
