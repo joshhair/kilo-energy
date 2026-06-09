@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useApp } from '../lib/context';
@@ -28,6 +28,28 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Deep-link bounce handling. dashboard/layout.tsx stashes the path the user
+  // was on (in sessionStorage) before bouncing here while the role resolves;
+  // we must land them back there, not on a hardcoded /dashboard. Two things
+  // make this race-safe across the "role already cached" and "role fetched
+  // here" paths:
+  //   - destRef captures the stash exactly ONCE (consume removes it), so both
+  //     redirect paths agree on the same destination even though only the
+  //     first caller actually reads sessionStorage.
+  //   - navigatedRef guarantees a single push, so a late in-flight fetch can't
+  //     override an earlier redirect (which previously dropped the deep-link
+  //     back to /dashboard).
+  const destRef = useRef<string | null>(null);
+  const navigatedRef = useRef(false);
+  // Stable (only depends on router) so it can sit in the effect dep arrays
+  // below without retriggering them.
+  const goToPostAuthDest = useCallback(() => {
+    if (destRef.current === null) destRef.current = consumePostAuthRedirect();
+    if (navigatedRef.current) return;
+    navigatedRef.current = true;
+    router.push(destRef.current);
+  }, [router]);
+
   // If not signed in via Clerk, redirect to /sign-in
   useEffect(() => {
     if (clerkLoaded && !isSignedIn) {
@@ -35,12 +57,13 @@ export default function LoginPage() {
     }
   }, [clerkLoaded, isSignedIn, router]);
 
-  // If already has a role (from localStorage restore), go straight to dashboard
+  // If already has a role (from localStorage restore / context), go to the
+  // stashed deep-link (falls back to /dashboard when there's no stash).
   useEffect(() => {
     if (clerkLoaded && isSignedIn && currentRole) {
-      router.push('/dashboard');
+      goToPostAuthDest();
     }
-  }, [clerkLoaded, isSignedIn, currentRole, router]);
+  }, [clerkLoaded, isSignedIn, currentRole, goToPostAuthDest]);
 
   // Auto-resolve role from internal User table via /api/auth/me
   useEffect(() => {
@@ -75,7 +98,7 @@ export default function LoginPage() {
             // for an API 403 to silence them.
             user.scopedInstallerId ?? null,
           );
-          router.push(consumePostAuthRedirect());
+          goToPostAuthDest();
         } else if (res.status === 404) {
           setError('Access denied — your account is not registered. Contact your administrator.');
           setLoading(false);
@@ -92,7 +115,7 @@ export default function LoginPage() {
       });
 
     return () => { cancelled = true; };
-  }, [clerkLoaded, isSignedIn, currentRole, setRole, router]);
+  }, [clerkLoaded, isSignedIn, currentRole, setRole, goToPostAuthDest]);
 
   // Show branded splash screen while Clerk loads or while we resolve the role
   if (!clerkLoaded || !isSignedIn || (loading && !error)) {

@@ -136,6 +136,31 @@ test.describe('Visual regression — desktop admin', () => {
 // project (393×852, iPhone UA, admin storage state). They are skipped on
 // desktop because the routes are mobile-only (/dashboard/you redirects to
 // /dashboard above 767px).
+// T1.2 — deep links must NOT bounce to /dashboard. On a fresh load,
+// dashboard/layout.tsx bounces through `/` while the role resolves (currentRole
+// is briefly null), stashing the intended path in sessionStorage; app/page.tsx
+// must return the user to that stashed path, not a hardcoded /dashboard.
+// Runs under both authed projects (visual-desktop + visual-mobile), so it
+// guards the viewport-agnostic fix on both. Not a visual test — URL only.
+test.describe('Deep-link redirect (T1.2)', () => {
+  for (const route of [
+    '/dashboard/projects',
+    '/dashboard/payroll',
+    '/dashboard/users',
+    '/dashboard/new-deal',
+    '/dashboard/my-pay',
+    '/dashboard/you', // mobile-only; redirects to /dashboard on desktop by design
+  ]) {
+    test(`preserves deep link ${route}`, async ({ page, isMobile }) => {
+      test.skip(route === '/dashboard/you' && !isMobile, '/dashboard/you is mobile-only');
+      await page.goto(route);
+      // Allow the bounce-through-/ + role-resolve + return cycle to settle.
+      await page.waitForURL((url) => url.pathname === route, { timeout: 15_000 }).catch(() => {});
+      expect(new URL(page.url()).pathname).toBe(route);
+    });
+  }
+});
+
 test.describe('Visual regression — mobile safety surfaces', () => {
   // T1.1 — the mobile View-As drawer must stay fully on-screen when opened.
   // It lives in the "You" page (MobileYou), opens an inline candidate panel,
