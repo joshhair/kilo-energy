@@ -135,6 +135,22 @@ Do this quarterly. Mark it on the calendar.
 
 - **2026-04-19**: Runbook created. First rehearsal pending — schedule
   for next Monday's operations block.
+- **2026-06-08** (Tier-0 hardening, T0.5): **restore path validated
+  locally, end-to-end.** Took the latest prod backup
+  (`turso-2026-06-04-115722.json`, 3961 rows) and restored it into a
+  throwaway copy of `dev.db` (a local SQLite file — zero prod/Turso-cloud
+  access):
+    1. Dry-run: dump parses; every table present in `RESTORE_ORDER`
+       (tooling in sync with schema); all `SELECT id` structure-compatible.
+    2. `--commit --mode=replace`: **Inserted 3961 / Deleted 646**, every
+       table clean, no FK or column errors.
+    3. Re-run dry-run: would-insert 0 / would-skip 3961 — confirms all
+       rows landed.
+  **Still untested** (gated behind the prod boundary): the Turso-cloud
+  target path (remote auth/latency — same `@libsql/client` code, just a
+  `libsql://` URL instead of `file:`) and the "boot the app against the
+  restored DB" step. Do those in the next full rehearsal with a real
+  `turso db create staging-restore-test` branch.
 - _(add entries as rehearsals complete)_
 
 ---
