@@ -17,6 +17,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import PaidCorrectionModal from '../components/PaidCorrectionModal';
 import { SegmentedPills } from '../../../components/ui';
 import { usePublishHeightVar } from '../../../lib/hooks';
+import ViewportPortal from './shared/ViewportPortal';
 import { PaymentTypeBadge } from '../../../components/ui/PaymentTypeBadge';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
@@ -896,6 +897,7 @@ export default function MobilePayroll() {
           an outlined emerald CTA. The action stays prominent (sticky +
           centered + full-width) but the chrome no longer screams. */}
       {effectiveRole === 'admin' && ctaMounted && (
+        <ViewportPortal>
         <div
           ref={ctaRef}
           className={`fixed left-0 right-0 px-4 z-40 ${ctaExiting ? 'cta-bar-exit' : 'cta-bar-enter'}`}
@@ -925,6 +927,7 @@ export default function MobilePayroll() {
             {statusTab === 'Pending' ? 'Publish Payroll' : 'Approve All'}
           </button>
         </div>
+        </ViewportPortal>
       )}
 
       {publishMounted && (() => {
