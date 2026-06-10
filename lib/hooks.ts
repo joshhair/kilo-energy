@@ -31,17 +31,35 @@ export function usePublishHeightVar(
 ): void {
   useEffect(() => {
     const root = document.documentElement;
-    const el = ref.current;
-    if (!enabled || !el) {
+    if (!enabled) {
       root.style.setProperty(varName, '0px');
       return () => root.style.setProperty(varName, '0px');
     }
-    const update = () => root.style.setProperty(varName, `${el.offsetHeight}px`);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
+    let ro: ResizeObserver | null = null;
+    let raf = 0;
+    // The observed element may mount a tick AFTER this effect runs — e.g. when
+    // it's rendered through ViewportPortal, which returns null until its own
+    // mount effect flips. Retry on animation frames until ref.current exists so
+    // the var doesn't get stuck at 0px (T1.8 — caught by Codex review). Bounded
+    // (~60 frames ≈ 1s) so a node that never mounts can't spin rAF forever
+    // (Codex re-review).
+    let tries = 0;
+    const MAX_TRIES = 60;
+    const attach = () => {
+      const el = ref.current;
+      if (!el) {
+        if (tries++ < MAX_TRIES) raf = requestAnimationFrame(attach);
+        return;
+      }
+      const update = () => root.style.setProperty(varName, `${el.offsetHeight}px`);
+      update();
+      ro = new ResizeObserver(update);
+      ro.observe(el);
+    };
+    attach();
     return () => {
-      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      ro?.disconnect();
       root.style.setProperty(varName, '0px');
     };
   }, [ref, varName, enabled]);

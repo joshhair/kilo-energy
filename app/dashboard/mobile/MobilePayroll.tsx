@@ -1118,7 +1118,11 @@ export default function MobilePayroll() {
                 className={ROW}
                 style={{ color: 'var(--text-primary)' }}
                 disabled={noEntries}
-                onClick={() => { setShowActions(false); window.print(); }}
+                // Close the sheet FIRST, then print on a later tick so the
+                // sheet/backdrop portal is gone before the print snapshot
+                // (React batches the close, so same-tick print would capture
+                // the overlay — caught by Codex review).
+                onClick={() => { setShowActions(false); setTimeout(() => window.print(), 250); }}
               >
                 <Printer className="w-[18px] h-[18px] shrink-0" /> Print
               </button>

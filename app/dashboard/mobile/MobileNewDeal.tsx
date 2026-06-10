@@ -2186,7 +2186,7 @@ export default function MobileNewDeal() {
       {pillMounted && (
         <ViewportPortal>
         <div
-          className={`fixed left-4 right-4 z-50 rounded-2xl flex items-center justify-between px-5 py-3.5${
+          className={`fixed left-4 right-4 z-40 rounded-2xl flex items-center justify-between px-5 py-3.5${
             !pillActive ? ' comm-pill-exit' : ''
           }`}
           style={{
