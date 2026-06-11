@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
+import { useRoleBootstrap, BootErrorCard } from '../../lib/role-bootstrap';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { CommandPalette, ShortcutsOverlay } from '../../lib/command-palette';
 import InstallPrompt from './components/InstallPrompt';
@@ -352,26 +353,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMobileOpen(false);
   }
 
+  // F7 (2026-06-11): resolve the role IN PLACE instead of bouncing through
+  // "/". The old flow (stash path → push('/') → app/page.tsx splash → role
+  // resolves → push back) flashed TWO different loading screens on every
+  // fresh /dashboard load — most visibly on PWA home-screen launches, whose
+  // manifest start_url is /dashboard. The shared bootstrap resolves
+  // /api/auth/me right here while the layout's own splash holds; the URL
+  // never changes, so deep links survive without the sessionStorage stash.
+  const bootstrap = useRoleBootstrap();
   useEffect(() => {
-    if (!currentRole) {
-      // Stash the dashboard path the user was on so the role-resolution
-      // loop in `app/page.tsx` can return them here instead of dumping
-      // them on `/dashboard`. Without this, refresh on any dashboard
-      // route bounced to / → role resolves → push('/dashboard'), losing
-      // the deep-link.
-      if (typeof window !== 'undefined' && pathname?.startsWith('/dashboard')) {
-        try {
-          sessionStorage.setItem(
-            'postAuthRedirect',
-            pathname + (window.location.search ?? ''),
-          );
-        } catch {
-          // Private browsing / sessionStorage disabled — degrade to old behavior.
-        }
-      }
-      router.push('/');
-    }
-  }, [currentRole, router, pathname]);
+    if (bootstrap.status === 'unauthenticated') router.push('/sign-in');
+  }, [bootstrap.status, router]);
 
   // Show / hide scroll-to-top button based on main scroll position
   useEffect(() => {
@@ -455,6 +447,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [projects, payrollEntries, currentRole]);
 
   if (!currentRole) {
+    // Account-not-registered / verification failure — same card "/" shows.
+    if (bootstrap.status === 'error' && bootstrap.error) {
+      return <BootErrorCard error={bootstrap.error} />;
+    }
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-6 relative overflow-hidden"

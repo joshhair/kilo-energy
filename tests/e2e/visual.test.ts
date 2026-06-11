@@ -271,6 +271,25 @@ test.describe('Fixed-positioning containing-block guard (T1.8)', () => {
   });
 });
 
+// F7 — a fresh /dashboard load (the PWA start_url) must resolve the role IN
+// PLACE: the old flow bounced through "/" while the role resolved, flashing
+// two different loading screens on every home-screen launch. Track every
+// document navigation and assert "/" is never visited.
+test.describe('In-place role bootstrap (F7)', () => {
+  test('fresh /dashboard load never bounces through /', async ({ page }) => {
+    const visited: string[] = [];
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) visited.push(new URL(frame.url()).pathname);
+    });
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    // Wait for the role to resolve and the real dashboard chrome to appear.
+    await page.waitForSelector('#main-content', { timeout: 20_000 });
+    expect(visited.filter((p) => p === '/')).toHaveLength(0);
+    expect(new URL(page.url()).pathname).toBe('/dashboard');
+  });
+});
+
 test.describe('Visual regression — mobile safety surfaces', () => {
   // T1.8 — New Deal fixed bottom CTA must be VIEWPORT-pinned (portaled out of
   // the transformed step wrapper), not anchored to the wrapper. Asserts it's a
