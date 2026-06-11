@@ -9,25 +9,20 @@ import { useToast } from '../../../../lib/toast';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileProjectDetail from '../../mobile/MobileProjectDetail';
 import {
-  PHASES, Phase, InstallerBaseline,
+  Phase, InstallerBaseline,
   getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
   splitCloserSetterPay, resolveTrainerRate,
   DEFAULT_INSTALL_PAY_PCT,
   SOLARTECH_FAMILIES,
 } from '../../../../lib/data';
 import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-deduction';
-import { computeProjectedTrainerLegs } from '../../../../lib/trainer-projection';
-import { myCommissionOnProject } from '../../../../lib/commissionHelpers';
-import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Pencil, Plus, ChevronLeft, ChevronRight, Copy, Trash2, MoreVertical } from 'lucide-react';
+import { AlertTriangle, X, Pencil } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import RowActionsMenu from '../../components/RowActionsMenu';
 import ProjectChatter from '../../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection';
 import { evenSplit } from '../../../../lib/commission-split';
-import { PipelineStepper, PhaseBadge, PIPELINE_STEPS } from '../components/detail/PipelineStepper';
-import { RepCommissionCard } from '../components/detail/RepCommissionCard';
+import { PipelineStepper } from '../components/detail/PipelineStepper';
 import { ProjectDetailSkeleton } from '../components/detail/ProjectDetailSkeleton';
 import { ProjectNotes } from '../../components/ProjectNotes';
 import { ActivityTimeline } from '../components/detail/ActivityTimeline';
@@ -43,6 +38,14 @@ import RecordTrainerPaymentModal from '../components/RecordTrainerPaymentModal';
 import PaidCorrectionModal from '../../components/PaidCorrectionModal';
 import type { PayrollEntry } from '../../../../lib/data';
 import { findChargebackForEntry } from '../../../../lib/chargebacks';
+import { deriveProjectCommissionView } from '../components/detail/commission-derived';
+import { ProjectHeaderNav } from '../components/detail/ProjectHeaderNav';
+import { PhaseQuickAdvance } from '../components/detail/PhaseQuickAdvance';
+import { ProjectHeaderToolbar } from '../components/detail/ProjectHeaderToolbar';
+import { ProjectDetailsGrid } from '../components/detail/ProjectDetailsGrid';
+import { MyCommissionCard } from '../components/detail/MyCommissionCard';
+import { CommissionBreakdownAdmin } from '../components/detail/CommissionBreakdownAdmin';
+import { CancelReasonModal } from '../components/detail/CancelReasonModal';
 
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -647,941 +650,92 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     toast('Project updated', 'success');
   };
 
-  // Commission entries for this project (rep view)
-  const myEntries = effectiveRole === 'rep'
-    ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId)
-    : [];
-
-  // All payroll entries for this project (admin view)
-  const projectEntries = payrollEntries.filter((e) => e.projectId === project.id);
-  const closerEntries = projectEntries.filter((e) => e.repId === project.repId && e.paymentStage !== 'Trainer');
-  const setterEntries = project.setterId ? projectEntries.filter((e) => e.repId === project.setterId && e.paymentStage !== 'Trainer') : [];
-  const coCloserIds = new Set((project.additionalClosers ?? []).map((c) => c.userId));
-  const coSetterIds = new Set((project.additionalSetters ?? []).map((c) => c.userId));
-  // Trainer payouts belong in their own card so the admin view shows a
-  // dedicated slot matching closer/setter. Identified by paymentStage
-  // (some trainers are admins/reps too, so repId alone isn't reliable).
-  const trainerEntries = projectEntries.filter((e) => e.paymentStage === 'Trainer');
-  const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId) && !trainerEntries.includes(e) && !e.isChargeback);
-
-  // Resolved baseline rates for this project
-  const projectBaselines = (() => {
-    if (project.baselineOverride) return project.baselineOverride;
-    if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      try {
-        return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
-      } catch {
-        // Product deactivated — fall through to generic installer rates
-      }
-    }
-    if (project.installerProductId) {
-      return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);
-    }
-    return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
-  })();
-
-  const closerExpectedM2 = project.m2Amount ?? 0;
-  const setterPerW = 'setterPerW' in projectBaselines && projectBaselines.setterPerW != null
-    ? projectBaselines.setterPerW
-    : Math.round((projectBaselines.closerPerW + 0.10) * 100) / 100;
-  const _m1Flat = project.kWSize >= 5 ? 1000 : 500;
-
-  // Per-person total expected commission (sum of all milestones). Displayed
-  // under each rep's name on the admin commission breakdown so admin can
-  // eyeball each rep's full expected payout at a glance. Milestone
-  // breakdown stays visible on the right.
-  const closerTotalExpected =
-    (project.m1Amount ?? 0) + (project.m2Amount ?? 0) + (project.m3Amount ?? 0);
-  const setterTotalExpected = project.setterId
-    ? (project.setterM1Amount ?? 0) + (project.setterM2Amount ?? 0) + (project.setterM3Amount ?? 0)
-    : 0;
-  // Compute every projected trainer leg (closer-trainer + setter-trainer
-  // for every primary + co-party). Multi-party path activated when any
-  // additionalClosers/Setters exist or when explicit m2 amounts are
-  // passed — see lib/trainer-projection.ts. For Bryce/Patrick/Tyson:
-  // Hunter (via Patrick, share 0.5) + Paul (via Tyson, share 0.5) both
-  // surface as separate legs.
-  const projectedTrainerLegs = computeProjectedTrainerLegs(
-    {
-      id: project.id,
-      trainerId: project.trainerId ?? null,
-      trainerRate: project.trainerRate ?? null,
-      repId: project.repId,
-      setterId: project.setterId ?? null,
-      kWSize: project.kWSize ?? 0,
-      m2Amount: project.m2Amount,
-      setterM2Amount: project.setterM2Amount,
-      additionalClosers: (project.additionalClosers ?? []).map((c) => ({
-        userId: c.userId,
-        userName: c.userName ?? '',
-        m2Amount: c.m2Amount ?? 0,
-      })),
-      additionalSetters: (project.additionalSetters ?? []).map((s) => ({
-        userId: s.userId,
-        userName: s.userName ?? '',
-        m2Amount: s.m2Amount ?? 0,
-      })),
-    },
-    trainerAssignments,
+  // Derived commission view-model (entry partitions, baseline resolution,
+  // expected totals, projected trainer legs, admin rollups) — moved
+  // verbatim to components/detail/commission-derived.ts (T4.1 split).
+  // ONE call so the partitions keep object identity (otherEntries
+  // excludes via .includes against the sibling arrays).
+  const derived = deriveProjectCommissionView({
+    project,
     payrollEntries,
-  );
-  const primaryTrainerLeg = projectedTrainerLegs[0] ?? null;
-  const effectiveTrainerRate = primaryTrainerLeg?.rate ?? 0;
-  const effTrainerId = primaryTrainerLeg?.trainerId ?? null;
-  const trainerTotalExpected = projectedTrainerLegs.reduce((s, l) => s + l.amount, 0);
-  const isMultiTrainer = projectedTrainerLegs.length > 1;
-
-  const coCloserTotal = (project.additionalClosers ?? []).reduce(
-    (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
-  );
-  const coSetterTotal = (project.additionalSetters ?? []).reduce(
-    (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
-  );
-  // Three admin-only rollups related by: Rep Commission + Kilo Margin =
-  // Total Commission. Total = the gross pool Kilo receives from the installer
-  // ((sold − Kilo cost) × W); Rep = everything paid out to reps (closer +
-  // setter + co-parties + trainers); Margin = what Kilo keeps. Margin is
-  // derived by subtraction so the three always reconcile to the cent.
-  const repCommissionTotal = Math.round((closerTotalExpected + setterTotalExpected + coCloserTotal + coSetterTotal + trainerTotalExpected) * 100) / 100;
-  const totalCommissionGross = Math.round((project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000 * 100) / 100;
-  const kiloMarginAmount = Math.round((totalCommissionGross - repCommissionTotal) * 100) / 100;
+    effectiveRole,
+    effectiveRepId,
+    trainerAssignments,
+    solarTechProducts,
+    productCatalogProducts,
+    productCatalogPricingVersions,
+    installerPricingVersions,
+  });
+  const { myEntries, projectEntries, setterTotalExpected, effTrainerId, effectiveTrainerRate } = derived;
 
   return (
     <div className="px-3 pt-2 pb-4 md:p-8 max-w-6xl">
       {/* Breadcrumb + Prev/Next */}
-      <div className="flex items-center justify-between mb-6">
-        <nav className="animate-breadcrumb-enter inline-flex items-center gap-0.5 text-xs text-[var(--text-secondary)] bg-[var(--surface)]/60 backdrop-blur-md border border-[var(--border-subtle)]/60 rounded-xl px-4 py-2.5">
-          <Link href="/dashboard" className="hover:bg-[var(--surface-card)]/50 hover:text-[var(--text-secondary)] transition-colors px-2 py-1 rounded-lg">Dashboard</Link>
-          <span className="text-[var(--text-dim)] mx-1">/</span>
-          <Link href="/dashboard/projects" className="hover:bg-[var(--surface-card)]/50 hover:text-[var(--text-secondary)] transition-colors px-2 py-1 rounded-lg">Projects</Link>
-          <span className="text-[var(--text-dim)] mx-1">/</span>
-          <span className="text-[var(--text-primary)] font-medium bg-[var(--accent-emerald-solid)]/10 px-2.5 py-1 rounded-lg">{project.customerName}</span>
-        </nav>
-
-        {/* Prev / Next project buttons */}
-        {(prevProjectId || nextProjectId) && (
-          <div className="flex items-center gap-1.5">
-            {prevProjectId ? (
-              <Link
-                href={`/dashboard/projects/${prevProjectId}`}
-                title="Previous project (←)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Link>
-            ) : (
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/30 border border-[var(--border-subtle)]/40 text-[var(--text-dim)] cursor-default">
-                <ChevronLeft className="w-4 h-4" />
-              </span>
-            )}
-            {nextProjectId ? (
-              <Link
-                href={`/dashboard/projects/${nextProjectId}`}
-                title="Next project (→)"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/60 border border-[var(--border)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)] transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            ) : (
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--surface-card)]/30 border border-[var(--border-subtle)]/40 text-[var(--text-dim)] cursor-default">
-                <ChevronRight className="w-4 h-4" />
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      <ProjectHeaderNav
+        customerName={project.customerName}
+        prevProjectId={prevProjectId}
+        nextProjectId={nextProjectId}
+      />
 
       {/* Pipeline stage tracker */}
       <PipelineStepper phase={project.phase} soldDate={project.soldDate} />
 
       {/* Phase quick-advance strip — admin/PM only, hidden when off-track */}
-      {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (() => {
-        const phaseIdx = PIPELINE_STEPS.indexOf(project.phase as typeof PIPELINE_STEPS[number]);
-        const prevStep = phaseIdx > 0 ? PIPELINE_STEPS[phaseIdx - 1] : null;
-        const nextStep = phaseIdx < PIPELINE_STEPS.length - 1 ? PIPELINE_STEPS[phaseIdx + 1] : null;
-        return (
-          <div className="flex items-center gap-2 mb-5 -mt-3">
-            {prevStep ? (
-              <button
-                onClick={() => handlePhaseChange(prevStep)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50 transition-colors"
-              >
-                ← {prevStep}
-              </button>
-            ) : <span />}
-            {nextStep && (
-              <button
-                onClick={() => handlePhaseChange(nextStep)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-emerald-solid)]/50 transition-colors ml-auto"
-              >
-                {nextStep} →
-              </button>
-            )}
-          </div>
-        );
-      })()}
+      {(effectiveRole === 'admin' || isPM) && !['Cancelled', 'On Hold'].includes(project.phase) && (
+        <PhaseQuickAdvance phase={project.phase} onPhaseChange={handlePhaseChange} />
+      )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div>
-          <div className="h-[3px] w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 mb-3" />
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl md:text-4xl font-black text-[var(--text-primary)] tracking-tight">{project.customerName}</h1>
-            {project.flagged && (
-              <span className="flex items-center gap-1 bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-xs px-2 py-0.5 rounded-full">
-                <AlertTriangle className="w-3 h-3" />
-                Flagged
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <PhaseBadge phase={project.phase} />
-            <span className="text-[var(--text-muted)] text-sm">Sold {formatDate(project.soldDate)}</span>
-          </div>
-        </div>
-
-        {(effectiveRole === 'admin' || isPM) ? (
-          <div className="md:sticky md:top-4 md:z-30 md:self-start flex flex-col md:flex-row md:flex-nowrap items-stretch md:items-center gap-2 md:whitespace-nowrap md:bg-[var(--surface-page)]/85 md:backdrop-blur md:rounded-xl md:p-2 md:-m-2 md:shadow-sm md:shadow-black/20">
-            {!isPM && (
-              <button
-                onClick={openEditModal}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)] hover:bg-[var(--accent-blue-soft)] transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </button>
-            )}
-            <button
-              onClick={handleFlag}
-              className={`flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border transition-colors ${
-                project.flagged
-                  ? 'border-red-500/40 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)]'
-                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]'
-              }`}
-            >
-              {project.flagged ? <FlagOff className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
-              {project.flagged ? 'Unflag' : 'Flag'}
-            </button>
-            {!isPM && (
-              <Link
-                href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5" /> Duplicate
-              </Link>
-            )}
-            {/* T1.6 — destructive actions live behind the "More" menu, visually
-                separated from the benign Edit/Flag/Duplicate browse strip. The
-                existing gates are unchanged (Cancel → reason modal, Delete →
-                ConfirmDialog). */}
-            {(project.phase !== 'Cancelled' || !isPM) && (
-              <RowActionsMenu
-                ariaLabel="More project actions"
-                trigger={{
-                  className: 'flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors',
-                  children: <><MoreVertical className="w-3.5 h-3.5" /> More</>,
-                }}
-                actions={[
-                  ...(project.phase !== 'Cancelled' ? [{
-                    label: 'Cancel Project',
-                    danger: true,
-                    onSelect: handleCancel,
-                  }] : []),
-                  ...(!isPM ? [{
-                    label: 'Delete Project',
-                    icon: Trash2,
-                    danger: true,
-                    onSelect: () => setShowDeleteConfirm(true),
-                  }] : []),
-                ]}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-            {(effectiveRepId === project.repId) && (
-              <Link
-                href={`/dashboard/new-deal?duplicate=true&installer=${encodeURIComponent(project.installer)}&financer=${encodeURIComponent(project.financer)}&productType=${encodeURIComponent(project.productType)}&repId=${project.repId}${project.setterId ? `&setterId=${project.setterId}` : ''}&customerName=${encodeURIComponent(project.customerName)}`}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5" /> Duplicate
-              </Link>
-            )}
-            {(effectiveRepId === project.repId) && project.phase !== 'Cancelled' && (
-              <RowActionsMenu
-                ariaLabel="More project actions"
-                trigger={{
-                  className: 'flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors',
-                  children: <><MoreVertical className="w-3.5 h-3.5" /> More</>,
-                }}
-                actions={[{
-                  label: 'Cancel Project',
-                  danger: true,
-                  onSelect: handleCancel,
-                }]}
-              />
-            )}
-          </div>
-        )}
-      </div>
+      <ProjectHeaderToolbar
+        project={project}
+        isAdminOrPM={effectiveRole === 'admin' || isPM}
+        isPM={isPM}
+        effectiveRepId={effectiveRepId}
+        onEdit={openEditModal}
+        onFlag={handleFlag}
+        onCancel={handleCancel}
+        onDelete={() => setShowDeleteConfirm(true)}
+      />
 
       {/* Details grid */}
-      <div className="card-surface rounded-2xl p-6 mb-5">
-        <h2 className="text-[var(--text-primary)] font-semibold mb-4">Project Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
-          {[
-            ['Rep', project.repName],
-            ['Installer', project.installer],
-            ['Financer', project.financer],
-            ['Product Type', project.productType],
-            ['System Size', `${project.kWSize} kW`],
-            ...(!isPM ? [['Net PPW', `$${project.netPPW}`]] : []),
-            ['Sold Date', formatDate(project.soldDate)],
-            ['Phase', project.phase],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">{label}</p>
-              <p className="text-[var(--text-primary)]">{value}</p>
-            </div>
-          ))}
-          {project.setterId && (
-            <div>
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Setter</p>
-              <p className="text-[var(--text-primary)]">{project.setterName}</p>
-            </div>
-          )}
-          {project.leadSource && (
-            <div>
-              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Lead Source</p>
-              <p className="text-[var(--text-primary)] capitalize">{project.leadSource === 'door_knock' ? 'Door Knock' : project.leadSource}</p>
-            </div>
-          )}
-        </div>
-
-        {(effectiveRole === 'admin' || isPM) && (
-          <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
-            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-2">Change Phase</p>
-            <select
-              value={project.phase}
-              onChange={(e) => handlePhaseChange(e.target.value as Phase)}
-              className="bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
-            >
-              {PHASES.map((ph) => (
-                <option key={ph} value={ph}>{ph}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+      <ProjectDetailsGrid
+        project={project}
+        isPM={isPM}
+        canChangePhase={effectiveRole === 'admin' || isPM}
+        onPhaseChange={handlePhaseChange}
+      />
 
       {/* Commission — rep view shows their own payroll entries */}
-      {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (() => {
-        // isTrainerOnDeal flags the trainer-ONLY case (drives the
-        // "My Commission (Trainer)" heading + dedicated trainer entries
-        // list below). When the viewer is also the closer/setter/co-party,
-        // their projected trainer pay folds into the role hero card via
-        // `viewerTrainerPay` below — the trainer-only heading would be
-        // misleading. So we keep the exclusion guards here.
-        const isTrainerOnDeal = project.trainerId === effectiveRepId && project.repId !== effectiveRepId && project.setterId !== effectiveRepId && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) && !(project.additionalSetters ?? []).some((s) => s.userId === effectiveRepId);
-        const trainerOnlyEntries = isTrainerOnDeal ? payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer') : [];
-        return (
-        <div className="card-surface rounded-2xl p-6 mb-5">
-          <h2 className="text-[var(--text-primary)] font-semibold mb-4">{isTrainerOnDeal ? 'My Commission (Trainer)' : 'My Commission'}</h2>
-          {(() => {
-            // Compute the rep's total once so both the payroll view and the
-            // "projected" view use the same hero number. Matches the
-            // MobileProjectDetail "Your Commission $X" hero — parity fix
-            // so a rep sees one total on their phone and the same total
-            // on desktop (previously desktop only showed milestone boxes).
-            const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
-            const isSetterRep = project.setterId === effectiveRepId;
-            const isCloserRep2 = project.repId === effectiveRepId;
-            // isTrainerRep gates the "trainer-only" hero card path. When
-            // the viewer is also closer/setter/co-party, the trainer
-            // projection is folded into their role hero card (via the
-            // `viewerTrainerPay` block below), so the standalone trainer
-            // card only fires when this is a pure trainer view — no other
-            // role on the deal.
-            const isTrainerRep = project.trainerId === effectiveRepId && !isCloserRep2 && !isSetterRep && !(project.additionalClosers ?? []).some((c) => c.userId === effectiveRepId) && !coSetterEntry;
-
-            // Trainer-only path: single lump paid at Trainer stage, no M1/M2/M3.
-            // Projected as trainerRate × kW × 1000; paid entries override if
-            // they exist.
-            if (isTrainerRep) {
-              const trainerEntries = payrollEntries.filter((e) => e.projectId === project.id && e.repId === effectiveRepId && e.paymentStage === 'Trainer');
-              const paidTotal = trainerEntries.filter((e) => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
-              const pendingTotal = trainerEntries.filter((e) => e.status !== 'Paid').reduce((s, e) => s + e.amount, 0);
-              const projected = (project.trainerRate ?? 0) * (project.kWSize ?? 0) * 1000;
-              const myTotal = trainerEntries.length > 0 ? (paidTotal + pendingTotal) : projected;
-              return myTotal > 0 ? (
-                <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                     style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
-                  <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                       style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
-                  <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission (Trainer)</p>
-                  <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
-                    ${myTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </p>
-                  <p className="text-[var(--text-secondary)] text-sm mt-1">
-                    Trainer payout on this deal
-                    {project.trainerRate != null && ` · $${project.trainerRate.toFixed(2)}/W × ${project.kWSize} kW`}
-                  </p>
-                </div>
-              ) : null;
-            }
-
-            const myCommission = myCommissionOnProject(project, effectiveRepId, effectiveRole, payrollEntries, trainerAssignments);
-            return myCommission.total > 0 ? (
-              <div className="mb-5 rounded-2xl p-5 relative overflow-hidden"
-                   style={{ background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 6%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)' }}>
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-40 pointer-events-none"
-                     style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent) 0%, transparent 65%)' }} />
-                <p className="text-[var(--text-muted)] text-xs uppercase tracking-widest mb-1">Your Commission</p>
-                <p className="text-[var(--accent-emerald-display)] text-4xl font-black tabular-nums">
-                  ${myCommission.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </p>
-                <p className="text-[var(--text-secondary)] text-sm mt-1">
-                  {myCommission.status === 'paid'
-                    ? 'Fully paid'
-                    : myCommission.status === 'partial'
-                    ? 'Partially paid · see breakdown below'
-                    : 'Projected earnings on this deal'}
-                  {myCommission.trainerProjection > 0 && ` (includes $${myCommission.trainerProjection.toLocaleString(undefined, { maximumFractionDigits: 0 })} trainer override)`}
-                </p>
-              </div>
-            ) : null;
-          })()}
-          {/* Trainer branch: they don't have M1/M2/M3 — the hero above is
-              their full total. If Trainer-stage entries exist, list them;
-              else show "no payments yet" (phase will trigger generation). */}
-          {isTrainerOnDeal ? (
-            trainerOnlyEntries.length > 0 ? (
-              <div className="space-y-2">
-                {trainerOnlyEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
-                    <div>
-                      <p className="text-[var(--text-secondary)] text-sm font-medium">{entry.paymentStage}</p>
-                      <p className="text-[var(--text-muted)] text-xs mt-0.5">{formatDate(entry.date)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                        entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                        entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                        'bg-[var(--border)] text-[var(--text-secondary)]'
-                      }`}>{entry.status}</span>
-                      <span className="text-[var(--accent-emerald-text)] font-bold">${entry.amount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[var(--text-muted)] text-sm">
-                No payments yet &mdash; trainer payout is released when the deal progresses past Acceptance.
-              </p>
-            )
-          ) : myEntries.length > 0 ? (
-            <div className="space-y-2">
-              {myEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
-                  <div>
-                    <p className="text-[var(--text-secondary)] text-sm font-medium">
-                      {entry.paymentStage}
-                      {entry.notes ? <span className="text-[var(--text-muted)] font-normal ml-1.5 text-xs">({entry.notes})</span> : null}
-                    </p>
-                    <p className="text-[var(--text-muted)] text-xs mt-0.5">{formatDate(entry.date)}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                      entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                      'bg-[var(--border)] text-[var(--text-secondary)]'
-                    }`}>
-                      {entry.status}
-                    </span>
-                    <span className="text-[var(--accent-emerald-text)] font-bold">${entry.amount.toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (() => {
-              const coCloserEntry = (project.additionalClosers ?? []).find((c) => c.userId === effectiveRepId);
-              const coSetterEntry = (project.additionalSetters ?? []).find((s) => s.userId === effectiveRepId);
-              const isSetterRep = project.setterId === effectiveRepId;
-              const isCloserRep = project.repId === effectiveRepId;
-              const expM1 = isSetterRep ? (project.setterM1Amount ?? 0) : coCloserEntry ? coCloserEntry.m1Amount : coSetterEntry ? coSetterEntry.m1Amount : (project.m1Amount ?? 0);
-              const expM2 = isSetterRep ? (project.setterM2Amount ?? 0) : coCloserEntry ? coCloserEntry.m2Amount : coSetterEntry ? coSetterEntry.m2Amount : (project.m2Amount ?? 0);
-              const expM3 = isSetterRep ? (project.setterM3Amount ?? 0) : coCloserEntry ? (coCloserEntry.m3Amount ?? 0) : coSetterEntry ? (coSetterEntry.m3Amount ?? 0) : (project.m3Amount ?? 0);
-              // Closer viewing their own deal: show setter's TOTAL (not breakdown)
-              // so they can see what their setter is making. Policy: setters and
-              // trainers don't get this reciprocal visibility.
-              const showSetterTotal = isCloserRep && project.setterId && setterTotalExpected > 0;
-              return (
-            <div>
-              <div className="flex gap-4 mb-4">
-                <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
-                  <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M1</p>
-                  <p className="text-[var(--accent-emerald-text)] font-bold">${expM1.toLocaleString()}</p>
-                </div>
-                <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
-                  <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M2</p>
-                  <p className="text-[var(--accent-emerald-text)] font-bold">${expM2.toLocaleString()}</p>
-                </div>
-                {expM3 > 0 && (
-                  <div className="flex-1 bg-[var(--surface-card)]/50 rounded-xl px-4 py-3">
-                    <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-0.5">Expected M3</p>
-                    <p className="text-[var(--accent-teal-text)] font-bold">${expM3.toLocaleString()}</p>
-                  </div>
-                )}
-              </div>
-              {showSetterTotal && (
-                <div className="mb-3 bg-[var(--surface-card)]/50 rounded-xl px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[var(--text-muted)] text-xs">{project.setterName} (setter) total</span>
-                  <span className="text-[var(--text-secondary)] font-semibold text-sm">${setterTotalExpected.toLocaleString()}</span>
-                </div>
-              )}
-              <p className="text-[var(--text-muted)] text-sm">
-                No payments yet &mdash; commission will appear here as milestones are reached.
-              </p>
-            </div>
-              );
-            })()}
-        </div>
-        );
-      })()}
+      {(effectiveRole === 'rep' || effectiveRole === 'sub-dealer') && !isPM && (
+        <MyCommissionCard
+          project={project}
+          effectiveRole={effectiveRole}
+          effectiveRepId={effectiveRepId}
+          payrollEntries={payrollEntries}
+          trainerAssignments={trainerAssignments}
+          myEntries={myEntries}
+          setterTotalExpected={setterTotalExpected}
+        />
+      )}
 
       {/* Commission breakdown (admin) */}
       {effectiveRole === 'admin' && !isPM && (
-        <div className="card-surface rounded-2xl p-6 mb-5">
-          <h2 className="text-[var(--text-primary)] font-semibold mb-1">Commission Breakdown</h2>
-
-          {/* Baseline rates summary */}
-          <div className="flex flex-wrap gap-3 mb-4 mt-2">
-            <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Closer baseline: <span className="text-[var(--accent-cyan-text)] font-semibold">${projectBaselines.closerPerW.toFixed(3)}/W</span>
-            </span>
-            {project.setterId && (
-              <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-                Setter baseline: <span className="text-[var(--accent-cyan-text)] font-semibold">${setterPerW.toFixed(3)}/W</span>
-              </span>
-            )}
-            <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Kilo cost: <span className="text-[var(--accent-purple-text)] font-semibold">${projectBaselines.kiloPerW.toFixed(3)}/W</span>
-            </span>
-            <span className="text-xs bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[var(--text-secondary)]">
-              Sold: <span className="text-[var(--text-primary)] font-semibold">${project.netPPW.toFixed(3)}/W</span>
-            </span>
-          </div>
-
-          {/* ── Admin-only: commission rollup — Total = Rep + Kilo Margin ── */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4 px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Total Commission</span>
-              <span className="text-[var(--text-primary)] text-sm font-bold tabular-nums">${totalCommissionGross.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Rep Commission</span>
-              <span className="text-[var(--accent-emerald-text)] text-sm font-bold tabular-nums">${repCommissionTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Kilo Margin</span>
-              <span className={`text-sm font-bold tabular-nums ${kiloMarginAmount < 0 ? 'text-[var(--accent-red-text)]' : 'text-[var(--accent-purple-text)]'}`}>${kiloMarginAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {/* ── Closer ── */}
-            <RepCommissionCard
-              name={project.repName}
-              role="Closer"
-              totalExpected={closerTotalExpected}
-              expectedAmounts={[
-                ...(!project.setterId ? [{ label: 'Expected M1', amount: project.m1Amount ?? 0 }] : []),
-                { label: 'Expected M2', amount: closerExpectedM2 },
-                ...((project.m3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.m3Amount ?? 0 }] : []),
-              ]}
-              entries={closerEntries}
-              onEditPaid={effectiveRole === 'admin' ? setPaidCorrectionEntryId : undefined}
-            />
-
-            {/* ── Setter ── */}
-            {project.setterId ? (
-              <RepCommissionCard
-                name={project.setterName ?? ''}
-                role="Setter"
-                totalExpected={setterTotalExpected}
-                expectedAmounts={[
-                  { label: 'Expected M1', amount: project.setterM1Amount ?? 0 },
-                  { label: 'Expected M2', amount: project.setterM2Amount ?? 0 },
-                  ...((project.setterM3Amount ?? 0) > 0 ? [{ label: 'Expected M3', amount: project.setterM3Amount ?? 0 }] : []),
-                ]}
-                entries={setterEntries}
-                onEditPaid={effectiveRole === 'admin' ? setPaidCorrectionEntryId : undefined}
-              />
-            ) : (
-              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                <p className="text-[var(--text-primary)] text-sm font-semibold mb-0.5">{project.repName} <span className="text-[var(--text-muted)] font-normal text-xs">(self-gen)</span></p>
-                <p className="text-[var(--text-muted)] text-xs">M1 flat goes to closer — no setter on this deal</p>
-              </div>
-            )}
-
-            {/* ── Co-closers / Co-setters (tag-team attribution) ──
-                Only renders if the deal actually has tag-team participants.
-                Each card mirrors the primary closer/setter card so the
-                payroll picture is consistent at a glance. */}
-            {(project.additionalClosers ?? []).map((co) => {
-              const coEntries = projectEntries.filter((e) => e.repId === co.userId && e.paymentStage !== 'Trainer');
-              return (
-                <div key={`cc-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[var(--text-primary)] text-sm font-semibold">{co.userName}</p>
-                      <p className="text-[var(--text-muted)] text-xs">Co-closer · #{co.position}</p>
-                    </div>
-                    <div className="text-right space-y-0.5">
-                      {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
-                      )}
-                      {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
-                      )}
-                      {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
-                      )}
-                    </div>
-                  </div>
-                  {coEntries.length > 0 && (
-                    <div className="space-y-1.5">
-                      {coEntries.map((entry) => (
-                        <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                              'bg-[var(--border)] text-[var(--text-secondary)]'
-                            }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                            {effectiveRole === 'admin' && entry.status === 'Paid' && (
-                              <button
-                                type="button"
-                                onClick={() => setPaidCorrectionEntryId(entry.id)}
-                                aria-label={`Edit ${entry.paymentStage} paid amount`}
-                                title="Edit recorded amount (admin)"
-                                className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {(project.additionalSetters ?? []).map((co) => {
-              const coEntries = projectEntries.filter((e) => e.repId === co.userId && e.paymentStage !== 'Trainer');
-              return (
-                <div key={`cs-${co.userId}`} className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[var(--text-primary)] text-sm font-semibold">{co.userName}</p>
-                      <p className="text-[var(--text-muted)] text-xs">Co-setter · #{co.position}</p>
-                    </div>
-                    <div className="text-right space-y-0.5">
-                      {(co.m1Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M1 · ${co.m1Amount.toLocaleString()}</p>
-                      )}
-                      {(co.m2Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M2 · ${co.m2Amount.toLocaleString()}</p>
-                      )}
-                      {(co.m3Amount ?? 0) > 0 && (
-                        <p className="text-[var(--accent-emerald-text)] font-bold text-sm">M3 · ${co.m3Amount!.toLocaleString()}</p>
-                      )}
-                    </div>
-                  </div>
-                  {coEntries.length > 0 && (
-                    <div className="space-y-1.5">
-                      {coEntries.map((entry) => (
-                        <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                              entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                              'bg-[var(--border)] text-[var(--text-secondary)]'
-                            }`}>{entry.status}</span>
-                            <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                            {effectiveRole === 'admin' && entry.status === 'Paid' && (
-                              <button
-                                type="button"
-                                onClick={() => setPaidCorrectionEntryId(entry.id)}
-                                aria-label={`Edit ${entry.paymentStage} paid amount`}
-                                title="Edit recorded amount (admin)"
-                                className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* ── Trainer ──
-                Only renders if the project has a trainerId pinned (per-project
-                override) OR if any Trainer-stage payroll rows exist. Trainer
-                info is scrubbed server-side for non-admin/PM viewers, so
-                project.trainerName / trainerRate will be undefined for reps. */}
-            {(project.trainerId || trainerEntries.length > 0 || effTrainerId) && (
-              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    {isMultiTrainer ? (
-                      <>
-                        <p className="text-[var(--text-primary)] text-sm font-semibold">{projectedTrainerLegs.length} trainers on this deal</p>
-                        <p className="text-[var(--text-muted)] text-xs">Each trainer paid on their setter/closer&apos;s share</p>
-                        {trainerTotalExpected > 0 && (
-                          <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Combined total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                        )}
-                        <div className="mt-2 space-y-1">
-                          {projectedTrainerLegs.map((leg) => {
-                            const trainerName = reps.find((r) => r.id === leg.trainerId)?.name ?? '(trainer)';
-                            const traineeLabel = leg.trainees && leg.trainees.length > 0
-                              ? leg.trainees.map((t) => t.name || reps.find((r) => r.id === t.userId)?.name || '?').join(' + ')
-                              : '';
-                            const sharePct = Math.round((leg.share ?? 1) * 100);
-                            return (
-                              <div key={`${leg.leg}-${leg.trainerId}`} className="flex items-center justify-between text-xs bg-[var(--surface-card)]/60 rounded-lg px-2.5 py-1.5">
-                                <span className="text-[var(--text-primary)]">
-                                  <span className="font-medium">{trainerName}</span>
-                                  {traineeLabel && <span className="text-[var(--text-muted)]"> · via {traineeLabel}</span>}
-                                  <span className="text-[var(--text-muted)]"> · ${leg.rate.toFixed(2)}/W × {sharePct}%</span>
-                                </span>
-                                <span className="text-[var(--accent-emerald-text)] font-semibold tabular-nums">${leg.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[var(--text-primary)] text-sm font-semibold">{project.trainerName ?? reps.find((r) => r.id === effTrainerId)?.name ?? '(trainer)'}</p>
-                        <p className="text-[var(--text-muted)] text-xs">Trainer{effectiveTrainerRate > 0 ? ` · $${effectiveTrainerRate.toFixed(2)}/W` : ''}</p>
-                        {trainerTotalExpected > 0 && (
-                          <p className="text-[var(--accent-emerald-text)] text-xs font-semibold mt-0.5">Total expected: ${trainerTotalExpected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {/* Admin-only: record a backdated Trainer-stage entry. Used
-                      for Glide-cleanup where the trainer is attached but the
-                      Trainer payroll wasn't auto-generated. Blocked on
-                      Cancelled / On-Hold deals (the modal won't open if the
-                      project isn't active). */}
-                  {effectiveRole === 'admin' && project.phase !== 'Cancelled' && project.phase !== 'On Hold' && (
-                    <button
-                      type="button"
-                      onClick={() => setShowRecordTrainerPayment(true)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors text-[var(--accent-amber-text)] hover:bg-[var(--accent-amber-soft)]"
-                      style={{ border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 35%, transparent)' }}
-                      title="Record a backdated trainer-stage payroll entry (admin)"
-                    >
-                      <Plus className="w-3 h-3" /> Record Payment
-                    </button>
-                  )}
-                </div>
-                {trainerEntries.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {trainerEntries.map((entry) => (
-                      <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                        <div>
-                          <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.paymentStage}</span>
-                          {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
-                          <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                            entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                            'bg-[var(--border)] text-[var(--text-secondary)]'
-                          }`}>{entry.status}</span>
-                          <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                          {effectiveRole === 'admin' && entry.status === 'Paid' && (
-                            <button
-                              type="button"
-                              onClick={() => setPaidCorrectionEntryId(entry.id)}
-                              aria-label={`Edit ${entry.paymentStage} paid amount`}
-                              title="Edit recorded amount (admin)"
-                              className="ml-0.5 p-1 rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)]"
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[var(--text-dim)] text-xs italic">No payroll entries yet — generated on phase progression.</p>
-                )}
-              </div>
-            )}
-
-            {/* ── Other entries (trainer overrides, bonuses, etc.) ── */}
-            {otherEntries.length > 0 && (
-              <div className="bg-[var(--surface-card)]/40 border border-[var(--border)]/50 rounded-xl p-4">
-                <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-2">Other Payouts</p>
-                <div className="space-y-1.5">
-                  {otherEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between bg-[var(--surface-card)]/70 rounded-lg px-3 py-2">
-                      <div>
-                        <span className="text-[var(--text-secondary)] text-xs font-medium">{entry.repName}</span>
-                        <span className="text-[var(--text-muted)] text-xs ml-1.5">{entry.paymentStage}</span>
-                        {entry.notes ? <span className="text-[var(--text-muted)] text-xs ml-1.5">({entry.notes})</span> : null}
-                        <p className="text-[var(--text-dim)] text-xs">{formatDate(entry.date)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          entry.status === 'Paid' ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)]' :
-                          entry.status === 'Pending' ? 'bg-[var(--accent-amber-soft)] text-[var(--accent-amber-text)]' :
-                          'bg-[var(--border)] text-[var(--text-secondary)]'
-                        }`}>{entry.status}</span>
-                        <span className="text-[var(--accent-emerald-text)] font-bold text-sm">${entry.amount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Cancelled banner + chargeback affordance ── */}
-            {project.phase === 'Cancelled' && (() => {
-              const eligiblePaidEntries = projectEntries
-                .filter((e) => e.status === 'Paid' && !e.isChargeback && !findChargebackForEntry(e.id, projectEntries));
-              if (eligiblePaidEntries.length === 0) return null;
-              return (
-                <div className="border-t border-[var(--border-subtle)] pt-4">
-                  <div className="flex items-center justify-between gap-3 bg-[var(--accent-amber-soft)] border border-amber-500/30 rounded-xl p-4">
-                    <div>
-                      <p className="text-[var(--accent-amber-text)] text-sm font-semibold">Deal cancelled — chargeback(s) pending</p>
-                      <p className="text-[var(--text-muted)] text-xs mt-0.5">
-                        {eligiblePaidEntries.length} Paid milestone{eligiblePaidEntries.length !== 1 ? 's' : ''} without a linked chargeback. Record a clawback so payroll totals stay net-correct.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowRecordChargeback(true)}
-                      className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-[var(--accent-amber-text)] border border-amber-500/40 transition-colors"
-                    >
-                      Record Chargeback
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Compact milestone Mark Paid/Unpaid strip. The full per-rep
-                breakdown above already shows each milestone's status + amount
-                inside each RepCommissionCard; this footer exists only so admin
-                can flip the project-level m1Paid/m2Paid/m3Paid flags in one
-                tap. Amount shown is the PROJECT total for that milestone
-                (closer + setter + co-parties) so the number isn't misread
-                as "$0 paid out at M1" when in fact the setter is owed $1,000.
-                Inline editor only targets the closer's portion, so we hide
-                it whenever a setter is present and route the admin to the
-                Edit Deal modal instead.
-                Dup Milestone Status block removed 2026-04-24 per Josh's ask. */}
-            <div className="border-t border-[var(--border-subtle)] pt-4 flex flex-wrap gap-2">
-              {(() => {
-                const sumExtras = (key: 'm1Amount' | 'm2Amount' | 'm3Amount') =>
-                  ((project.additionalClosers ?? []).reduce((s, c) => s + (c[key] ?? 0), 0)) +
-                  ((project.additionalSetters ?? []).reduce((s, c) => s + (c[key] ?? 0), 0));
-                const m1Total = (project.m1Amount ?? 0) + (project.setterM1Amount ?? 0) + sumExtras('m1Amount');
-                const m2Total = (project.m2Amount ?? 0) + (project.setterM2Amount ?? 0) + sumExtras('m2Amount');
-                const m3Total = (project.m3Amount ?? 0) + (project.setterM3Amount ?? 0) + sumExtras('m3Amount');
-                return ([
-                  { stage: 'M1' as const, paid: project.m1Paid, toggle: handleToggleM1, amount: m1Total, closerAmount: project.m1Amount ?? 0 },
-                  { stage: 'M2' as const, paid: project.m2Paid, toggle: handleToggleM2, amount: m2Total, closerAmount: project.m2Amount ?? 0 },
-                  ...(m3Total > 0 ? [{ stage: 'M3' as const, paid: project.m3Paid, toggle: handleToggleM3, amount: m3Total, closerAmount: project.m3Amount ?? 0 }] : []),
-                ]);
-              })().map(({ stage, paid, toggle, amount, closerAmount }) => {
-                const hasSetter = !!project.setterId;
-                const isEditable = effectiveRole === 'admin' && !isPM && !hasSetter && (stage === 'M1' || stage === 'M2');
-                const isEditing = stage === 'M1' ? editM1 : stage === 'M2' ? editM2 : false;
-                return (
-                  <div key={stage} className="flex flex-col gap-1">
-                    <button
-                      onClick={toggle}
-                      className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
-                        paid
-                          ? 'bg-[var(--accent-emerald-soft)] text-[var(--accent-emerald-text)] border-[var(--accent-emerald-solid)]/30 hover:bg-[var(--accent-emerald-soft)]'
-                          : 'bg-[var(--surface-card)]/60 text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-card)]'
-                      }`}
-                      title={paid ? `Mark ${stage} unpaid` : `Mark ${stage} paid`}
-                    >
-                      <span>{stage}</span>
-                      <span className={paid ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-amber-text)]'}>
-                        {paid ? 'Paid' : 'Pending'}
-                      </span>
-                    </button>
-                    {isEditable ? (
-                      isEditing ? (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <input
-                            type="number"
-                            value={stage === 'M1' ? m1Val : m2Val}
-                            onChange={(e) => stage === 'M1' ? setM1Val(e.target.value) : setM2Val(e.target.value)}
-                            className="w-24 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
-                          />
-                          <input
-                            type="text"
-                            value={editReason}
-                            onChange={(e) => setEditReason(e.target.value)}
-                            placeholder="Reason (optional)"
-                            maxLength={200}
-                            className="w-44 text-xs rounded px-2 py-1 text-[var(--text-primary)] bg-[var(--surface-card)] border border-[var(--border)]"
-                          />
-                          <button onClick={stage === 'M1' ? saveM1 : saveM2} className="text-xs text-[var(--accent-emerald-text)] font-medium">Save</button>
-                          <button
-                            onClick={() => {
-                              if (stage === 'M1') setEditM1(false); else setEditM2(false);
-                              setEditReason('');
-                            }}
-                            className="text-xs text-[var(--text-muted)]"
-                          >Cancel</button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            if (stage === 'M1') { setM1Val(String(closerAmount)); setEditM1(true); }
-                            else { setM2Val(String(closerAmount)); setEditM2(true); }
-                          }}
-                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 tabular-nums text-left"
-                          title="Click to edit closer's milestone amount"
-                        >
-                          ${amount.toLocaleString()}
-                        </button>
-                      )
-                    ) : (
-                      effectiveRole === 'admin' && !isPM ? (
-                        <span
-                          className="text-xs text-[var(--text-muted)] tabular-nums"
-                          title="Project total (closer + setter + co-parties). Edit via Edit Deal modal."
-                        >
-                          ${amount.toLocaleString()}
-                        </span>
-                      ) : null
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <CommissionBreakdownAdmin
+          project={project}
+          derived={derived}
+          reps={reps}
+          effectiveRole={effectiveRole}
+          isPM={isPM}
+          onEditPaid={setPaidCorrectionEntryId}
+          onRecordTrainerPayment={() => setShowRecordTrainerPayment(true)}
+          onRecordChargeback={() => setShowRecordChargeback(true)}
+          milestoneEditor={{
+            editM1, editM2, m1Val, m2Val, editReason,
+            setEditM1, setEditM2, setM1Val, setM2Val, setEditReason,
+            saveM1, saveM2,
+            onToggleM1: handleToggleM1, onToggleM2: handleToggleM2, onToggleM3: handleToggleM3,
+          }}
+        />
       )}
 
       {/* Notes — per-note rows, each individually deletable. Replaced
@@ -2484,68 +1638,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         danger={false}
       />
 
-      {/* Cancellation Reason Modal — portaled to document.body for the same
-          reason as the Edit modal: ancestor transform/filter contexts trap
-          fixed descendants relative to the ancestor, not the viewport. */}
-      {showCancelReasonModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCancelReasonModal(false); }}>
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md shadow-2xl animate-slide-in-scale">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-[var(--accent-red-text)]" />
-                <h2 className="text-[var(--text-primary)] font-bold text-base">Cancel Project</h2>
-              </div>
-              <button onClick={() => setShowCancelReasonModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg p-1 hover:bg-[var(--surface-card)]">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-[var(--text-secondary)] text-sm">Please provide a reason for cancelling <span className="text-[var(--text-primary)] font-medium">{project.customerName}</span>.</p>
-              <div>
-                <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Reason</label>
-                <select
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]"
-                >
-                  <option value="">Select a reason...</option>
-                  <option value="Customer changed mind">Customer changed mind</option>
-                  <option value="Credit denied">Credit denied</option>
-                  <option value="Roof not suitable">Roof not suitable</option>
-                  <option value="Competitor won">Competitor won</option>
-                  <option value="Pricing issue">Pricing issue</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1.5">Notes <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
-                <textarea
-                  rows={3}
-                  value={cancelNotes}
-                  onChange={(e) => setCancelNotes(e.target.value)}
-                  placeholder="Additional details..."
-                  className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)] resize-none placeholder-slate-500"
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={() => setShowCancelReasonModal(false)}
-                  className="flex-1 bg-[var(--surface-card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--text-secondary)] font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
-                >
-                  Go Back
-                </button>
-                <button
-                  onClick={confirmCancelWithReason}
-                  className="flex-1 bg-red-600 hover:bg-red-500 text-[var(--text-primary)] font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors active:scale-[0.97]"
-                >
-                  Cancel Project
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      , document.body)}
+      {/* Cancellation Reason Modal — extracted to components/detail/
+          CancelReasonModal (T4.1). State stays page-owned: the arrow-key
+          nav effect reads showCancelReasonModal to suppress shortcuts. */}
+      <CancelReasonModal
+        open={showCancelReasonModal}
+        customerName={project.customerName}
+        reason={cancelReason}
+        notes={cancelNotes}
+        onReasonChange={setCancelReason}
+        onNotesChange={setCancelNotes}
+        onConfirm={confirmCancelWithReason}
+        onClose={() => setShowCancelReasonModal(false)}
+      />
     </div>
   );
 }
