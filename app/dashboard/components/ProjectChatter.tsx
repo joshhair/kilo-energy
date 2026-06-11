@@ -955,7 +955,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             placeholder="Write a message…"
             rows={1}
             style={{ maxHeight: COMPOSER_MAX_HEIGHT_PX }}
-            className="flex-1 min-w-0 bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto sm:min-h-[4.5rem]"
+            className="flex-1 min-w-0 sm:w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto sm:min-h-[4.5rem]"
           />
 
           {/* Inline icon buttons on mobile (right of the textarea); desktop

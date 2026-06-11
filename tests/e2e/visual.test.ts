@@ -463,6 +463,25 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   });
 
+  // F2 (feedback 2026-06-10) — the desktop Chatter compose textarea collapsed
+  // to its intrinsic ~20-col width (~150px) because the container switches to
+  // sm:block while the textarea relied on flex-1. Read-only width assertion.
+  test('desktop project Chatter — compose textarea spans the full box', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop-only layout (mobile compose is flex)');
+    await page.goto('/dashboard/projects');
+    await page.waitForLoadState('networkidle');
+    const firstProject = page.locator('a[href^="/dashboard/projects/"]').first();
+    await firstProject.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstProject.click();
+    await page.waitForURL('**/dashboard/projects/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    const ta = page.locator('textarea[placeholder="Write a message…"]');
+    await ta.scrollIntoViewIfNeeded();
+    await ta.waitFor({ state: 'visible' });
+    const widths = await ta.evaluate((el) => ({ ta: el.clientWidth, parent: el.parentElement!.clientWidth }));
+    expect(widths.ta).toBeGreaterThan(widths.parent * 0.9);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

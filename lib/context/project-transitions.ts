@@ -239,6 +239,9 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   if (updates.installer !== undefined) dbUpdates.installer = updates.installer;
   if (updates.financer !== undefined) dbUpdates.financer = updates.financer;
   if (updates.productType !== undefined) dbUpdates.productType = updates.productType;
+  // Installer prepaid sub-option. '' flows through — the API maps empty → null
+  // (clear). Added 2026-06-10 with edit-modal prepaid support (Rebekah's report).
+  if (updates.prepaidSubType !== undefined) dbUpdates.prepaidSubType = updates.prepaidSubType;
   if (updates.kWSize !== undefined) dbUpdates.kWSize = updates.kWSize;
   if (updates.netPPW !== undefined) dbUpdates.netPPW = updates.netPPW;
   // Primary closer + setter — server uses `closerId`, client uses `repId`.

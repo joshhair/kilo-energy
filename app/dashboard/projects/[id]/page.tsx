@@ -47,7 +47,7 @@ import { findChargebackForEntry } from '../../../../lib/chargebacks';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, setPayrollEntries, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId } = useApp();
+  const { effectiveRole, effectiveRepId, projects, setProjects, payrollEntries, setPayrollEntries, reps, activeInstallers, activeFinancers, installerBaselines, updateProject: ctxUpdateProject, installerPricingVersions, productCatalogProducts, productCatalogPricingVersions, installerPayConfigs, solarTechProducts, trainerAssignments, isViewingAs, viewAsUser, currentUserScopedInstallerId, getInstallerPrepaidOptions } = useApp();
   const isPM = effectiveRole === 'project_manager';
   // Internal-only gate: admin OR an internal PM (no installer scope on
   // either the signed-in user or the View-As target). Vendor PMs are
@@ -120,6 +120,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // and they no longer earn override). Only set true via the Clear button.
     noChainTrainer: false,
     solarTechProductId: '',
+    // Installer-specific prepaid sub-option (HDM/PE…). Mirrors New Deal —
+    // PATCH support added 2026-06-10 (Rebekah's report).
+    prepaidSubType: '',
     // Lead-source attribution. Editable from the modal by admin/internal-PM
     // only — see canSeeInternalOnlyUi gate where this section renders.
     // Reps' updates would be stripped by the API anyway (REP_BLOCKED_FIELDS).
@@ -445,6 +448,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
       noChainTrainer: project.noChainTrainer ?? false,
       solarTechProductId: project.solarTechProductId ?? '',
+      prepaidSubType: project.prepaidSubType ?? '',
       leadSource: project.leadSource ?? '',
       blitzId: project.blitzId ?? '',
     });
@@ -633,6 +637,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       noChainTrainer: editVals.noChainTrainer,
       solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
       ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
+      // Always sent: '' clears (PATCH maps empty → null), a value sets.
+      prepaidSubType: editVals.prepaidSubType,
       leadSource: nextLeadSource ?? undefined,
       blitzId: nextBlitzId ?? undefined,
     });
@@ -1691,7 +1697,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Installer</label>
                 <SearchableSelect
                   value={editVals.installer}
-                  onChange={(val) => { setEditVals((v) => ({ ...v, installer: val, solarTechProductId: val === 'SolarTech' ? v.solarTechProductId : '' })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
+                  onChange={(val) => { setEditVals((v) => ({ ...v, installer: val, solarTechProductId: val === 'SolarTech' ? v.solarTechProductId : '', prepaidSubType: val === v.installer ? v.prepaidSubType : '' })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
                   options={(activeInstallers.includes(editVals.installer) || !editVals.installer ? activeInstallers : [editVals.installer, ...activeInstallers]).map((inst) => ({ value: inst, label: !activeInstallers.includes(inst) ? `${inst} (archived)` : inst }))}
                   placeholder="Select installer…"
                   error={!!editErrors.installer}
@@ -1746,7 +1752,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       key={pt}
                       type="button"
-                      onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer }))}
+                      onClick={() => setEditVals((v) => ({ ...v, productType: pt, financer: pt === 'Cash' ? 'Cash' : v.financer === 'Cash' ? '' : v.financer, prepaidSubType: pt === 'Cash' || pt === 'Loan' ? v.prepaidSubType : '' }))}
                       className={`py-2 rounded-xl text-sm font-medium border transition-all ${
                         editVals.productType === pt
                           ? 'bg-[var(--accent-emerald-solid)] border-[var(--accent-emerald-solid)] text-black shadow-[0_0_10px_color-mix(in srgb, var(--accent-blue-solid) 30%, transparent)]'
@@ -1758,6 +1764,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   ))}
                 </div>
               </div>
+
+              {/* Prepaid sub-type — mirrors New Deal's standard-installer gate
+                  (installer has admin-configured prepaid options + Cash/Loan).
+                  Optional: tapping the selected option again clears it. */}
+              {getInstallerPrepaidOptions(editVals.installer).length > 0 && (editVals.productType === 'Cash' || editVals.productType === 'Loan') && (
+                <div>
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Prepaid Type (optional)</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {getInstallerPrepaidOptions(editVals.installer).map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setEditVals((v) => ({ ...v, prepaidSubType: v.prepaidSubType === opt ? '' : opt }))}
+                        className={`py-2 rounded-xl text-sm font-medium border transition-all ${
+                          editVals.prepaidSubType === opt
+                            ? 'bg-violet-600/20 border-violet-500/60 text-[var(--accent-purple-text)] shadow-[0_0_10px_color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)]'
+                            : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* kW + PPW */}
               <div className="grid grid-cols-2 gap-3">

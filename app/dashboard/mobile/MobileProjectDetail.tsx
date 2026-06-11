@@ -73,6 +73,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     installerPricingVersions, activeInstallers, activeFinancers,
     productCatalogProducts, productCatalogPricingVersions, solarTechProducts,
     isViewingAs, viewAsUser, currentUserScopedInstallerId,
+    getInstallerPrepaidOptions,
   } = useApp();
   const isPM = effectiveRole === 'project_manager';
   const isAdmin = effectiveRole === 'admin';
@@ -123,6 +124,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     overrideSetterPerW: string;
     overrideKiloPerW: string;
     solarTechProductId: string;
+    prepaidSubType: string;
     additionalClosers: CoPartyDraft[];
     additionalSetters: CoPartyDraft[];
     trainerId: string;
@@ -134,7 +136,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     installer: '', financer: '', productType: '', kWSize: '', netPPW: '', soldDate: '',
     repId: '', setterId: '', notes: '', useBaselineOverride: false,
     overrideCloserPerW: '', overrideSetterPerW: '', overrideKiloPerW: '',
-    solarTechProductId: '', additionalClosers: [], additionalSetters: [],
+    solarTechProductId: '', prepaidSubType: '', additionalClosers: [], additionalSetters: [],
     trainerId: '', trainerRate: '', noChainTrainer: false,
     leadSource: '', blitzId: '',
   });
@@ -286,6 +288,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       overrideSetterPerW: project.baselineOverride?.setterPerW != null ? String(project.baselineOverride.setterPerW) : '',
       overrideKiloPerW: project.baselineOverride ? String(project.baselineOverride.kiloPerW) : '',
       solarTechProductId: project.solarTechProductId ?? '',
+      prepaidSubType: project.prepaidSubType ?? '',
       additionalClosers: (project.additionalClosers ?? []).map((c) => ({
         userId: c.userId,
         m1Amount: String(c.m1Amount ?? 0),
@@ -443,6 +446,8 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         ? undefined
         : (editDraft.solarTechProductId || undefined),
       ...(editDraft.installer !== project.installer ? { installerProductId: undefined } : {}),
+      // Always sent: '' clears (PATCH maps empty → null), a value sets.
+      prepaidSubType: editDraft.prepaidSubType,
       // Primary closer (server: closerId, client: repId). Only sent when
       // changed — avoids triggering a no-op recompute on save.
       ...(editDraft.repId && editDraft.repId !== project.repId ? {
@@ -1630,6 +1635,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                 ...d,
                 installer: e.target.value,
                 solarTechProductId: e.target.value === 'SolarTech' ? d.solarTechProductId : '',
+                prepaidSubType: e.target.value === d.installer ? d.prepaidSubType : '',
               }))}
               className="w-full min-h-[48px] outline-none"
               style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: '14px', padding: '12px 14px', color: 'var(--text-primary)', fontSize: '1rem' }}
@@ -1685,6 +1691,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                     ...d,
                     productType: pt,
                     financer: pt === 'Cash' ? 'Cash' : d.financer === 'Cash' ? '' : d.financer,
+                    prepaidSubType: pt === 'Cash' || pt === 'Loan' ? d.prepaidSubType : '',
                   }))}
                   className="py-2 rounded-xl text-sm font-medium transition-all"
                   style={
@@ -1698,6 +1705,34 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               ))}
             </div>
           </div>
+
+          {/* Prepaid sub-type — mirrors New Deal + desktop edit modal gate
+              (installer has admin-configured prepaid options + Cash/Loan).
+              Optional: tapping the selected option again clears it. */}
+          {getInstallerPrepaidOptions(editDraft.installer).length > 0 && (editDraft.productType === 'Cash' || editDraft.productType === 'Loan') && (
+            <div>
+              <label className="block tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 500 }}>
+                Prepaid Type (optional)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {getInstallerPrepaidOptions(editDraft.installer).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setEditDraft((d) => ({ ...d, prepaidSubType: d.prepaidSubType === opt ? '' : opt }))}
+                    className="py-2 min-h-[44px] rounded-xl text-sm font-medium transition-all"
+                    style={
+                      editDraft.prepaidSubType === opt
+                        ? { background: 'color-mix(in srgb, var(--accent-purple-solid) 20%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 60%, transparent)', color: 'var(--accent-purple-text)' }
+                        : { background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '0.5px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', color: 'var(--text-secondary)' }
+                    }
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Financer — hidden for Cash deals (auto-set) */}
           {editDraft.productType !== 'Cash' && (

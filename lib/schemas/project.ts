@@ -128,6 +128,11 @@ export const patchProjectSchema = z.object({
 
   // Core deal shape (affects commission math)
   productType: z.string().min(1).optional(),
+  // Installer-specific prepaid sub-option (e.g. HDM/PE). Settable at create
+  // since launch; PATCH support added 2026-06-10 (Rebekah: "editing the
+  // project doesn't let me choose a prepaid option"). '' clears (route maps
+  // empty → null).
+  prepaidSubType: optionalString,
   kWSize: finiteNumber.positive().max(1000).optional(),  // kW bound — 1MW residential cap
   netPPW: finiteNumber.min(0).max(10).optional(),        // $/W sanity bound
   closerId: nullableId,

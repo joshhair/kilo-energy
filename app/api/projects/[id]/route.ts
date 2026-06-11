@@ -180,6 +180,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // sheet's Clear button; defaults false on new projects.
   if (body.noChainTrainer !== undefined) data.noChainTrainer = body.noChainTrainer;
 
+  // Prepaid sub-option — empty string clears (column is nullable; create
+  // route stores null for "none", keep PATCH symmetric).
+  if (body.prepaidSubType !== undefined) data.prepaidSubType = body.prepaidSubType || null;
+
   // FK resolution: installer/financer name → ID.
   //
   // Archived guard: an archived installer/financer must not be SELECTABLE on
