@@ -21,6 +21,15 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30000,
   retries: 1,
+  // Platform-agnostic snapshot names (no -win32/-linux suffix): baselines are
+  // generated locally on Windows but the nightly visual workflow runs on
+  // ubuntu-latest — with Playwright's default template CI looked for -linux
+  // files that don't exist and failed on missing snapshots every night. The
+  // suite's 1% maxDiffPixelRatio was chosen precisely to absorb cross-platform
+  // antialiasing drift (see visual.test.ts), so one shared baseline set is the
+  // intended design. If a surface exceeds tolerance on Linux, raise its
+  // tolerance or regenerate that baseline from a CI artifact.
+  snapshotPathTemplate: '{testDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
   globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
   use: {
     baseURL: BASE_URL,
