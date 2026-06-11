@@ -41,20 +41,12 @@ import { join, relative } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..');
 
-// Load the no-silent-rep-clears allowlist so the diff scanner doesn't
-// false-positive on legitimate allowlisted clears (e.g. blitzId resets
-// when the rep changes). Each allowlisted location is line-pinned, so
-// shifts caused by surrounding edits are caught by re-validating against
-// the file's current content via the check gate itself.
-let silentClearAllowlist = new Set();
-try {
-  const data = JSON.parse(
-    readFileSync(join(ROOT, 'scripts', 'no-silent-rep-clears.allowlist.json'), 'utf-8'),
-  );
-  silentClearAllowlist = new Set((data.entries ?? []).map((e) => e.location));
-} catch {
-  // No allowlist file — treat all as flaggable. The check gate will catch.
-}
+// The silent-clear cross-check defers to the AST gate's own coverage list.
+// (The v1/v2 allowlist was line-pinned `e.location`; v3 is content-anchored
+// `{file, field, anchor}` — there is no line key to mirror anymore, and the
+// old lookup silently matched nothing. 2026-06-11, caught by Codex review.)
+// Import is side-effect-safe: the guard script is gated on isMain.
+import { PROTECTED_FILES as SILENT_CLEAR_PROTECTED_FILES } from './check-no-silent-rep-clears.mjs';
 
 const GATES = [
   ['check:tokens', 'design-token drift'],
@@ -218,13 +210,15 @@ if (!base) {
       for (const pat of RISK_PATTERNS) {
         const m = added.match(pat.re);
         if (m) {
-          // Cross-check against the silent-clear allowlist — if this exact
-          // file:line was deliberately allowed (with a written reason),
-          // surface it as an informational note instead of a hard block.
-          // The check:no-silent-rep-clears gate is the authoritative
-          // judge; the audit just mirrors that decision here.
-          const loc = `${currentFile.replaceAll('\\', '/')}:${currentNewLine}`;
-          if (pat.id === 'silent-rep-clear' && silentClearAllowlist.has(loc)) {
+          // The check:no-silent-rep-clears gate (ran above as gate #9, AST +
+          // content-anchored allowlist) is the authoritative judge for files
+          // it protects — if it passed, an added clear there is allowlisted
+          // or it would have blocked already. The audit only hard-blocks
+          // clears added in UNPROTECTED files, where the AST gate is blind.
+          if (
+            pat.id === 'silent-rep-clear' &&
+            SILENT_CLEAR_PROTECTED_FILES.includes(currentFile.replaceAll('\\', '/'))
+          ) {
             continue;
           }
           risks.push({

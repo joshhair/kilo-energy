@@ -49,6 +49,7 @@ const ROOT = join(import.meta.dirname, '..');
 export const PROTECTED_FILES = [
   'app/dashboard/new-deal/page.tsx',
   'app/dashboard/mobile/MobileNewDeal.tsx',
+  'app/dashboard/mobile/new-deal/StepReview.tsx',
   'app/dashboard/projects/[id]/page.tsx',
   'app/dashboard/projects/components/detail/EditProjectModal.tsx',
   'app/dashboard/mobile/MobileProjectDetail.tsx',
@@ -167,13 +168,17 @@ export function detectClears(src, fileName = 'form.tsx') {
 
   const visit = (node) => {
     // Pattern 1: update('<field>', '')  — any formatting, incl. multiline,
-    // template literals, and wrapped empties ((''), '' as const).
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === 'update' &&
-      node.arguments.length >= 2
-    ) {
+    // template literals, and wrapped empties ((''), '' as const). Also
+    // matches PROPERTY-ACCESS callees (`formCtl.update(...)`, `props.update`)
+    // — split components receive `update` through prop bundles, and the
+    // pre-push audit defers to this gate for protected files, so a
+    // property-access clear must not escape both (Codex, 2026-06-11).
+    const callee = ts.isCallExpression(node) ? unwrap(node.expression) : null;
+    const calleeIsUpdate =
+      callee &&
+      ((ts.isIdentifier(callee) && callee.text === 'update') ||
+        (ts.isPropertyAccessExpression(callee) && callee.name.text === 'update'));
+    if (calleeIsUpdate && node.arguments.length >= 2) {
       const fieldArg = asStringLiteral(node.arguments[0]);
       if (fieldArg && FIELD_SET.has(fieldArg.text) && isEmptyStringLiteral(node.arguments[1])) {
         record('update-clear', fieldArg.text, node);

@@ -2,7 +2,7 @@
  * check:button-contrast — guard against the white-text-on-emerald regression.
  *
  * Background:
- *   The "View Projects" button on MobileNewDeal.tsx kept regressing to
+ *   The "View Projects" button (now in app/dashboard/mobile/new-deal/MobileSuccessScreen.tsx) kept regressing to
  *   white text on bright emerald (unreadable in dark mode). Root cause:
  *   inline style `background: 'var(--accent-emerald-text)'` (which is the
  *   TEXT color, intended for emerald text on dark surfaces — NOT a button

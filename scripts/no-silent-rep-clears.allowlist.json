@@ -42,12 +42,12 @@
       "reason": "Mobile admin Closer (Rep) picker — clears blitzId when the closer changes because blitz availability is rep-scoped; the new closer may not be approved for the prior blitz. setterId is NOT cleared (picker even filters the setter out of closer options)."
     },
     {
-      "file": "app/dashboard/mobile/MobileNewDeal.tsx",
+      "file": "app/dashboard/mobile/new-deal/StepReview.tsx",
       "field": "blitzId",
       "anchor": "c4b9e373db9b",
       "count": 1,
       "snippet": "if (val !== 'blitz') { update('blitzId', ''); }",
-      "reason": "Mobile lead-source toggle off `blitz`. Same rationale as the desktop lead-source toggle — an orphan blitzId would persist invisibly. setterId preserved."
+      "reason": "Mobile lead-source toggle off `blitz`. Same rationale as the desktop lead-source toggle — an orphan blitzId would persist invisibly. setterId preserved. [Re-keyed 2026-06-11: clear moved verbatim (with its anchor comment lines) to StepReview.tsx in the T4.1 split; reviewed by Codex dual-gate.]"
     }
   ]
 }

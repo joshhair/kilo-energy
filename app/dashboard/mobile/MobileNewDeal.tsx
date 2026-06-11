@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
 import {
@@ -11,7 +11,7 @@ import {
   getSolarTechBaseline, getInstallerRatesForDeal, getProductCatalogBaselineVersioned,
   INSTALLER_PAY_CONFIGS, DEFAULT_INSTALL_PAY_PCT, getActiveInstallerVersion,
 } from '../../../lib/data';
-import { Check, Loader2, ChevronLeft, CheckCircle2, ArrowRight, RotateCcw, Pencil } from 'lucide-react';
+import { Check, ChevronLeft, ArrowRight } from 'lucide-react';
 import { SetterPickerPopover } from '../components/SetterPickerPopover';
 import { CoPartySection, type CoPartyDraft } from '../projects/components/CoPartySection';
 import { evenSplit } from '../../../lib/commission-split';
@@ -19,199 +19,11 @@ import { splitCloserSetterPay } from '../../../lib/commission';
 import { applyCloserTrainerDeduction } from '../../../lib/closer-trainer-deduction';
 import MobileCard from './shared/MobileCard';
 import ViewportPortal from './shared/ViewportPortal';
-import { BviIntakePanel } from '../new-deal/components/BviIntakePanel';
 import { EMPTY_BVI_INTAKE, validateBviIntake, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
-// ── Validation (mirrors desktop exactly) ────────────────────────────────────
-
-function validateField(field: string, value: string): string {
-  switch (field) {
-    case 'repId':        return value ? '' : 'Closer is required';
-    case 'customerName': return value.trim() ? '' : 'Customer name is required';
-    case 'soldDate':     return value ? '' : 'Sold date is required';
-    case 'installer':    return value ? '' : 'Installer is required';
-    case 'financer':     return value ? '' : 'Financer is required';
-    case 'productType':  return value ? '' : 'Product type is required';
-    case 'solarTechFamily':    return value ? '' : 'Product family is required';
-    case 'solarTechProductId': return value ? '' : 'Product is required';
-    case 'pcFamily':           return value ? '' : 'Product family is required';
-    case 'installerProductId': return value ? '' : 'Product is required';
-    case 'prepaidSubType':     return value ? '' : 'Prepaid type is required';
-    case 'blitzId':            return value ? '' : 'Blitz is required';
-    case 'kWSize':
-      if (!value) return 'kW size is required';
-      if (parseFloat(value) < 1) return 'Must be at least 1 kW';
-      return '';
-    case 'netPPW':
-      if (!value) return 'Net PPW is required';
-      if (parseFloat(value) <= 0) return 'Must be greater than 0';
-      return '';
-    default: return '';
-  }
-}
-
-function genId(prefix: string): string {
-  return `${prefix}_${Date.now()}`;
-}
-
-// ── Inline components ────────────────────────────────────────────────────────
-
-function FieldError({ field, errors }: { field: string; errors: Record<string, string> }) {
-  return errors[field] ? (
-    <p className="text-[var(--accent-red-text)] text-base mt-1" role="alert">{errors[field]}</p>
-  ) : null;
-}
-
-// ── Step indicator ───────────────────────────────────────────────────────────
-
-const DEAL_STEPS = ['People', 'Deal Details', 'Review & Notes'] as const;
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="flex items-center gap-2 mb-2">
-      <div className="flex items-center gap-1.5">
-        {DEAL_STEPS.map((_, idx) => (
-          <div
-            key={idx}
-            className="step-dot rounded-full"
-            style={{
-              width:  idx === currentStep ? 10 : 8,
-              height: idx === currentStep ? 10 : 8,
-              background: idx === currentStep
-                ? 'var(--accent-emerald-solid)'
-                : idx < currentStep
-                ? 'color-mix(in srgb, var(--accent-emerald-solid) 35%, transparent)'
-                : 'color-mix(in srgb, var(--text-primary) 18%, transparent)',
-              transition: 'all 320ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              flexShrink: 0,
-            }}
-          />
-        ))}
-      </div>
-      <span
-        key={currentStep}
-        className="deal-step-counter"
-        style={{
-          display: 'inline-block',
-          animation: 'deal-title-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both',
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-        }}
-      >
-        Step {currentStep + 1} of {DEAL_STEPS.length}
-      </span>
-    </div>
-  );
-}
-
-// ── Success screen ───────────────────────────────────────────────────────────
-
-interface SubmittedDeal {
-  projectId: string;
-  customerName: string;
-  installer: string;
-  financer: string;
-  productType: string;
-  kW: number;
-  soldPPW: number;
-  closerTotal: number;
-  closerM1: number;
-  closerM2: number;
-  closerM3: number;
-  setterTotal: number;
-  setterM1: number;
-  setterM2: number;
-  setterM3: number;
-  setterName: string;
-  repName: string;
-}
-
-function MobileSuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => void }) {
-  const router = useRouter();
-  return (
-    <div className="px-4 pt-3 pb-24 space-y-4">
-      <div className="flex flex-col items-center text-center pt-4 mb-4">
-        <div className="success-icon-spring w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'var(--accent-emerald-soft)', border: '1px solid var(--accent-emerald-glow)' }}>
-          <CheckCircle2 className="w-7 h-7 text-[var(--accent-emerald-text)]" strokeWidth={1.5} />
-        </div>
-        <div className="success-up-1">
-          <h2 className="text-xl font-black text-[var(--text-primary)] mb-1" style={{ fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>Deal Submitted!</h2>
-          <p className="text-base" style={{ color: 'var(--text-muted)' }}>
-            <span className="text-[var(--text-primary)] font-semibold">{deal.customerName}</span> has been added to your pipeline.
-          </p>
-        </div>
-      </div>
-
-      <MobileCard className="success-up-2">
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Deal Summary</p>
-        <div className="space-y-2 text-base">
-          <div className="flex justify-between">
-            <span className="text-base" style={{ color: 'var(--text-muted)' }}>Installer</span>
-            <span className="text-[var(--text-primary)] font-medium">{deal.installer}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-base" style={{ color: 'var(--text-muted)' }}>Financer</span>
-            <span className="text-[var(--text-primary)] font-medium">{deal.financer || '---'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-base" style={{ color: 'var(--text-muted)' }}>Product Type</span>
-            <span className="text-[var(--text-primary)] font-medium">{deal.productType}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-base" style={{ color: 'var(--text-muted)' }}>System</span>
-            <span className="text-[var(--text-primary)] font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</span>
-          </div>
-        </div>
-      </MobileCard>
-
-      <MobileCard className="success-up-3">
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Commission</p>
-        {deal.closerTotal > 0 ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-base font-medium" style={{ color: 'var(--text-muted)' }}>{deal.repName} (Closer)</p>
-              <p className="text-base" style={{ color: 'var(--text-muted)' }}>
-                M1: ${deal.closerM1.toLocaleString()} · M2: ${deal.closerM2.toLocaleString()}
-                {deal.closerM3 > 0 && ` · M3: $${deal.closerM3.toLocaleString()}`}
-              </p>
-            </div>
-            <p className="text-xl font-black" style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}>${deal.closerTotal.toLocaleString()}</p>
-          </div>
-        ) : (
-          <p className="text-base" style={{ color: 'var(--text-muted)' }}>Commission will be calculated once pricing is confirmed.</p>
-        )}
-        {deal.setterTotal > 0 && (
-          <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <p className="text-base font-medium" style={{ color: 'var(--text-muted)' }}>{deal.setterName} (Setter)</p>
-            <p className="text-lg font-bold text-[var(--accent-blue-text)]">${deal.setterTotal.toLocaleString()}</p>
-          </div>
-        )}
-      </MobileCard>
-
-      <div className="success-up-4 space-y-2 pt-2">
-        <button
-          onClick={() => router.push('/dashboard/projects')}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 font-semibold rounded-xl text-base active:scale-[0.97]"
-          style={{
-            background: 'var(--accent-emerald-solid)',
-            color: 'var(--text-on-accent)',
-            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-          }}
-        >
-          View Projects <ArrowRight className="w-4 h-4" />
-        </button>
-        <button
-          onClick={onReset}
-          className="w-full min-h-[48px] flex items-center justify-center gap-2 font-medium rounded-xl text-base active:scale-[0.97]"
-          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
-        >
-          <RotateCcw className="w-4 h-4" /> Submit Another
-        </button>
-      </div>
-    </div>
-  );
-}
+import { validateField, genId, FieldError, DEAL_STEPS, StepIndicator } from './new-deal/shared';
+import { MobileSuccessScreen, type SubmittedDeal } from './new-deal/MobileSuccessScreen';
+import { StepReview } from './new-deal/StepReview';
 
 // ── Main component ───────────────────────────────────────────────────────────
 
@@ -1944,251 +1756,27 @@ export default function MobileNewDeal() {
         {/* ── Step 3: Review & Notes ── */}
         {currentStep === 2 && (
           <div key={2} className={`space-y-7 flex-1 flex flex-col pb-[176px] ${exitAnimClass || (stepDirectionRef.current === 'fwd' ? 'deal-step-enter-fwd' : 'deal-step-enter-back')}`}>
-            {/* Summary card */}
-            <MobileCard>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Deal Summary</p>
-              {/* People section — tap to jump back to Step 1 */}
-              <button
-                type="button"
-                onClick={() => jumpToStep(0)}
-                className="w-full text-left pb-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px' }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>People</span>
-                  <span className="flex items-center gap-1 opacity-50 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
-                </div>
-                <div className="space-y-2 text-base">
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>Customer</span>
-                    <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{form.customerName || '---'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>Sold Date</span>
-                    <span className="text-[var(--text-primary)] font-medium">{form.soldDate || '---'}</span>
-                  </div>
-                  {effectiveRole === 'admin' && (
-                    <div className="flex justify-between">
-                      <span className="text-base" style={{ color: 'var(--text-muted)' }}>Closer</span>
-                      <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
-                    </div>
-                  )}
-                  {form.setterId && (
-                    <div className="flex justify-between">
-                      <span className="text-base" style={{ color: 'var(--text-muted)' }}>Setter</span>
-                      <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
-                    </div>
-                  )}
-                </div>
-              </button>
-              {/* Deal Details section — tap to jump back to Step 2 */}
-              <button
-                type="button"
-                onClick={() => jumpToStep(1)}
-                className="w-full text-left pt-2 mt-2 rounded-xl active:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] transition-all duration-150 active:scale-[0.985] group"
-                style={{ borderTop: '1px solid var(--border-default)', borderLeft: '2px solid color-mix(in srgb, var(--accent-emerald-solid) 18%, transparent)', paddingLeft: '10px', paddingTop: '8px', marginTop: '8px' }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Deal Details</span>
-                  <span className="flex items-center gap-1 opacity-50 group-active:opacity-100 transition-opacity duration-150" style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}><Pencil className="w-3 h-3" />Edit</span>
-                </div>
-                <div className="space-y-2 text-base">
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>Installer</span>
-                    <span className="text-[var(--text-primary)] font-medium">{form.installer || '---'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>Financer</span>
-                    <span className="text-[var(--text-primary)] font-medium">{form.financer || '---'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>Product Type</span>
-                    <span className="text-[var(--text-primary)] font-medium">{form.productType || '---'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-base" style={{ color: 'var(--text-muted)' }}>System</span>
-                    <span className="text-[var(--text-primary)] font-medium">
-                      {kW > 0 ? `${kW.toFixed(1)} kW` : '---'}
-                      {kW > 0 && soldPPW > 0 && ` @ $${soldPPW.toFixed(2)}/W`}
-                    </span>
-                  </div>
-                  {form.prepaidSubType && (
-                    <div className="flex justify-between">
-                      <span className="text-base" style={{ color: 'var(--text-muted)' }}>Prepaid Type</span>
-                      <span className="text-[var(--text-primary)] font-medium">{form.prepaidSubType}</span>
-                    </div>
-                  )}
-                </div>
-              </button>
-            </MobileCard>
-
-            {/* Commission breakdown */}
-            {(showPreview || (isSubDealer && subDealerCommission > 0)) && (
-              <MobileCard className="field-slide-in" key={closerTotal + '-' + setterTotal}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Commission Breakdown</p>
-                {isSubDealer ? (
-                  <div className="space-y-1.5 text-base">
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-muted)' }}>M2 commission</span>
-                      <span
-                        key={commFlash ? 'flash' : 'idle'}
-                        className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
-                      >${subDealerCommission.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 text-base">
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: 'var(--text-muted)' }}>Closer total</span>
-                      <span
-                        key={commFlash ? 'flash' : 'idle'}
-                        className={`font-black text-lg${commFlash ? ' commission-val-flash' : ''}`}
-                        style={{ color: 'var(--accent-emerald-display)', fontFamily: "var(--m-font-display, 'DM Serif Display', serif)" }}
-                      >${closerTotal.toLocaleString()}</span>
-                    </div>
-                    <div className="text-base" style={{ color: 'var(--text-muted)' }}>
-                      M1: ${closerM1.toLocaleString()} · M2: ${closerM2.toLocaleString()}{hasM3 ? ` · M3: $${closerM3.toLocaleString()}` : ''}
-                    </div>
-                    {form.setterId && setterTotal > 0 && (
-                      <>
-                        <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Setter total</span>
-                          <span className="text-[var(--accent-blue-text)] font-semibold">${setterTotal.toLocaleString()}</span>
-                        </div>
-                        <div className="text-base" style={{ color: 'var(--text-muted)' }}>
-                          M1: ${setterM1.toLocaleString()} · M2: ${setterM2.toLocaleString()}{hasM3 ? ` · M3: $${setterM3.toLocaleString()}` : ''}
-                        </div>
-                      </>
-                    )}
-                    {trainerRep && trainerTotal > 0 && (
-                      <div className="flex justify-between pt-1.5 text-base" style={{ borderTop: '1px solid var(--border-default)' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Trainer ({trainerRep.name})</span>
-                        <span className="text-[var(--accent-amber-text)]">${trainerTotal.toLocaleString()} (${trainerOverrideRate.toFixed(2)}/W)</span>
-                      </div>
-                    )}
-                    {effectiveRole === 'admin' && (
-                      <div className="flex justify-between pt-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Kilo margin</span>
-                        <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>${Math.max(0, kiloTotal - closerTotal - setterTotal - trainerTotal - closerTrainerTotal).toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </MobileCard>
-            )}
-
-            {/* Divider */}
-            <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border-default), transparent)' }} />
-
-            {/* BVI conditional intake — appears when installer = BVI on mobile too */}
-            {isBviInstaller && (
-              <BviIntakePanel
-                value={bviIntake}
-                onChange={setBviIntake}
-                utilityBill={utilityBill}
-                onUtilityBillChange={setUtilityBill}
-                sendOnSubmit={bviSendOnSubmit}
-                onSendOnSubmitChange={setBviSendOnSubmit}
-                errors={bviErrors}
-              />
-            )}
-
-            {/* Notes */}
-            <div>
-              <label className={labelCls} style={labelStyle}>Notes <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-primary) 14%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
-              <textarea
-                placeholder="Add any notes about this deal..."
-                value={form.notes}
-                onChange={(e) => update('notes', e.target.value)}
-                maxLength={500}
-                className={`${inputCls('')} min-h-[80px] max-h-[160px] resize-none py-2.5`} style={v0InputStyle('')}
-              />
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-base italic" style={{ color: 'var(--text-muted)' }}>Internal notes only</p>
-                <p className="text-base" style={{ color: form.notes.length >= 500 ? 'var(--accent-red-text)' : form.notes.length >= 400 ? 'var(--accent-amber-text)' : 'var(--text-muted)' }}>
-                  {form.notes.length}/500
-                </p>
-              </div>
-            </div>
-
-            {/* Lead Source */}
-            <div>
-              <label className={labelCls} style={labelStyle}>Lead Source <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-primary) 14%, transparent)', borderRadius: 6, padding: '2px 7px', marginLeft: 4 }}>optional</span></label>
-              <select
-                value={form.leadSource}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  update('leadSource', val);
-                  // DO NOT clear setterId — setter is independent of leadSource
-                  // and blitz. See project_kilo_setter_regression (Tyson, Melissa,
-                  // Hunter, Patrick — four prod incidents from silent clears).
-                  if (val !== 'blitz') { update('blitzId', ''); }
-                }}
-                className={selectCls('')} style={v0InputStyle('')}
-              >
-                <option value="">-- Select --</option>
-                <option value="organic">Organic</option>
-                <option value="referral">Referral</option>
-                <option value="blitz">Blitz</option>
-                <option value="door_knock">Door Knock</option>
-                <option value="web">Web Lead</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            {/* Blitz selector */}
-            {form.leadSource === 'blitz' && (
-              <div key={'blitz-sel'} ref={(el) => { fieldWrapperRefs.current['blitzId'] = el; }} className="field-slide-in">
-                <label className={labelCls} style={labelStyle}>Blitz</label>
-                <select
-                  value={form.blitzId}
-                  onChange={(e) => {
-                    const blitzId = e.target.value;
-                    update('blitzId', blitzId);
-                    // Sold date is intentionally NOT snapped to the blitz window
-                    // (removed 2026-06-05) — deals attach to the blitz they originated
-                    // on even when they close outside the blitz dates. Per Josh.
-                  }}
-                  onBlur={() => handleBlur('blitzId')}
-                  className={selectCls('blitzId')} style={v0InputStyle('blitzId')}
-                >
-                  <option value="">-- Select Blitz --</option>
-                  {availableBlitzes.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-                <FieldError errors={errors} field="blitzId" />
-              </div>
-            )}
-
-            {/* Portaled to <body> so it pins to the viewport, not the
-                transformed step wrapper (T1.8). The submit button is no longer
-                a DOM descendant of the form, so it links back via form="...". */}
-            <ViewportPortal>
-            <div
-              key="cta-2"
-              className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
-              style={{
-                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-                paddingBottom: '12px',
-                paddingTop: '12px',
-                background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
-                backdropFilter: 'blur(8px)',
+            {/* Step 3 content — extracted to new-deal/StepReview.tsx (T4.1).
+                State/handlers stay here; the gate + animated wrapper above are
+                the host's. The submit CTA inside pairs with this component's
+                <form id="mobile-new-deal-form"> via its form attribute. */}
+            <StepReview
+              flow={{ jumpToStep, handlePrev, submitting }}
+              formCtl={{ form, errors, update, handleBlur, fieldWrapperRefs }}
+              money={{
+                showPreview, isSubDealer, subDealerCommission, commFlash,
+                closerTotal, closerM1, closerM2, closerM3, hasM3,
+                setterTotal, setterM1, setterM2, setterM3,
+                trainerRep, trainerTotal, trainerOverrideRate, kiloTotal, closerTrainerTotal, kW, soldPPW,
               }}
-            >
-              <div className="flex gap-3">
-                <button type="button" onClick={handlePrev} disabled={submitting}
-                  className="flex-1 flex items-center justify-center gap-1 font-medium active:scale-[0.97] disabled:opacity-60"
-                  style={{ background: 'color-mix(in srgb, var(--text-primary) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--text-primary) 10%, transparent)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-secondary)' }}
-                ><ChevronLeft className="w-4 h-4" /> Back</button>
-                <button type="submit" form="mobile-new-deal-form" disabled={submitting}
-                  className="flex-1 flex items-center justify-center gap-2 font-medium active:scale-[0.97] disabled:opacity-60"
-                  style={{ background: 'var(--accent-emerald-solid)', borderRadius: 16, padding: 18, fontSize: 16, color: 'var(--text-on-accent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
-                >{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Check className="w-4 h-4" /> Submit Deal</>}</button>
-              </div>
-            </div>
-            </ViewportPortal>
+              bvi={{
+                isBviInstaller, bviIntake, setBviIntake, utilityBill, setUtilityBill,
+                bviSendOnSubmit, setBviSendOnSubmit, bviErrors,
+              }}
+              identity={{ effectiveRole, reps }}
+              availableBlitzes={availableBlitzes}
+              styles={{ labelCls, labelStyle, inputCls, selectCls, v0InputStyle }}
+            />
           </div>
         )}
       </form>
