@@ -482,6 +482,30 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     expect(widths.ta).toBeGreaterThan(widths.parent * 0.9);
   });
 
+  // F4b (feedback 2026-06-11) — the feedback modal opened off-page on iPhone
+  // Safari. It rendered inline in the layout subtree, where a Safari-only
+  // containing-block ancestor (backdrop-filter/transform/filter) could anchor
+  // the fixed overlay to a wrapper instead of the viewport. Fix: portal the
+  // overlay to <body>. Deterministic structural assertion (no network).
+  test('mobile feedback modal is portaled to body and sits in the viewport', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile is the reported surface');
+    await page.goto('/dashboard/projects');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Send feedback' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.waitFor({ state: 'visible' });
+    const check = await dialog.evaluate((el) => {
+      const overlay = el.parentElement!;
+      const r = el.getBoundingClientRect();
+      return {
+        overlayParentIsBody: overlay.parentElement === document.body,
+        inViewport: r.top >= 0 && r.bottom <= window.innerHeight + 1 && r.left >= 0 && r.right <= window.innerWidth + 1,
+      };
+    });
+    expect(check.overlayParentIsBody).toBe(true);
+    expect(check.inViewport).toBe(true);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

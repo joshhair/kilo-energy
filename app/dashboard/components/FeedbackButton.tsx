@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageCirclePlus, X, Loader2, Send, CheckCircle2, Camera } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useToast } from '@/lib/toast';
+import ViewportPortal from '../mobile/shared/ViewportPortal';
 
 const MAX_LENGTH = 2000;
 type HtmlToImageModule = typeof import('html-to-image');
@@ -254,7 +255,16 @@ export function FeedbackButton() {
           appears underneath, the modal stays fully visible. Desktop keeps
           the original centered behavior. max-h uses dvh which accounts for
           the dynamic visible viewport (no growing past keyboard). */}
+      {/* Portaled to document.body (F4b, Josh's iPhone report 2026-06-11:
+          "this feedback box is off the page"): rendered inline, the fixed
+          overlay sat inside the layout subtree where an ancestor effect
+          (Safari treats backdrop-filter/transform/filter ancestors as
+          containing blocks for fixed descendants more aggressively than
+          Chromium) could anchor it to the wrapper instead of the viewport.
+          The portal escapes every ancestor; the existing dvh/safe-area
+          sizing handles the keyboard. */}
       {open && (
+        <ViewportPortal>
         <div
           data-feedback-exclude="true"
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -396,6 +406,7 @@ export function FeedbackButton() {
             </div>
           </div>
         </div>
+        </ViewportPortal>
       )}
     </>
   );
