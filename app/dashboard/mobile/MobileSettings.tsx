@@ -91,9 +91,13 @@ const SETTINGS_KEYFRAMES = `
   @media (prefers-reduced-motion: reduce) {
     .ms-slide-in, .ms-slide-out, .ms-slide-back, .ms-nav-item-in { animation: none !important; }
   }
-  .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) both; }
+  /* enters use fill backwards (not both): a finished filling animation keeps
+     applying its final frame — even transform:none is held as an identity matrix,
+     which still traps fixed descendants (T1.8). Exit keeps both (must hold the
+     final hidden frame until unmount). */
+  .ms-slide-in   { animation: ms-slide-in   320ms cubic-bezier(0.16,1,0.3,1) backwards; }
   .ms-slide-out  { animation: ms-slide-out  240ms cubic-bezier(0.55,0,1,0.45) both; }
-  .ms-slide-back { animation: ms-slide-back 280ms cubic-bezier(0.16,1,0.3,1) both; }
+  .ms-slide-back { animation: ms-slide-back 280ms cubic-bezier(0.16,1,0.3,1) backwards; }
   @keyframes sk-shimmer {
     0%   { background-position: -200% 0; }
     100% { background-position:  200% 0; }

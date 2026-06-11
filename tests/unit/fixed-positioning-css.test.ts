@@ -86,6 +86,39 @@ describe('T1.8 fixed-positioning CSS guard (globals.css)', () => {
     });
   }
 
+  // The REAL load-bearing invariant (proven by the runtime guard catching the
+  // Project Detail bottom bar): enter wrappers must NOT use animation-fill-mode
+  // `both`/`forwards`. A finished filling animation keeps APPLYING its final
+  // frame, and even a final `transform: none` is held as an identity MATRIX —
+  // still a containing block. `backwards` stops applying at animation end, so
+  // computed transform falls back to the cascade (`none`).
+  const ENTER_WRAPPER_CLASSES = [
+    '.animate-page-enter',
+    '.animate-mobile-tab',
+    '.animate-view-enter',
+    '.deal-step-enter-fwd',
+    '.deal-step-enter-back',
+    '.animate-settings-section-enter',
+    '.animate-settings-section-fwd',
+    '.animate-settings-section-back',
+    '.animate-mobile-slide-in',
+  ];
+  for (const cls of ENTER_WRAPPER_CLASSES) {
+    it(`${cls} does not use a persistent fill mode (both/forwards)`, () => {
+      const re = new RegExp(`\\${cls}[^{]*\\{([^}]*)\\}`, 'g');
+      const matches = [...globalsCss.matchAll(re)];
+      expect(matches.length, `${cls} rule not found`).toBeGreaterThan(0);
+      for (const m of matches) {
+        const anim = m[1].match(/animation\s*:\s*([^;]+);/i);
+        if (!anim) continue; // e.g. reduced-motion override block
+        expect(
+          /\b(both|forwards)\b/.test(anim[1]),
+          `${cls} animation shorthand uses a persistent fill mode: "${anim[1].trim()}"`,
+        ).toBe(false);
+      }
+    });
+  }
+
   // The persistent `will-change: transform` on these one-shot enter wrappers is
   // itself a containing-block creator — it must be gone. We assert the class
   // blocks no longer declare it.
@@ -117,6 +150,18 @@ describe('T1.8 fixed-positioning CSS guard (MobileSettings.tsx inline keyframes)
     it(`@keyframes ${name} settles at transform: none`, () => {
       const final = finalTransform(keyframeBlock(mobileSettings, name));
       expect(final).toBe('none');
+    });
+
+    it(`.${name} does not use a persistent fill mode (both/forwards)`, () => {
+      const re = new RegExp(`\\.${name}\\s*\\{[^}]*animation\\s*:\\s*([^;]+);`, 'g');
+      const matches = [...mobileSettings.matchAll(re)];
+      expect(matches.length, `.${name} animation rule not found`).toBeGreaterThan(0);
+      for (const m of matches) {
+        expect(
+          /\b(both|forwards)\b/.test(m[1]),
+          `.${name} animation uses a persistent fill mode: "${m[1].trim()}"`,
+        ).toBe(false);
+      }
     });
   }
 });

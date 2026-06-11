@@ -607,14 +607,21 @@ body {
   }
 }
 
+/* fill-mode `backwards`, NOT `both`: with `both` the finished animation keeps
+   APPLYING forever, and a held final state — even `transform: none` — is
+   serialized as an identity matrix, which still creates a containing block for
+   fixed descendants (T1.8, proven by the runtime guard). `backwards` stops
+   applying at animation end, so computed transform falls back to the cascade
+   (`none`) and fixed children pin to the viewport. Visually identical: the
+   `to` state equals the natural state. Enter animations only — exits keep `both`. */
 .animate-page-enter {
-  animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 /* On mobile, use the faster mobile tab transition instead */
 @media (max-width: 767px) {
   .animate-page-enter {
-    animation: mobileTabEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: mobileTabEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
 }
 
@@ -632,7 +639,7 @@ body {
 }
 
 .animate-mobile-tab {
-  animation: mobileTabEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: mobileTabEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @keyframes panelEnterRight {
@@ -708,7 +715,7 @@ body {
   to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-enter {
-  animation: settings-section-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: settings-section-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-settings-section-enter { animation: none; }
@@ -720,14 +727,14 @@ body {
   to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-fwd {
-  animation: settings-section-fwd 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: settings-section-fwd 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @keyframes settings-section-back {
   from { opacity: 0; transform: translateX(-16px) translateY(4px); }
   to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-back {
-  animation: settings-section-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: settings-section-back 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-settings-section-fwd,
@@ -835,7 +842,7 @@ body {
 }
 .animate-view-enter,
 .animate-tab-enter {
-  animation: viewEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: viewEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-view-enter,
@@ -1524,8 +1531,8 @@ select {
 }
 /* No persistent will-change: a settled one-shot enter doesn't need the hint, and
    `will-change: transform` itself creates a containing block for fixed children (T1.8). */
-.deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-.deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
 @keyframes deal-step-exit-fwd {
   from { opacity: 1; transform: translateX(0); }
   to   { opacity: 0; transform: translateX(-18px); }
@@ -1879,7 +1886,7 @@ select {
   to   { opacity: 1; transform: none; }
 }
 .animate-mobile-slide-in {
-  animation: mobileSlideIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: mobileSlideIn 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-mobile-slide-in { animation: none; }

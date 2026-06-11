@@ -225,7 +225,18 @@ test.describe('Fixed-positioning containing-block guard (T1.8)', () => {
   // ID-free routes only (the desktop/mobile list + entry surfaces). Project
   // Detail is reached by clicking the first card so its fixed bottom bar is
   // covered without a seeded fixture ID.
-  const ROUTES = ['/dashboard', '/dashboard/projects', '/dashboard/payroll', '/dashboard/new-deal'];
+  const ROUTES = [
+    '/dashboard',
+    '/dashboard/projects',
+    '/dashboard/payroll',
+    '/dashboard/new-deal',
+    '/dashboard/users',
+    '/dashboard/settings',
+    '/dashboard/my-pay',
+    '/dashboard/training',
+    '/dashboard/blitz',
+    '/dashboard/incentives',
+  ];
   for (const route of ROUTES) {
     test(`no fixed element trapped in a containing block on ${route}`, async ({ page }) => {
       await page.goto(route);
