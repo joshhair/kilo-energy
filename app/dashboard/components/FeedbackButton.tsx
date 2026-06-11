@@ -25,6 +25,98 @@ import { usePathname } from 'next/navigation';
 import { useToast } from '@/lib/toast';
 
 const MAX_LENGTH = 2000;
+type HtmlToImageModule = typeof import('html-to-image');
+
+function stripDataUrlPrefix(dataUrl: string): string {
+  const comma = dataUrl.indexOf(',');
+  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+}
+
+function getCaptureBackground(target: HTMLElement): string {
+  const transparent = new Set(['', 'transparent', 'rgba(0, 0, 0, 0)']);
+  const candidates = [
+    getComputedStyle(target).backgroundColor,
+    getComputedStyle(document.body).backgroundColor,
+    getComputedStyle(document.documentElement).backgroundColor,
+  ];
+  return candidates.find((color) => !transparent.has(color)) ?? '#0f172a';
+}
+
+function canvasLooksBlank(canvas: HTMLCanvasElement): boolean {
+  if (canvas.width === 0 || canvas.height === 0) return true;
+
+  let data: Uint8ClampedArray;
+  try {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return false;
+    data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  } catch {
+    // If the canvas is tainted by a cross-origin asset, keep the screenshot
+    // rather than incorrectly throwing away useful evidence.
+    return false;
+  }
+
+  const stride = Math.max(4, Math.floor(Math.sqrt((canvas.width * canvas.height) / 4096)));
+  let sampled = 0;
+  let minR = 255;
+  let minG = 255;
+  let minB = 255;
+  let maxR = 0;
+  let maxG = 0;
+  let maxB = 0;
+
+  for (let y = 0; y < canvas.height; y += stride) {
+    for (let x = 0; x < canvas.width; x += stride) {
+      const i = (y * canvas.width + x) * 4;
+      if (data[i + 3] < 12) continue;
+      sampled += 1;
+      minR = Math.min(minR, data[i]);
+      minG = Math.min(minG, data[i + 1]);
+      minB = Math.min(minB, data[i + 2]);
+      maxR = Math.max(maxR, data[i]);
+      maxG = Math.max(maxG, data[i + 1]);
+      maxB = Math.max(maxB, data[i + 2]);
+    }
+  }
+
+  if (sampled < 16) return true;
+  return maxR - minR < 6 && maxG - minG < 6 && maxB - minB < 6;
+}
+
+async function captureVisibleElement(
+  htmlToImage: HtmlToImageModule,
+  target: HTMLElement,
+): Promise<string | undefined> {
+  const rect = target.getBoundingClientRect();
+  const viewportWidth = Math.max(1, Math.round(target.clientWidth || rect.width || window.innerWidth));
+  const viewportHeight = Math.max(1, Math.round(target.clientHeight || rect.height || window.innerHeight));
+  const scrollTop = target === document.body || target === document.documentElement ? window.scrollY : target.scrollTop;
+  const scrollLeft = target === document.body || target === document.documentElement ? window.scrollX : target.scrollLeft;
+  const contentWidth = Math.max(viewportWidth, Math.round(target.scrollWidth || viewportWidth));
+  const contentHeight = Math.max(viewportHeight, Math.round(target.scrollHeight || viewportHeight));
+  const backgroundColor = getCaptureBackground(target);
+
+  const canvas = await htmlToImage.toCanvas(target, {
+    pixelRatio: 1,
+    cacheBust: true,
+    width: viewportWidth,
+    height: viewportHeight,
+    canvasWidth: viewportWidth,
+    canvasHeight: viewportHeight,
+    backgroundColor,
+    style: {
+      transform: `translate(${-scrollLeft}px, ${-scrollTop}px)`,
+      transformOrigin: 'top left',
+      width: `${contentWidth}px`,
+      height: `${contentHeight}px`,
+      maxHeight: 'none',
+      overflow: 'visible',
+    },
+    filter: (node) => !(node instanceof HTMLElement && node.closest('[data-feedback-exclude="true"]')),
+  });
+  if (canvasLooksBlank(canvas)) return undefined;
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
 
 export function FeedbackButton() {
   const pathname = usePathname();
@@ -37,11 +129,6 @@ export function FeedbackButton() {
   // uncheck before sending if they're on a sensitive screen.
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Refs so the screenshot capture can exclude the widget itself (the
-  // floating button + the open modal) from what it rasterizes. Without
-  // this the screenshot would show the modal sitting over the page.
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   // Only render on /dashboard/** routes. Defensive — layout mount path
   // should already guarantee this, but a stray render elsewhere would be
@@ -79,50 +166,17 @@ export function FeedbackButton() {
   const captureScreenshot = async (): Promise<string | undefined> => {
     try {
       const htmlToImage = await import('html-to-image');
-      // The dashboard scrolls inside <main id="main-content"> (set
-      // overflow-y:auto in dashboard/layout.tsx so the sidebar can stay
-      // pinned). window.scrollY is therefore ALWAYS 0, no matter where
-      // the user is. The prior fix translated by -window.scrollY and so
-      // continued to capture the top of the page — confirmed by repeat
-      // reports (Josh 2026-05-14, 2026-05-21).
-      //
-      // Real fix: read scrollTop from the actual scroll container, capture
-      // <main> directly (not body), and translate the clone by that real
-      // offset. <main> exists on every /dashboard route since the widget
-      // is only mounted under that layout.
-      const mainEl = document.getElementById('main-content');
-      const target = mainEl ?? document.body;
-      const scrollTop = mainEl ? mainEl.scrollTop : window.scrollY;
-      const scrollLeft = mainEl ? mainEl.scrollLeft : window.scrollX;
-      const dataUrl = await htmlToImage.toJpeg(target, {
-        quality: 0.7,
-        pixelRatio: 1,
-        cacheBust: true,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        style: {
-          transform: `translate(-${scrollLeft}px, -${scrollTop}px)`,
-          transformOrigin: 'top left',
-          // Expand the clone to its full content size so all children are
-          // laid out (overflow:auto would otherwise hide everything below
-          // the viewport in the clone). Negative-translate then exposes
-          // exactly the visible viewport portion to the output canvas.
-          width: `${target.clientWidth}px`,
-          height: `${target.scrollHeight}px`,
-          overflow: 'visible',
-        },
-        filter: (node) => {
-          // Exclude the widget itself (button + modal) from the capture.
-          // contains() returns false for the ref node itself only when the
-          // ref is null; both checks are intentionally inclusive.
-          if (buttonRef.current && buttonRef.current.contains(node)) return false;
-          if (modalRef.current && modalRef.current.contains(node)) return false;
-          return true;
-        },
-      });
+      const mainEl = document.getElementById('main-content') as HTMLElement | null;
+      const dataUrl =
+        (mainEl ? await captureVisibleElement(htmlToImage, mainEl) : undefined)
+        ?? await captureVisibleElement(htmlToImage, document.body);
+
+      if (!dataUrl) {
+        console.warn('Feedback screenshot capture produced a blank image.');
+        return undefined;
+      }
       // Strip "data:image/jpeg;base64," to send only the base64 chunk.
-      const comma = dataUrl.indexOf(',');
-      return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+      return stripDataUrlPrefix(dataUrl);
     } catch (err) {
       console.warn('Feedback screenshot capture failed:', err);
       return undefined;
@@ -171,8 +225,8 @@ export function FeedbackButton() {
           bottom nav (~80px from bottom) so it doesn't sit on top of nav
           icons. Desktop has no bottom nav, so a smaller offset works. */}
       <button
-        ref={buttonRef}
         type="button"
+        data-feedback-exclude="true"
         onClick={() => setOpen(true)}
         aria-label="Send feedback"
         // Always tappable on every screen (it captures the active screen),
@@ -202,6 +256,7 @@ export function FeedbackButton() {
           the dynamic visible viewport (no growing past keyboard). */}
       {open && (
         <div
+          data-feedback-exclude="true"
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
@@ -209,7 +264,6 @@ export function FeedbackButton() {
           }}
         >
           <div
-            ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="feedback-modal-title"

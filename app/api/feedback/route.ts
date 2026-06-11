@@ -8,6 +8,7 @@ import { enforceRateLimit } from '../../../lib/rate-limit';
 import { sendEmail } from '../../../lib/email-helpers';
 import { renderFeedbackEmail } from '../../../lib/email-templates/feedback';
 import { buildBlobKey } from '../../../lib/file-uploads';
+import { decodeFeedbackScreenshot } from '../../../lib/feedback-screenshot';
 import { logger, errorContext } from '../../../lib/logger';
 import { postFeedbackToSlack } from '../../../lib/slack-feedback';
 
@@ -100,13 +101,20 @@ export async function POST(req: NextRequest) {
       logger.warn('feedback_screenshot_skipped_no_blob_token', { feedbackId: created.id });
     } else {
       try {
-        const buffer = Buffer.from(body.screenshotBase64, 'base64');
-        const key = buildBlobKey(`feedback/${created.id}`, 'screenshot.jpg');
-        const uploaded = await put(key, buffer, {
-          access: 'public',
-          contentType: 'image/jpeg',
-        });
-        screenshotUrl = uploaded.url;
+        const decoded = decodeFeedbackScreenshot(body.screenshotBase64);
+        if (!decoded.ok) {
+          logger.warn('feedback_screenshot_skipped_invalid_image', {
+            feedbackId: created.id,
+            reason: decoded.reason,
+          });
+        } else {
+          const key = buildBlobKey(`feedback/${created.id}`, 'screenshot.jpg');
+          const uploaded = await put(key, decoded.buffer, {
+            access: 'public',
+            contentType: 'image/jpeg',
+          });
+          screenshotUrl = uploaded.url;
+        }
       } catch (err) {
         logger.warn('feedback_screenshot_upload_failed', {
           feedbackId: created.id,
