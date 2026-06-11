@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
 
 export function ConfirmDeleteDialog({
@@ -22,9 +23,15 @@ export function ConfirmDeleteDialog({
   const [typed, setTyped] = useState('');
   const canConfirm = !isDeletionBlocked && (!requiresTypeToConfirm || typed === confirm.name);
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  // Portaled to document.body at z-[60] (same fix as the shared ConfirmDialog,
+  // T1.5): inline at z-50 it tied with the fixed BottomNav and could paint
+  // BELOW it when the nav rides up the bottom stack, covering Cancel/Delete.
+  // The portal also escapes any transformed/animated ancestor (T1.8).
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-[60] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md">
@@ -70,6 +77,7 @@ export function ConfirmDeleteDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

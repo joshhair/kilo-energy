@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import {
   Plus, EyeOff, Eye, Trash2, ChevronDown,
-  ListChecks, CheckSquare, Square, Landmark,
+  ListChecks, CheckSquare, Square, Landmark, MoreVertical,
 } from 'lucide-react';
+import RowActionsMenu from '../../components/RowActionsMenu';
 import { useApp } from '../../../../lib/context';
 import { useToast as _useToast } from '../../../../lib/toast';
 import { validateName } from '../../../../lib/validation';
@@ -181,33 +182,41 @@ export function FinancersSection({ hiddenFinancers, deleteConfirm: _deleteConfir
                   </div>
                 </div>
                 {!financerSelectMode && (
-                <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <IconButton
-                    variant="warning"
-                    aria-label={`Archive ${fin.name}`}
-                    title="Archive financer"
-                    onClick={() => setFinancerActive(fin.name, false)}
-                  >
-                    <EyeOff className="w-3.5 h-3.5" />
-                  </IconButton>
-                  <IconButton
-                    variant="danger"
-                    aria-label={`Delete ${fin.name}`}
-                    title="Delete financer"
-                    onClick={() => {
-                      const projectCount = projects.filter((p) => p.financer === fin.name).length;
-                      setDeleteConfirm({
-                        type: 'financer',
-                        id: fin.name,
-                        name: fin.name,
-                        message: projectCount > 0
-                          ? `This financer is used by ${projectCount} project${projectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
-                          : 'This financer has no associated projects and will be permanently deleted.',
-                      });
+                <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                  {/* T1.7 — archive/delete behind a kebab: archive was a
+                      one-click hover icon beside delete; the menu makes both
+                      a deliberate two-step. Delete keeps its usage-aware
+                      ConfirmDeleteDialog gate. */}
+                  <RowActionsMenu
+                    ariaLabel={`Actions for ${fin.name}`}
+                    trigger={{
+                      className: 'flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[color-mix(in_srgb,var(--text-primary)_8%,transparent)] transition-colors',
+                      children: <MoreVertical className="w-3.5 h-3.5" />,
                     }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </IconButton>
+                    actions={[
+                      {
+                        label: 'Archive financer',
+                        icon: EyeOff,
+                        onSelect: () => setFinancerActive(fin.name, false),
+                      },
+                      {
+                        label: 'Delete financer…',
+                        icon: Trash2,
+                        danger: true,
+                        onSelect: () => {
+                          const projectCount = projects.filter((p) => p.financer === fin.name).length;
+                          setDeleteConfirm({
+                            type: 'financer',
+                            id: fin.name,
+                            name: fin.name,
+                            message: projectCount > 0
+                              ? `This financer is used by ${projectCount} project${projectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
+                              : 'This financer has no associated projects and will be permanently deleted.',
+                          });
+                        },
+                      },
+                    ]}
+                  />
                 </div>
                 )}
               </div>

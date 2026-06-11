@@ -45,8 +45,8 @@
 
   "InstallersSection.tsx": {
     "rawInputs": 4,
-    "rawButtons": 20,
-    "reason": "PR 9 migrated the add-form, search, and empty state. Remaining 4 inputs: 3 micro-text (text-xs) inline-edit inputs in the prepaid-options panel and pay-schedule edit, 1 family-name input in the PC-mode add form. Remaining buttons: standard/PC segmented selector (2), select-mode toggle (1), select-all (1), archived-section disclosure (1), row-hover icon stagger (5 per active row including the new BVI-handoff Mail button, 2 per archived row), prepaid-options expansion add/edit/save/cancel/delete (5), pay-schedule expansion (varies). +1 button bump in 2026-04-29 added the Mail icon for handoff config."
+    "rawButtons": 18,
+    "reason": "PR 9 migrated the add-form, search, and empty state. Remaining 4 inputs: 3 micro-text (text-xs) inline-edit inputs in the prepaid-options panel and pay-schedule edit, 1 family-name input in the PC-mode add form. Remaining buttons: standard/PC segmented selector (2), select-mode toggle (1), select-all (1), archived-section disclosure (1), row-hover icon stagger (3 config icons per active row; archive/delete moved into the shared RowActionsMenu kebab in T1.7, 2 per archived row), prepaid-options expansion add/edit/save/cancel/delete (5), pay-schedule expansion (varies). 20→18 in T1.7 (2026-06-10): archive + delete row buttons replaced by RowActionsMenu."
   },
 
   "InstallerHandoffPanel.tsx": {

@@ -4,8 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Plus, Pencil, Check, X, EyeOff, Eye, Trash2,
   ChevronRight, ChevronDown, CreditCard, DollarSign,
-  ListChecks, CheckSquare, Square, Building2, Mail,
+  ListChecks, CheckSquare, Square, Building2, Mail, MoreVertical,
 } from 'lucide-react';
+import RowActionsMenu from '../../components/RowActionsMenu';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
 import { validateName } from '../../../../lib/validation';
@@ -318,41 +319,52 @@ export function InstallersSection({
                       >
                         <Mail className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={() => setInstallerActive(inst.name, false)}
-                        title="Archive installer"
-                        className="text-[var(--text-dim)] hover:text-[var(--accent-amber-text)] transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <EyeOff className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          const isSolarTech = inst.name === 'SolarTech';
-                          const productCount = isSolarTech
-                            ? solarTechProducts.length
-                            : productCatalogProducts.filter((p) => p.installer === inst.name).length;
-                          const versionCount = installerPricingVersions.filter((v) => v.installer === inst.name).length;
-                          const parts: string[] = [];
-                          if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? '' : 's'}`);
-                          if (versionCount > 0) parts.push(`${versionCount} pricing version${versionCount === 1 ? '' : 's'}`);
-                          const installerProjectCount = projects.filter((p) => p.installer === inst.name).length;
-                          const cascadeDetail = installerProjectCount > 0
-                            ? `This installer is used by ${installerProjectCount} project${installerProjectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
-                            : parts.length > 0
-                              ? `This will PERMANENTLY delete ${parts.join(' and ')} along with every baseline tier underneath them. This cannot be undone from the UI.\n\nExisting deals that reference this installer will remain but will no longer have a pricing source.`
-                              : 'This installer has no products, pricing, or associated projects and will be permanently deleted.';
-                          setDeleteConfirm({
-                            type: 'installer',
-                            id: inst.name,
-                            name: inst.name,
-                            message: cascadeDetail,
-                          });
+                      {/* T1.7 — archive/delete live behind a kebab, separated
+                          from the per-row CONFIG icons (pay/prepaid/handoff).
+                          Archive was a one-click hover icon adjacent to them;
+                          the menu makes it a deliberate two-step. Delete keeps
+                          its usage-aware ConfirmDeleteDialog gate. */}
+                      <RowActionsMenu
+                        ariaLabel={`Actions for ${inst.name}`}
+                        trigger={{
+                          className: 'flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[color-mix(in_srgb,var(--text-primary)_8%,transparent)] transition-colors',
+                          children: <MoreVertical className="w-3.5 h-3.5" />,
                         }}
-                        title="Permanently delete installer"
-                        className="text-[var(--text-dim)] hover:text-[var(--accent-red-text)] transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        actions={[
+                          {
+                            label: 'Archive installer',
+                            icon: EyeOff,
+                            onSelect: () => setInstallerActive(inst.name, false),
+                          },
+                          {
+                            label: 'Delete installer…',
+                            icon: Trash2,
+                            danger: true,
+                            onSelect: () => {
+                              const isSolarTech = inst.name === 'SolarTech';
+                              const productCount = isSolarTech
+                                ? solarTechProducts.length
+                                : productCatalogProducts.filter((p) => p.installer === inst.name).length;
+                              const versionCount = installerPricingVersions.filter((v) => v.installer === inst.name).length;
+                              const parts: string[] = [];
+                              if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? '' : 's'}`);
+                              if (versionCount > 0) parts.push(`${versionCount} pricing version${versionCount === 1 ? '' : 's'}`);
+                              const installerProjectCount = projects.filter((p) => p.installer === inst.name).length;
+                              const cascadeDetail = installerProjectCount > 0
+                                ? `This installer is used by ${installerProjectCount} project${installerProjectCount === 1 ? '' : 's'} and cannot be deleted. Archive it instead.`
+                                : parts.length > 0
+                                  ? `This will PERMANENTLY delete ${parts.join(' and ')} along with every baseline tier underneath them. This cannot be undone from the UI.\n\nExisting deals that reference this installer will remain but will no longer have a pricing source.`
+                                  : 'This installer has no products, pricing, or associated projects and will be permanently deleted.';
+                              setDeleteConfirm({
+                                type: 'installer',
+                                id: inst.name,
+                                name: inst.name,
+                                message: cascadeDetail,
+                              });
+                            },
+                          },
+                        ]}
+                      />
                     </div>
                   </div>
 

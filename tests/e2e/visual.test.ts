@@ -435,6 +435,34 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  // T1.7 — Settings global-config rows (installers/financers): archive +
+  // delete live behind a per-row kebab, separated from the inline CONFIG
+  // icons. Archive was previously a one-click hover icon adjacent to delete.
+  // Delete keeps its usage-aware ConfirmDeleteDialog gate.
+  test('desktop Settings — installer archive/delete behind kebab, delete gate intact', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop-only settings sections');
+    await page.goto('/dashboard/settings');
+    await page.waitForLoadState('networkidle');
+    await page.getByText('Installers', { exact: true }).first().click();
+    const kebab = page.locator('button[aria-label^="Actions for"]').first();
+    await kebab.waitFor({ state: 'visible', timeout: 10_000 });
+    // No inline archive icons on active rows (data-independent: ARCHIVED rows
+    // never had "Archive installer" — they use "Restore installer" — while
+    // their delete buttons legitimately keep the "Permanently delete" title,
+    // so asserting on the delete title would false-fail whenever archived
+    // installers exist; Codex review catch). The kebab menuitem assertions
+    // below cover the delete-relocation half of the regression.
+    await expect(page.locator('button[title="Archive installer"]')).toHaveCount(0);
+    await kebab.click();
+    await page.getByRole('menu').waitFor({ state: 'visible' });
+    await expect(page.getByRole('menuitem', { name: 'Archive installer' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /Delete installer/ })).toBeVisible();
+    // Delete still lands on the ConfirmDeleteDialog gate; cancel out.
+    await page.getByRole('menuitem', { name: /Delete installer/ }).click();
+    await page.getByText(/Delete .*\?/).first().waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.
