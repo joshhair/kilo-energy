@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { usePublishHeightVar } from '../../../lib/hooks';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
@@ -14,7 +13,7 @@ import {
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
 import { computeProjectedTrainerLegs } from '../../../lib/trainer-projection';
-import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy, GraduationCap, MoreHorizontal } from 'lucide-react';
 import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
 import RecordTrainerPaymentModal from '../projects/components/RecordTrainerPaymentModal';
@@ -87,11 +86,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const project = projects.find((p) => p.id === projectId);
 
-  // Access checks — shared by the early returns below AND the action-bar
-  // height publisher. The publisher must be enabled exactly when the bar
-  // will mount: gating on `!!project` alone would strand a stale
-  // --kilo-cta-h when View As flips this open page into a denied state
-  // without a route unmount (Codex review).
+  // Access checks for the permission early-returns below.
   const repDenied =
     effectiveRole === 'rep' &&
     !!project &&
@@ -105,20 +100,13 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     !!project &&
     project.subDealerId !== effectiveRepId &&
     project.repId !== effectiveRepId;
-  const showsActionBar = !!project && !repDenied && !subDealerDenied;
-
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
-  // Bottom action bar height → --kilo-cta-h so the global feedback bubble
-  // stacks above it (exclusive owner of the var on this page). The bar became
-  // truly viewport-fixed only after the T1.8 fill-mode fix un-trapped it —
-  // which also exposed that its old hardcoded bottom-16 (64px) offset sat
-  // under the real nav (~105px with the iPhone home-indicator safe area).
-  // `showsActionBar` gates the publish: while the project is still resolving
-  // from context (cold deep-link over LTE) the bar isn't mounted, and the
-  // hook's bounded rAF retry would give up after ~1s and strand the var at 0px.
-  const actionBarRef = useRef<HTMLDivElement>(null);
-  usePublishHeightVar(actionBarRef, '--kilo-cta-h', showsActionBar);
+  // No --kilo-cta-h publisher here anymore: the fixed bottom action bar was
+  // retired 2026-06-11 (Josh: for reps it was a near-empty strip, and its
+  // Change Phase button duplicated the tappable phase label below the
+  // stepper). Overflow actions live in the header More button; the global
+  // feedback bubble sits directly above the nav via the var's 0px fallback.
   const [phaseConfirm, setPhaseConfirm] = useState<Phase | null>(null);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -737,16 +725,32 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
         Projects
       </button>
 
-      {/* Customer name + flagged dot. Phase used to render here as an
-          outlined pill, but the prominent cyan phase label below the
-          stepper says the same thing more attractively — keeping just
-          one phase indicator per view. Admins still get tap-to-change
-          via that label (button + chevron); reps see static text. */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-[var(--text-primary)]">{project.customerName}</h1>
+      {/* Customer name + flagged dot + the More overflow trigger. Phase used
+          to render here as an outlined pill, but the prominent cyan phase
+          label below the stepper says the same thing more attractively —
+          keeping just one phase indicator per view. Admins still get
+          tap-to-change via that label (button + chevron); reps see static
+          text. The More button replaced the retired fixed bottom bar
+          (2026-06-11): the bar's only universal content was this trigger,
+          and for reps the strip was otherwise empty. min-w-0 + truncate keep
+          long customer names from pushing the trigger offscreen. */}
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-xl font-bold text-[var(--text-primary)] truncate">{project.customerName}</h1>
           {project.flagged && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--accent-red-solid)' }} />}
         </div>
+        <button
+          onClick={() => setMoreSheetOpen(true)}
+          aria-label="More actions"
+          className="shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
+          style={{
+            background: 'var(--surface-pressed)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Phase stepper — compact dots */}
@@ -786,7 +790,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
           type="button"
           onClick={() => setPhaseSheetOpen(true)}
           aria-label={`Change phase — currently ${project.phase}`}
-          className="inline-flex items-center gap-1.5 mt-2 min-h-[36px] rounded-md active:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50"
+          className="inline-flex items-center gap-1.5 mt-2 min-h-[44px] min-w-[44px] rounded-md active:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-[var(--accent-cyan-solid)]/50"
           style={{
             color: isOffTrack
               ? (project.phase === 'Cancelled' ? 'var(--accent-red-display)' : 'var(--accent-amber-display)')
@@ -1540,35 +1544,6 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
       {/* Activity Timeline */}
       <MobileActivityTimeline projectId={projectId} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
-
-      {/* Sticky bottom action bar */}
-      <div ref={actionBarRef} className="fixed left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ bottom: 'var(--kilo-bottom-nav-h, 5rem)', background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
-        {(isAdmin || isPM) && (
-          <button
-            onClick={() => setPhaseSheetOpen(true)}
-            className="flex-1 min-h-[48px] text-[var(--text-primary)] text-base font-semibold rounded-xl active:scale-[0.97] transition-transform duration-75 ease-out"
-            style={{
-              background: 'var(--accent-emerald-solid)',
-              fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-            }}
-          >
-            Change Phase &#x25BE;
-          </button>
-        )}
-        <button
-          onClick={() => setMoreSheetOpen(true)}
-          className="min-h-[48px] px-5 text-base font-medium rounded-xl active:scale-[0.95] transition-transform duration-75 ease-out"
-          style={{
-            background: 'var(--surface-pressed)',
-            border: '1px solid var(--border-default)',
-            color: 'var(--text-primary)',
-            fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-          }}
-          aria-label="More actions"
-        >
-          &middot; &middot; &middot;
-        </button>
-      </div>
 
       {/* Phase bottom sheet */}
       <MobileBottomSheet open={phaseSheetOpen} onClose={() => setPhaseSheetOpen(false)} title="Change Phase">

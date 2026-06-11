@@ -249,8 +249,11 @@ test.describe('Fixed-positioning containing-block guard (T1.8)', () => {
     });
   }
 
-  test('no fixed element trapped on mobile Project Detail (bottom bar)', async ({ page, isMobile }) => {
-    test.skip(!isMobile, 'mobile Project Detail bottom bar is the mobile-only surface');
+  // (The fixed bottom action bar this guard originally targeted was retired
+  // 2026-06-11 — the guard stays: it protects ANY fixed element the page
+  // renders now or later, e.g. the bottom sheets and the global FAB.)
+  test('no fixed element trapped on mobile Project Detail', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile Project Detail is the mobile-only surface');
     await page.goto('/dashboard/projects');
     await page.waitForLoadState('networkidle');
     // Open the first project card to render MobileProjectDetail + its fixed bar.
@@ -599,56 +602,121 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     expect(m).toBe(false);
   });
 
-  // Regression lock 2026-06-11 (Josh's iPhone report): the project-detail
-  // change-phase bar was hardcoded bottom-16 (64px) — less than the nav's
-  // real height once T1.8 un-trapped the bar (~105px with the home-indicator
-  // safe area), so the bar's lower half hid behind the nav and the feedback
-  // bubble stacked onto the bar. The bar now anchors to --kilo-bottom-nav-h
-  // and publishes --kilo-cta-h; assert the whole bottom stack is disjoint:
-  // bar bottom ≤ nav top, bubble bottom ≤ bar top.
-  test('mobile Project Detail — change-phase bar clears nav, bubble clears bar', async ({ page, isMobile }) => {
-    test.skip(!isMobile, 'mobile bottom stack');
+  // Regression locks 2026-06-11, two generations in one day: first the
+  // change-phase bar was re-anchored above the nav (it had been hiding
+  // behind it); hours later Josh flagged that for reps the bar was a
+  // near-empty strip ("just this white bar") — its Change Phase button
+  // duplicated the tappable phase label below the stepper, and its only
+  // universal content was the More trigger. The bar is RETIRED for all
+  // roles: More lives in the header (normal flow), phase changes stay on
+  // the 44px-floor phase label, and nothing on this page publishes
+  // --kilo-cta-h. Lock the new arrangement.
+  // Returns false when the signed-in user has no visible projects (the rep
+  // e2e user may have none in a given environment) — callers soft-skip.
+  async function openFirstProjectDetail(page: import('@playwright/test').Page): Promise<boolean> {
     await page.goto('/dashboard/projects');
     await page.waitForLoadState('networkidle');
     const firstCard = page.locator('button.animate-card-enter').first();
-    await firstCard.waitFor({ state: 'visible', timeout: 10_000 });
+    if (!(await firstCard.isVisible().catch(() => false))) {
+      await page.waitForTimeout(2000);
+      if (!(await firstCard.isVisible().catch(() => false))) return false;
+    }
     await firstCard.click();
     await page.waitForURL('**/dashboard/projects/*', { timeout: 10_000 });
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(900); // let the height publishers settle
-    const m = await page.evaluate(() => {
-      const more = document.querySelector('button[aria-label="More actions"]');
-      let bar: HTMLElement | null = more ? (more.parentElement as HTMLElement) : null;
-      while (bar && getComputedStyle(bar).position !== 'fixed') bar = bar.parentElement;
-      // The bottom nav is one of several <nav> elements — find the fixed one
-      // anchored at the viewport bottom (BottomNav has no aria-label/id).
+    await page.waitForTimeout(600);
+    return true;
+  }
+
+  function measureBottomStack(page: import('@playwright/test').Page) {
+    return page.evaluate(() => {
+      const vh = window.innerHeight;
+      // Fixed elements occupying the bottom band. Only the bottom nav (and
+      // its descendants) and the feedback FAB may live there — no bottom
+      // sheets are open at measurement time.
+      // "In the bottom band" means the element STARTS there (top > 55% of
+      // the viewport) — a bar shape. Full-height fixed chrome (the desktop
+      // sidebar's ASIDE spans inset-y-0 even at mobile width) reaches the
+      // band with its bottom edge but is not a bottom bar.
+      const fixedBottom = Array.from(document.querySelectorAll<HTMLElement>('*')).filter((el) => {
+        const cs = getComputedStyle(el);
+        if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden') return false;
+        const r = el.getBoundingClientRect();
+        return r.height > 0 && r.width > 0 && r.top > vh * 0.55;
+      });
+      const allowed = (el: HTMLElement) =>
+        el.tagName === 'NAV' || el.closest('nav') !== null ||
+        el.getAttribute('aria-label') === 'Send feedback' ||
+        el.closest('[aria-label="Send feedback"]') !== null;
+      const offenders = fixedBottom
+        .filter((el) => !allowed(el))
+        .map((el) => `${el.tagName}[class="${String(el.className).slice(0, 80)}"]`);
       const nav = Array.from(document.querySelectorAll('nav')).find((n) => {
         const cs = getComputedStyle(n);
         return cs.position === 'fixed' && Math.abs(n.getBoundingClientRect().bottom - window.innerHeight) < 2;
       });
       const bubble = document.querySelector('button[aria-label="Send feedback"]');
-      if (!bar || !nav || !bubble) return null;
-      const barR = bar.getBoundingClientRect();
-      const navR = nav.getBoundingClientRect();
-      const bubbleR = bubble.getBoundingClientRect();
+      const more = document.querySelector('button[aria-label="More actions"]');
+      const phaseLabel = document.querySelector('button[aria-label^="Change phase"]');
       return {
-        barClearsNav: barR.bottom <= navR.top + 1,
-        bubbleClearsBar: bubbleR.bottom <= barR.top + 1,
+        offenders,
         ctaVar: getComputedStyle(document.documentElement).getPropertyValue('--kilo-cta-h').trim(),
-        // Diagnostics for the failure message — viewport-relative px.
-        vh: window.innerHeight,
-        bar: [Math.round(barR.top), Math.round(barR.bottom)],
-        nav: [Math.round(navR.top), Math.round(navR.bottom)],
-        barBottomStyle: getComputedStyle(bar).bottom,
-        navVar: getComputedStyle(document.documentElement).getPropertyValue('--kilo-bottom-nav-h').trim(),
+        bubbleAboveNav: bubble && nav
+          ? bubble.getBoundingClientRect().bottom <= nav.getBoundingClientRect().top + 1
+          : null,
+        moreInFlow: more ? getComputedStyle(more).position !== 'fixed' : null,
+        phaseLabelButtons: phaseLabel ? 1 : 0,
+        phaseLabelHeight: phaseLabel ? Math.round(phaseLabel.getBoundingClientRect().height) : null,
+        phaseLabelWidth: phaseLabel ? Math.round(phaseLabel.getBoundingClientRect().width) : null,
       };
     });
-    expect(m, 'bar, nav, or bubble not found on project detail').not.toBeNull();
-    expect(m!.barClearsNav, `bar bottom must sit at/above nav top (got ${JSON.stringify(m)})`).toBe(true);
-    expect(m!.bubbleClearsBar, `bubble must sit fully above the bar (got ${JSON.stringify(m)})`).toBe(true);
-    // The bar must actually publish its height — 0px would mean the bubble
-    // only happens to clear it by fallback slack.
-    expect(parseFloat(m!.ctaVar || '0')).toBeGreaterThan(40);
+  }
+
+  test('mobile Project Detail — no bottom bar; header More + phase label carry the actions', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile bottom stack');
+    const opened = await openFirstProjectDetail(page);
+    expect(opened, 'admin must see at least one project card').toBe(true);
+    const m = await measureBottomStack(page);
+    expect(m.offenders, `unexpected fixed elements in the bottom band: ${JSON.stringify(m.offenders)}`).toEqual([]);
+    expect(parseFloat(m.ctaVar || '0'), '--kilo-cta-h must be unpublished on project detail').toBe(0);
+    expect(m.bubbleAboveNav, 'feedback bubble must sit directly above the nav').toBe(true);
+    expect(m.moreInFlow, 'header More button must exist in normal flow').toBe(true);
+    // Admin storage state: the phase label is THE tap-to-change target and
+    // must meet the 44px floor BOTH axes (short phases like "New"/"PTO"
+    // would otherwise shrink the only phase affordance — Codex). The bar
+    // CTA it replaced was 48px tall.
+    expect(m.phaseLabelButtons, 'admin must have the tappable phase label').toBe(1);
+    expect(m.phaseLabelHeight ?? 0).toBeGreaterThanOrEqual(44);
+    expect(m.phaseLabelWidth ?? 0).toBeGreaterThanOrEqual(44);
+    // The phase label actually opens the Change Phase sheet…
+    await page.locator('button[aria-label^="Change phase"]').click();
+    await expect(page.getByText('Change Phase', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('Change Phase', { exact: true })).toBeHidden();
+    // …and the header More trigger opens the same role-gated Actions sheet
+    // the bar's trigger used to open ("Duplicate Deal" renders for admin).
+    await page.getByRole('button', { name: 'More actions' }).click();
+    await expect(page.getByText('Duplicate Deal', { exact: true })).toBeVisible();
+  });
+
+  // The rep view — the role whose near-empty strip prompted the redesign.
+  // Reps get NO phase affordance (static label, not a button), but the
+  // header More must be present and the bottom band holds only nav + FAB.
+  test.describe('rep state', () => {
+    test.use({ storageState: 'tests/e2e/.auth/rep.json' });
+    test('mobile Project Detail (rep) — no bar, header More present, static phase label', async ({ page, isMobile }) => {
+      test.skip(!isMobile, 'mobile bottom stack');
+      const opened = await openFirstProjectDetail(page);
+      test.skip(!opened, 'rep e2e user has no visible projects in this environment');
+      const m = await measureBottomStack(page);
+      expect(m.offenders, `unexpected fixed elements in the bottom band: ${JSON.stringify(m.offenders)}`).toEqual([]);
+      expect(parseFloat(m.ctaVar || '0')).toBe(0);
+      expect(m.bubbleAboveNav, 'feedback bubble must sit directly above the nav').toBe(true);
+      expect(m.moreInFlow, 'header More button must exist in normal flow for reps too').toBe(true);
+      expect(m.phaseLabelButtons, 'reps must NOT get a tappable phase label').toBe(0);
+      await page.getByRole('button', { name: 'More actions' }).click();
+      await expect(page.getByText('Duplicate Deal', { exact: true })).toBeVisible();
+    });
   });
 
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
