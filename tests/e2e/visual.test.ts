@@ -506,6 +506,40 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     expect(check.inViewport).toBe(true);
   });
 
+  // F3 (feedback 2026-06-10) — users/[id] on wide screens: page constrained to
+  // max-w-6xl (projects-detail precedent), sidebar no longer has an inner
+  // scrollbar, and the Payment History body cells align with their headers
+  // (a tr::before pseudo was being wrapped in an anonymous CELL by Chromium,
+  // which under table-fixed swallowed the first column and pushed Date to 0px).
+  test('desktop users/[id] — wide-screen layout constrained, payment table aligned', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'wide-desktop layout');
+    await page.setViewportSize({ width: 1740, height: 900 });
+    await page.goto('/dashboard/users');
+    await page.waitForLoadState('networkidle');
+    const firstRep = page.locator('a[href^="/dashboard/users/"]').first();
+    await firstRep.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstRep.click();
+    await page.waitForURL('**/dashboard/users/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(600);
+    const m = await page.evaluate(() => {
+      const container = document.querySelector('.max-w-6xl') as HTMLElement | null;
+      const table = Array.from(document.querySelectorAll('table')).find((t) => t.textContent?.includes('Customer / Notes'));
+      const th1 = table?.querySelector('thead th') as HTMLElement | null;
+      // Skip the empty-state placeholder row (colSpan=6) — comparing the
+      // header to it would false-pass the alignment check (Codex review).
+      const td1 = table?.querySelector('tbody td:not([colspan])') as HTMLElement | null;
+      return {
+        containerWidth: container?.getBoundingClientRect().width ?? 0,
+        // null when there are no real data rows — skip the assertion then.
+        colAligned: th1 && td1 ? Math.abs(th1.getBoundingClientRect().x - td1.getBoundingClientRect().x) < 2 : null,
+      };
+    });
+    expect(m.containerWidth).toBeGreaterThan(0);
+    expect(m.containerWidth).toBeLessThanOrEqual(1152);
+    if (m.colAligned !== null) expect(m.colAligned).toBe(true);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

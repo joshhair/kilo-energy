@@ -967,7 +967,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const initials = rep.name.split(' ').map((n) => n[0]).join('');
 
   return (
-    <div className="p-4 md:p-8 animate-fade-in-up">
+    /* max-w-6xl matches the projects detail page — without it the grid's 1fr
+       column stretched unbounded on wide windows while content stayed left,
+       reading as "squished with a void on the right" (Josh feedback 2026-06-10). */
+    <div className="p-4 md:p-8 animate-fade-in-up max-w-6xl">
       {/* Breadcrumb */}
       <nav className="animate-breadcrumb-enter flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6">
         <Link href="/dashboard" className="hover:text-[var(--text-secondary)] transition-colors">Dashboard</Link>
@@ -979,7 +982,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Two-column layout at xl+ */}
       <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8 xl:items-start">
-        {/* LEFT: sticky sidebar */}
+        {/* LEFT: sticky sidebar. max-h + overflow-y-auto stay (Codex review:
+            on short xl viewports or trainer-card-heavy reps the column can
+            exceed the viewport, and an uncapped sticky pins its bottom out of
+            reach) — overflow-y-auto only renders a scrollbar when content
+            actually exceeds. The "squished side column" feel came from the
+            missing page max-width, fixed above. */}
         <div className="xl:sticky xl:top-6 xl:self-start xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
           <div className="xl:flex xl:flex-col xl:gap-6">
 
@@ -1466,9 +1474,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
             </tr>
           </thead>
           <tbody>
+            {/* Hover accent lives on the FIRST TD, not a tr::before: Chromium
+                wraps a table-row pseudo-element in an anonymous CELL, which
+                under table-fixed swallows the entire first column (every body
+                cell shifted one slot right, Date collapsed to 0px — the
+                "squished" Payment History in Josh's 2026-06-10 report). Auto
+                tables hide the same quirk because the anonymous cell sizes
+                to ~0. */}
             {pagedPayroll.map((entry, i) => (
-              <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center`}>
-                <td className="px-5 py-3 text-[var(--text-primary)]">
+              <tr key={entry.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} group border-b border-[var(--border-subtle)]/50 even:bg-[var(--surface-card)]/20 hover:bg-[var(--accent-emerald-solid)]/[0.03] transition-colors duration-150`}>
+                <td className="relative px-5 py-3 text-[var(--text-primary)] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-[var(--accent-emerald-solid)] before:rounded-full before:scale-y-0 group-hover:before:scale-y-100 before:transition-transform before:duration-200 before:origin-center">
                   {entry.customerName || entry.notes || '—'}
                 </td>
                 <td className="px-5 py-3">
