@@ -241,7 +241,8 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                         aria-label={`Remove ${name}`}
                         className="shrink-0 flex items-center justify-center active:opacity-60 transition-opacity"
                         style={{
-                          width: 32, height: 32, borderRadius: 8,
+                          // 44px tap target (T2.5 a11y; was 32px)
+                          width: 44, height: 44, borderRadius: 8,
                           color: 'var(--text-dim)',
                           background: 'transparent',
                         }}

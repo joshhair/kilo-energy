@@ -26,8 +26,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch zoom re-enabled (T2.5 a11y): maximumScale:1 + userScalable:false
+  // locked low-vision users out of zooming the whole app. iOS auto-zoom on
+  // input focus (the usual reason apps disable zoom) is prevented instead by
+  // the ≥16px mobile form-control font floor in globals.css.
+  maximumScale: 5,
   viewportFit: 'cover',
   themeColor: '#03060c',
 };
