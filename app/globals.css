@@ -599,7 +599,11 @@ body {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* end at `none` (not translateY(0)) so the settled wrapper does NOT create
+       a CSS containing block — otherwise every in-page position:fixed descendant
+       resolves to this wrapper instead of the viewport (T1.8). Identity
+       interpolation keeps the slide identical. */
+    transform: none;
   }
 }
 
@@ -622,7 +626,8 @@ body {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* end at `none` so the settled wrapper creates no containing block (T1.8). */
+    transform: none;
   }
 }
 
@@ -699,7 +704,8 @@ body {
 
 @keyframes settings-section-enter {
   from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  /* end at `none` so the settled wrapper creates no containing block (T1.8). */
+  to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-enter {
   animation: settings-section-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -710,19 +716,18 @@ body {
 
 @keyframes settings-section-fwd {
   from { opacity: 0; transform: translateX(16px) translateY(4px); }
-  to   { opacity: 1; transform: translateX(0) translateY(0); }
+  /* end at `none`; drop persistent will-change — both create a containing block (T1.8). */
+  to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-fwd {
   animation: settings-section-fwd 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
 }
 @keyframes settings-section-back {
   from { opacity: 0; transform: translateX(-16px) translateY(4px); }
-  to   { opacity: 1; transform: translateX(0) translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 .animate-settings-section-back {
   animation: settings-section-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-settings-section-fwd,
@@ -825,7 +830,8 @@ body {
 
 @keyframes viewEnter {
   from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  /* end at `none` so the settled wrapper creates no containing block (T1.8). */
+  to   { opacity: 1; transform: none; }
 }
 .animate-view-enter,
 .animate-tab-enter {
@@ -1500,11 +1506,13 @@ select {
 
 @keyframes deal-step-enter-fwd {
   from { opacity: 0; transform: translateX(20px) scale(0.97); }
-  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+  /* end at `none` so the settled wrapper creates no containing block (T1.8) —
+     this wraps MobileNewDeal steps incl. their fixed CTA bars/pill. */
+  to   { opacity: 1; transform: none; }
 }
 @keyframes deal-step-enter-back {
   from { opacity: 0; transform: translateX(-20px) scale(0.97); }
-  to   { opacity: 1; transform: translateX(0)     scale(1);    }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes deal-title-enter {
   from { opacity: 0; transform: translateY(4px); }
@@ -1514,8 +1522,10 @@ select {
   .deal-step-enter-fwd,
   .deal-step-enter-back { animation: none !important; opacity: 1 !important; }
 }
-.deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
-.deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; }
+/* No persistent will-change: a settled one-shot enter doesn't need the hint, and
+   `will-change: transform` itself creates a containing block for fixed children (T1.8). */
+.deal-step-enter-fwd  { animation: deal-step-enter-fwd  280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.deal-step-enter-back { animation: deal-step-enter-back 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes deal-step-exit-fwd {
   from { opacity: 1; transform: translateX(0); }
   to   { opacity: 0; transform: translateX(-18px); }
@@ -1864,11 +1874,12 @@ select {
 /* Project detail page forward-slide entrance — used in MobileProjectDetail.tsx */
 @keyframes mobileSlideIn {
   from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  /* end at `none`; drop persistent will-change. This wraps the whole
+     MobileProjectDetail page incl. its fixed bottom bar + modal (T1.8). */
+  to   { opacity: 1; transform: none; }
 }
 .animate-mobile-slide-in {
   animation: mobileSlideIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-mobile-slide-in { animation: none; }

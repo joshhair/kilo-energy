@@ -74,9 +74,12 @@ const NAV: NavGroup[] = [
 // unmount the instant handleBack() fired.
 
 const SETTINGS_KEYFRAMES = `
-  @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  /* enter keyframes end at transform:none so the settled wrapper creates no CSS
+     containing block — otherwise the fixed settings sheet/bulk bar inside resolves
+     to this wrapper instead of the viewport (T1.8). Identity interpolation keeps the slide. */
+  @keyframes ms-slide-in   { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes ms-slide-out  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: 0; } }
-  @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes ms-slide-back { from { transform: translateX(-20px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes ms-nav-item-in { from { transform: translateX(14px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes bs-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
   @keyframes bs-down { from { transform: translateY(0);    } to { transform: translateY(100%); } }

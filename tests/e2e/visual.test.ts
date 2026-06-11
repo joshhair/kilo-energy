@@ -161,6 +161,105 @@ test.describe('Deep-link redirect (T1.2)', () => {
   }
 });
 
+// T1.8 — Runtime ancestor-walk guard. After the page-enter animation settles,
+// EVERY visible position:fixed element must resolve to the viewport — i.e. none
+// of its ancestors may create a CSS containing block (computed transform!=none,
+// filter!=none, perspective!=none, backdrop-filter!=none, will-change naming
+// transform/filter/perspective, or contain: layout/paint/strict/content). This
+// catches the symptom regardless of cause: a new wrapper animation, a stray
+// will-change, a `contain` added for perf — anything that would silently push a
+// fixed CTA/pill/FAB/toolbar/modal footer-style instead of pinning it.
+//
+// Rides both authed projects (visual-desktop 1440×900 + visual-mobile 393×852)
+// so the archetypes are covered on each viewport. Pure structural assertion —
+// no screenshot/baseline, so no baseline churn.
+type FixedOffender = { fixed: string; ancestor: string; reasons: string[] };
+
+async function findFixedContainingBlockOffenders(page: Page): Promise<FixedOffender[]> {
+  // Let the page-enter / section-enter animation finish so we read the SETTLED
+  // computed styles (the fix ends those keyframes at transform:none).
+  await page.waitForTimeout(700);
+  return page.evaluate(() => {
+    const describe = (el: Element): string => {
+      const e = el as HTMLElement;
+      const id = e.id ? `#${e.id}` : '';
+      const cls = typeof e.className === 'string' && e.className
+        ? '.' + e.className.trim().split(/\s+/).slice(0, 3).join('.')
+        : '';
+      const txt = (e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30);
+      return `${e.tagName.toLowerCase()}${id}${cls}${txt ? ` "${txt}"` : ''}`;
+    };
+    // Reasons an ancestor would establish a containing block for fixed descendants.
+    const cbReasons = (cs: CSSStyleDeclaration): string[] => {
+      const r: string[] = [];
+      if (cs.transform && cs.transform !== 'none') r.push(`transform:${cs.transform}`);
+      if (cs.filter && cs.filter !== 'none') r.push(`filter:${cs.filter}`);
+      if (cs.perspective && cs.perspective !== 'none') r.push(`perspective:${cs.perspective}`);
+      const bf = (cs as unknown as { backdropFilter?: string }).backdropFilter;
+      if (bf && bf !== 'none') r.push(`backdrop-filter:${bf}`);
+      if (/transform|filter|perspective/.test(cs.willChange || '')) r.push(`will-change:${cs.willChange}`);
+      if (/\b(layout|paint|strict|content)\b/.test(cs.contain || '')) r.push(`contain:${cs.contain}`);
+      return r;
+    };
+    const isVisible = (el: Element): boolean => {
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0) return false;
+      const rect = (el as HTMLElement).getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+    const out: FixedOffender[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('*'))) {
+      if (getComputedStyle(el).position !== 'fixed' || !isVisible(el)) continue;
+      let anc = el.parentElement;
+      while (anc && anc !== document.documentElement && anc !== document.body) {
+        const reasons = cbReasons(getComputedStyle(anc));
+        if (reasons.length) out.push({ fixed: describe(el), ancestor: describe(anc), reasons });
+        anc = anc.parentElement;
+      }
+    }
+    return out;
+  });
+}
+
+test.describe('Fixed-positioning containing-block guard (T1.8)', () => {
+  // ID-free routes only (the desktop/mobile list + entry surfaces). Project
+  // Detail is reached by clicking the first card so its fixed bottom bar is
+  // covered without a seeded fixture ID.
+  const ROUTES = ['/dashboard', '/dashboard/projects', '/dashboard/payroll', '/dashboard/new-deal'];
+  for (const route of ROUTES) {
+    test(`no fixed element trapped in a containing block on ${route}`, async ({ page }) => {
+      await page.goto(route);
+      await page.waitForLoadState('networkidle');
+      const offenders = await findFixedContainingBlockOffenders(page);
+      expect(
+        offenders,
+        `position:fixed elements trapped in a containing block:\n${JSON.stringify(offenders, null, 2)}`,
+      ).toEqual([]);
+    });
+  }
+
+  test('no fixed element trapped on mobile Project Detail (bottom bar)', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile Project Detail bottom bar is the mobile-only surface');
+    await page.goto('/dashboard/projects');
+    await page.waitForLoadState('networkidle');
+    // Open the first project card to render MobileProjectDetail + its fixed bar.
+    // Mobile rows are MobileCard <button>s (router.push), NOT <a href> links, so
+    // target the card button (it carries the list's `animate-card-enter` class)
+    // and ASSERT we actually reached a detail URL — otherwise the guard would
+    // silently run on the list page and never exercise the fixed bottom bar.
+    const firstCard = page.locator('button.animate-card-enter').first();
+    await firstCard.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstCard.click();
+    await page.waitForURL('**/dashboard/projects/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    const offenders = await findFixedContainingBlockOffenders(page);
+    expect(
+      offenders,
+      `position:fixed elements trapped in a containing block:\n${JSON.stringify(offenders, null, 2)}`,
+    ).toEqual([]);
+  });
+});
+
 test.describe('Visual regression — mobile safety surfaces', () => {
   // T1.8 — New Deal fixed bottom CTA must be VIEWPORT-pinned (portaled out of
   // the transformed step wrapper), not anchored to the wrapper. Asserts it's a
