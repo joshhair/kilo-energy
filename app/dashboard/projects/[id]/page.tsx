@@ -19,9 +19,10 @@ import { applyCloserTrainerDeduction } from '../../../../lib/closer-trainer-dedu
 import { computeProjectedTrainerLegs } from '../../../../lib/trainer-projection';
 import { myCommissionOnProject } from '../../../../lib/commissionHelpers';
 import { formatDate } from '../../../../lib/utils';
-import { Flag, FlagOff, AlertTriangle, X, Pencil, Plus, ChevronLeft, ChevronRight, Copy, Trash2 } from 'lucide-react';
+import { Flag, FlagOff, AlertTriangle, X, Pencil, Plus, ChevronLeft, ChevronRight, Copy, Trash2, MoreVertical } from 'lucide-react';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import RowActionsMenu from '../../components/RowActionsMenu';
 import ProjectChatter from '../../components/ProjectChatter';
 import { CoPartySection, type CoPartyDraft } from '../components/CoPartySection';
 import { evenSplit } from '../../../../lib/commission-split';
@@ -862,21 +863,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Link>
             )}
-            {project.phase !== 'Cancelled' && (
-              <button
-                onClick={handleCancel}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
-              >
-                Cancel
-              </button>
-            )}
-            {!isPM && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-red-500/30 text-[var(--accent-red-text)] hover:bg-[var(--accent-red-soft)] transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
+            {/* T1.6 — destructive actions live behind the "More" menu, visually
+                separated from the benign Edit/Flag/Duplicate browse strip. The
+                existing gates are unchanged (Cancel → reason modal, Delete →
+                ConfirmDialog). */}
+            {(project.phase !== 'Cancelled' || !isPM) && (
+              <RowActionsMenu
+                ariaLabel="More project actions"
+                trigger={{
+                  className: 'flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors',
+                  children: <><MoreVertical className="w-3.5 h-3.5" /> More</>,
+                }}
+                actions={[
+                  ...(project.phase !== 'Cancelled' ? [{
+                    label: 'Cancel Project',
+                    danger: true,
+                    onSelect: handleCancel,
+                  }] : []),
+                  ...(!isPM ? [{
+                    label: 'Delete Project',
+                    icon: Trash2,
+                    danger: true,
+                    onSelect: () => setShowDeleteConfirm(true),
+                  }] : []),
+                ]}
+              />
             )}
           </div>
         ) : (
@@ -890,12 +901,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </Link>
             )}
             {(effectiveRepId === project.repId) && project.phase !== 'Cancelled' && (
-              <button
-                onClick={handleCancel}
-                className="bg-[var(--accent-red-soft)] hover:bg-[var(--accent-red-soft)] border border-red-500/30 text-[var(--accent-red-text)] text-sm px-4 py-2 min-h-[44px] w-full md:w-auto rounded-xl transition-colors"
-              >
-                Cancel Project
-              </button>
+              <RowActionsMenu
+                ariaLabel="More project actions"
+                trigger={{
+                  className: 'flex items-center justify-center gap-1.5 text-sm px-3 py-1.5 min-h-[44px] w-full md:w-auto rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-card)] transition-colors',
+                  children: <><MoreVertical className="w-3.5 h-3.5" /> More</>,
+                }}
+                actions={[{
+                  label: 'Cancel Project',
+                  danger: true,
+                  onSelect: handleCancel,
+                }]}
+              />
             )}
           </div>
         )}

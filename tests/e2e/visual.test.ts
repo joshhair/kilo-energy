@@ -407,6 +407,34 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     expect(b2!.y + b2!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   });
 
+  // T1.6 — Project Detail destructive actions (Cancel/Delete) live behind the
+  // header "More" menu, separated from the benign Edit/Flag/Duplicate strip.
+  // The existing gates stay intact (Delete → ConfirmDialog). Reaches a project
+  // generically via the first list link so it works on any environment.
+  test('desktop Project Detail — destructive actions behind More menu, gates intact', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop-only surface (mobile uses its own bottom-bar sheets)');
+    await page.goto('/dashboard/projects');
+    await page.waitForLoadState('networkidle');
+    const firstProject = page.locator('a[href^="/dashboard/projects/"]').first();
+    await firstProject.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstProject.click();
+    await page.waitForURL('**/dashboard/projects/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    // No inline destructive buttons in the header strip.
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
+    // They live behind "More", danger-styled, one deliberate click deeper.
+    await page.getByRole('button', { name: 'More project actions' }).click();
+    await page.getByRole('menu').waitFor({ state: 'visible' });
+    await expect(page.getByRole('menuitem', { name: 'Cancel Project' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Delete Project' })).toBeVisible();
+    // Delete still lands on the ConfirmDialog gate; cancel out without mutating.
+    await page.getByRole('menuitem', { name: 'Delete Project' }).click();
+    await page.getByRole('dialog').waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

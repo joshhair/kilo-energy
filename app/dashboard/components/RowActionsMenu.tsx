@@ -5,23 +5,30 @@ import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 
 /**
- * T1.5 — per-row "⋯" overflow menu for the Users list rows.
+ * T1.5/T1.6 — "⋯" overflow menu separating destructive actions from browsing.
  *
- * Manage actions (convert role, deactivate) used to render as always-visible
- * icon buttons at the row edge, directly beside the row's navigation target —
- * a mis-tap hazard on a row that is itself one big <Link>. This menu separates
- * browsing from committing: one neutral kebab per row; the actions live one
- * deliberate click deeper and still hand off to the page's ConfirmDialog flows.
+ * Destructive/manage actions (convert role, deactivate, cancel, delete) used
+ * to render as always-visible buttons directly beside navigation targets and
+ * benign actions — a mis-tap hazard. This menu separates browsing from
+ * committing: one neutral kebab trigger; the actions live one deliberate
+ * click deeper and still hand off to the caller's ConfirmDialog flows. Used
+ * on the Users list rows (T1.5) and the Project Detail header (T1.6).
  *
  * The dropdown renders via createPortal to <body> with position:fixed, so it
  * can't be clipped by row overflow and isn't affected by any animated wrapper
  * (T1.8). It opens downward, flipping upward when the trigger sits within
- * ~150px of the viewport bottom. Closes on outside press, Escape, scroll, or
- * resize (scroll would desync a fixed-positioned menu from its trigger).
+ * ~150px of the viewport bottom. Closes on outside press, Escape, resize, or
+ * a scroll that actually MOVES the trigger (scroll events arrive async — a
+ * pre-open scroll-into-view lands a frame after mount, so closing on every
+ * scroll event would instantly self-close the menu).
+ *
+ * `trigger` customizes the kebab (e.g. a labeled header button); the default
+ * is the compact w-7 icon used on list rows.
  */
 export default function RowActionsMenu({
   ariaLabel,
   actions,
+  trigger,
 }: {
   ariaLabel: string;
   actions: {
@@ -30,6 +37,7 @@ export default function RowActionsMenu({
     danger?: boolean;
     onSelect: () => void;
   }[];
+  trigger?: { className: string; children: React.ReactNode };
 }) {
   const [pos, setPos] = useState<{ top: number; right: number; up: boolean } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -102,9 +110,9 @@ export default function RowActionsMenu({
         aria-label={ariaLabel}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[color-mix(in_srgb,var(--text-primary)_8%,transparent)] transition-colors"
+        className={trigger?.className ?? 'hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[color-mix(in_srgb,var(--text-primary)_8%,transparent)] transition-colors'}
       >
-        <MoreVertical className="w-3.5 h-3.5" />
+        {trigger?.children ?? <MoreVertical className="w-3.5 h-3.5" />}
       </button>
       {open &&
         createPortal(

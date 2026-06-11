@@ -15,7 +15,7 @@ import { useToast } from '../../../lib/toast';
 import { SegmentedPills } from '../../../components/ui';
 import { GradCard } from './components/GradCard';
 import { InactiveExpander } from './components/InactiveExpander';
-import RowActionsMenu from './components/RowActionsMenu';
+import RowActionsMenu from '../components/RowActionsMenu';
 import { RepsSkeleton } from './components/RepsSkeleton';
 import { TopPerformersPodium } from './components/TopPerformersPodium';
 
