@@ -50,6 +50,7 @@ export const PROTECTED_FILES = [
   'app/dashboard/new-deal/page.tsx',
   'app/dashboard/mobile/MobileNewDeal.tsx',
   'app/dashboard/projects/[id]/page.tsx',
+  'app/dashboard/projects/components/detail/EditProjectModal.tsx',
   'app/dashboard/mobile/MobileProjectDetail.tsx',
 ];
 
