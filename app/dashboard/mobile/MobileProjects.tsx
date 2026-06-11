@@ -311,12 +311,17 @@ export default function MobileProjects() {
           Shown as compact selects side-by-side to keep vertical space tight
           on phone. Installer select only renders when there's more than one
           to choose from. */}
+      {/* min-w-0 on both selects: a select's min-content width is its longest
+          OPTION text, so two flex-1 selects refused to shrink and the sort
+          control clipped off the right edge at 393px ("Newest* is almost off
+          the screen", Josh feedback 2026-06-09). min-w-0 lets flexbox split
+          the row evenly; the native control ellipsizes its own label. */}
       <div className="flex gap-2">
         {installers.length > 1 && (
           <select
             value={installerFilter}
             onChange={(e) => setInstallerFilter(e.target.value)}
-            className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
+            className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
             style={{
               background: 'var(--surface-card)',
               border: '1px solid var(--border-subtle)',
@@ -330,7 +335,7 @@ export default function MobileProjects() {
         <select
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="flex-1 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
+          className="flex-1 min-w-0 min-h-[44px] rounded-xl px-3 text-sm text-[var(--text-primary)] outline-none appearance-none"
           style={{
             background: 'var(--surface-card)',
             border: '1px solid var(--border-subtle)',

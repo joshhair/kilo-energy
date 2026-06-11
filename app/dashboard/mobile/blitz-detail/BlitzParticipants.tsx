@@ -207,35 +207,33 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                   </div>
                 )}
 
-                {/* Attendance pills + Remove on one row — compact, no
-                    equal-width flex (label-driven width), single-line.
-                    Active pill uses emerald soft-tint to read as a
-                    selection without the chunky filled-button look. */}
+                {/* Attendance select + Remove on one row. Was three pill
+                    buttons in a flex-wrap — at 393px they wrapped raggedly
+                    next to the trash icon ("bubbles are odd", Josh feedback
+                    2026-06-11). A single native select can't wrap, matches
+                    the desktop table's attendance control, and the empty
+                    option replicates tap-to-clear. */}
                 {(showAttendance || (canManage && !isOwner && p.joinStatus !== 'pending')) && (
                   <div className="flex items-center justify-between gap-2 mt-3">
                     {showAttendance ? (
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {(['attended', 'partial', 'no-show'] as const).map((s) => {
-                          const active = (p.attendanceStatus ?? '') === s;
-                          return (
-                            <button
-                              key={s}
-                              disabled={updatingAttendance.has(p.user.id)}
-                              onClick={() => handleAttendance(p.user.id, active ? null : s)}
-                              className="whitespace-nowrap text-xs font-semibold rounded-full transition-colors disabled:opacity-40"
-                              style={{
-                                padding: '6px 12px',
-                                color: active ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
-                                background: active ? 'var(--accent-emerald-soft)' : 'transparent',
-                                border: `1px solid ${active ? 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)' : 'var(--border-subtle)'}`,
-                                fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
-                              }}
-                            >
-                              {s === 'no-show' ? 'No-show' : s.charAt(0).toUpperCase() + s.slice(1)}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <select
+                        value={p.attendanceStatus ?? ''}
+                        disabled={updatingAttendance.has(p.user.id)}
+                        onChange={(e) => handleAttendance(p.user.id, e.target.value === '' ? null : (e.target.value as 'attended' | 'partial' | 'no-show'))}
+                        aria-label={`Attendance for ${name}`}
+                        className="flex-1 min-w-0 min-h-[40px] rounded-xl px-3 text-xs font-semibold outline-none appearance-none disabled:opacity-40"
+                        style={{
+                          color: p.attendanceStatus ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
+                          background: p.attendanceStatus ? 'var(--accent-emerald-soft)' : 'transparent',
+                          border: `1px solid ${p.attendanceStatus ? 'color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)' : 'var(--border-subtle)'}`,
+                          fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
+                        }}
+                      >
+                        <option value="">Attendance: not marked</option>
+                        <option value="attended">Attended</option>
+                        <option value="partial">Partial</option>
+                        <option value="no-show">No-show</option>
+                      </select>
                     ) : <span />}
                     {canManage && !isOwner && p.joinStatus !== 'pending' && (
                       <button

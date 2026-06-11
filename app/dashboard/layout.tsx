@@ -866,7 +866,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Eye className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent-amber-text)' }} />
-                <span className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
+                {/* line-clamp-2 (not truncate): the banner identity must stay
+                    readable on 393px — "My Rep View …" was ellipsizing
+                    (Josh feedback 2026-06-08). */}
+                <span className="text-sm line-clamp-2 break-words" style={{ color: 'var(--text-secondary)' }}>
                   {isSelfView
                     ? <>My Rep View <span style={{ color: 'var(--text-muted)' }}>— same as any rep sees</span></>
                     : <>Viewing as <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{viewAsUser.name}</span> <span style={{ color: 'var(--text-muted)' }}>({roleLabel})</span></>

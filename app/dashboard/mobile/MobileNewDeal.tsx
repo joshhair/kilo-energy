@@ -1948,7 +1948,7 @@ export default function MobileNewDeal() {
                 <div className="space-y-2 text-base">
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Customer</span>
-                    <span className="text-[var(--text-primary)] font-medium text-right truncate ml-4">{form.customerName || '---'}</span>
+                    <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{form.customerName || '---'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-base" style={{ color: 'var(--text-muted)' }}>Sold Date</span>
@@ -1957,13 +1957,13 @@ export default function MobileNewDeal() {
                   {effectiveRole === 'admin' && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--text-muted)' }}>Closer</span>
-                      <span className="text-[var(--text-primary)] font-medium truncate ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
+                      <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{reps.find((r) => r.id === form.repId)?.name || '---'}</span>
                     </div>
                   )}
                   {form.setterId && (
                     <div className="flex justify-between">
                       <span className="text-base" style={{ color: 'var(--text-muted)' }}>Setter</span>
-                      <span className="text-[var(--text-primary)] font-medium truncate ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
+                      <span className="text-[var(--text-primary)] font-medium text-right line-clamp-2 break-words ml-4">{reps.find((r) => r.id === form.setterId)?.name || '---'}</span>
                     </div>
                   )}
                 </div>
