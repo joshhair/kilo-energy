@@ -9,6 +9,7 @@ import { sendEmail } from '../../../lib/email-helpers';
 import { renderFeedbackEmail } from '../../../lib/email-templates/feedback';
 import { buildBlobKey } from '../../../lib/file-uploads';
 import { logger, errorContext } from '../../../lib/logger';
+import { postFeedbackToSlack } from '../../../lib/slack-feedback';
 
 // Fixed recipient — operational queue lands in Josh's Gmail where filters
 // route to the `kilo/feedback` label for triage. Not configurable via env
@@ -150,6 +151,29 @@ export async function POST(req: NextRequest) {
       feedbackId: created.id,
       error: err instanceof Error ? err.message : String(err),
     });
+  }
+
+  const feedbackSlackWebhookUrl = process.env.FEEDBACK_SLACK_WEBHOOK_URL?.trim();
+  if (feedbackSlackWebhookUrl) {
+    const result = await postFeedbackToSlack(feedbackSlackWebhookUrl, {
+      id: created.id,
+      userName,
+      userEmail: profile?.email ?? user.email,
+      userRole,
+      url: body.url ?? null,
+      message: body.message,
+      userAgent,
+      createdAt: created.createdAt.toISOString(),
+      screenshotUrl,
+    });
+
+    if (!result.ok) {
+      logger.warn('feedback_slack_post_failed', {
+        feedbackId: created.id,
+        status: result.status,
+        error: result.error,
+      });
+    }
   }
 
   return NextResponse.json(
