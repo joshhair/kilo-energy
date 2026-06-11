@@ -64,7 +64,23 @@ export default defineConfig({
     {
       name: 'chromium-anon',
       testMatch: [/smoke\.test\.ts/],
+      testIgnore: [/role-smoke\.test\.ts/],
       use: { browserName: 'chromium' },
+    },
+    // Per-role authenticated mobile smoke (T4.4) — every nav route per
+    // seeded role at the phone viewport. Storage states come from `setup`;
+    // the per-role state is applied via test.use inside the spec.
+    {
+      name: 'role-smoke',
+      dependencies: ['setup'],
+      testMatch: [/role-smoke\.test\.ts/],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 393, height: 852 },
+        isMobile: true,
+        hasTouch: true,
+        userAgent: devices['iPhone 14 Pro'].userAgent,
+      },
     },
     // a11y guardrail: runs axe-core against key surfaces. The test file
     // handles its own auth via `test.use({ storageState })` inside the

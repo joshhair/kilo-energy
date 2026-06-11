@@ -124,3 +124,6 @@ state/staging.db
 /db
 /db-wal
 /db-shm
+
+# Playwright run output — regenerated every run, never versioned
+test-results/
