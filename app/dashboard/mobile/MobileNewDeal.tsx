@@ -658,6 +658,19 @@ export default function MobileNewDeal() {
     return () => { if (pillExitTimerRef.current) clearTimeout(pillExitTimerRef.current); };
   }, [currentStep, showPreview]);
 
+  // Publish the bottom-stack height so the global feedback bubble clears the
+  // CTA bar (+ commission pill when lifted) — it was overlapping the bar's
+  // corner (T1.8 leftover, verified live 2026-06-11). The bars' geometry is
+  // already fixed constants in this file (52px button + 24px padding = 76px;
+  // pill lift = 60px), so publishing constants is deterministic — unlike the
+  // earlier clientHeight-at-mount approach this can't race StrictMode or the
+  // portal's first paint. Cleanup resets so other routes fall back to 0.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--kilo-cta-h', pillActive ? '136px' : '76px');
+    return () => { root.style.setProperty('--kilo-cta-h', '0px'); };
+  }, [pillActive]);
+
   useEffect(() => {
     if (closerTotal !== prevCloserTotalRef.current && (closerTotal > 0 || prevCloserTotalRef.current > 0)) {
       prevCloserTotalRef.current = closerTotal;

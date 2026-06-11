@@ -540,6 +540,31 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     if (m.colAligned !== null) expect(m.colAligned).toBe(true);
   });
 
+  // T1.8 leftover closed 2026-06-11 — the feedback bubble sat ON the New Deal
+  // CTA bar: MobileNewDeal published --kilo-cta-h but the desktop page's dead
+  // commission bar (md:hidden AND behind the early mobile return) ran a
+  // publisher whose disabled branch zeroed the var after the child set it.
+  test('mobile New Deal — feedback bubble clears the CTA bar', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile bottom stack');
+    await page.goto('/dashboard/new-deal');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(900);
+    const m = await page.evaluate(() => {
+      const bubble = document.querySelector('button[aria-label="Send feedback"]');
+      const next = Array.from(document.querySelectorAll('button')).find((b) => /^Next/.test(b.textContent || ''));
+      // Walk up to the position:fixed CTA BAR (not the inner flex row) — the
+      // bar's padded/background area is what the bubble must clear (Codex).
+      let bar: HTMLElement | null = next ? (next.parentElement as HTMLElement) : null;
+      while (bar && getComputedStyle(bar).position !== 'fixed') bar = bar.parentElement;
+      if (!bubble || !bar) return null;
+      const b = bubble.getBoundingClientRect();
+      const c = bar.getBoundingClientRect();
+      return !(b.right < c.left || b.left > c.right || b.bottom < c.top || b.top > c.bottom);
+    });
+    expect(m, 'bubble or CTA bar not found').not.toBeNull();
+    expect(m).toBe(false);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

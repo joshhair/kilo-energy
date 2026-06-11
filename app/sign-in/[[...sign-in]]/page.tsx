@@ -109,8 +109,13 @@ export default function SignInPage() {
             extra 8px each side was enough to squish Clerk's form (which has
             its own internal padding). Dropping it on mobile lets the
             widget breathe without losing the glass effect on desktop. */}
+        {/* w-full (not w-fit) below sm: at 393px the fit-width frame let
+            Clerk compress its card — labels wrapped mid-word ("Sign / up"),
+            header split, the whole widget read as jumbled (F9, Josh
+            2026-06-11). Full width + a w-full Clerk rootBox gives the form
+            the entire phone width to lay out. Desktop unchanged (sm:w-fit). */}
         <div
-          className="w-fit max-w-full mx-auto rounded-3xl p-0.5 sm:p-1"
+          className="w-full sm:w-fit max-w-full mx-auto rounded-3xl p-0.5 sm:p-1"
           style={{
             background:
               'linear-gradient(135deg, rgba(0,229,160,0.18) 0%, var(--accent-cyan-soft) 50%, color-mix(in srgb, var(--text-primary) 4%, transparent) 100%)',
@@ -122,7 +127,21 @@ export default function SignInPage() {
             className="rounded-[22px] p-0 sm:p-1"
             style={{ background: 'rgba(13,21,37,0.75)', backdropFilter: 'blur(10px)' }}
           >
-            <SignIn />
+            <SignIn
+              appearance={{
+                // CSS objects (not classes): Clerk's own stylesheet wins the
+                // specificity fight against appended utility classes, so the
+                // card kept its fixed ~25rem width and the footer row wrapped
+                // mid-word at 393px.
+                elements: {
+                  rootBox: { width: '100%' },
+                  cardBox: { width: '100%', maxWidth: '100%' },
+                  card: { width: '100%', maxWidth: '100%' },
+                  footer: { width: '100%' },
+                  footerAction: { flexWrap: 'nowrap', whiteSpace: 'nowrap' },
+                },
+              }}
+            />
           </div>
         </div>
 

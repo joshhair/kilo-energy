@@ -9,12 +9,30 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { THEME_BOOT_SCRIPT } from '../lib/use-theme';
 
 export const metadata: Metadata = {
+  // Absolute base for OG/twitter image URLs — link previews (iMessage, Slack,
+  // social) require fully-qualified URLs (F8, Josh 2026-06-11: texting the
+  // app link showed no logo/preview).
+  metadataBase: new URL('https://app.kiloenergies.com'),
   title: 'Kilo Energy',
   description: 'Solar sales commission tracking',
   manifest: '/manifest.json',
   icons: {
     icon: '/icons/icon-192.png',
     apple: '/icons/icon-192.png',
+  },
+  openGraph: {
+    title: 'Kilo Energy',
+    description: 'Solar sales, run on real numbers.',
+    url: 'https://app.kiloenergies.com',
+    siteName: 'Kilo Energy',
+    images: [{ url: '/icons/icon-512.png', width: 512, height: 512, alt: 'Kilo Energy' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Kilo Energy',
+    description: 'Solar sales, run on real numbers.',
+    images: ['/icons/icon-512.png'],
   },
   appleWebApp: {
     capable: true,
