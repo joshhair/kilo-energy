@@ -15,6 +15,7 @@ import { useToast } from '../../../lib/toast';
 import { SegmentedPills } from '../../../components/ui';
 import { GradCard } from './components/GradCard';
 import { InactiveExpander } from './components/InactiveExpander';
+import RowActionsMenu from './components/RowActionsMenu';
 import { RepsSkeleton } from './components/RepsSkeleton';
 import { TopPerformersPodium } from './components/TopPerformersPodium';
 
@@ -929,22 +930,22 @@ function UsersPageInner() {
                         {badge.label}
                       </span>
                       {canManageReps && u.role === 'sub-dealer' && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
-                          title="Convert to Rep"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-emerald-text)] hover:bg-[color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)] transition-colors"
-                        >
-                          <UserCog className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {canManageReps && u.role === 'sub-dealer' && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
-                          title="Deactivate sub-dealer"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <RowActionsMenu
+                          ariaLabel={`Actions for ${u.firstName} ${u.lastName}`}
+                          actions={[
+                            {
+                              label: 'Convert to Rep',
+                              icon: UserCog,
+                              onSelect: () => setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
+                            },
+                            {
+                              label: 'Deactivate sub-dealer',
+                              icon: Trash2,
+                              danger: true,
+                              onSelect: () => setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
+                            },
+                          ]}
+                        />
                       )}
                     </Link>
                   );
@@ -985,17 +986,23 @@ function UsersPageInner() {
                     </Link>
                     <button
                       disabled={reactivatingId === rep.id}
-                      onClick={async () => {
-                        setReactivatingId(rep.id);
-                        try {
-                          await reactivateRep(rep.id);
-                          toast(`${rep.name} reactivated`, 'success');
-                        } catch {
-                          toast('Failed to reactivate rep', 'error');
-                        } finally {
-                          setReactivatingId(null);
-                        }
-                      }}
+                      onClick={() => setConfirmAction({
+                        title: `Reactivate ${rep.name}?`,
+                        message: 'They will regain app access immediately.',
+                        confirmLabel: 'Reactivate',
+                        onConfirm: async () => {
+                          setConfirmAction(null);
+                          setReactivatingId(rep.id);
+                          try {
+                            await reactivateRep(rep.id);
+                            toast(`${rep.name} reactivated`, 'success');
+                          } catch {
+                            toast('Failed to reactivate rep', 'error');
+                          } finally {
+                            setReactivatingId(null);
+                          }
+                        },
+                      })}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
                     >
@@ -1037,17 +1044,23 @@ function UsersPageInner() {
                     </Link>
                     <button
                       disabled={reactivatingSubDealerId === sd.id}
-                      onClick={async () => {
-                        setReactivatingSubDealerId(sd.id);
-                        try {
-                          await reactivateSubDealer(sd.id);
-                          toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
-                        } catch {
-                          toast('Failed to reactivate sub-dealer', 'error');
-                        } finally {
-                          setReactivatingSubDealerId(null);
-                        }
-                      }}
+                      onClick={() => setConfirmAction({
+                        title: `Reactivate ${sd.firstName} ${sd.lastName}?`,
+                        message: 'They will regain app access immediately.',
+                        confirmLabel: 'Reactivate',
+                        onConfirm: async () => {
+                          setConfirmAction(null);
+                          setReactivatingSubDealerId(sd.id);
+                          try {
+                            await reactivateSubDealer(sd.id);
+                            toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                          } catch {
+                            toast('Failed to reactivate sub-dealer', 'error');
+                          } finally {
+                            setReactivatingSubDealerId(null);
+                          }
+                        },
+                      })}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}
                     >
@@ -1089,19 +1102,25 @@ function UsersPageInner() {
                     </Link>
                     <button
                       disabled={reactivatingPmId === u.id}
-                      onClick={async () => {
-                        setReactivatingPmId(u.id);
-                        try {
-                          const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                          if (!res.ok) throw new Error();
-                          setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
-                          toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                        } catch {
-                          toast('Failed to reactivate project manager', 'error');
-                        } finally {
-                          setReactivatingPmId(null);
-                        }
-                      }}
+                      onClick={() => setConfirmAction({
+                        title: `Reactivate ${u.firstName} ${u.lastName}?`,
+                        message: 'They will regain app access immediately.',
+                        confirmLabel: 'Reactivate',
+                        onConfirm: async () => {
+                          setConfirmAction(null);
+                          setReactivatingPmId(u.id);
+                          try {
+                            const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                            if (!res.ok) throw new Error();
+                            setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                            toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                          } catch {
+                            toast('Failed to reactivate project manager', 'error');
+                          } finally {
+                            setReactivatingPmId(null);
+                          }
+                        },
+                      })}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
                     >
@@ -1143,19 +1162,25 @@ function UsersPageInner() {
                     </Link>
                     <button
                       disabled={reactivatingAdminId === u.id}
-                      onClick={async () => {
-                        setReactivatingAdminId(u.id);
-                        try {
-                          const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                          if (!res.ok) throw new Error();
-                          setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
-                          toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                        } catch {
-                          toast('Failed to reactivate admin', 'error');
-                        } finally {
-                          setReactivatingAdminId(null);
-                        }
-                      }}
+                      onClick={() => setConfirmAction({
+                        title: `Reactivate ${u.firstName} ${u.lastName}?`,
+                        message: 'They will regain app access immediately.',
+                        confirmLabel: 'Reactivate',
+                        onConfirm: async () => {
+                          setConfirmAction(null);
+                          setReactivatingAdminId(u.id);
+                          try {
+                            const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                            if (!res.ok) throw new Error();
+                            setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                            toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                          } catch {
+                            toast('Failed to reactivate admin', 'error');
+                          } finally {
+                            setReactivatingAdminId(null);
+                          }
+                        },
+                      })}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
                     >
@@ -1636,22 +1661,22 @@ function UsersPageInner() {
 
                   <ChevronRight className="hidden md:block w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)] transition-colors" />
                   {canManageReps && (
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Convert ${rep.name} to Sub-Dealer?`, message: `${rep.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(rep.id, 'sub-dealer'); toast(`${rep.name} converted to Sub-Dealer`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
-                      title="Convert to Sub-Dealer"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-purple-text)] hover:bg-[var(--accent-purple-soft)] transition-colors"
-                    >
-                      <UserCog className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {canManageReps && (
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }); }}
-                      title="Deactivate rep"
-                      className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <RowActionsMenu
+                      ariaLabel={`Actions for ${rep.name}`}
+                      actions={[
+                        {
+                          label: 'Convert to Sub-Dealer',
+                          icon: UserCog,
+                          onSelect: () => setConfirmAction({ title: `Convert ${rep.name} to Sub-Dealer?`, message: `${rep.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(rep.id, 'sub-dealer'); toast(`${rep.name} converted to Sub-Dealer`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
+                        },
+                        {
+                          label: 'Deactivate rep',
+                          icon: Trash2,
+                          danger: true,
+                          onSelect: () => setConfirmAction({ title: `Deactivate ${rep.name}?`, message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateRep(rep.id); toast(`${rep.name} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
+                        },
+                      ]}
+                    />
                   )}
                 </div>
               </div>
@@ -1727,17 +1752,23 @@ function UsersPageInner() {
                 </Link>
                 <button
                   disabled={reactivatingId === rep.id}
-                  onClick={async () => {
-                    setReactivatingId(rep.id);
-                    try {
-                      await reactivateRep(rep.id);
-                      toast(`${rep.name} reactivated`, 'success');
-                    } catch {
-                      toast('Failed to reactivate rep', 'error');
-                    } finally {
-                      setReactivatingId(null);
-                    }
-                  }}
+                  onClick={() => setConfirmAction({
+                    title: `Reactivate ${rep.name}?`,
+                    message: 'They will regain app access immediately.',
+                    confirmLabel: 'Reactivate',
+                    onConfirm: async () => {
+                      setConfirmAction(null);
+                      setReactivatingId(rep.id);
+                      try {
+                        await reactivateRep(rep.id);
+                        toast(`${rep.name} reactivated`, 'success');
+                      } catch {
+                        toast('Failed to reactivate rep', 'error');
+                      } finally {
+                        setReactivatingId(null);
+                      }
+                    },
+                  })}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
                 >

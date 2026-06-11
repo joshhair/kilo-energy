@@ -75,6 +75,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   // Trainer assignment picker state
   const [showTrainerPicker, setShowTrainerPicker] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [confirmReactivate, setConfirmReactivate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Commission-by-Role drill-down — admin-only slide-over that lists the
   // PayrollEntries making up a total when the amount cell is clicked.
@@ -763,7 +764,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               {/* Deactivate / Reactivate */}
               {isInactive ? (
                 <button
-                  onClick={handleReactivate}
+                  onClick={() => setConfirmReactivate(true)}
                   disabled={isReactivating}
                   className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
@@ -851,6 +852,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           title="Deactivate user"
           message={`Deactivate ${displayName}? This will lock them out of Clerk and revoke any pending invitation.`}
           confirmLabel="Deactivate"
+          danger
+        />
+
+        <ConfirmDialog
+          open={confirmReactivate}
+          onClose={() => setConfirmReactivate(false)}
+          onConfirm={() => { setConfirmReactivate(false); handleReactivate(); }}
+          title="Reactivate user"
+          message={`Reactivate ${displayName}? They will regain app access immediately.`}
+          confirmLabel="Reactivate"
           danger
         />
       </div>
@@ -1604,7 +1615,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <div className="flex flex-wrap gap-3">
             {isInactive ? (
               <button
-                onClick={handleReactivate}
+                onClick={() => setConfirmReactivate(true)}
                 disabled={isReactivating}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
@@ -1679,6 +1690,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         title="Permanently delete user"
         message={`PERMANENTLY delete ${displayName}? This cannot be undone. Their Clerk account will also be removed.`}
         confirmLabel="Delete permanently"
+        danger
+      />
+
+      <ConfirmDialog
+        open={confirmReactivate}
+        onClose={() => setConfirmReactivate(false)}
+        onConfirm={() => { setConfirmReactivate(false); handleReactivate(); }}
+        title="Reactivate user"
+        message={`Reactivate ${displayName}? They will regain app access immediately.`}
+        confirmLabel="Reactivate"
         danger
       />
 

@@ -347,6 +347,66 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     });
   });
 
+  // T1.5 — Users row manage actions live behind a per-row "⋯" (sheet on mobile,
+  // dropdown on desktop); destructive flows stay ConfirmDialog-gated; and the
+  // dialog's own buttons must remain TAPPABLE in the worst case (InstallPrompt
+  // visible → BottomNav rides up the bottom stack → used to paint OVER the
+  // z-50 inline dialog; now portaled to body at z-[60]).
+  test('mobile Users — kebab sheet, confirm dialog tappable over elevated nav', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile-only surface');
+    // Re-show the install prompt (beforeEach suppresses it) — the elevated-nav
+    // worst case is exactly what this test locks in.
+    await page.addInitScript(() => {
+      try { localStorage.removeItem('kilo-install-dismissed'); } catch { /* noop */ }
+    });
+    await page.goto('/dashboard/users');
+    await page.waitForLoadState('networkidle');
+    const kebab = page.locator('button[aria-label^="Actions for"]').first();
+    await kebab.waitFor({ state: 'visible', timeout: 10_000 });
+    await kebab.click();
+    await page.getByRole('button', { name: /^Deactivate (rep|sub-dealer)$/ }).waitFor({ state: 'visible' });
+    await page.addStyleTag({ content: HIDE_VOLATILE_CSS });
+    await page.waitForTimeout(400);
+    await expect(page).toHaveScreenshot('mobile-users-actions-sheet.png', {
+      fullPage: false,
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    });
+    await page.getByRole('button', { name: /^Deactivate (rep|sub-dealer)$/ }).click();
+    // The REAL assertion: Cancel must be clickable (not covered by the nav).
+    // A covered control fails this click with "intercepts pointer events".
+    const cancel = page.getByRole('button', { name: 'Cancel', exact: true });
+    await cancel.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+    await cancel.click({ timeout: 5_000 });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('desktop Users — row actions menu opens on-screen and flips at viewport bottom', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop-only surface');
+    await page.goto('/dashboard/users');
+    await page.waitForLoadState('networkidle');
+    const kebabs = page.locator('button[aria-label^="Actions for"]');
+    await kebabs.first().waitFor({ state: 'visible', timeout: 10_000 });
+    await kebabs.first().click();
+    const menu = page.getByRole('menu');
+    await menu.waitFor({ state: 'visible' });
+    const box = await menu.boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    // Bottom-most kebab: the menu must flip upward rather than clip below.
+    const count = await kebabs.count();
+    const last = kebabs.nth(count - 1);
+    await last.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    await last.click();
+    await menu.waitFor({ state: 'visible' });
+    const b2 = await menu.boundingBox();
+    expect(b2!.y + b2!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

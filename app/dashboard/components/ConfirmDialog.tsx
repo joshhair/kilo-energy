@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
 import { useFocusTrap } from '../../../lib/hooks';
 
@@ -46,11 +47,16 @@ export default function ConfirmDialog({
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
+  // Portaled to document.body at z-[60] (the Add Rep Modal precedent): inline,
+  // the overlay shared z-50 with the fixed BottomNav, and when the nav rides up
+  // the bottom stack (e.g. above the InstallPrompt) it painted OVER the dialog's
+  // Cancel/Confirm buttons — a covered destructive control. The portal also
+  // escapes any transformed/animated ancestor (T1.8 containing blocks).
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-[60] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -91,6 +97,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

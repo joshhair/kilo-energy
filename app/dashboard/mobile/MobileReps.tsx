@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { Search, Users, ChevronRight, Mail, Clock, UserCog, Trash2, Check } from 'lucide-react';
+import { Search, Users, ChevronRight, Mail, Clock, UserCog, Trash2, Check, MoreVertical } from 'lucide-react';
 import { formatCompactKW } from '../../../lib/utils';
 import MobilePageHeader from './shared/MobilePageHeader';
 import MobileCard from './shared/MobileCard';
@@ -163,6 +163,10 @@ export default function MobileReps() {
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; confirmLabel: string; onConfirm: () => Promise<void> } | null>(null);
+  // T1.5 — row manage actions (convert / deactivate) live behind a per-row "⋯"
+  // bottom sheet instead of inline icon buttons, so a browse tap can't land on
+  // a destructive control. The sheet items feed the existing confirm flows.
+  const [actionUser, setActionUser] = useState<{ id: string; name: string; kind: 'rep' | 'sub-dealer' } | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -605,51 +609,18 @@ export default function MobileReps() {
                     </div>
                     <MobileBadge value={badge.label} />
                     {isAdmin && u.role === 'sub-dealer' && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmAction({
-                              title: `Deactivate ${u.firstName} ${u.lastName}?`,
-                              message: 'They will lose app access immediately. You can reactivate them later.',
-                              confirmLabel: 'Deactivate',
-                              onConfirm: async () => {
-                                setConfirmAction(null);
-                                try {
-                                  await deactivateSubDealer(u.id);
-                                  toast(`${u.firstName} ${u.lastName} deactivated`, 'success');
-                                } catch { /* error toast shown by persistFetch */ }
-                              },
-                            });
-                          }}
-                          title="Deactivate sub-dealer"
-                          className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
-                          style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmAction({
-                              title: 'Convert to Rep',
-                              message: `Convert ${u.firstName} ${u.lastName} from Sub-Dealer to Rep? This will change their role and cannot be undone easily.`,
-                              confirmLabel: 'Convert',
-                              onConfirm: () => convertUserRole(u.id, 'rep')
-                                .then(() => toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'))
-                                .catch((err) => {
-                                  toast(`Failed to convert ${u.firstName} ${u.lastName}`, 'error');
-                                  console.warn('[MobileReps] convertUserRole failed:', err instanceof Error ? err.message : err);
-                                }),
-                            });
-                          }}
-                          title="Convert to Rep"
-                          className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
-                          style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
-                        >
-                          <UserCog className="w-4 h-4" />
-                        </button>
-                      </>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActionUser({ id: u.id, name: `${u.firstName} ${u.lastName}`, kind: 'sub-dealer' });
+                        }}
+                        title="User actions"
+                        aria-label={`Actions for ${u.firstName} ${u.lastName}`}
+                        className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
+                        style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </MobileCard>
@@ -864,24 +835,14 @@ export default function MobileReps() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConfirmAction({
-                          title: `Deactivate ${rep.name}?`,
-                          message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.',
-                          confirmLabel: 'Deactivate',
-                          onConfirm: async () => {
-                            setConfirmAction(null);
-                            try {
-                              await deactivateRep(rep.id);
-                              toast(`${rep.name} deactivated`, 'success');
-                            } catch { /* error toast shown by persistFetch */ }
-                          },
-                        });
+                        setActionUser({ id: rep.id, name: rep.name, kind: 'rep' });
                       }}
-                      title="Deactivate rep"
+                      title="Rep actions"
+                      aria-label={`Actions for ${rep.name}`}
                       className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-all active:scale-[0.86] touch-manipulation"
                       style={{ color: 'var(--text-muted)', transition: 'transform 130ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 120ms' }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <MoreVertical className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -915,17 +876,23 @@ export default function MobileReps() {
               </div>
               <button
                 disabled={reactivatingId === rep.id}
-                onClick={async () => {
-                  setReactivatingId(rep.id);
-                  try {
-                    await reactivateRep(rep.id);
-                    toast(`${rep.name} reactivated`, 'success');
-                  } catch {
-                    toast('Failed to reactivate rep', 'error');
-                  } finally {
-                    setReactivatingId(null);
-                  }
-                }}
+                onClick={() => setConfirmAction({
+                  title: `Reactivate ${rep.name}?`,
+                  message: 'They will regain app access immediately.',
+                  confirmLabel: 'Reactivate',
+                  onConfirm: async () => {
+                    setConfirmAction(null);
+                    setReactivatingId(rep.id);
+                    try {
+                      await reactivateRep(rep.id);
+                      toast(`${rep.name} reactivated`, 'success');
+                    } catch {
+                      toast('Failed to reactivate rep', 'error');
+                    } finally {
+                      setReactivatingId(null);
+                    }
+                  },
+                })}
                 className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
                 style={{ background: 'var(--accent-emerald-soft)', color: 'var(--accent-emerald-text)', border: '1px solid var(--accent-emerald-glow)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -952,17 +919,23 @@ export default function MobileReps() {
               </div>
               <button
                 disabled={reactivatingSubDealerId === sd.id}
-                onClick={async () => {
-                  setReactivatingSubDealerId(sd.id);
-                  try {
-                    await reactivateSubDealer(sd.id);
-                    toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
-                  } catch {
-                    toast('Failed to reactivate sub-dealer', 'error');
-                  } finally {
-                    setReactivatingSubDealerId(null);
-                  }
-                }}
+                onClick={() => setConfirmAction({
+                  title: `Reactivate ${sd.firstName} ${sd.lastName}?`,
+                  message: 'They will regain app access immediately.',
+                  confirmLabel: 'Reactivate',
+                  onConfirm: async () => {
+                    setConfirmAction(null);
+                    setReactivatingSubDealerId(sd.id);
+                    try {
+                      await reactivateSubDealer(sd.id);
+                      toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
+                    } catch {
+                      toast('Failed to reactivate sub-dealer', 'error');
+                    } finally {
+                      setReactivatingSubDealerId(null);
+                    }
+                  },
+                })}
                 className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
                 style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -989,19 +962,25 @@ export default function MobileReps() {
               </div>
               <button
                 disabled={reactivatingPmId === u.id}
-                onClick={async () => {
-                  setReactivatingPmId(u.id);
-                  try {
-                    const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                    if (!res.ok) throw new Error();
-                    setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
-                    toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                  } catch {
-                    toast('Failed to reactivate project manager', 'error');
-                  } finally {
-                    setReactivatingPmId(null);
-                  }
-                }}
+                onClick={() => setConfirmAction({
+                  title: `Reactivate ${u.firstName} ${u.lastName}?`,
+                  message: 'They will regain app access immediately.',
+                  confirmLabel: 'Reactivate',
+                  onConfirm: async () => {
+                    setConfirmAction(null);
+                    setReactivatingPmId(u.id);
+                    try {
+                      const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                      if (!res.ok) throw new Error();
+                      setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
+                      toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                    } catch {
+                      toast('Failed to reactivate project manager', 'error');
+                    } finally {
+                      setReactivatingPmId(null);
+                    }
+                  },
+                })}
                 className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
                 style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -1028,19 +1007,25 @@ export default function MobileReps() {
               </div>
               <button
                 disabled={reactivatingAdminId === u.id}
-                onClick={async () => {
-                  setReactivatingAdminId(u.id);
-                  try {
-                    const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                    if (!res.ok) throw new Error();
-                    setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
-                    toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                  } catch {
-                    toast('Failed to reactivate admin', 'error');
-                  } finally {
-                    setReactivatingAdminId(null);
-                  }
-                }}
+                onClick={() => setConfirmAction({
+                  title: `Reactivate ${u.firstName} ${u.lastName}?`,
+                  message: 'They will regain app access immediately.',
+                  confirmLabel: 'Reactivate',
+                  onConfirm: async () => {
+                    setConfirmAction(null);
+                    setReactivatingAdminId(u.id);
+                    try {
+                      const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
+                      if (!res.ok) throw new Error();
+                      setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
+                      toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
+                    } catch {
+                      toast('Failed to reactivate admin', 'error');
+                    } finally {
+                      setReactivatingAdminId(null);
+                    }
+                  },
+                })}
                 className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl disabled:opacity-50"
                 style={{ background: 'var(--accent-amber-soft)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}
               >
@@ -1062,6 +1047,86 @@ export default function MobileReps() {
           danger
         />
       )}
+
+      {/* T1.5 — per-row manage actions sheet. Items hand off to the existing
+          ConfirmDialog flows; the sheet closes first so the dialog stands alone. */}
+      <MobileBottomSheet
+        open={actionUser !== null}
+        onClose={() => setActionUser(null)}
+        title={actionUser?.name}
+      >
+        {actionUser?.kind === 'rep' && (
+          <MobileBottomSheet.Item
+            label="Convert to Sub-Dealer"
+            icon={UserCog}
+            onTap={() => {
+              const u = actionUser;
+              setActionUser(null);
+              setConfirmAction({
+                title: `Convert ${u.name} to Sub-Dealer?`,
+                message: `${u.name} will move to the Sub-Dealers list with sub-dealer login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`,
+                confirmLabel: 'Convert',
+                onConfirm: async () => {
+                  setConfirmAction(null);
+                  try {
+                    await convertUserRole(u.id, 'sub-dealer');
+                    toast(`${u.name} converted to Sub-Dealer`, 'success');
+                  } catch { /* error toast shown by persistFetch */ }
+                },
+              });
+            }}
+          />
+        )}
+        {actionUser?.kind === 'sub-dealer' && (
+          <MobileBottomSheet.Item
+            label="Convert to Rep"
+            icon={UserCog}
+            onTap={() => {
+              const u = actionUser;
+              setActionUser(null);
+              setConfirmAction({
+                title: `Convert ${u.name} to Rep?`,
+                message: `${u.name} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`,
+                confirmLabel: 'Convert',
+                onConfirm: async () => {
+                  setConfirmAction(null);
+                  try {
+                    await convertUserRole(u.id, 'rep');
+                    toast(`${u.name} converted to Rep`, 'success');
+                  } catch { /* error toast shown by persistFetch */ }
+                },
+              });
+            }}
+          />
+        )}
+        {actionUser && (
+          <MobileBottomSheet.Item
+            label={actionUser.kind === 'rep' ? 'Deactivate rep' : 'Deactivate sub-dealer'}
+            icon={Trash2}
+            danger
+            onTap={() => {
+              const u = actionUser;
+              setActionUser(null);
+              setConfirmAction({
+                title: `Deactivate ${u.name}?`,
+                message: 'They will lose app access immediately. Their existing deals and commission history are preserved. You can reactivate them later.',
+                confirmLabel: 'Deactivate',
+                onConfirm: async () => {
+                  setConfirmAction(null);
+                  try {
+                    if (u.kind === 'rep') {
+                      await deactivateRep(u.id);
+                    } else {
+                      await deactivateSubDealer(u.id);
+                    }
+                    toast(`${u.name} deactivated`, 'success');
+                  } catch { /* error toast shown by persistFetch */ }
+                },
+              });
+            }}
+          />
+        )}
+      </MobileBottomSheet>
 
       {/* Add User Bottom Sheet */}
       <MobileBottomSheet
