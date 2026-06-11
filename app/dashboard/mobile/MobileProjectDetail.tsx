@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
+import { usePublishHeightVar } from '../../../lib/hooks';
 import {
   PHASES, Phase, InstallerBaseline, DEFAULT_INSTALL_PAY_PCT,
   getSolarTechBaseline, getProductCatalogBaselineVersioned,
@@ -86,8 +87,38 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
 
   const project = projects.find((p) => p.id === projectId);
 
+  // Access checks — shared by the early returns below AND the action-bar
+  // height publisher. The publisher must be enabled exactly when the bar
+  // will mount: gating on `!!project` alone would strand a stale
+  // --kilo-cta-h when View As flips this open page into a denied state
+  // without a route unmount (Codex review).
+  const repDenied =
+    effectiveRole === 'rep' &&
+    !!project &&
+    project.repId !== effectiveRepId &&
+    project.setterId !== effectiveRepId &&
+    project.trainerId !== effectiveRepId &&
+    !project.additionalClosers?.some((p) => p.userId === effectiveRepId) &&
+    !project.additionalSetters?.some((p) => p.userId === effectiveRepId);
+  const subDealerDenied =
+    effectiveRole === 'sub-dealer' &&
+    !!project &&
+    project.subDealerId !== effectiveRepId &&
+    project.repId !== effectiveRepId;
+  const showsActionBar = !!project && !repDenied && !subDealerDenied;
+
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  // Bottom action bar height → --kilo-cta-h so the global feedback bubble
+  // stacks above it (exclusive owner of the var on this page). The bar became
+  // truly viewport-fixed only after the T1.8 fill-mode fix un-trapped it —
+  // which also exposed that its old hardcoded bottom-16 (64px) offset sat
+  // under the real nav (~105px with the iPhone home-indicator safe area).
+  // `showsActionBar` gates the publish: while the project is still resolving
+  // from context (cold deep-link over LTE) the bar isn't mounted, and the
+  // hook's bounded rAF retry would give up after ~1s and strand the var at 0px.
+  const actionBarRef = useRef<HTMLDivElement>(null);
+  usePublishHeightVar(actionBarRef, '--kilo-cta-h', showsActionBar);
   const [phaseConfirm, setPhaseConfirm] = useState<Phase | null>(null);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -187,23 +218,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
     );
   }
 
-  if (
-    effectiveRole === 'rep' &&
-    project.repId !== effectiveRepId &&
-    project.setterId !== effectiveRepId &&
-    project.trainerId !== effectiveRepId &&
-    !project.additionalClosers?.some((p) => p.userId === effectiveRepId) &&
-    !project.additionalSetters?.some((p) => p.userId === effectiveRepId)
-  ) {
-    return (
-      <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
-        You don&apos;t have permission to view this project.
-        <button onClick={handleBack} className="text-[var(--accent-blue-text)] ml-1">Back</button>
-      </div>
-    );
-  }
-
-  if (effectiveRole === 'sub-dealer' && project.subDealerId !== effectiveRepId && project.repId !== effectiveRepId) {
+  if (repDenied || subDealerDenied) {
     return (
       <div className="px-5 pt-4 pb-28 text-center text-base text-[var(--text-muted)]">
         You don&apos;t have permission to view this project.
@@ -707,7 +722,10 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   }
 
   return (
-    <div className="px-5 pt-4 pb-40 space-y-4 animate-mobile-slide-in">
+    <div
+      className="px-5 pt-4 space-y-4 animate-mobile-slide-in"
+      style={{ paddingBottom: 'calc(var(--kilo-bottom-nav-h, 5rem) + var(--kilo-cta-h, 0px) + 1.5rem)' }}
+    >
 
       {/* Back button */}
       <button
@@ -1524,7 +1542,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       <MobileActivityTimeline projectId={projectId} viewAsUserId={isViewingAs && viewAsUser ? viewAsUser.id : undefined} />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
+      <div ref={actionBarRef} className="fixed left-0 right-0 z-50 flex items-center gap-3 px-5 py-3" style={{ bottom: 'var(--kilo-bottom-nav-h, 5rem)', background: 'var(--surface-card)', borderTop: '1px solid var(--border-subtle)' }}>
         {(isAdmin || isPM) && (
           <button
             onClick={() => setPhaseSheetOpen(true)}

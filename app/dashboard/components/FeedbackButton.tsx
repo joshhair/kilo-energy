@@ -130,6 +130,7 @@ export function FeedbackButton() {
   // uncheck before sending if they're on a sensitive screen.
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null);
 
   // Only render on /dashboard/** routes. Defensive — layout mount path
   // should already guarantee this, but a stray render elsewhere would be
@@ -138,8 +139,12 @@ export function FeedbackButton() {
 
   useEffect(() => {
     if (!open) return;
-    // Focus the textarea on open for keyboard-first flow.
-    const t = setTimeout(() => textareaRef.current?.focus(), 50);
+    // Focus the textarea on open for keyboard-first flow — desktop only. On
+    // touch devices focusing would pop the keyboard the instant the sheet
+    // opens; mobile users tap the textarea when they're ready to type.
+    const t = setTimeout(() => {
+      if (window.matchMedia('(pointer: fine)').matches) textareaRef.current?.focus();
+    }, 50);
     // Escape closes the modal.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !submitting) setOpen(false);
@@ -150,6 +155,32 @@ export function FeedbackButton() {
       window.removeEventListener('keydown', onKey);
     };
   }, [open, submitting]);
+
+  // Pin the open modal to the VISUAL viewport. On iOS, focusing the textarea
+  // opens the keyboard and WebKit pans the layout viewport to reveal the
+  // input — position:fixed elements ride that pan, so the whole sheet lurched
+  // up the screen and detached from the bottom (Josh, 2026-06-11). Sizing the
+  // overlay to visualViewport and translating by its offsetTop keeps the sheet
+  // glued to the visible area: it rises exactly to the keyboard's top edge.
+  // Callback-ref state (not a plain ref) because the overlay mounts a tick
+  // late through ViewportPortal — a [open]-dep effect would see null and
+  // never re-fire (same trap as usePublishHeightVar's rAF retry, T1.8).
+  useEffect(() => {
+    if (!open || !overlayEl) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const sync = () => {
+      overlayEl.style.height = `${vv.height}px`;
+      overlayEl.style.transform = `translateY(${vv.offsetTop}px)`;
+    };
+    sync();
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    return () => {
+      vv.removeEventListener('resize', sync);
+      vv.removeEventListener('scroll', sync);
+    };
+  }, [open, overlayEl]);
 
   if (!isDashboard) return null;
 
@@ -253,8 +284,12 @@ export function FeedbackButton() {
           the modal up so the top gets clipped (Josh hit this 2026-05-22).
           items-end on mobile pins the modal to the bottom edge — the keyboard
           appears underneath, the modal stays fully visible. Desktop keeps
-          the original centered behavior. max-h uses dvh which accounts for
-          the dynamic visible viewport (no growing past keyboard). */}
+          the original centered behavior.
+          The overlay is a top-anchored 100dvh box (NOT inset-0): the
+          visualViewport effect above overrides its height/translateY while
+          the keyboard is up, and an explicit bottom edge would fight that.
+          The sheet's mobile max-h is %-of-overlay so it never grows past
+          the visible area even with the keyboard open. */}
       {/* Portaled to document.body (F4b, Josh's iPhone report 2026-06-11:
           "this feedback box is off the page"): rendered inline, the fixed
           overlay sat inside the layout subtree where an ancestor effect
@@ -266,8 +301,9 @@ export function FeedbackButton() {
       {open && (
         <ViewportPortal>
         <div
+          ref={setOverlayEl}
           data-feedback-exclude="true"
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-x-0 top-0 h-[100dvh] z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget && !submitting) setOpen(false);
@@ -277,7 +313,7 @@ export function FeedbackButton() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="feedback-modal-title"
-            className="w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[calc(100dvh-env(safe-area-inset-top))] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0"
+            className="w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[calc(100%-env(safe-area-inset-top))] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',

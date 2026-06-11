@@ -513,16 +513,31 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     await page.getByRole('button', { name: 'Send feedback' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible' });
+    // The visualViewport pinning effect (keyboard-jump fix, 2026-06-11) must
+    // engage: it syncs the overlay's inline height to visualViewport.height
+    // once the overlay mounts. Effects run post-paint, so POLL for the inline
+    // height rather than sampling at dialog-visible (Codex: race). A real
+    // keyboard pan isn't reproducible in Chromium emulation — initial sync
+    // proves the listener attached; iOS behavior is covered by the same
+    // sync handler running on vv resize/scroll.
+    await page.waitForFunction(() => {
+      const d = document.querySelector('[role="dialog"]');
+      const overlay = d?.parentElement;
+      return !!overlay && (overlay as HTMLElement).style.height !== '';
+    }, undefined, { timeout: 5_000 });
     const check = await dialog.evaluate((el) => {
       const overlay = el.parentElement!;
       const r = el.getBoundingClientRect();
       return {
         overlayParentIsBody: overlay.parentElement === document.body,
         inViewport: r.top >= 0 && r.bottom <= window.innerHeight + 1 && r.left >= 0 && r.right <= window.innerWidth + 1,
+        overlayInlineHeight: overlay.style.height,
+        vvHeight: window.visualViewport ? `${window.visualViewport.height}px` : null,
       };
     });
     expect(check.overlayParentIsBody).toBe(true);
     expect(check.inViewport).toBe(true);
+    if (check.vvHeight) expect(check.overlayInlineHeight).toBe(check.vvHeight);
   });
 
   // F3 (feedback 2026-06-10) — users/[id] on wide screens: page constrained to
@@ -582,6 +597,58 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     });
     expect(m, 'bubble or CTA bar not found').not.toBeNull();
     expect(m).toBe(false);
+  });
+
+  // Regression lock 2026-06-11 (Josh's iPhone report): the project-detail
+  // change-phase bar was hardcoded bottom-16 (64px) — less than the nav's
+  // real height once T1.8 un-trapped the bar (~105px with the home-indicator
+  // safe area), so the bar's lower half hid behind the nav and the feedback
+  // bubble stacked onto the bar. The bar now anchors to --kilo-bottom-nav-h
+  // and publishes --kilo-cta-h; assert the whole bottom stack is disjoint:
+  // bar bottom ≤ nav top, bubble bottom ≤ bar top.
+  test('mobile Project Detail — change-phase bar clears nav, bubble clears bar', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile bottom stack');
+    await page.goto('/dashboard/projects');
+    await page.waitForLoadState('networkidle');
+    const firstCard = page.locator('button.animate-card-enter').first();
+    await firstCard.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstCard.click();
+    await page.waitForURL('**/dashboard/projects/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(900); // let the height publishers settle
+    const m = await page.evaluate(() => {
+      const more = document.querySelector('button[aria-label="More actions"]');
+      let bar: HTMLElement | null = more ? (more.parentElement as HTMLElement) : null;
+      while (bar && getComputedStyle(bar).position !== 'fixed') bar = bar.parentElement;
+      // The bottom nav is one of several <nav> elements — find the fixed one
+      // anchored at the viewport bottom (BottomNav has no aria-label/id).
+      const nav = Array.from(document.querySelectorAll('nav')).find((n) => {
+        const cs = getComputedStyle(n);
+        return cs.position === 'fixed' && Math.abs(n.getBoundingClientRect().bottom - window.innerHeight) < 2;
+      });
+      const bubble = document.querySelector('button[aria-label="Send feedback"]');
+      if (!bar || !nav || !bubble) return null;
+      const barR = bar.getBoundingClientRect();
+      const navR = nav.getBoundingClientRect();
+      const bubbleR = bubble.getBoundingClientRect();
+      return {
+        barClearsNav: barR.bottom <= navR.top + 1,
+        bubbleClearsBar: bubbleR.bottom <= barR.top + 1,
+        ctaVar: getComputedStyle(document.documentElement).getPropertyValue('--kilo-cta-h').trim(),
+        // Diagnostics for the failure message — viewport-relative px.
+        vh: window.innerHeight,
+        bar: [Math.round(barR.top), Math.round(barR.bottom)],
+        nav: [Math.round(navR.top), Math.round(navR.bottom)],
+        barBottomStyle: getComputedStyle(bar).bottom,
+        navVar: getComputedStyle(document.documentElement).getPropertyValue('--kilo-bottom-nav-h').trim(),
+      };
+    });
+    expect(m, 'bar, nav, or bubble not found on project detail').not.toBeNull();
+    expect(m!.barClearsNav, `bar bottom must sit at/above nav top (got ${JSON.stringify(m)})`).toBe(true);
+    expect(m!.bubbleClearsBar, `bubble must sit fully above the bar (got ${JSON.stringify(m)})`).toBe(true);
+    // The bar must actually publish its height — 0px would mean the bubble
+    // only happens to clear it by fallback slack.
+    expect(parseFloat(m!.ctaVar || '0')).toBeGreaterThan(40);
   });
 
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
