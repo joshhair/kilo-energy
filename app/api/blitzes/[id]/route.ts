@@ -68,8 +68,37 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const isBlitzOwner = blitz.ownerId === user.id;
   const visibleCosts = user.role === 'admin' ? blitz.costs : [];
 
+  // ─── Announcements (field-gated) ───
+  // The blitz detail itself is open-discovery for internal reps (above),
+  // but announcements are addressed to the ROSTER: managers, the owner/
+  // creator, and approved/invited participants. Waitlisted reps are
+  // excluded until promoted (announcements can carry operational
+  // logistics that aren't theirs yet — flip deliberately if waitlist
+  // becomes a standby roster). Non-participant discovery viewers see none.
+  const viewerJoinStatus = blitz.participants.find((p) => p.userId === user.id)?.joinStatus ?? null;
+  const canSeeAnnouncements =
+    user.role === 'admin' ||
+    user.role === 'project_manager' ||
+    isBlitzOwner ||
+    blitz.createdById === user.id ||
+    viewerJoinStatus === 'approved' ||
+    viewerJoinStatus === 'invited';
+  const [announcements, announcementsTotal] = canSeeAnnouncements
+    ? await Promise.all([
+        prisma.blitzAnnouncement.findMany({
+          where: { blitzId: id },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        }),
+        prisma.blitzAnnouncement.count({ where: { blitzId: id } }),
+      ])
+    : [[], 0];
+
   return NextResponse.json({
     ...blitz,
+    canSeeAnnouncements,
+    announcements,
+    announcementsTotal,
     costs: visibleCosts.map(serializeBlitzCost),
     projects: blitz.projects.map((p) => {
       const s = serializeProject(p);

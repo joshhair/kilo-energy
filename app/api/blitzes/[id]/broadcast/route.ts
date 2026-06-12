@@ -88,11 +88,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
   const { message } = parsed.data;
 
-  // Rate-limit via prior audit row. AuditLog stores actor + entity + action;
-  // we look for the most recent blitz_broadcast on this blitz id regardless
-  // of actor so two owners can't ping-pong.
-  const lastBroadcast = await prisma.auditLog.findFirst({
-    where: { entityType: 'Blitz', entityId: id, action: 'blitz_broadcast' },
+  // Rate-limit via the most recent ANNOUNCEMENT row (regardless of actor,
+  // so two owners can't ping-pong). Keyed off BlitzAnnouncement rather than
+  // the old AuditLog lookup: the announcement is created BEFORE the email
+  // fan-out, which also narrows the old double-submit window where nothing
+  // existed to rate-limit against until the post-send audit write (Codex).
+  const lastBroadcast = await prisma.blitzAnnouncement.findFirst({
+    where: { blitzId: id },
     orderBy: { createdAt: 'desc' },
     select: { createdAt: true },
   });
@@ -108,11 +110,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const appUrl = process.env.APP_URL || 'https://app.kiloenergies.com';
-  const ownerName = `${blitz.owner?.firstName ?? ''} ${blitz.owner?.lastName ?? ''}`.trim() || 'The blitz leader';
-  const subject = `Kilo Blitz — ${blitz.name}: message from ${blitz.owner?.firstName ?? 'the leader'}`;
+  // Snapshot the ACTUAL actor — an admin can broadcast on an owner's blitz,
+  // and the email + persisted announcement should both say who really sent
+  // it (Codex design round, 2026-06-12).
+  const senderName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.email;
+  const senderFirst = user.firstName || senderName;
+  const subject = `Kilo Blitz — ${blitz.name}: message from ${senderFirst}`;
   const html = renderBroadcastHtml({
     blitzName: blitz.name,
-    ownerName,
+    ownerName: senderName,
     message,
     startDate: blitz.startDate,
     endDate: blitz.endDate,
@@ -120,10 +126,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     blitzId: id,
   });
 
+  // The announcement is the durable object; email is just the delivery
+  // channel. Create it BEFORE the fan-out so a partial email failure can
+  // never lose the message again (Josh's vanished broadcasts, 2026-06-12).
+  const eligibleRecipients = blitz.participants.filter((p) => p.user?.email && p.user.id !== user.id);
+  const announcement = await prisma.blitzAnnouncement.create({
+    data: {
+      blitzId: id,
+      senderId: user.id,
+      senderName,
+      senderRole: user.role,
+      message,
+      emailSubject: subject,
+      recipientTotal: eligibleRecipients.length,
+    },
+  });
+
   let okCount = 0;
   let failedCount = 0;
+  let skippedCount = 0;
   for (const p of blitz.participants) {
-    if (!p.user?.email) continue;
+    if (!p.user?.email) { skippedCount += 1; continue; }
     // Skip echoing the broadcast back to the sender — they typed it.
     if (p.user.id === user.id) continue;
     try {
@@ -134,12 +157,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         emailHtml: html,
       });
       if (res.ok && !res.skipped) okCount += 1;
-      else if (!res.ok) failedCount += 1;
+      else if (res.ok && res.skipped) skippedCount += 1;
+      else failedCount += 1;
     } catch (err) {
       failedCount += 1;
       logger.error('blitz_broadcast_notify_threw', { ...errorContext(err), blitzId: id, userId: p.user.id });
     }
   }
+
+  await prisma.blitzAnnouncement.update({
+    where: { id: announcement.id },
+    data: { recipientsOk: okCount, recipientsFailed: failedCount, recipientsSkipped: skippedCount },
+  });
 
   await logChange({
     actor: { id: user.id, email: user.email },

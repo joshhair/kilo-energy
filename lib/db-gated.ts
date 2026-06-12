@@ -242,6 +242,31 @@ export function blitzCostVisibilityWhere(): Prisma.BlitzCostWhereInput {
 }
 
 /**
+ * BlitzAnnouncement: roster-only. Announcements are addressed to the
+ * blitz roster (broadcast emails go to approved participants), so the
+ * persisted history is visible to admins, PMs (route layer additionally
+ * enforces canAccessBlitz), the blitz owner/creator, and approved or
+ * invited participants. Waitlisted reps are excluded until promoted —
+ * the blitz DETAIL is open-discovery, but announcements can carry
+ * operational logistics that are not theirs yet. Expressed as a
+ * relational filter on the parent blitz (compiles to a JOIN).
+ */
+export function blitzAnnouncementVisibilityWhere(): Prisma.BlitzAnnouncementWhereInput {
+  const user = requireEffectiveUser();
+  if (user.role === 'admin') return {};
+  if (user.role === 'project_manager') return {};
+  return {
+    blitz: {
+      OR: [
+        { ownerId: user.id },
+        { createdById: user.id },
+        { participants: { some: { userId: user.id, joinStatus: { in: ['approved', 'invited'] } } } },
+      ],
+    },
+  };
+}
+
+/**
  * ProjectAdminNote: admin + internal PM only. Vendor PMs explicitly
  * blocked even if they can see the project (admin notes about a vendor
  * project shouldn't reach the vendor). Default-deny everyone else.
@@ -581,6 +606,34 @@ const extendedDb = prisma.$extends({
       },
       async aggregate({ args, query }) {
         args.where = intersectWhere(args.where, blitzCostVisibilityWhere());
+        return query(args);
+      },
+    },
+    blitzAnnouncement: {
+      async findMany({ args, query }) {
+        args.where = intersectWhere(args.where, blitzAnnouncementVisibilityWhere());
+        return query(args);
+      },
+      async findFirst({ args, query }) {
+        args.where = intersectWhere(args.where, blitzAnnouncementVisibilityWhere());
+        return query(args);
+      },
+      async findUnique({ args, query }) {
+        const result = await query(args);
+        if (!result) return result;
+        const match = await prisma.blitzAnnouncement.findFirst({
+          where: { AND: [{ id: result.id }, blitzAnnouncementVisibilityWhere()] },
+          select: { id: true },
+        });
+        return match ? result : null;
+      },
+      async count({ args, query }) {
+        args = args ?? {};
+        args.where = intersectWhere(args.where, blitzAnnouncementVisibilityWhere());
+        return query(args);
+      },
+      async aggregate({ args, query }) {
+        args.where = intersectWhere(args.where, blitzAnnouncementVisibilityWhere());
         return query(args);
       },
     },

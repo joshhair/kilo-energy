@@ -785,10 +785,39 @@ model Blitz {
   incentives           Incentive[]
   projects             Project[]
   cancellationRequests BlitzRequest[]
+  announcements        BlitzAnnouncement[]
 
   @@index([status])
   @@index([ownerId])
   @@index([startDate])
+}
+
+/// The durable announcement object participants read on the blitz page —
+/// email is only the delivery channel (Josh's 2026-06-12 feedback: his
+/// broadcasts "vanished" because only the emails existed). Created BEFORE
+/// the email fan-out; delivery counts updated after. Sender fields are an
+/// actor snapshot at send time (an admin can broadcast on an owner's blitz).
+model BlitzAnnouncement {
+  id      String @id @default(cuid())
+  blitzId String
+  blitz   Blitz  @relation(fields: [blitzId], references: [id], onDelete: Cascade)
+
+  senderId   String
+  senderName String
+  /// 'admin' | 'rep' | 'sub-dealer' | 'project_manager' at send time.
+  senderRole String
+
+  message      String
+  emailSubject String @default("")
+
+  recipientTotal    Int @default(0)
+  recipientsOk      Int @default(0)
+  recipientsFailed  Int @default(0)
+  recipientsSkipped Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([blitzId, createdAt])
 }
 
 model BlitzParticipant {

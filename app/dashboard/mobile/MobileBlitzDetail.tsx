@@ -28,6 +28,7 @@ import BlitzLeaderboard from './blitz-detail/BlitzLeaderboard';
 import BlitzEditSheet from './blitz-detail/BlitzEditSheet';
 import BlitzProgressBar from './blitz-detail/BlitzProgressBar';
 import BlitzMyStats from './blitz-detail/BlitzMyStats';
+import BlitzAnnouncements from './blitz-detail/BlitzAnnouncements';
 
 export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const router = useRouter();
@@ -536,6 +537,20 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       <div key={tab} className="animate-fade-in">
         {tab === 'overview' && (
           <div className="space-y-4">
+            {/* Announcements first — the durable broadcast history (Codex
+                design round): reps land on Overview and see news without
+                digging. Server gates visibility to the roster; canSee comes
+                from the API. */}
+            {blitz.canSeeAnnouncements && (
+              <BlitzAnnouncements
+                blitzId={blitz.id}
+                announcements={blitz.announcements ?? []}
+                total={blitz.announcementsTotal ?? 0}
+                canManage={canManage}
+                canBroadcast={canManage && (blitz.status === 'upcoming' || blitz.status === 'active')}
+                onBroadcast={() => setShowBroadcast(true)}
+              />
+            )}
             {(blitz.status === 'upcoming' || blitz.status === 'active') && (
               <BlitzEarningsForecast
                 variant="mobile"
@@ -781,6 +796,9 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 const data = await r.json();
                 toast(`Broadcast sent to ${data.recipientsOk} rep${data.recipientsOk === 1 ? '' : 's'}.`);
                 setShowBroadcast(false);
+                setBroadcastMessage('');
+                // Refresh so the new announcement appears in the Overview card.
+                loadBlitz();
               } catch {
                 toast('Network error sending broadcast', 'error');
               } finally {

@@ -146,9 +146,9 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                 <div className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
+                      <p className="min-w-0 text-base font-semibold text-[var(--text-primary)] line-clamp-2 break-words" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{name}</p>
                       {isOwner && (
-                        <span className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
+                        <span className="shrink-0 text-[10px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-emerald-text)', background: 'var(--accent-emerald-soft)' }}>Leader</span>
                       )}
                     </div>
                     {stats && p.joinStatus === 'approved' && (stats.deals > 0 || stats.kW > 0) && (
@@ -221,7 +221,12 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                         disabled={updatingAttendance.has(p.user.id)}
                         onChange={(e) => handleAttendance(p.user.id, e.target.value === '' ? null : (e.target.value as 'attended' | 'partial' | 'no-show'))}
                         aria-label={`Attendance for ${name}`}
-                        className="flex-1 min-w-0 min-h-[40px] rounded-xl px-3 text-xs font-semibold outline-none appearance-none disabled:opacity-40"
+                        // Fixed-px text (the file's existing escape-hatch
+                        // pattern): at the 24px mobile root, text-xs inflates
+                        // to 18px and the longest option needed ~318px in a
+                        // ~228px slot — the select clipped mid-word at the
+                        // card edge (Josh's report, 2026-06-12).
+                        className="flex-1 min-w-0 min-h-[40px] rounded-xl px-3 text-[12px] font-semibold outline-none appearance-none disabled:opacity-40"
                         style={{
                           color: p.attendanceStatus ? 'var(--accent-emerald-text)' : 'var(--text-muted)',
                           background: p.attendanceStatus ? 'var(--accent-emerald-soft)' : 'transparent',
@@ -229,7 +234,7 @@ export default function BlitzParticipants({ blitzId, blitzOwnerId, participants,
                           fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",
                         }}
                       >
-                        <option value="">Attendance: not marked</option>
+                        <option value="">Not marked</option>
                         <option value="attended">Attended</option>
                         <option value="partial">Partial</option>
                         <option value="no-show">No-show</option>

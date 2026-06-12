@@ -1088,6 +1088,37 @@ export default function BlitzDetailPage() {
           )}
           </div>
           <div className="xl:col-span-1 space-y-4">
+            {/* Announcements — sidebar-top per the Codex design round:
+                durable broadcast history (server gates to the roster). */}
+            {blitz.canSeeAnnouncements && (blitz.announcementsTotal > 0 || isAdmin || isOwner) && (
+              <div className="card-surface rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-3.5 h-3.5 text-[var(--accent-emerald-text)]" aria-hidden />
+                  <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Announcements</p>
+                  {blitz.announcementsTotal > 0 && (
+                    <span className="text-[10px] text-[var(--text-dim)] ml-auto tabular-nums">{blitz.announcementsTotal}</span>
+                  )}
+                </div>
+                {(blitz.announcements ?? []).length === 0 ? (
+                  <p className="text-xs text-[var(--text-dim)]">No announcements yet — use Broadcast to message the team.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(blitz.announcements ?? []).map((a: { id: string; senderName: string; message: string; createdAt: string; recipientsOk: number; recipientTotal: number }) => (
+                      <div key={a.id} className="rounded-xl p-2.5" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)', border: '1px solid var(--border-subtle)' }}>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-xs font-semibold text-[var(--text-primary)]">{a.senderName}</span>
+                          <span className="text-[10px] text-[var(--text-dim)] shrink-0">{formatDate(a.createdAt.slice(0, 10))}</span>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap break-words">{a.message}</p>
+                        {(isAdmin || isOwner) && (
+                          <p className="text-[10px] mt-1 text-[var(--text-dim)]">Emailed to {a.recipientsOk}/{a.recipientTotal}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {/* Blitz details */}
             <div className="card-surface rounded-2xl p-4 space-y-3">
               <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Details</p>
@@ -1557,6 +1588,9 @@ export default function BlitzDetailPage() {
                     const data = await r.json();
                     toast(`Broadcast sent to ${data.recipientsOk} rep${data.recipientsOk === 1 ? '' : 's'}.`);
                     setShowBroadcast(false);
+                    setBroadcastMessage('');
+                    // Refresh so the new announcement shows in the sidebar card.
+                    loadBlitz();
                   } catch {
                     toast('Network error sending broadcast', 'error');
                   } finally {

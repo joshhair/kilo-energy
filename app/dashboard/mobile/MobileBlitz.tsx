@@ -154,36 +154,6 @@ export default function MobileBlitz() {
       });
   }, [isAdmin, effectiveRepId]);
 
-  const searchOnlyBlitzes = useMemo(() => {
-    if (!search.trim()) return blitzes;
-    const q = search.toLowerCase();
-    return blitzes.filter((b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q));
-  }, [blitzes, search]);
-
-  const myBlitzes = useMemo(() => {
-    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return searchOnlyBlitzes.filter((b) =>
-      b.owner.id === effectiveRepId ||
-      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
-    );
-  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
-
-  const pendingBlitzes = useMemo(() => {
-    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return searchOnlyBlitzes.filter((b) =>
-      b.owner.id !== effectiveRepId &&
-      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'pending')
-    );
-  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
-
-  const invitedBlitzes = useMemo(() => {
-    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
-    return searchOnlyBlitzes.filter((b) =>
-      b.owner.id !== effectiveRepId &&
-      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
-    );
-  }, [searchOnlyBlitzes, isAdmin, effectiveRepId]);
-
   const filteredBlitzes = useMemo(() => {
     let list = blitzes;
     if (statusFilter !== 'all') list = list.filter((b) => b.status === statusFilter);
@@ -204,12 +174,16 @@ export default function MobileBlitz() {
     };
     return [...list].sort((a, b) => {
       if (sortKey === 'newest') {
-        // Upcoming first, soonest-first; everything else most-recent-first.
-        const aUp = a.status === 'upcoming';
-        const bUp = b.status === 'upcoming';
-        if (aUp && bUp) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-        if (aUp) return -1;
-        if (bUp) return 1;
+        // Status-aware (Josh's report, 2026-06-12: the ACTIVE June blitz
+        // sat below future blitzes): happening-now first, then upcoming
+        // soonest-first, then completed/cancelled most-recent-first. The
+        // old comparator pinned ALL upcoming above active.
+        const rank = (s: BlitzStatus) =>
+          s === 'active' ? 0 : s === 'upcoming' ? 1 : s === 'completed' ? 2 : 3;
+        const ra = rank(a.status);
+        const rb = rank(b.status);
+        if (ra !== rb) return ra - rb;
+        if (ra === 1) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
         return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
       }
       if (sortKey === 'oldest') return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
@@ -229,6 +203,35 @@ export default function MobileBlitz() {
       return 0;
     });
   }, [blitzes, statusFilter, search, sortKey, isAdmin, effectiveRepId]);
+
+  // Member sections partition from the SORTED + filtered list (Josh's
+  // 2026-06-12 report: these used raw API order — startDate desc — so the
+  // active June blitz sank below future ones; the sort/status pills also
+  // never applied here). 'waitlist' joins the pending section deliberately
+  // (it is "awaiting a spot", not lost in Browse).
+  const myBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return filteredBlitzes.filter((b) =>
+      b.owner.id === effectiveRepId ||
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'approved')
+    );
+  }, [filteredBlitzes, isAdmin, effectiveRepId]);
+
+  const pendingBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return filteredBlitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && (p.joinStatus === 'pending' || p.joinStatus === 'waitlist'))
+    );
+  }, [filteredBlitzes, isAdmin, effectiveRepId]);
+
+  const invitedBlitzes = useMemo(() => {
+    if (isAdmin || !effectiveRepId) return [] as BlitzData[];
+    return filteredBlitzes.filter((b) =>
+      b.owner.id !== effectiveRepId &&
+      b.participants.some((p) => p.user.id === effectiveRepId && p.joinStatus === 'invited')
+    );
+  }, [filteredBlitzes, isAdmin, effectiveRepId]);
 
   const activeBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'active').length, [blitzes]);
   const upcomingBlitzes = useMemo(() => blitzes.filter((b) => b.status === 'upcoming').length, [blitzes]);
@@ -724,7 +727,7 @@ export default function MobileBlitz() {
                   )}
                   {pendingFiltered.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>Pending Approval</p>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 px-1" style={sectionLabelStyle}>Pending / Waitlisted</p>
                       <div className="space-y-3">
                         {pendingFiltered.map((blitz, index) => renderBlitzCard(blitz, index))}
                       </div>
