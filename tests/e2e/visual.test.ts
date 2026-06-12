@@ -719,6 +719,72 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     });
   });
 
+  // Regression locks 2026-06-11 (Josh's mobile chatter report): the composer
+  // was a ~10-character column (the form-control font floor inflated to 24px
+  // by the mobile root + 54/60px rem-inflated icon buttons), sat UNDER the
+  // bottom nav (sticky bottom-0 pinned to the scrollport edge → a real tap
+  // hit the nav), and the @mention picker was a modal sheet whose focus
+  // choreography killed the iOS keyboard. Lock the fixed arrangement.
+  test('mobile project Chatter — composer tappable, usable width, inline mention strip', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile chatter UX');
+    const opened = await openFirstProjectDetail(page);
+    expect(opened, 'admin must see a project').toBe(true);
+    const textarea = page.locator('textarea[placeholder="Write a message…"]');
+    await textarea.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const m = await textarea.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const card = el.closest('.card-surface');
+      return {
+        tapHitsTextarea: hit === el,
+        width: Math.round(r.width),
+        cardWidth: card ? Math.round(card.getBoundingClientRect().width) : null,
+        fontSize: parseFloat(getComputedStyle(el).fontSize),
+      };
+    });
+    expect(m.tapHitsTextarea, 'tap at the textarea center must hit the textarea, not the nav').toBe(true);
+    expect(m.width / (m.cardWidth ?? 393), `textarea must use most of the card (got ${m.width}/${m.cardWidth})`).toBeGreaterThan(0.5);
+    // Floor fix: text-sm (21px at the 24px root) wins again, and the iOS
+    // no-zoom guarantee (>=16px) still holds.
+    expect(m.fontSize).toBeLessThan(24);
+    expect(m.fontSize).toBeGreaterThanOrEqual(16);
+    // Inline mention strip: appears on @query and inserts WITHOUT moving
+    // focus (pointerdown-preventDefault — the iOS keyboard never dismisses).
+    await textarea.click();
+    await textarea.fill('Hello @');
+    await page.waitForTimeout(300);
+    const strip = page.locator('[aria-label="Mention suggestions"]');
+    await expect(strip).toBeVisible();
+    const chip = strip.locator('button').first();
+    const chipName = (await chip.textContent())?.trim();
+    await chip.dispatchEvent('pointerdown');
+    await page.waitForTimeout(300);
+    const after = await textarea.evaluate((el) => ({
+      value: (el as HTMLTextAreaElement).value,
+      focused: document.activeElement === el,
+    }));
+    expect(after.value).toContain(`@${chipName}`);
+    expect(after.focused, 'focus must never leave the textarea').toBe(true);
+  });
+
+  // The 641-767px band used to fall through to the desktop fixed-position
+  // dropdown, which rides the iOS keyboard pan — the mention gate now
+  // matches the app's 768 mobile breakpoint. Lock the strip at 700px.
+  test.describe('mid-width chatter (700px)', () => {
+    test.use({ viewport: { width: 700, height: 800 } });
+    test('mention strip renders at 700px (not the desktop dropdown)', async ({ page }) => {
+      const opened = await openFirstProjectDetail(page);
+      expect(opened).toBe(true);
+      const textarea = page.locator('textarea[placeholder="Write a message…"]');
+      await textarea.scrollIntoViewIfNeeded();
+      await textarea.click();
+      await textarea.fill('Hi @');
+      await page.waitForTimeout(300);
+      await expect(page.locator('[aria-label="Mention suggestions"]')).toBeVisible();
+    });
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

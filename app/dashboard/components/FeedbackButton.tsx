@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageCirclePlus, X, Loader2, Send, CheckCircle2, Camera } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useToast } from '@/lib/toast';
+import { useVisualViewportPin } from '@/lib/hooks';
 import ViewportPortal from '../mobile/shared/ViewportPortal';
 
 const MAX_LENGTH = 2000;
@@ -156,31 +157,12 @@ export function FeedbackButton() {
     };
   }, [open, submitting]);
 
-  // Pin the open modal to the VISUAL viewport. On iOS, focusing the textarea
-  // opens the keyboard and WebKit pans the layout viewport to reveal the
-  // input — position:fixed elements ride that pan, so the whole sheet lurched
-  // up the screen and detached from the bottom (Josh, 2026-06-11). Sizing the
-  // overlay to visualViewport and translating by its offsetTop keeps the sheet
-  // glued to the visible area: it rises exactly to the keyboard's top edge.
-  // Callback-ref state (not a plain ref) because the overlay mounts a tick
-  // late through ViewportPortal — a [open]-dep effect would see null and
-  // never re-fire (same trap as usePublishHeightVar's rAF retry, T1.8).
-  useEffect(() => {
-    if (!open || !overlayEl) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const sync = () => {
-      overlayEl.style.height = `${vv.height}px`;
-      overlayEl.style.transform = `translateY(${vv.offsetTop}px)`;
-    };
-    sync();
-    vv.addEventListener('resize', sync);
-    vv.addEventListener('scroll', sync);
-    return () => {
-      vv.removeEventListener('resize', sync);
-      vv.removeEventListener('scroll', sync);
-    };
-  }, [open, overlayEl]);
+  // Pin the open modal to the VISUAL viewport so the sheet hugs the iOS
+  // keyboard's top edge instead of riding the layout-viewport pan (Josh,
+  // 2026-06-11). Extracted to useVisualViewportPin for reuse (chatter's
+  // expanded panel shares the bug class). Callback-ref state (not a plain
+  // ref) because the overlay mounts a tick late through ViewportPortal.
+  useVisualViewportPin(overlayEl, open);
 
   if (!isDashboard) return null;
 

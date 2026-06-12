@@ -4,9 +4,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../../lib/context';
 import { useToast } from '../../../lib/toast';
-import { useMediaQuery } from '../../../lib/hooks';
-import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2, Search, Maximize2, X } from 'lucide-react';
-import MobileBottomSheet from '../mobile/shared/MobileBottomSheet';
+import { useMediaQuery, useVisualViewportPin } from '../../../lib/hooks';
+import { MessageSquare, Send, CheckSquare, RefreshCw, Calendar, Trash2, Maximize2, X } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,13 +82,22 @@ function isDueDateOverdue(iso: string): boolean {
  *  Matches only against known user names to avoid over-matching trailing words.
  *  `bubbleTone='own'` lifts the mention to a higher-contrast color since the
  *  own-message bubble (emerald-soft) collides with the default emerald-text. */
-function renderMessageText(text: string, knownNames: string[], bubbleTone: 'own' | 'other' = 'other'): React.ReactNode[] {
-  if (knownNames.length === 0) return [<span key={0}>{text}</span>];
+// Compiled ONCE per mentionable-list change (useMemo at the call site) —
+// previously rebuilt per message per keystroke: the controlled composeText
+// re-renders the whole component, and compiling an alternation over every
+// rep name for ~30 messages on each keypress was the mobile typing jank
+// (Josh, 2026-06-11).
+function buildMentionPattern(knownNames: string[]): RegExp | null {
+  if (knownNames.length === 0) return null;
   // Sort longest-first so multi-word names beat their sub-strings
   const escaped = [...knownNames]
     .sort((a, b) => b.length - a.length)
     .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const pattern = new RegExp(`(@(?:${escaped.join('|')}))`, 'g');
+  return new RegExp(`(@(?:${escaped.join('|')}))`, 'g');
+}
+
+function renderMessageText(text: string, pattern: RegExp | null, bubbleTone: 'own' | 'other' = 'other'): React.ReactNode[] {
+  if (!pattern) return [<span key={0}>{text}</span>];
   const parts = text.split(pattern);
   return parts.map((part, i) => {
     if (part.startsWith('@')) {
@@ -163,11 +171,19 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   const { toast } = useToast();
   // Mobile gets a MobileBottomSheet mention picker (tap-friendly) instead
   // of the cursor-anchored floating dropdown that's fiddly on touch.
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  // 767 matches the app-wide mobile breakpoint (BottomNav md:hidden, the
+  // page twins' useMediaQuery) — the old 640 left iPhone-landscape/small
+  // tablets on the desktop fixed-position dropdown, which rides the iOS
+  // keyboard pan (Codex, 2026-06-11).
+  const isMobile = useMediaQuery('(max-width: 767px)');
   // Expanded mode: lifts the chatter into a full-viewport sheet via portal.
   // Embedded card stays mounted underneath for quick-glance; tap the expand
   // icon in the header to open, tap the X (or the backdrop) to collapse.
   const [expanded, setExpanded] = useState(false);
+  // Callback-ref state (portal/late-mount safe) for the expanded panel; the
+  // pin keeps it glued to the visual viewport while the iOS keyboard is up.
+  const [panelEl, setPanelEl] = useState<HTMLDivElement | null>(null);
+  useVisualViewportPin(panelEl, expanded);
   // Lock the page scroll while the sheet is open so backgrounds don't drift
   // under the sticky composer on iOS Safari. Also listens for Escape to
   // close — matches the @mention picker + MobileBottomSheet keyboard story.
@@ -229,6 +245,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     subDealers.filter((sd) => sd.active !== false).forEach((sd) => users.push({ id: sd.id, name: `${sd.firstName} ${sd.lastName}` }));
     return users;
   }, [serverMentionable, reps, subDealers]);
+
+  // Mention-highlight regex, compiled once per mentionable-list change —
+  // NOT per message per keystroke (see buildMentionPattern).
+  const mentionPattern = useMemo(
+    () => buildMentionPattern(mentionableUsers.map((u) => u.name)),
+    [mentionableUsers],
+  );
 
   // Unread count for this project
   const unreadCount = useMemo(() => {
@@ -311,6 +334,13 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // because the chatter shares a scroll ancestor with the page (the layout
   // <main> element with overflow-y-auto).
   const lastMessageId = useRef<string | undefined>(undefined);
+  // Set at the optimistic temp→real id swap (and the failure rollback): the
+  // last-id changes WITHOUT a new message existing, and the smooth scroll
+  // fired a network-roundtrip after send, yanking the view mid-typing
+  // (Josh's "nothing stays on screen", 2026-06-11). Server ids are unrelated
+  // to temp ids, so the swap site flags itself instead of id-pattern checks
+  // (Codex S0).
+  const skipNextAutoScrollRef = useRef(false);
   useEffect(() => {
     const newest = messages[messages.length - 1]?.id;
     const previous = lastMessageId.current;
@@ -318,6 +348,10 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
     // Skip first observation — we're just recording the baseline.
     if (previous === undefined) return;
     if (newest === previous) return;
+    if (skipNextAutoScrollRef.current) {
+      skipNextAutoScrollRef.current = false;
+      return;
+    }
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -408,7 +442,9 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         return res.json();
       })
       .then((saved) => {
-        // Replace optimistic message with server version
+        // Replace optimistic message with server version. The id changes but
+        // no new message exists — don't let the auto-scroll fire again.
+        skipNextAutoScrollRef.current = true;
         setMessages((prev) =>
           prev.map((m) => (m.id === optimisticId ? saved : m))
         );
@@ -418,6 +454,9 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         // user sees their compose text restored and a clear toast — no
         // more "looked saved but disappeared on refresh" silent fail.
         toast(err instanceof Error ? `Couldn't send: ${err.message}` : "Couldn't send message", 'error');
+        // Removing the optimistic row changes the last id too — same
+        // no-new-message case as the success swap; don't auto-scroll.
+        skipNextAutoScrollRef.current = true;
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setComposeText(messageText + (checkItems.length > 0 ? '\n' + checkItems.map((ci) => `☐ ${ci.text}`).join('\n') : ''));
       })
@@ -640,13 +679,29 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   };
 
   const handleMentionSelect = (rep: { id: string; name: string }) => {
+    // Idempotence: the strip chips fire on pointerdown (keyboard-preserving)
+    // AND click (keyboard/assistive activation). A touch tap unmounts the
+    // chip before its click dispatches, but if a slow frame lets both
+    // through, the first call flips mentionActive and the second no-ops.
+    if (!mentionActive) return;
     const before = composeText.slice(0, mentionStartIdx);
     const after = composeText.slice(textareaRef.current?.selectionStart ?? composeText.length);
     const newText = `${before}@${rep.name} ${after}`;
     setComposeText(newText);
     setMentionActive(false);
     setMentionQuery('');
-    textareaRef.current?.focus();
+    // Place the caret right after the inserted "@Name " — the controlled
+    // value swap would otherwise leave it at a stale index. rAF so the new
+    // value is committed first; preventScroll avoids a page jump (on mobile
+    // the strip's pointerdown-preventDefault means focus never left at all).
+    const caret = before.length + rep.name.length + 2;
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      el.setSelectionRange(caret, caret);
+      autoGrowTextarea(el);
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -699,15 +754,22 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
   // to fill the available viewport (sheet mode). The expanded panel adds
   // safe-area-inset-top padding so the X button clears the iPhone notch +
   // any browser chrome (URL bar bounce can otherwise cover the header).
+  // Expanded panel is TOP-ANCHORED with explicit height (not inset-0): the
+  // useVisualViewportPin override below needs to own the height, and an
+  // explicit bottom edge would fight it (the FeedbackButton pattern).
+  // animate-fade-in (opacity-only), NOT animate-modal-panel: that animation
+  // fills a transform, and a filled CSS animation outranks inline styles —
+  // it would permanently defeat the pin's translateY (Codex; the same
+  // fill-mode trap as T1.8 inc 5).
   const outerClass = expanded
-    ? 'fixed inset-0 z-50 bg-[var(--surface-page)] px-4 sm:px-6 pb-4 sm:pb-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:pt-6 flex flex-col animate-modal-panel overflow-hidden'
+    ? 'fixed inset-x-0 top-0 h-[100dvh] z-50 bg-[var(--surface-page)] px-4 sm:px-6 pb-4 sm:pb-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:pt-6 flex flex-col animate-fade-in overflow-hidden'
     : 'card-surface rounded-2xl p-4 sm:p-6 mt-5';
   const messageListClass = expanded
     ? 'flex-1 overflow-y-auto space-y-2 mb-3 pr-1 scrollbar-thin scroll-pb-2'
     : 'max-h-[70vh] sm:max-h-[24rem] overflow-y-auto space-y-2 mb-4 pr-1 scrollbar-thin scroll-pb-2';
 
   const body = (
-    <div className={outerClass}>
+    <div ref={setPanelEl} className={outerClass}>
       {/* Header — sticky in expanded mode so the collapse X stays reachable
           even after scrolling far into history. In embedded mode the header
           scrolls naturally with the page. */}
@@ -835,7 +897,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
                   >
                     {/* Message text */}
                     <div className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap break-words">
-                      {renderMessageText(msg.text, mentionableUsers.map((u) => u.name), isOwn ? 'own' : 'other')}
+                      {renderMessageText(msg.text, mentionPattern, isOwn ? 'own' : 'other')}
                     </div>
 
                     {/* Check items — indented inside the bubble */}
@@ -945,8 +1007,42 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
           1 row + auto-grow, toolbar shrunk, Send button icon-only on mobile
           to reduce the bar height ~60% (was eating half the viewport). The
           safe-area-inset padding clears the iPhone home indicator. */}
-      <div className={`${expanded ? '' : 'sticky bottom-0'} -mx-4 sm:mx-0 -mb-4 sm:mb-0 px-4 sm:px-0 pb-[env(safe-area-inset-bottom)] sm:pb-0 bg-[var(--surface)] sm:bg-transparent border-t sm:border-t-0 border-[var(--border)]/60 pt-2 sm:pt-0`}>
-        <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden flex items-end gap-2 p-1.5 sm:p-0 sm:block">
+      {/* 2026-06-11 (Josh's report): `sticky bottom-0` is GONE on mobile —
+          it pinned the composer to the <main> scrollport edge, which sits
+          UNDER the z-50 bottom nav (a real tap on the textarea hit the
+          Projects nav link). In-flow, iOS pans naturally to the focused
+          textarea. Expanded mode has its own flex column. */}
+      <div className="-mx-4 sm:mx-0 -mb-4 sm:mb-0 px-4 sm:px-0 pb-[env(safe-area-inset-bottom)] sm:pb-0 bg-[var(--surface)] sm:bg-transparent border-t sm:border-t-0 border-[var(--border)]/60 pt-2 sm:pt-0">
+        {/* Inline @mention strip (mobile): non-modal, in-flow, filtered by
+            the query typed in the MAIN textarea. pointerdown-preventDefault
+            inserts WITHOUT moving focus, so the iOS keyboard never dismisses
+            (the desktop dropdown's mousedown semantics, mobile-shaped). The
+            old MobileBottomSheet picker stole focus to its Close button
+            (keyboard death) and re-opened on every keystroke after dismiss. */}
+        {mentionActive && isMobile && (
+          <div className="flex gap-2 overflow-x-auto pb-2 px-0.5" aria-label="Mention suggestions">
+            {mentionableUsers
+              .filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase()))
+              .slice(0, 8)
+              .map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onPointerDown={(e) => { e.preventDefault(); handleMentionSelect(u); }}
+                  onClick={() => handleMentionSelect(u)}
+                  className="shrink-0 min-h-[44px] px-4 rounded-full text-sm font-medium bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] active:scale-[0.96] transition-transform"
+                >
+                  {u.name}
+                </button>
+              ))}
+            {mentionableUsers.filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 && (
+              <span className="text-xs text-[var(--text-dim)] self-center px-1">No matches</span>
+            )}
+          </div>
+        )}
+        {/* px paddings/gaps (not rem): at the 24px mobile root the rem forms
+            inflated 1.5× and squeezed the textarea below half the card. */}
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden flex items-end gap-[6px] p-[6px] sm:p-0 sm:block">
           <textarea
             ref={textareaRef}
             value={composeText}
@@ -955,18 +1051,21 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
             placeholder="Write a message…"
             rows={1}
             style={{ maxHeight: COMPOSER_MAX_HEIGHT_PX }}
-            className="flex-1 min-w-0 sm:w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-2.5 py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto sm:min-h-[4.5rem]"
+            className="flex-1 min-w-0 sm:w-full bg-transparent text-[var(--text-secondary)] text-sm placeholder:text-[var(--text-dim)] px-[10px] py-2 sm:px-4 sm:py-3 resize-none focus:outline-none overflow-y-auto sm:min-h-[4.5rem]"
           />
 
           {/* Inline icon buttons on mobile (right of the textarea); desktop
               keeps the original full toolbar row beneath for the Cmd+Enter hint
               and the labeled Send button. */}
-          <div className="flex items-center gap-1 shrink-0 sm:hidden">
+          {/* Explicit 44px (px, not rem): at the 24px mobile root these
+              inflated to 54/60px and squeezed the textarea to ~10 chars/line
+              (Josh's report). 44px keeps the T2.5 touch floor exactly. */}
+          <div className="flex items-center gap-[4px] shrink-0 sm:hidden">
             <button
               onClick={addChecklistLine}
               title="Add checklist item"
               aria-label="Add checklist item"
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 active:scale-[0.94] transition-all"
+              className="flex items-center justify-center w-[44px] h-[44px] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]/60 active:scale-[0.94] transition-all"
             >
               <CheckSquare className="w-4 h-4" />
             </button>
@@ -974,7 +1073,7 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
               onClick={handleSend}
               disabled={!composeText.trim() || sending}
               aria-label="Send message"
-              className="flex items-center justify-center w-10 h-10 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.94] transition-all"
+              className="flex items-center justify-center w-[44px] h-[44px] rounded-lg disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.94] transition-all"
               style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
             >
               <Send className="w-4 h-4" />
@@ -1016,37 +1115,11 @@ export default function ProjectChatter({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      {/* @mention picker — bottom-sheet on mobile (tap to pick), cursor-
-          anchored floating popover on desktop (arrow keys + Enter). */}
-      {mentionActive && isMobile && (
-        <MobileBottomSheet open={mentionActive} onClose={() => setMentionActive(false)} title="Mention a teammate">
-          <div className="px-5 pb-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-dim)' }} aria-hidden />
-              <input
-                type="text"
-                value={mentionQuery}
-                onChange={(e) => setMentionQuery(e.target.value)}
-                placeholder="Search names…"
-                autoFocus
-                className="w-full bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-xl pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-emerald-solid)]"
-              />
-            </div>
-          </div>
-          <div className="max-h-[50vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-            {mentionableUsers
-              .filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase()))
-              .slice(0, 20)
-              .map((u) => (
-                <MobileBottomSheet.Item
-                  key={u.id}
-                  label={u.name}
-                  onTap={() => handleMentionSelect(u)}
-                />
-              ))}
-          </div>
-        </MobileBottomSheet>
-      )}
+      {/* @mention picker — the mobile UX is the inline strip above the
+          composer (in the compose area, non-modal, keyboard-preserving);
+          desktop keeps the cursor-anchored floating popover (arrow keys +
+          Enter). The old MobileBottomSheet picker was removed 2026-06-11:
+          modal focus choreography killed the iOS keyboard mid-word. */}
       {mentionActive && !isMobile && (
         <MentionDropdown
           query={mentionQuery}

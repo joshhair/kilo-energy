@@ -65,6 +65,42 @@ export function usePublishHeightVar(
   }, [ref, varName, enabled]);
 }
 
+/**
+ * Pins a fixed, top-anchored element to the VISUAL viewport. On iOS the
+ * software keyboard overlays the layout viewport and WebKit pans it —
+ * position:fixed elements ride that pan and slide off-screen. Sizing the
+ * element to visualViewport.height and translating by its offsetTop keeps
+ * it glued to what the user can actually see (the FeedbackButton keyboard
+ * fix, 2026-06-11, extracted for reuse).
+ *
+ * Pass the ELEMENT (from a callback ref via useState), not a RefObject —
+ * portal-mounted elements appear a tick late and a plain-ref effect would
+ * see null forever (the FeedbackButton/ViewportPortal gotcha). The pinned
+ * element must be top-anchored with an explicit height class (e.g.
+ * `fixed inset-x-0 top-0 h-[100dvh]`) — an explicit bottom edge would
+ * fight the height override.
+ */
+export function useVisualViewportPin(el: HTMLElement | null, active = true): void {
+  useEffect(() => {
+    if (!el || !active) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const sync = () => {
+      el.style.height = `${vv.height}px`;
+      el.style.transform = `translateY(${vv.offsetTop}px)`;
+    };
+    sync();
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    return () => {
+      vv.removeEventListener('resize', sync);
+      vv.removeEventListener('scroll', sync);
+      el.style.height = '';
+      el.style.transform = '';
+    };
+  }, [el, active]);
+}
+
 export function useIsHydrated(): boolean {
   return useSyncExternalStore(
     subscribe,
