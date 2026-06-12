@@ -12,6 +12,7 @@ import MobileCard from './shared/MobileCard';
 import MobileBadge from './shared/MobileBadge';
 import MobileEmptyState from './shared/MobileEmptyState';
 import MobileBottomSheet from './shared/MobileBottomSheet';
+import { AddressVerifyField } from './blitz-detail/AddressVerifyField';
 import { SegmentedPills } from '../../../components/ui';
 
 export type BlitzStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -560,7 +561,7 @@ export default function MobileBlitz() {
                       if (!joining) handleJoinBlitz(blitz.id);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-semibold rounded-full transition-opacity active:opacity-70 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] text-xs font-semibold rounded-full transition-opacity active:opacity-70 cursor-pointer"
                   style={{
                     color: 'var(--accent-emerald-text)',
                     border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 55%, transparent)',
@@ -650,8 +651,6 @@ export default function MobileBlitz() {
         scrollable
         ariaLabel="Filter blitzes by status"
       />
-
-
       {/* Search + Sort */}
       <div className="space-y-2">
         <div className="relative">
@@ -831,10 +830,13 @@ export default function MobileBlitz() {
                   <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
                     {req.type === 'create' ? 'New blitz request' : 'Cancel request'}
                   </p>
-                  <MobileBadge
-                    value={req.status === 'approved' ? 'Approved' : req.status === 'denied' ? 'Denied' : 'Pending'}
-                    variant="status"
-                  />
+                  {/* mt-3 matches the admin request card's action-row gap. */}
+                  <div className="mt-3">
+                    <MobileBadge
+                      value={req.status === 'approved' ? 'Approved' : req.status === 'denied' ? 'Denied' : 'Pending'}
+                      variant="status"
+                    />
+                  </div>
                 </MobileCard>
               ))}
             </div>
@@ -876,12 +878,13 @@ export default function MobileBlitz() {
           </div>
           <div>
             <label className="block text-xs font-medium mb-1.5 uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing / Address</label>
-            <input
+            <AddressVerifyField
               value={createForm.housing}
-              onChange={(e) => setCreateForm((f) => ({ ...f, housing: e.target.value }))}
-              placeholder="e.g. 123 Main St, Apt 4"
-              className="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
-              style={{
+              onChange={(v) => setCreateForm((f) => ({ ...f, housing: v }))}
+              onCityFound={(city) => setCreateForm((f) => (f.location ? f : { ...f, location: city }))}
+              placeholder="e.g. 123 Main St, Apt 4 — then Verify"
+              inputClassName="w-full min-h-[48px] rounded-xl px-3 text-base text-[var(--text-primary)] focus:outline-none focus:ring-1"
+              inputStyle={{
                 background: 'var(--surface-card)',
                 border: '1px solid var(--border-subtle)',
                 fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)",

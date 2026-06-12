@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import MobileBottomSheet from '../shared/MobileBottomSheet';
+import { AddressVerifyField } from './AddressVerifyField';
 import { useToast } from '../../../../lib/toast';
 import { sortForSelection } from '../../../../lib/sorting';
 
@@ -122,12 +123,13 @@ export default function BlitzEditSheet({ open, onClose, onSaved, blitz, isAdmin,
           />
         </Field>
         <Field label="Housing">
-          <input
+          <AddressVerifyField
             value={form.housing}
-            onChange={(e) => setForm({ ...form, housing: e.target.value })}
-            placeholder="Optional"
-            className="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
-            style={SELECT_STYLE}
+            onChange={(v) => setForm((f) => ({ ...f, housing: v }))}
+            onCityFound={(city) => setForm((f) => (f.location ? f : { ...f, location: city }))}
+            placeholder="Optional — type, then Verify"
+            inputClassName="w-full rounded-lg px-3 py-2 text-base text-[var(--text-primary)] min-h-[48px] focus:outline-none focus:ring-1"
+            inputStyle={SELECT_STYLE}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">

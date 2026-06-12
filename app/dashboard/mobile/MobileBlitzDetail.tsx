@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate } from '../../../lib/utils';
-import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus, UserPlus, Megaphone } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, XCircle, Loader2, CalendarPlus, UserPlus, Megaphone, MapPin } from 'lucide-react';
+import { mapsHref } from '../../../lib/maps';
 import MobileBadge from './shared/MobileBadge';
 import MobileBottomSheet from './shared/MobileBottomSheet';
 import { deriveBlitzStatus } from '../../../lib/blitzStatus';
@@ -28,8 +29,6 @@ import BlitzEditSheet from './blitz-detail/BlitzEditSheet';
 import BlitzProgressBar from './blitz-detail/BlitzProgressBar';
 import BlitzMyStats from './blitz-detail/BlitzMyStats';
 
-const TAB_ORDER_BASE: BlitzTabKey[] = ['overview', 'participants', 'deals', 'costs', 'profitability'];
-
 export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const router = useRouter();
   const { effectiveRole, effectiveRepId, reps, installerPricingVersions, productCatalogProducts, solarTechProducts } = useApp();
@@ -42,7 +41,6 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const [loading, setLoading] = useState(true);
   const prevTabRef = useRef<BlitzTabKey>('overview');
   const scrollPos = useRef<Partial<Record<BlitzTabKey, number>>>({});
-  const [panelDir, setPanelDir] = useState<'right' | 'left'>('right');
   const [tab, setTab] = useState<BlitzTabKey>('overview');
 
   const [canRequestBlitz, setCanRequestBlitz] = useState(false);
@@ -67,9 +65,6 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
   const [submittingAction, setSubmittingAction] = useState(false);
 
   const handleTabChange = useCallback((next: BlitzTabKey) => {
-    const prevIdx = TAB_ORDER_BASE.indexOf(prevTabRef.current);
-    const nextIdx = TAB_ORDER_BASE.indexOf(next);
-    setPanelDir(nextIdx >= prevIdx ? 'right' : 'left');
     scrollPos.current[prevTabRef.current] = window.scrollY;
     window.scrollTo({ top: 0, behavior: 'instant' });
     prevTabRef.current = next;
@@ -306,7 +301,27 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           <MobileBadge value={statusLabel} variant="status" />
         </div>
         <p className="text-base mt-1" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-          {blitz.location && <>{blitz.location} &middot; </>}
+          {blitz.location && (() => {
+            // Clickable location (Josh's blitz feedback): housing + city
+            // give the precise pin; Apple Maps on Apple UAs, Google else.
+            const href = mapsHref([blitz.housing, blitz.location]);
+            return href ? (
+              <>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] min-h-[44px] -my-2.5 py-2.5"
+                >
+                  <MapPin className="w-3.5 h-3.5" aria-hidden />
+                  {blitz.location}
+                </a>
+                {' '}&middot;{' '}
+              </>
+            ) : (
+              <>{blitz.location} &middot; </>
+            );
+          })()}
           {formatDate(blitz.startDate)} &ndash; {formatDate(blitz.endDate)}
         </p>
 
@@ -392,7 +407,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           serif headline, ghost-outlined CTA. */}
       {canShowFomoBanner && (
         <div
-          className="card-surface rounded-2xl p-5 mb-4 border-l-2"
+          className="card-surface rounded-2xl p-5 border-l-2"
           style={{ borderLeftColor: 'color-mix(in srgb, var(--accent-emerald-solid) 45%, transparent)' }}
         >
           <p
@@ -438,7 +453,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       )}
       {!canManage && !isPM && viewerJoinStatus === 'pending' && (
         <div
-          className="rounded-2xl p-3 mb-4"
+          className="rounded-2xl p-3"
           style={{
             background: 'color-mix(in srgb, var(--accent-amber-solid) 6%, var(--surface-card))',
             border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 24%, transparent)',
@@ -451,7 +466,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
       )}
       {!canManage && !isPM && viewerJoinStatus === 'waitlist' && (
         <div
-          className="rounded-2xl p-3 mb-4"
+          className="rounded-2xl p-3"
           style={{
             background: 'color-mix(in srgb, var(--accent-cyan-solid) 6%, var(--surface-card))',
             border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 24%, transparent)',
@@ -466,7 +481,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
           accept or decline. */}
       {!canManage && !isPM && viewerJoinStatus === 'invited' && (
         <div
-          className="rounded-2xl p-3 mb-4 flex items-center justify-between gap-3"
+          className="rounded-2xl p-3 flex items-center justify-between gap-3"
           style={{
             background: 'color-mix(in srgb, var(--accent-blue-solid) 6%, var(--surface-card))',
             border: '1px solid color-mix(in srgb, var(--accent-blue-solid) 24%, transparent)',
@@ -514,7 +529,11 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
       <BlitzTabs tabs={tabs} active={tab} onChange={handleTabChange} />
 
-      <div key={tab} className={panelDir === 'right' ? 'animate-panel-right' : 'animate-panel-left'}>
+      {/* Opacity-only tab transition (Josh: "blitz tabs are jenky") — the
+          old directional slide animated transform on a full-height panel
+          that remounts per tab; per-tab scroll restore makes the slide
+          fight the scroll jump. Fade is cheap and calm. */}
+      <div key={tab} className="animate-fade-in">
         {tab === 'overview' && (
           <div className="space-y-4">
             {(blitz.status === 'upcoming' || blitz.status === 'active') && (
@@ -557,7 +576,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
               const endMs = new Date(blitz.endDate + 'T00:00:00').getTime();
               const totalDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
               return (
-                <div className="rounded-xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+                <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                   <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Details</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -571,13 +590,27 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                     {blitz.location && (
                       <div className="flex justify-between">
                         <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Location</span>
-                        <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</span>
+                        {(() => {
+                          const href = mapsHref([blitz.location]);
+                          return href ? (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-right underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</a>
+                          ) : (
+                            <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.location}</span>
+                          );
+                        })()}
                       </div>
                     )}
                     {blitz.housing && (
-                      <div className="flex justify-between">
-                        <span style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing</span>
-                        <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</span>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Housing</span>
+                        {(() => {
+                          const href = mapsHref([blitz.housing, blitz.location]);
+                          return href ? (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-right underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</a>
+                          ) : (
+                            <span className="text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{blitz.housing}</span>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -587,7 +620,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
 
             {/* Team avatar preview */}
             {approvedParticipants.length > 0 && (
-              <div className="rounded-xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
+              <div className="rounded-2xl p-4" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-dim)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>Team</p>
                   <button onClick={() => handleTabChange('participants')} className="text-xs font-medium" style={{ color: 'var(--accent-emerald-text)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>View all</button>

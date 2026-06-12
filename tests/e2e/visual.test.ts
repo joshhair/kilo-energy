@@ -785,6 +785,58 @@ test.describe('Visual regression — mobile safety surfaces', () => {
     });
   });
 
+  // Blitz address locks (Josh's feedback 2026-06-12): the Verify flow pulls
+  // real addresses to select (geocoder mocked at OUR route — the upstream
+  // is policy-bound), and rendered locations are maps links. No pixel
+  // baseline yet: blitz detail lacks a stable seeded fixture (the suite's
+  // long-standing constraint), so these are structural locks.
+  test('mobile Blitz — address Verify flow (mocked geocoder)', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile blitz UX');
+    await page.route('**/api/geocode*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          results: [
+            { displayName: '123 Main Street, Austin, Travis County, Texas, 78701, United States', city: 'Austin', state: 'Texas' },
+          ],
+        }),
+      }),
+    );
+    await page.goto('/dashboard/blitz');
+    await page.waitForLoadState('networkidle');
+    const createBtn = page.locator('button[aria-label="Create blitz"]');
+    test.skip(!(await createBtn.isVisible().catch(() => false)), 'create affordance not visible for this account');
+    await createBtn.click();
+    const housing = page.getByPlaceholder(/then Verify/);
+    await housing.waitFor({ state: 'visible' });
+    await housing.fill('123 Main St Austin');
+    await page.getByRole('button', { name: 'Verify address' }).click();
+    const suggestion = page.getByText('123 Main Street, Austin', { exact: false });
+    await expect(suggestion).toBeVisible();
+    // Attribution per the geocoder's usage policy — shown with the results.
+    await expect(page.getByText('© OpenStreetMap contributors')).toBeVisible();
+    await suggestion.dispatchEvent('pointerdown');
+    await expect(housing).toHaveValue(/123 Main Street, Austin/);
+    // Selection closes the results (and the attribution with them).
+    await expect(page.getByText('© OpenStreetMap contributors')).toBeHidden();
+  });
+
+  test('mobile Blitz detail — location renders as a maps link', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'mobile blitz UX');
+    await page.goto('/dashboard/blitz');
+    await page.waitForLoadState('networkidle');
+    const card = page.locator('button:has-text("Reps")').first();
+    test.skip(!(await card.isVisible().catch(() => false)), 'no blitz cards in this environment');
+    await card.click();
+    await page.waitForURL('**/dashboard/blitz/*', { timeout: 10_000 });
+    await page.waitForLoadState('networkidle');
+    const link = page.locator('a[href*="maps"]').first();
+    test.skip(!(await link.isVisible().catch(() => false)), 'this blitz has no location set');
+    const href = await link.getAttribute('href');
+    expect(href).toMatch(/maps\.apple\.com|google\.com\/maps/);
+  });
+
   test('mobile You — View As drawer open stays on-screen', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile-only surface (/dashboard/you redirects on desktop)');
     // Reach the You page the way a mobile user does — tap the bottom-nav tab.

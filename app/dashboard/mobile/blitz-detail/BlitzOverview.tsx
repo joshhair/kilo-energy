@@ -22,7 +22,7 @@ export default function BlitzOverview({ participantCount, totalDeals, totalKW, n
       : []),
   ];
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className={`grid gap-2 [&>*]:min-w-0 ${stats.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {stats.map((stat, i) => (
           <div

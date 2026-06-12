@@ -16,6 +16,7 @@ import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileBlitzDetail from '../../mobile/MobileBlitzDetail';
 import { formatDate, formatCurrency, formatCompactKWParts } from '../../../../lib/utils';
+import { mapsHref } from '../../../../lib/maps';
 import { getSolarTechBaseline, getProductCatalogBaseline, getInstallerRatesForDeal } from '../../../../lib/data';
 import { ArrowLeft, MapPin, Calendar, CalendarPlus, Home, Users, Plus, Trash2, DollarSign, TrendingUp, Zap, XCircle, UserPlus, Pencil, Save, Loader2, FolderKanban, ChevronUp, Megaphone } from 'lucide-react';
 import { useToast } from '../../../../lib/toast';
@@ -746,9 +747,17 @@ export default function BlitzDetailPage() {
                 ); })()}
               </div>
               <div className="flex flex-wrap gap-3 mt-2 text-sm text-[var(--text-secondary)]">
-                {blitz.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>}
+                {blitz.location && (() => { const href = mapsHref([blitz.housing, blitz.location]); return href ? (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:brightness-110"><MapPin className="w-3.5 h-3.5" />{blitz.location}</a>
+                ) : (
+                  <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{blitz.location}</span>
+                ); })()}
                 <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{formatDate(blitz.startDate)} — {formatDate(blitz.endDate)}</span>
-                {blitz.housing && <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>}
+                {blitz.housing && (() => { const href = mapsHref([blitz.housing, blitz.location]); return href ? (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:brightness-110"><Home className="w-3.5 h-3.5" />{blitz.housing}</a>
+                ) : (
+                  <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" />{blitz.housing}</span>
+                ); })()}
                 {/* Add to Calendar — visible to every viewer (admin / PM / owner /
                     creator / participant — anyone who has access to view the blitz
                     has access to the .ics endpoint via the same auth gate).
@@ -1094,13 +1103,21 @@ export default function BlitzDetailPage() {
                 {blitz.location && (
                   <div className="flex justify-between">
                     <span className="text-[var(--text-muted)]">Location</span>
-                    <span className="text-[var(--text-primary)]">{blitz.location}</span>
+                    {(() => { const href = mapsHref([blitz.location]); return href ? (
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:brightness-110">{blitz.location}</a>
+                    ) : (
+                      <span className="text-[var(--text-primary)]">{blitz.location}</span>
+                    ); })()}
                   </div>
                 )}
                 {blitz.housing && (
-                  <div className="flex justify-between">
-                    <span className="text-[var(--text-muted)]">Housing</span>
-                    <span className="text-[var(--text-primary)]">{blitz.housing}</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[var(--text-muted)] shrink-0">Housing</span>
+                    {(() => { const href = mapsHref([blitz.housing, blitz.location]); return href ? (
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-right underline underline-offset-2 decoration-[var(--accent-emerald-solid)]/50 text-[var(--accent-emerald-text)] hover:brightness-110">{blitz.housing}</a>
+                    ) : (
+                      <span className="text-[var(--text-primary)]">{blitz.housing}</span>
+                    ); })()}
                   </div>
                 )}
               </div>
