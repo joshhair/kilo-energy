@@ -11,18 +11,20 @@ import { PayrollEntry, Reimbursement } from '../../../lib/data';
 import { formatDate, downloadCSV, fmt$, localDateString, todayLocalDateStr } from '../../../lib/utils';
 import { sumPaid, sumPending, sumDraft, breakdownByType } from '../../../lib/aggregators';
 import { RelativeDate } from '../components/RelativeDate';
-import { X, CreditCard, AlertTriangle, Receipt, Check, Filter, ArrowRight, Download, Printer, Trash2, ChevronDown } from 'lucide-react';
+import { X, CreditCard, AlertTriangle, ArrowRight, Download, Printer, Trash2, ChevronDown } from 'lucide-react';
 import { PaginationBar } from '../components/PaginationBar';
 import { RepSelector } from '../components/RepSelector';
-import { SearchableSelect } from '../components/SearchableSelect';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PaidCorrectionModal from '../components/PaidCorrectionModal';
 import Link from 'next/link';
 import MobilePayroll from '../mobile/MobilePayroll';
 import { PayrollSkeleton } from './components/PayrollSkeleton';
-import { StatCard, ReimBadge } from './components/StatCard';
+import { StatCard } from './components/StatCard';
 import { GradCards } from './components/GradCards';
+import { ReimbursementsView } from './components/ReimbursementsView';
+import { ManualPaymentModal } from './components/ManualPaymentModal';
+import { EditEntryModal } from './components/EditEntryModal';
 
 type StatusTab = 'Draft' | 'Pending' | 'Paid';
 type TypeTab = 'All' | 'Deal' | 'Bonus' | 'Trainer' | 'Charge';
@@ -850,9 +852,8 @@ function PayrollPageInner() {
     persistPayrollEntry(newEntry);
   };
 
-  const inputCls = 'w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-all duration-200 input-focus-glow';
-
-  const labelCls = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider';
+  // inputCls/labelCls moved to components/form-styles.ts (T4.1) — only the
+  // extracted modals consume them.
 
   // ── Non-admin guard ──────────────────────────────────────────────────────────
   // Reps can view only their own entries in a read-only mode; no admin actions.
@@ -1134,164 +1135,25 @@ function PayrollPageInner() {
       {/* ── Reimbursements view ──────────────────────────────────────────────── */}
       {pageView === 'reimbursements' && (
         <div key={pageView} className={pageDir === 'forward' ? 'animate-tab-forward' : 'animate-tab-backward'}>
-          {/* Date + status filter */}
-          <div className="flex items-center gap-3 mb-5">
-            <Filter className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
-            <select
-              value={reimFilterStatus}
-              onChange={(e) => setReimFilterStatus(e.target.value as 'All' | 'Pending' | 'Approved' | 'Denied')}
-              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-            >
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Denied">Denied</option>
-              <option value="All">All</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">From</label>
-              <input
-                type="date"
-                value={reimFilterFrom}
-                onChange={(e) => setReimFilterFrom(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">To</label>
-              <input
-                type="date"
-                value={reimFilterTo}
-                onChange={(e) => setReimFilterTo(e.target.value)}
-                className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]"
-                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <select
-              value={showArchivedReim === 'only' ? 'only' : showArchivedReim ? 'all' : 'active'}
-              onChange={(e) => setShowArchivedReim(e.target.value === 'only' ? 'only' : e.target.value === 'all' ? true : false)}
-              className="rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] ml-auto"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              title="Archive visibility"
-            >
-              <option value="active">Active only</option>
-              <option value="all">Include archived</option>
-              <option value="only">Archived only</option>
-            </select>
-            {(reimFilterFrom || reimFilterTo || reimFilterStatus !== 'Pending' || showArchivedReim !== false) && (
-              <button
-                onClick={() => { setReimFilterFrom(''); setReimFilterTo(''); setReimFilterStatus('Pending'); setShowArchivedReim(false); }}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline transition-colors"
-              >
-                Clear
-              </button>
-            )}
-            <span className="text-[var(--text-dim)] text-xs ml-auto">{filteredReimbursements.length} request{filteredReimbursements.length !== 1 ? 's' : ''}</span>
-          </div>
-
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: 'var(--surface-card)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rep</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Amount</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Date</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Receipt</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status</th>
-                  <th className="text-left px-5 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReimbursements.map((r, i) => (
-                  <tr key={r.id} className={`table-row-enter row-stagger-${Math.min(i, 24)} relative transition-colors duration-150`} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--surface)' : 'color-mix(in srgb, var(--surface-card) 35%, var(--surface-page))' }}>
-                    <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{r.repName}</td>
-                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{r.description}</td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent-emerald-display)', fontFamily: "'DM Serif Display', serif" }}>${r.amount.toFixed(2)}</td>
-                    <td className="px-5 py-3 text-[var(--text-muted)] text-xs">{formatDate(r.date)}</td>
-                    <td className="px-5 py-3 text-[var(--text-secondary)] text-xs">
-                      {r.receiptUrl ? (
-                        <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-cyan-text)] hover:underline">
-                          {r.receiptName || 'Receipt'}
-                        </a>
-                      ) : (
-                        r.receiptName || '—'
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      <ReimBadge status={r.status} />
-                      {r.archivedAt && (
-                        <span className="ml-1.5 text-[10px] uppercase tracking-wider text-[var(--text-dim)]">· archived</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      {(() => {
-                        // Inline handler — shared by all state-transition buttons.
-                        const patchReim = (updates: Partial<{ status: Reimbursement['status']; archived: boolean }>, successMsg: string, rollback: Partial<Reimbursement>) => {
-                          if (processingReimIds.has(r.id)) return;
-                          setProcessingReimIds((prev) => new Set(prev).add(r.id));
-                          const optimistic: Partial<Reimbursement> = {};
-                          if (updates.status) optimistic.status = updates.status;
-                          if (updates.archived !== undefined) optimistic.archivedAt = updates.archived ? new Date().toISOString() : undefined;
-                          setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, ...optimistic } : x));
-                          fetch(`/api/reimbursements/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
-                            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); toast(successMsg, 'success'); })
-                            .catch((err) => { console.error(err); toast('Failed to persist change', 'error'); setReimbursements((prev) => prev.map((x) => x.id === r.id ? { ...x, ...rollback } : x)); })
-                            .finally(() => setProcessingReimIds((prev) => { const s = new Set(prev); s.delete(r.id); return s; }));
-                        };
-                        const deleteReim = () => { setPendingDeleteReim(r); };
-                        const btnCls = 'flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-                        return (
-                          <div className="flex gap-2 flex-wrap">
-                            {r.status === 'Pending' && (
-                              <>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Approved' }, `Reimbursement approved for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-emerald-soft)] hover:bg-emerald-800/60 text-[var(--accent-emerald-text)]`}>
-                                  <Check className="w-3 h-3" /> Approve
-                                </button>
-                                <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Denied' }, `Reimbursement denied for ${r.repName}`, { status: 'Pending' })} className={`${btnCls} bg-[var(--accent-red-soft)] hover:bg-red-800/60 text-[var(--accent-red-text)]`}>
-                                  <X className="w-3 h-3" /> Deny
-                                </button>
-                              </>
-                            )}
-                            {(r.status === 'Approved' || r.status === 'Denied') && (
-                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ status: 'Pending' }, `Reset to Pending`, { status: r.status })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
-                                Reset
-                              </button>
-                            )}
-                            {!r.archivedAt && (
-                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: true }, `Reimbursement archived`, { archivedAt: undefined })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-muted)] border border-[var(--border-subtle)]`}>
-                                Archive
-                              </button>
-                            )}
-                            {r.archivedAt && (
-                              <button disabled={processingReimIds.has(r.id)} onClick={() => patchReim({ archived: false }, `Reimbursement unarchived`, { archivedAt: r.archivedAt })} className={`${btnCls} bg-[var(--surface-card)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border-subtle)]`}>
-                                Unarchive
-                              </button>
-                            )}
-                            <button disabled={processingReimIds.has(r.id)} onClick={deleteReim} className={`${btnCls} text-[var(--text-dim)] hover:text-[var(--accent-red-text)] hover:bg-red-500/10`} title="Delete permanently">
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                ))}
-                {filteredReimbursements.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Receipt className="w-10 h-10 text-[var(--text-dim)]" />
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{reimbursements.length === 0 ? 'No reimbursement requests' : 'No requests match the selected filters'}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{reimbursements.length === 0 ? 'Reps can submit reimbursement requests from their My Pay page' : 'Try adjusting the status or date filters to find what you need'}</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {/* Reimbursements content — extracted to components/ReimbursementsView
+              (T4.1). Gate + tab-animation wrapper stay here. */}
+          <ReimbursementsView
+            reimbursements={reimbursements}
+            filteredReimbursements={filteredReimbursements}
+            reimFilterStatus={reimFilterStatus}
+            setReimFilterStatus={setReimFilterStatus}
+            reimFilterFrom={reimFilterFrom}
+            setReimFilterFrom={setReimFilterFrom}
+            reimFilterTo={reimFilterTo}
+            setReimFilterTo={setReimFilterTo}
+            showArchivedReim={showArchivedReim}
+            setShowArchivedReim={setShowArchivedReim}
+            processingReimIds={processingReimIds}
+            setProcessingReimIds={setProcessingReimIds}
+            setPendingDeleteReim={setPendingDeleteReim}
+            setReimbursements={setReimbursements}
+            toast={toast}
+          />
         </div>
       )}
 
@@ -1786,213 +1648,30 @@ function PayrollPageInner() {
       {showActionBar && <div className="h-20" />}
 
       {/* Manual Payment Modal */}
-      {showPaymentModal && (() => {
-        const isBonus = paymentForm.type === 'Bonus';
-        const isChargeback = paymentForm.type === 'Chargeback';
-        const isCharge = paymentForm.type === 'Charge';
-        const closeAndReset = () => {
-          setShowPaymentModal(false);
-          setPaymentForm({ type: 'Deal', repId: '', projectId: '', amount: '', stage: 'M1', date: '', notes: '', chargeCategory: 'misc' });
-        };
-        const titleFor = isCharge ? 'Charge' : isChargeback ? 'Chargeback' : isBonus ? 'Bonus' : 'Payment';
-        // Type toggle colors mirror the PaymentTypeBadge palette so the
-        // active mode previews how the resulting row will look in the list.
-        const typeAccent = (t: typeof paymentForm.type) =>
-          t === 'Chargeback' ? 'var(--accent-red-solid)'
-          : t === 'Charge'   ? 'var(--accent-red-solid)'
-          : t === 'Bonus'    ? 'var(--accent-amber-solid)'
-          : 'var(--brand)';
-        return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={paymentPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Add {titleFor}</h2>
-              <button onClick={closeAndReset} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleAddPayment} className="space-y-4">
-              {/* Type toggle: Deal (project + stage) / Bonus (rep + amount only)
-                  / Chargeback (clawback of a specific Paid entry, project-linked)
-                  / Charge (standalone one-off deduction, no parent entry,
-                  needs a category). Stored as negative Deal regardless. */}
-              <div>
-                <label className={labelCls}>Type</label>
-                <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-                  {(['Deal', 'Bonus', 'Chargeback', 'Charge'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setPaymentForm((p) => ({ ...p, type: t }))}
-                      className={`flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${paymentForm.type === t ? ((t === 'Chargeback' || t === 'Charge') ? 'text-[var(--text-primary)]' : 'text-black') : 'text-[var(--text-secondary)]'}`}
-                      style={{ background: paymentForm.type === t ? typeAccent(t) : 'transparent' }}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                {isChargeback && (
-                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Clawback of a specific paid milestone. Enter positive dollars; stored as a negative Draft entry. Pick the cancelled deal below.</p>
-                )}
-                {isCharge && (
-                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5">One-off deduction (equipment damage, clawback, dispute). No project needed. Stored as a negative Draft entry — publish to apply.</p>
-                )}
-              </div>
-              {isCharge && (
-                <div>
-                  <label className={labelCls}>Category</label>
-                  <SearchableSelect
-                    value={paymentForm.chargeCategory}
-                    onChange={(val) => setPaymentForm((p) => ({ ...p, chargeCategory: val as typeof p.chargeCategory }))}
-                    options={[
-                      { value: 'equipment_damage', label: 'Equipment damage' },
-                      { value: 'reimbursement_clawback', label: 'Reimbursement clawback' },
-                      { value: 'customer_dispute', label: 'Customer dispute' },
-                      { value: 'misc', label: 'Misc' },
-                    ]}
-                    placeholder="Select category"
-                    searchable={false}
-                  />
-                </div>
-              )}
-              <div>
-                <label className={labelCls}>Rep</label>
-                <RepSelector
-                  value={paymentForm.repId}
-                  onChange={(repId) => setPaymentForm((p) => ({ ...p, repId, projectId: '' }))}
-                  reps={reps}
-                  filterFn={(r) => r.active !== false}
-                  placeholder="— Select rep —"
-                  clearLabel="— Select rep —"
-                />
-              </div>
-              {!isBonus && !isCharge && (
-                <div>
-                  <label className={labelCls}>Project</label>
-                  <SearchableSelect
-                    value={paymentForm.projectId}
-                    onChange={(val) => setPaymentForm((p) => ({ ...p, projectId: val }))}
-                    options={projects
-                      // Deal/Bonus rows attach to live projects; Chargebacks
-                      // attach specifically to CANCELLED projects (that's the
-                      // whole use case). Invert the phase filter when the
-                      // active type is Chargeback so admin can actually pick
-                      // the deal they're clawing back. 2026-04-23.
-                      .filter((p) => isChargeback
-                        ? p.phase === 'Cancelled'
-                        : p.phase !== 'Cancelled' && p.phase !== 'On Hold')
-                      .filter((p) => !paymentForm.repId || p.repId === paymentForm.repId || p.setterId === paymentForm.repId || p.additionalClosers?.some((c) => c.userId === paymentForm.repId) || p.additionalSetters?.some((s) => s.userId === paymentForm.repId))
-                      .map((p) => {
-                        const installerName = typeof p.installer === 'string' ? p.installer : (p.installer as { name?: string })?.name ?? '—';
-                        return { value: p.id, label: `${p.customerName} — ${installerName} (${p.kWSize} kW) [${p.phase}]` };
-                      })}
-                    placeholder={isChargeback ? '— Select cancelled project —' : '— Select project (optional) —'}
-                  />
-                </div>
-              )}
-              <div className={isBonus || isCharge ? '' : 'grid grid-cols-2 gap-3'}>
-                <div>
-                  <label className={labelCls}>Amount ($)</label>
-                  <input required type="number" min="0.01" step="0.01"
-                    value={paymentForm.amount}
-                    onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
-                    className={inputCls} />
-                </div>
-                {!isBonus && !isCharge && (
-                  <div>
-                    <label className={labelCls}>Stage</label>
-                    <SearchableSelect
-                      value={paymentForm.stage}
-                      onChange={(val) => setPaymentForm((p) => ({ ...p, stage: val as 'M1' | 'M2' | 'M3' }))}
-                      options={[
-                        { value: 'M1', label: 'M1' },
-                        { value: 'M2', label: 'M2' },
-                        { value: 'M3', label: 'M3' },
-                      ]}
-                      placeholder="Select stage"
-                      searchable={false}
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className={labelCls}>{isBonus ? 'Date' : isChargeback ? 'Date' : isCharge ? 'Charge Date' : 'Pay Date'}</label>
-                <input type="date" value={paymentForm.date}
-                  onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))}
-                  className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>{isCharge ? 'Reason' : 'Notes'}</label>
-                <input type="text" placeholder={isBonus ? 'e.g. Monthly performance bonus' : isChargeback ? 'e.g. Deal cancelled by homeowner — M2 claw-back' : isCharge ? 'e.g. iPad screen damaged, replacement cost' : 'e.g. Additional payment — special circumstance'}
-                  value={paymentForm.notes}
-                  onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))}
-                  className={inputCls + ' placeholder-slate-500'} />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="submit"
-                  className={`flex-1 font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97] ${(isChargeback || isCharge) ? 'text-[var(--text-primary)]' : 'btn-primary text-black'}`}
-                  style={{ backgroundColor: (isChargeback || isCharge) ? 'var(--accent-red-solid)' : 'var(--brand)' }}>
-                  Add {titleFor}
-                </button>
-                <button type="button" onClick={closeAndReset}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        );
-      })()}
+      {/* Manual Payment Modal — extracted to components/ManualPaymentModal
+          (T4.1). handleAddPayment + paymentForm state + focus trap stay here. */}
+      {showPaymentModal && (
+        <ManualPaymentModal
+          paymentForm={paymentForm}
+          setPaymentForm={setPaymentForm}
+          setShowPaymentModal={setShowPaymentModal}
+          handleAddPayment={handleAddPayment}
+          paymentPanelRef={paymentPanelRef}
+          projects={projects}
+          reps={reps}
+        />
+      )}
 
-      {/* Row-level Edit modal — amount / date / notes (status is changed
-          via the row buttons, not here). Paid entries are blocked at the
-          open-modal step. */}
+      {/* Row-level Edit modal — extracted to components/EditEntryModal (T4.1). */}
       {editingEntry && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50">
-          <div ref={editEntryPanelRef} className="bg-[var(--surface)] border border-[var(--border)]/80 shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md overflow-visible">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[var(--text-primary)] font-semibold text-lg">Edit {editingEntry.type} Entry</h2>
-              <button onClick={() => setEditingEntry(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-[var(--text-muted)] text-xs mb-4">{editingEntry.repName} — {editingEntry.paymentStage}{editingEntry.customerName ? ` · ${editingEntry.customerName}` : ''}</p>
-            <form onSubmit={handleSaveEditEntry} className="space-y-4">
-              <div>
-                <label className={labelCls}>Amount ($)</label>
-                <input required type="number" min={editingEntry.amount < 0 ? undefined : "0.01"} max={editingEntry.amount < 0 ? "-0.01" : undefined} step="0.01"
-                  value={editEntryForm.amount}
-                  onChange={(e) => setEditEntryForm((f) => ({ ...f, amount: e.target.value }))}
-                  className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Date</label>
-                <input type="date" value={editEntryForm.date} required
-                  onChange={(e) => setEditEntryForm((f) => ({ ...f, date: e.target.value }))}
-                  className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Notes</label>
-                <input type="text"
-                  value={editEntryForm.notes}
-                  onChange={(e) => setEditEntryForm((f) => ({ ...f, notes: e.target.value }))}
-                  className={inputCls + ' placeholder-slate-500'} />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="submit"
-                  className="btn-primary flex-1 text-black font-semibold py-2.5 rounded-xl text-sm active:scale-[0.97]"
-                  style={{ backgroundColor: 'var(--brand)' }}>
-                  Save Changes
-                </button>
-                <button type="button" onClick={() => setEditingEntry(null)}
-                  className="btn-secondary flex-1 bg-[var(--border)] hover:bg-[var(--text-dim)] text-[var(--text-primary)] font-medium py-2.5 rounded-xl text-sm active:scale-[0.97]">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EditEntryModal
+          editingEntry={editingEntry}
+          setEditingEntry={setEditingEntry}
+          editEntryForm={editEntryForm}
+          setEditEntryForm={setEditEntryForm}
+          handleSaveEditEntry={handleSaveEditEntry}
+          editEntryPanelRef={editEntryPanelRef}
+        />
       )}
 
       {/* ── Floating batch-action toolbar ────────────────────────────────────
