@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useIsHydrated, useFocusTrap, useMediaQuery } from '../../../lib/hooks';
@@ -10,10 +9,12 @@ import { useApp } from '../../../lib/context';
 import { formatCompactKW } from '../../../lib/utils';
 import { Search, ChevronRight, ChevronDown, Users, Plus, Trash2, X, Mail, Clock, UserCog } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { RepSelector } from '../components/RepSelector';
 import { useToast } from '../../../lib/toast';
 import { SegmentedPills } from '../../../components/ui';
 import { GradCard } from './components/GradCard';
+import { UnifiedDirectory } from './components/UnifiedDirectory';
+import { AddUserModal } from './components/AddUserModal';
+import { ROLE_LABELS, ROLE_LABELS_BY_ROLE, ROLE_BADGE_CLS, ROLE_BADGE_STYLES, ROLE_BADGE_HOVER, type SimpleUser } from './components/role-meta';
 import { InactiveExpander } from './components/InactiveExpander';
 import RowActionsMenu from '../components/RowActionsMenu';
 import { RepsSkeleton } from './components/RepsSkeleton';
@@ -39,44 +40,12 @@ const ROLE_FILTERS = [
 ] as const;
 type RoleFilter = typeof ROLE_FILTERS[number]['value'];
 
-type SimpleUser = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  role: string;
-  repType?: string;
-  active?: boolean;
-};
+// SimpleUser type moved to components/role-meta.ts (T4.1).
 
 const PIPELINE_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold', 'Completed']);
 const KW_EXCLUDED: ReadonlySet<string> = new Set(['Cancelled', 'On Hold']);
 
-const ROLE_LABELS = { closer: 'Closer', setter: 'Setter', both: 'Both' } as const;
-
-// User account role labels (for the Add User modal role picker).
-const ROLE_LABELS_BY_ROLE: Record<'rep' | 'admin' | 'sub-dealer' | 'project_manager', string> = {
-  rep: 'Rep',
-  admin: 'Admin',
-  'sub-dealer': 'Sub-Dealer',
-  project_manager: 'Project Manager',
-};
-const ROLE_BADGE_CLS = {
-  closer: 'border',
-  setter: 'border',
-  both:   'border',
-} as const;
-const ROLE_BADGE_STYLES = {
-  closer: { background: 'var(--accent-blue-soft)', color: 'var(--accent-blue-text)', borderColor: 'color-mix(in srgb, var(--accent-blue-solid) 25%, transparent)' },
-  setter: { background: 'color-mix(in srgb, var(--accent-purple-solid) 10%, transparent)', color: 'var(--accent-purple-text)', borderColor: 'color-mix(in srgb, var(--accent-purple-solid) 25%, transparent)' },
-  both:   { background: 'color-mix(in srgb, var(--accent-cyan-solid) 10%, transparent)', color: 'var(--accent-cyan-text)', borderColor: 'color-mix(in srgb, var(--accent-cyan-solid) 25%, transparent)' },
-} as const;
-const ROLE_BADGE_HOVER = {
-  closer: 'hover:brightness-125',
-  setter: 'hover:brightness-125',
-  both:   'hover:brightness-125',
-} as const;
+// ROLE_* display metadata moved to components/role-meta.ts (T4.1).
 
 // r=22 inside a 48×48 viewBox  →  circumference ≈ 138.23
 const REP_RING_CIRCUMFERENCE = 2 * Math.PI * 22;
@@ -832,367 +801,27 @@ function UsersPageInner() {
         })}
       </div>
 
-      {/* ── Non-rep view: simple user list ─────────────────────────────────── */}
-      {roleFilter !== 'rep' && (() => {
-        // Build the unified user pool based on the current role filter.
-        const pool: SimpleUser[] =
-          roleFilter === 'all'
-            ? [
-                // Filter to actual reps only — selling admins live in adminUsers below, not here.
-                ...reps.filter((r) => r.active !== false && r.role === 'rep').map((r) => ({ id: r.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone, role: 'rep', repType: r.repType })),
-                ...subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' })),
-                ...pmUsers.filter((u) => u.active !== false),
-                ...adminUsers.filter((u) => u.active !== false),
-              ]
-            : roleFilter === 'sub-dealer'
-            ? subDealers.filter((s) => s.active !== false).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, email: s.email, phone: s.phone, role: 'sub-dealer' }))
-            : roleFilter === 'project_manager'
-            ? pmUsers.filter((u) => u.active !== false)
-            : adminUsers.filter((u) => u.active !== false);
-
-        const q = debouncedSearch.trim().toLowerCase();
-        const filtered = q
-          ? pool.filter((u) => `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
-          : pool;
-
-        const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-          rep:              { label: 'Rep',              color: 'var(--accent-emerald-text)', bg: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)' },
-          'sub-dealer':     { label: 'Sub-Dealer',       color: 'var(--accent-purple-text)', bg: 'var(--accent-purple-soft)' },
-          project_manager:  { label: 'Project Manager',  color: 'var(--accent-cyan-text)', bg: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)' },
-          admin:            { label: 'Admin',            color: 'var(--accent-amber-text)', bg: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)' },
-        };
-
-        return (
-          <div>
-            {/* Search bar */}
-            <div className="relative mb-4 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={`Search ${roleFilter === 'all' ? 'all users' : roleBadge[roleFilter]?.label.toLowerCase() + 's'}…`}
-                className="w-full bg-[var(--surface-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 placeholder-[var(--text-dim)]"
-              />
-            </div>
-
-            <div className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-              {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
-            </div>
-
-            {filtered.length === 0 ? (
-              <div className="card-surface rounded-2xl p-8 text-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border)' }}>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  {q ? 'No users match your search.' : 'No users in this category yet.'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {filtered.map((u, i) => {
-                  const badge = roleBadge[u.role] ?? { label: u.role, color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)' };
-                  const initials = `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase();
-                  // Cascade entrance animation.
-                  //
-                  // Gated on extraUsersReady for the "all" filter (not
-                  // needed for single-role filters): the non-rep fetches
-                  // land after the initial render, and we want the cascade
-                  // to play ONCE with all users present, not twice as each
-                  // population arrives.
-                  //
-                  // We use inline animationDelay instead of the stagger-N
-                  // CSS classes because those cap at stagger-6 (450ms),
-                  // which causes cards 6+ to all pop in simultaneously at
-                  // the end of the cascade. An inline per-card delay of
-                  // 40ms gives a continuous cascade up to a soft cap of
-                  // 600ms — smooth all the way through even with 30+ cards.
-                  const shouldAnimate = roleFilter !== 'all' || extraUsersReady;
-                  const delayMs = Math.min(i * 40, 600);
-                  return (
-                    <Link
-                      key={u.id}
-                      href={`/dashboard/users/${u.id}`}
-                      className={`card-surface rounded-2xl p-4 flex items-center gap-3 transition-all hover:translate-y-[-2px] hover:shadow-lg active:scale-[0.98] ${shouldAnimate ? 'animate-slide-in-scale' : ''}`}
-                      style={{
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        borderLeft: `3px solid ${badge.color}`,
-                        ...(shouldAnimate ? { animationDelay: `${delayMs}ms` } : {}),
-                      }}
-                    >
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
-                        {initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{u.firstName} {u.lastName}</p>
-                        {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>}
-                      </div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0" style={{ background: badge.bg, color: badge.color }}>
-                        {badge.label}
-                      </span>
-                      {canManageReps && u.role === 'sub-dealer' && (
-                        <RowActionsMenu
-                          ariaLabel={`Actions for ${u.firstName} ${u.lastName}`}
-                          actions={[
-                            {
-                              label: 'Convert to Rep',
-                              icon: UserCog,
-                              onSelect: () => setConfirmAction({ title: `Convert ${u.firstName} ${u.lastName} to Rep?`, message: `${u.firstName} ${u.lastName} will move to the Reps list with rep login and permission defaults. Deals, payroll history, commission records, and their Clerk login remain unchanged.`, confirmLabel: 'Convert', onConfirm: async () => { setConfirmAction(null); try { await convertUserRole(u.id, 'rep'); toast(`${u.firstName} ${u.lastName} converted to Rep`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
-                            },
-                            {
-                              label: 'Deactivate sub-dealer',
-                              icon: Trash2,
-                              danger: true,
-                              onSelect: () => setConfirmAction({ title: `Deactivate ${u.firstName} ${u.lastName}?`, message: 'They will lose app access immediately. You can reactivate them later.', onConfirm: async () => { setConfirmAction(null); try { await deactivateSubDealer(u.id); toast(`${u.firstName} ${u.lastName} deactivated`, 'success'); } catch { /* error toast shown by persistFetch */ } } }),
-                            },
-                          ]}
-                        />
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* ── Inactive reps expander ──────────────────────────────── */}
-            {canManageReps && roleFilter === 'all' && inactiveReps.length > 0 && (
-              <InactiveExpander label="Show inactive reps" count={inactiveReps.length} isOpen={showInactive} onToggle={() => setShowInactive((v) => !v)}>
-                {inactiveReps.map((rep) => (
-                  <div
-                    key={rep.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
-                  >
-                    <Link
-                      href={`/dashboard/users/${rep.id}`}
-                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        {rep.firstName[0] ?? ''}{rep.lastName[0] ?? ''}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {rep.name}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                            (inactive)
-                          </span>
-                        </div>
-                        <div className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                          {ROLE_LABELS[rep.repType]}
-                        </div>
-                      </div>
-                    </Link>
-                    <button
-                      disabled={reactivatingId === rep.id}
-                      onClick={() => setConfirmAction({
-                        title: `Reactivate ${rep.name}?`,
-                        message: 'They will regain app access immediately.',
-                        confirmLabel: 'Reactivate',
-                        onConfirm: async () => {
-                          setConfirmAction(null);
-                          setReactivatingId(rep.id);
-                          try {
-                            await reactivateRep(rep.id);
-                            toast(`${rep.name} reactivated`, 'success');
-                          } catch {
-                            toast('Failed to reactivate rep', 'error');
-                          } finally {
-                            setReactivatingId(null);
-                          }
-                        },
-                      })}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'color-mix(in srgb, var(--accent-emerald-solid) 12%, transparent)', color: 'var(--accent-emerald-text)', border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 30%, transparent)' }}
-                    >
-                      {reactivatingId === rep.id ? 'Reactivating…' : 'Reactivate'}
-                    </button>
-                  </div>
-                ))}
-              </InactiveExpander>
-            )}
-
-            {/* ── Inactive sub-dealers expander ───────────────────────── */}
-            {canManageReps && (roleFilter === 'sub-dealer' || roleFilter === 'all') && inactiveSubDealers.length > 0 && (
-              <InactiveExpander label="Show inactive sub-dealers" count={inactiveSubDealers.length} isOpen={showInactiveSubDealers} onToggle={() => setShowInactiveSubDealers((v) => !v)}>
-                {inactiveSubDealers.map((sd) => (
-                  <div
-                    key={sd.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
-                  >
-                    <Link
-                      href={`/dashboard/users/${sd.id}`}
-                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        {sd.firstName[0] ?? ''}{sd.lastName[0] ?? ''}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {sd.firstName} {sd.lastName}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                            (inactive)
-                          </span>
-                        </div>
-                        {sd.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{sd.email}</div>}
-                      </div>
-                    </Link>
-                    <button
-                      disabled={reactivatingSubDealerId === sd.id}
-                      onClick={() => setConfirmAction({
-                        title: `Reactivate ${sd.firstName} ${sd.lastName}?`,
-                        message: 'They will regain app access immediately.',
-                        confirmLabel: 'Reactivate',
-                        onConfirm: async () => {
-                          setConfirmAction(null);
-                          setReactivatingSubDealerId(sd.id);
-                          try {
-                            await reactivateSubDealer(sd.id);
-                            toast(`${sd.firstName} ${sd.lastName} reactivated`, 'success');
-                          } catch {
-                            toast('Failed to reactivate sub-dealer', 'error');
-                          } finally {
-                            setReactivatingSubDealerId(null);
-                          }
-                        },
-                      })}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'var(--accent-purple-soft)', color: 'var(--accent-purple-text)', border: '1px solid color-mix(in srgb, var(--accent-purple-solid) 30%, transparent)' }}
-                    >
-                      {reactivatingSubDealerId === sd.id ? 'Reactivating…' : 'Reactivate'}
-                    </button>
-                  </div>
-                ))}
-              </InactiveExpander>
-            )}
-
-            {/* ── Inactive PMs expander ───────────────────────────────── */}
-            {canManageReps && (roleFilter === 'project_manager' || roleFilter === 'all') && inactivePMs.length > 0 && (
-              <InactiveExpander label="Show inactive project managers" count={inactivePMs.length} isOpen={showInactivePMs} onToggle={() => setShowInactivePMs((v) => !v)}>
-                {inactivePMs.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
-                  >
-                    <Link
-                      href={`/dashboard/users/${u.id}`}
-                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {u.firstName} {u.lastName}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                            (inactive)
-                          </span>
-                        </div>
-                        {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
-                      </div>
-                    </Link>
-                    <button
-                      disabled={reactivatingPmId === u.id}
-                      onClick={() => setConfirmAction({
-                        title: `Reactivate ${u.firstName} ${u.lastName}?`,
-                        message: 'They will regain app access immediately.',
-                        confirmLabel: 'Reactivate',
-                        onConfirm: async () => {
-                          setConfirmAction(null);
-                          setReactivatingPmId(u.id);
-                          try {
-                            const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                            if (!res.ok) throw new Error();
-                            setPmUsers((prev) => prev.map((p) => p.id === u.id ? { ...p, active: true } : p));
-                            toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                          } catch {
-                            toast('Failed to reactivate project manager', 'error');
-                          } finally {
-                            setReactivatingPmId(null);
-                          }
-                        },
-                      })}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'color-mix(in srgb, var(--accent-cyan-solid) 12%, transparent)', color: 'var(--accent-cyan-text)', border: '1px solid color-mix(in srgb, var(--accent-cyan-solid) 30%, transparent)' }}
-                    >
-                      {reactivatingPmId === u.id ? 'Reactivating…' : 'Reactivate'}
-                    </button>
-                  </div>
-                ))}
-              </InactiveExpander>
-            )}
-
-            {/* ── Inactive admins expander ─────────────────────────────── */}
-            {canManageReps && (roleFilter === 'admin' || roleFilter === 'all') && inactiveAdmins.length > 0 && (
-              <InactiveExpander label="Show inactive admins" count={inactiveAdmins.length} isOpen={showInactiveAdmins} onToggle={() => setShowInactiveAdmins((v) => !v)}>
-                {inactiveAdmins.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.7 }}
-                  >
-                    <Link
-                      href={`/dashboard/users/${u.id}`}
-                      className="flex-1 min-w-0 flex items-center gap-3 hover:opacity-100"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        {u.firstName[0] ?? ''}{u.lastName[0] ?? ''}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
-                          {u.firstName} {u.lastName}
-                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
-                            (inactive)
-                          </span>
-                        </div>
-                        {u.email && <div className="text-[11px] truncate" style={{ color: 'var(--text-dim)' }}>{u.email}</div>}
-                      </div>
-                    </Link>
-                    <button
-                      disabled={reactivatingAdminId === u.id}
-                      onClick={() => setConfirmAction({
-                        title: `Reactivate ${u.firstName} ${u.lastName}?`,
-                        message: 'They will regain app access immediately.',
-                        confirmLabel: 'Reactivate',
-                        onConfirm: async () => {
-                          setConfirmAction(null);
-                          setReactivatingAdminId(u.id);
-                          try {
-                            const res = await fetch(`/api/users/${u.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: true }) });
-                            if (!res.ok) throw new Error();
-                            setAdminUsers((prev) => prev.map((a) => a.id === u.id ? { ...a, active: true } : a));
-                            toast(`${u.firstName} ${u.lastName} reactivated`, 'success');
-                          } catch {
-                            toast('Failed to reactivate admin', 'error');
-                          } finally {
-                            setReactivatingAdminId(null);
-                          }
-                        },
-                      })}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: 'color-mix(in srgb, var(--accent-amber-solid) 12%, transparent)', color: 'var(--accent-amber-text)', border: '1px solid color-mix(in srgb, var(--accent-amber-solid) 30%, transparent)' }}
-                    >
-                      {reactivatingAdminId === u.id ? 'Reactivating…' : 'Reactivate'}
-                    </button>
-                  </div>
-                ))}
-              </InactiveExpander>
-            )}
-          </div>
-        );
-      })()}
+      {/* ── Non-rep view — extracted to components/UnifiedDirectory (T4.1) ── */}
+      {roleFilter !== 'rep' && (
+        <UnifiedDirectory
+          roleFilter={roleFilter}
+          search={search}
+          setSearch={setSearch}
+          debouncedSearch={debouncedSearch}
+          extraUsersReady={extraUsersReady}
+          canManageReps={canManageReps}
+          data={{ reps, subDealers, pmUsers, adminUsers, setPmUsers, setAdminUsers }}
+          inactive={{ inactiveReps, inactiveSubDealers, inactivePMs, inactiveAdmins }}
+          toggles={{
+            showInactive, setShowInactive, showInactiveSubDealers, setShowInactiveSubDealers,
+            showInactivePMs, setShowInactivePMs, showInactiveAdmins, setShowInactiveAdmins,
+            reactivatingId, setReactivatingId, reactivatingSubDealerId, setReactivatingSubDealerId,
+            reactivatingPmId, setReactivatingPmId, reactivatingAdminId, setReactivatingAdminId,
+          }}
+          actions={{ setConfirmAction, convertUserRole, deactivateSubDealer, reactivateSubDealer, reactivateRep }}
+          toast={toast}
+        />
+      )}
 
       {/* ── Top Performers Podium (reps view only) ─────────────────────────── */}
       {roleFilter === 'rep' && !isPM && <TopPerformersPodium entries={podiumDisplay} />}
@@ -1780,214 +1409,23 @@ function UsersPageInner() {
         )}
       </div>
       </>)}
-      {/* ── Add Rep Modal ──────────────────────────────────────────────────
-           Portaled to document.body so the modal escapes any transformed/
-           filtered ancestor (which would otherwise become the containing
-           block for `position: fixed` and offset the overlay from the
-           viewport — that's the "page isn't opening correctly" symptom). */}
-      {showAddModal && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-start sm:items-center justify-center z-[60] p-4 overflow-y-auto"
-          onClick={(e) => { if (e.target === e.currentTarget) resetAddModal(); }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div ref={addRepPanelRef} className="card-surface shadow-2xl shadow-black/40 animate-modal-panel rounded-2xl p-6 w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-[var(--text-primary)] font-bold text-lg">Add New User</h3>
-              <button onClick={resetAddModal} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Account role selector */}
-            <div className="mb-4">
-              <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Account type</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['rep', 'sub-dealer', 'project_manager', 'admin'] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => { setNewUserRole(r); setSendInvite(false); }}
-                    className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
-                      newUserRole === r
-                        ? 'border-[var(--accent-emerald-solid)] text-[var(--accent-emerald-text)] bg-[var(--accent-emerald-solid)]/10'
-                        : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:text-[var(--text-secondary)]'
-                    }`}
-                  >
-                    {ROLE_LABELS_BY_ROLE[r]}
-                  </button>
-                ))}
-              </div>
-              {(newUserRole === 'admin' || newUserRole === 'project_manager') && (
-                <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
-                  {ROLE_LABELS_BY_ROLE[newUserRole]} accounts are always invited by email — no dormant creation.
-                </p>
-              )}
-            </div>
-
-            {/* First Name + Last Name */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>First Name</label>
-                <input
-                  type="text"
-                  placeholder="First name"
-                  value={newFirstName}
-                  onChange={(e) => setNewFirstName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Last Name</label>
-                <input
-                  type="text"
-                  placeholder="Last name"
-                  value={newLastName}
-                  onChange={(e) => setNewLastName(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="mb-3">
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Email</label>
-              <input
-                type="email"
-                placeholder="rep@kiloenergy.com"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              />
-            </div>
-
-            {/* Phone */}
-            <div className="mb-4">
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Phone</label>
-              <input
-                type="tel"
-                placeholder="(555) 000-0000"
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)] placeholder-slate-500" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-              />
-            </div>
-
-            {/* PM-specific fields — only shown when role === 'project_manager'.
-                Picking an installer here provisions them as a vendor PM
-                immediately on creation, so the privacy gate scopes them
-                from their first session — no brief unscoped state. */}
-            {newUserRole === 'project_manager' && (
-              <div className="mb-4">
-                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                  Installer scope <span className="text-[10px] opacity-70">(optional)</span>
-                </label>
-                <select
-                  value={newScopedInstallerId}
-                  onChange={(e) => setNewScopedInstallerId(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]/50 focus:border-[var(--accent-emerald-solid)]"
-                  style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-                >
-                  <option value="">— Full access (internal PM) —</option>
-                  {installersForScope.map((i) => (
-                    <option key={i.id} value={i.id}>{i.name} (vendor PM — ops-only)</option>
-                  ))}
-                </select>
-                {newScopedInstallerId && (
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--accent-amber-text)' }}>
-                    Vendor PM — only sees projects from this installer; no payroll, pricing, or rep directory.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Rep-specific fields — only shown when role === 'rep' */}
-            {newUserRole === 'rep' && (
-              <>
-                {/* Closer/Setter/Both selector */}
-                <div className="mb-4">
-                  <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Rep type</label>
-                  <div className="flex gap-2">
-                    {(['closer', 'setter', 'both'] as const).map((rt) => (
-                      <button
-                        key={rt}
-                        type="button"
-                        onClick={() => setNewRepType(rt)}
-                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border ${
-                          newRepType === rt
-                            ? `${ROLE_BADGE_CLS[rt]} bg-opacity-100`
-                            : 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-card)] hover:border-[var(--border)] hover:text-[var(--text-secondary)]'
-                        }`}
-                        style={newRepType === rt ? ROLE_BADGE_STYLES[rt] : undefined}
-                      >
-                        {ROLE_LABELS[rt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Optional Trainer Assignment */}
-                <div className="mb-4">
-                  <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Trainer (optional)</label>
-                  <RepSelector
-                    value={newTrainerId}
-                    onChange={setNewTrainerId}
-                    // Trainer rule: keep historical, block new. Deactivated
-                    // trainers cannot be assigned to new trainees, so they
-                    // are filtered out of this picker.
-                    reps={reps.filter((r) => r.active !== false)}
-                    placeholder="-- Select trainer --"
-                    clearLabel="None"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Send Clerk invitation toggle */}
-            <div className="mb-5">
-              <label className={`flex items-center gap-3 select-none ${(newUserRole === 'admin' || newUserRole === 'project_manager') ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
-                <input
-                  type="checkbox"
-                  checked={sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager'}
-                  onChange={(e) => setSendInvite(e.target.checked)}
-                  disabled={newUserRole === 'admin' || newUserRole === 'project_manager'}
-                  className="w-4 h-4 rounded border-[var(--border-subtle)] accent-[var(--accent-emerald-solid)] cursor-pointer disabled:cursor-not-allowed"
-                />
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">Send invitation email</div>
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {(newUserRole === 'admin' || newUserRole === 'project_manager')
-                      ? 'Required for this role — admin and project manager accounts must receive an invite to access the app.'
-                      : 'Emails the rep a sign-up link. Leave off to add them without giving app access yet.'}
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            {/* Submit */}
-            <div className="flex gap-3">
-              <button
-                onClick={resetAddModal}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors hover:brightness-125"
-                style={{ background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddRep}
-                disabled={!newFirstName.trim() || !newLastName.trim() || isAddingRep}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, var(--accent-emerald-solid), var(--accent-cyan-solid))', color: 'var(--text-on-accent)' }}
-              >
-                {isAddingRep ? 'Adding…' : (sendInvite || newUserRole === 'admin' || newUserRole === 'project_manager') ? `Send ${ROLE_LABELS_BY_ROLE[newUserRole]} Invite` : `Add ${ROLE_LABELS_BY_ROLE[newUserRole]}`}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      {/* Add User modal — extracted to components/AddUserModal (T4.1).
+          State cluster + handleAddRep + Escape/focus-trap stay here. */}
+      <AddUserModal
+        open={showAddModal}
+        form={{
+          newUserRole, setNewUserRole, sendInvite, setSendInvite,
+          newFirstName, setNewFirstName, newLastName, setNewLastName,
+          newEmail, setNewEmail, newPhone, setNewPhone,
+          newScopedInstallerId, setNewScopedInstallerId,
+          newRepType, setNewRepType, newTrainerId, setNewTrainerId, isAddingRep,
+        }}
+        handleAddRep={handleAddRep}
+        resetAddModal={resetAddModal}
+        addRepPanelRef={addRepPanelRef}
+        installersForScope={installersForScope}
+        reps={reps}
+      />
 
       <ConfirmDialog
         open={confirmAction !== null}
