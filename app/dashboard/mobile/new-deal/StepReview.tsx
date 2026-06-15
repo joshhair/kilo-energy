@@ -28,7 +28,7 @@ import { Pencil, Loader2, Check, ChevronLeft } from 'lucide-react';
 import MobileCard from '../shared/MobileCard';
 import ViewportPortal from '../shared/ViewportPortal';
 import { BviIntakePanel } from '../../new-deal/components/BviIntakePanel';
-import { FieldError, type MobileDealForm } from './shared';
+import { FieldError, NAV_CLEAR_BOTTOM, type MobileDealForm } from './shared';
 import type { Rep } from '@/lib/data';
 import type { BviIntake, BviIntakeErrors } from '@/lib/installer-intakes/bvi';
 import type { Role } from '@/lib/notifications/types';
@@ -313,7 +313,7 @@ export function StepReview({ flow, formCtl, money, bvi, identity, availableBlitz
               key="cta-2"
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                bottom: NAV_CLEAR_BOTTOM,
                 paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',

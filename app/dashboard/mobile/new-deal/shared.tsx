@@ -12,6 +12,24 @@
 
 import type { CoPartyDraft } from '../../projects/components/CoPartySection';
 
+/**
+ * Bottom offset for the portaled fixed CTA bars so they clear the REAL
+ * bottom-nav height. BottomNav measures itself and publishes
+ * --kilo-bottom-nav-h; the REP nav is TALLER than the ADMIN nav because of
+ * the protruding primary "New Deal" button (BottomNav.tsx `-mt-2.5`). A
+ * hardcoded 72px therefore slid the CTA down BEHIND the nav whenever an admin
+ * viewed-as-rep (2026-06-14 regression; same class as the 85db48e project-
+ * detail fix). max() makes the offset MONOTONIC — it equals the legacy
+ * 72px+safe-area floor when the nav is short (admin: zero visual change) and
+ * grows only when the measured nav is taller (rep), so it physically cannot
+ * push the CTA toward the nav. The pill variant uses a 60px floor to preserve
+ * its original tuck.
+ */
+export const NAV_CLEAR_BOTTOM =
+  'max(calc(72px + env(safe-area-inset-bottom, 0px)), var(--kilo-bottom-nav-h, 0px))';
+export const PILL_CLEAR_BOTTOM =
+  'max(calc(60px + env(safe-area-inset-bottom, 0px)), var(--kilo-bottom-nav-h, 0px))';
+
 /** Mirror of MobileNewDeal's blankForm() shape — keep in lockstep. */
 export interface MobileDealForm {
   customerName: string;

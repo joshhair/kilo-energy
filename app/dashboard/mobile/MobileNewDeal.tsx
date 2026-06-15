@@ -21,7 +21,7 @@ import MobileCard from './shared/MobileCard';
 import ViewportPortal from './shared/ViewportPortal';
 import { EMPTY_BVI_INTAKE, validateBviIntake, type BviIntake } from '../../../lib/installer-intakes/bvi';
 
-import { validateField, genId, FieldError, DEAL_STEPS, StepIndicator } from './new-deal/shared';
+import { validateField, genId, FieldError, DEAL_STEPS, StepIndicator, NAV_CLEAR_BOTTOM, PILL_CLEAR_BOTTOM } from './new-deal/shared';
 import { MobileSuccessScreen, type SubmittedDeal } from './new-deal/MobileSuccessScreen';
 import { StepReview } from './new-deal/StepReview';
 
@@ -967,7 +967,7 @@ export default function MobileNewDeal() {
         <div
           className="fixed left-0 right-0 z-40 px-6"
           style={{
-            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            bottom: NAV_CLEAR_BOTTOM,
             paddingBottom: '12px',
             paddingTop: '12px',
             background: 'linear-gradient(to bottom, transparent 0%, var(--surface-page) 100%)',
@@ -1196,7 +1196,7 @@ export default function MobileNewDeal() {
               key={`cta-0`}
               className="cta-bar-enter fixed left-0 right-0 z-40 px-6"
               style={{
-                bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                bottom: NAV_CLEAR_BOTTOM,
                 paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
@@ -1707,8 +1707,8 @@ export default function MobileNewDeal() {
               className="cta-bar-enter cta-bar-lift-transition fixed left-0 right-0 z-40 px-6"
               style={{
                 bottom: pillActive
-                  ? 'calc(72px + 60px + env(safe-area-inset-bottom, 0px))'
-                  : 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                  ? `calc(${NAV_CLEAR_BOTTOM} + 60px)`
+                  : NAV_CLEAR_BOTTOM,
                 paddingBottom: '12px',
                 paddingTop: '12px',
                 background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--surface-page) 92%, transparent) 28%, var(--surface-page) 100%)',
@@ -1791,7 +1791,7 @@ export default function MobileNewDeal() {
             !pillActive ? ' comm-pill-exit' : ''
           }`}
           style={{
-            bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+            bottom: PILL_CLEAR_BOTTOM,
             background: 'linear-gradient(135deg, var(--accent-emerald-soft), color-mix(in srgb, var(--accent-cyan-solid) 8%, transparent))',
             border: '1px solid color-mix(in srgb, var(--accent-emerald-solid) 25%, transparent)',
             backdropFilter: 'blur(12px)',
