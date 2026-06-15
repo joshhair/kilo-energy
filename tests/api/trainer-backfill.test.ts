@@ -97,13 +97,22 @@ describe('Trainer Backfill — Database Integration', () => {
   });
 
   afterAll(async () => {
-    // Cleanup in dependency order
-    await prisma.payrollEntry.deleteMany({ where: { projectId } });
-    await prisma.project.delete({ where: { id: projectId } });
-    await prisma.trainerOverrideTier.deleteMany({ where: { assignmentId } });
-    await prisma.trainerAssignment.delete({ where: { id: assignmentId } });
-    await prisma.user.delete({ where: { id: trainerId } });
-    await prisma.user.delete({ where: { id: traineeId } });
+    // Cleanup in dependency order. Each delete is guarded on its id being
+    // defined: if beforeAll threw partway, the unset ids would otherwise make
+    // `deleteMany({ where: { projectId: undefined } })` match EVERY row (an
+    // undefined where is no filter in Prisma). This is the exact footgun that
+    // wiped the prod PayrollEntry table on 2026-06-12 when the suite ran
+    // against prod — never let a cleanup delete on an undefined scope.
+    if (projectId) {
+      await prisma.payrollEntry.deleteMany({ where: { projectId } });
+      await prisma.project.delete({ where: { id: projectId } }).catch(() => {});
+    }
+    if (assignmentId) {
+      await prisma.trainerOverrideTier.deleteMany({ where: { assignmentId } });
+      await prisma.trainerAssignment.delete({ where: { id: assignmentId } }).catch(() => {});
+    }
+    if (trainerId) await prisma.user.delete({ where: { id: trainerId } }).catch(() => {});
+    if (traineeId) await prisma.user.delete({ where: { id: traineeId } }).catch(() => {});
   });
 
   it('resolves trainer rate correctly for the first deal', () => {

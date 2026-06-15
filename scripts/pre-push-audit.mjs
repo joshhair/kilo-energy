@@ -157,7 +157,12 @@ console.log(header('3. Tests'));
   console.log(`  ${r.ok ? '✓' : '✗'} vitest (${tests} tests)`);
   if (!r.ok) {
     blocked = true;
-    console.log(r.stdout.split('\n').slice(-20).map((l) => `    ${l}`).join('\n'));
+    // Print stdout AND stderr — the no-prod-db-guard (tests/setup) writes its
+    // "ABORTING — remote database" message to stderr; showing only stdout hid
+    // it and made the block look like an unexplained vitest failure (the very
+    // signal that would tell a dev they'd pointed tests at prod). 2026-06-12.
+    const combined = [r.stdout, r.stderr].filter(Boolean).join('\n');
+    console.log(combined.split('\n').slice(-30).map((l) => `    ${l}`).join('\n'));
   }
 }
 

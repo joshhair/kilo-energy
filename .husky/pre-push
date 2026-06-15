@@ -8,4 +8,17 @@
 # local. Applies to ALL pushes, including the dev-agent loop's auto-push.
 #
 # Bypass with --no-verify ONLY in a genuine emergency; every bypass is tech debt.
+
+# Safety gate (2026-06-12 incident): the audit runs vitest, and if this shell
+# has a REMOTE TURSO_DATABASE_URL sourced from .env, the tests would hit prod.
+# The vitest guard catches this too, but fail fast HERE — before 30s of CI
+# gates — with a clear message, and unset it so the audit runs against dev.db.
+if [ -n "$TURSO_DATABASE_URL" ] && ! printf '%s' "$TURSO_DATABASE_URL" | grep -q '^file:'; then
+  echo "⚠  TURSO_DATABASE_URL points at a remote DB ($TURSO_DATABASE_URL)." >&2
+  echo "   Unsetting it for the pre-push audit so tests target dev.db, not prod." >&2
+  echo "   (Don't source prod .env into a shell you then push/test from.)" >&2
+  unset TURSO_DATABASE_URL
+  unset TURSO_AUTH_TOKEN
+fi
+
 npm run audit:pre-push

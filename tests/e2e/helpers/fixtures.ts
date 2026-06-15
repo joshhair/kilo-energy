@@ -4,6 +4,12 @@
 // test (it exercises the serialization seam, RBAC, and Zod at the same time).
 
 import type { APIRequestContext } from '@playwright/test';
+import { assertE2eMutationSafe } from '../../setup/db-guard';
+
+// Belt-and-suspenders: every golden mutation spec imports this module, so
+// guard here too — production DB/base-URL aborts the run at collection even
+// if a future spec forgets its own top-level guard. 2026-06-12 incident.
+assertE2eMutationSafe('e2e:fixtures');
 
 /** A customer-name prefix used for every fixture project. Makes cleanup
  *  by wildcard match safe — we never touch real data. */

@@ -18,6 +18,11 @@ import {
   getE2eUsers,
   pickReferenceData,
 } from '../helpers/fixtures';
+import { assertE2eMutationSafe } from '../../setup/db-guard';
+
+// Refuse to run this DATA-MUTATING suite against production (DB or base URL).
+// Fires at collection time, before any request. 2026-06-12 incident.
+assertE2eMutationSafe('golden:money-path');
 
 test.describe.configure({ mode: 'serial' });
 

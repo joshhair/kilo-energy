@@ -6,6 +6,11 @@
 // they return to reps with repType='both'. HTTP-only (no Prisma import).
 
 import { test, expect, request as pwRequest } from '@playwright/test';
+import { assertE2eMutationSafe } from '../../setup/db-guard';
+
+// Refuse to run this DATA-MUTATING suite against production (DB or base URL).
+// Fires at collection time, before any request. 2026-06-12 incident.
+assertE2eMutationSafe('golden:convert-role');
 
 test.describe.configure({ mode: 'serial' });
 

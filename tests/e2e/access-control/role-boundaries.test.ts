@@ -5,6 +5,12 @@
 // these guards, this suite catches it before a real user does.
 
 import { test, expect, request as pwRequest } from '@playwright/test';
+import { assertE2eMutationSafe } from '../../setup/db-guard';
+
+// Negative-path RBAC tests still issue POST/PATCH/DELETE — a regressed gate
+// would let one through and write to whatever this targets. Refuse to run
+// against production (DB or base URL). Fires at collection. 2026-06-12.
+assertE2eMutationSafe('access-control:role-boundaries');
 
 test('rep cannot view admin-only "Invite user" button on /dashboard/users', async ({ page }) => {
   await page.goto('/dashboard/users');

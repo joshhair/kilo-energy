@@ -303,8 +303,22 @@ async function main() {
       console.log("⚠  after the dump was taken will be LOST.");
       console.log("⚠".repeat(30));
       console.log();
-      console.log("  Proceeding in 5 seconds. Ctrl+C to abort.");
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // A 5-second timer is NOT a confirmation — it passes by inattention or
+      // when the script runs unattended/backgrounded (2026-06-12 audit). Require
+      // an explicit typed token from a human at the terminal. If stdin isn't a
+      // TTY (CI, piped), refuse outright rather than auto-proceed.
+      if (!process.stdin.isTTY) {
+        console.error("Refusing replace-mode restore: stdin is not a TTY (no human to confirm).");
+        process.exit(1);
+      }
+      const readline = await import("node:readline/promises");
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const answer = await rl.question('  Type exactly "REPLACE" to permanently delete and restore: ');
+      rl.close();
+      if (answer.trim() !== "REPLACE") {
+        console.error("Aborted — confirmation text did not match. Nothing was deleted.");
+        process.exit(1);
+      }
     }
     await commitRestore();
   } else {

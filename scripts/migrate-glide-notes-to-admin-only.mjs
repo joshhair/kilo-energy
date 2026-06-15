@@ -22,14 +22,17 @@
 //
 // Run against Turso production:
 //   set -a && . ./.env && set +a && node scripts/migrate-glide-notes-to-admin-only.mjs
-// or with COMMIT=true to actually write (otherwise dry-run):
-//   COMMIT=true node scripts/migrate-glide-notes-to-admin-only.mjs
+// or with --commit to actually write (otherwise dry-run):
+//   node scripts/migrate-glide-notes-to-admin-only.mjs --commit
 
 import { createClient } from "@libsql/client";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
-const COMMIT = process.env.COMMIT === 'true';
+// Commit is an explicit per-invocation FLAG, not an env var. A COMMIT env var
+// can linger in a shell (or a profile) and silently flip a "dry-run" into a
+// real prod write; an argv flag must be consciously typed each time (2026-06-12).
+const COMMIT = process.argv.includes('--commit');
 
 if (!url || !authToken) {
   console.error("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set");
@@ -155,7 +158,7 @@ async function main() {
   console.log(`  Project.notes   moved:      ${legacyNotesMoved}`);
   console.log(`  Projects touched:           ${projectsTouched} / ${projects.length}`);
   console.log('');
-  console.log(COMMIT ? 'Done — writes committed.' : 'Done (dry-run). Re-run with COMMIT=true to apply.');
+  console.log(COMMIT ? 'Done — writes committed.' : 'Done (dry-run). Re-run with --commit to apply.');
 }
 
 main().catch((err) => {

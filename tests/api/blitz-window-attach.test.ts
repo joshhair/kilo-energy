@@ -87,7 +87,15 @@ describe('Blitz attach — sold date outside the window', () => {
   });
 
   afterAll(async () => {
-    await prisma.project.deleteMany({ where: { id: { in: [attachTargetId, durableProjectId] } } }).catch(() => {});
+    // Build the id list from DEFINED ids only. If beforeAll threw before
+    // assigning attachTargetId/durableProjectId, an `in: [undefined, …]`
+    // (or fully-undefined) filter can collapse to a table-wide delete —
+    // the exact footgun that wiped prod PayrollEntry on 2026-06-12. Never
+    // pass an unguarded id into a cleanup delete.
+    const projectIds = [attachTargetId, durableProjectId].filter(Boolean);
+    if (projectIds.length) {
+      await prisma.project.deleteMany({ where: { id: { in: projectIds } } }).catch(() => {});
+    }
     if (blitzId) {
       await prisma.blitzParticipant.deleteMany({ where: { blitzId } }).catch(() => {});
       await prisma.blitz.delete({ where: { id: blitzId } }).catch(() => {});

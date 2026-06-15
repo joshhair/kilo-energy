@@ -32,6 +32,21 @@ if (!tursoUrl || !tursoToken) {
   console.error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be in env');
   process.exit(1);
 }
+// Seeding the e2e-admin user into PROD (for the nightly visual job's auth) is
+// a documented MANUAL step, but it must be deliberate — an accidental run with
+// prod .env sourced would write test users to live prod. Require an explicit
+// ALLOW_PROD_DB=1 flag to target prod (2026-06-12 incident). %2E/Unicode-dot
+// and case folded before the host match, mirroring lib/db's guard.
+const normProd = tursoUrl
+  .replace(/%2[eE]/g, '.')
+  .replace(/[。．｡]/g, '.')
+  .toLowerCase();
+if (normProd.includes('kilo-energy-joshhair.aws-us-east-2.turso.io') && process.env.ALLOW_PROD_DB !== '1') {
+  console.error('Refusing to seed e2e users into the PRODUCTION database without ALLOW_PROD_DB=1.');
+  console.error('This is the documented manual prod-seed: re-run as `ALLOW_PROD_DB=1 npm run test:e2e:setup`.');
+  console.error('For local e2e, point TURSO_DATABASE_URL at a non-prod DB instead.');
+  process.exit(1);
+}
 const { PrismaClient } = await import('../lib/generated/prisma/client.ts');
 const adapter = new PrismaLibSql({ url: tursoUrl, authToken: tursoToken });
 const prisma = new PrismaClient({ adapter });

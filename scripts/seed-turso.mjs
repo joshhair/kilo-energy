@@ -1,9 +1,20 @@
 import { createClient } from '@libsql/client';
 
-const c = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'libsql://kilo-energy-joshhair.aws-us-east-2.turso.io',
-  authToken: process.env.TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzUxNTA0NDMsImlkIjoiMDE5ZDRmMzEtZTUwMS03OWNiLTkyZmUtOWEyYzE3M2JjZDJiIiwicmlkIjoiMWU4MTMwOGMtYjg2NS00MWUxLWE5ZTUtOGE2MDI2ZmNiZjU0In0.YR9m1vxeH7JBxtFmmE7PrsE8d154-rZl1Hd4kWjDGtyCssONjA7aKGXwjh7Tcud51G_9LhCYHxCHh6Joam31BQ',
-});
+// SECURITY (2026-06-12): this file previously fell back to a HARDCODED prod
+// read-write Turso token + prod URL when env vars were unset — meaning anyone
+// running `node scripts/seed-turso.mjs` with a bare shell would authenticate
+// to PRODUCTION and overwrite seed data. The token was committed to git
+// (b970c50) and MUST be rotated in the Turso dashboard. Both credentials are
+// now required from the environment; no prod fallback exists.
+const url = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN;
+if (!url || !authToken) {
+  console.error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in the environment.');
+  console.error('This seed script has NO production fallback (by design — see header).');
+  console.error('Run with: set -a && . ./.env.local && set +a && node scripts/seed-turso.mjs  (point at a non-prod DB)');
+  process.exit(1);
+}
+const c = createClient({ url, authToken });
 
 const now = new Date().toISOString();
 
