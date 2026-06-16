@@ -109,10 +109,21 @@ const client = createClient({ url, authToken });
 // tables that appear earlier in the list. If you add a new table to the
 // schema, add it here in the right position.
 const RESTORE_ORDER = [
+  // Tier 0 — no FK dependencies (standalone logs/config); placed first so
+  // their presence in a dump never trips the order check.
+  "AuditLog",                     // (no FK; actorUserId is a plain string)
+  "DataAccessLog",                // (no FK)
+  "StalledAlertConfig",           // (no FK)
+
   // Tier 1 — no FK dependencies
   "User",
   "Installer",
   "Financer",
+
+  // Tier 1b — depend only on User
+  "Feedback",                     // → User
+  "NotificationPreference",       // → User
+  "PushSubscription",             // → User
 
   // Tier 2 — depend on tier 1
   "InstallerPricingVersion",      // → Installer
@@ -127,6 +138,7 @@ const RESTORE_ORDER = [
   "BlitzParticipant",             // → Blitz, User
   "BlitzCost",                    // → Blitz
   "BlitzRequest",                 // → User, Blitz?
+  "BlitzAnnouncement",            // → Blitz
 
   // Tier 4
   "ProductPricingTier",           // → ProductPricingVersion
@@ -134,17 +146,27 @@ const RESTORE_ORDER = [
   "TrainerAssignment",            // → User × 2
   "Incentive",                    // → User?, Blitz?
 
-  // Tier 5
+  // Tier 5 — depend on Project (+ User)
   "ProjectActivity",              // → Project
   "ProjectMessage",               // → Project
   "PayrollEntry",                 // → User, Project
   "Reimbursement",                // → User
   "TrainerOverrideTier",          // → TrainerAssignment
   "IncentiveMilestone",           // → Incentive
+  "ProjectCloser",                // → Project, User
+  "ProjectSetter",                // → Project, User
+  "ProjectAdminNote",             // → Project, User
+  "ProjectNote",                  // → Project, User
+  "ProjectFile",                  // → Project, User
+  "ProjectInstallerNote",         // → Project, User
+  "ProjectSurveyLink",            // → Project, User
+  "EmailDelivery",                // → Project, Installer?, User
+  "NotificationDelivery",         // → User?, Project?
 
   // Tier 6
   "ProjectCheckItem",             // → ProjectMessage
   "ProjectMention",               // → ProjectMessage
+  "ChatMessageReaction",          // → ProjectMessage
 ];
 
 // Sanity check: every table in the dump must be in RESTORE_ORDER, and vice versa.
@@ -218,10 +240,14 @@ async function commitRestore() {
 
   try {
     for (const name of RESTORE_ORDER) {
-      const rows = dump.tables[name];
-      if (!rows || rows.length === 0) continue;
+      const rows = dump.tables[name] ?? [];
 
       // ─── Replace mode: nuke the table first ─────────────────────────────
+      // MUST run even when the dump had 0 rows for this table — otherwise a
+      // table that was empty at backup time but written afterward keeps its
+      // post-backup rows on restore (Codex review 2026-06-16). So the
+      // empty-rows short-circuit below only skips the INSERT loop, never the
+      // DELETE.
       if (mode === "replace") {
         const delResult = await client.execute(`DELETE FROM "${name}"`);
         const deleted = Number(delResult.rowsAffected ?? 0);
@@ -230,6 +256,8 @@ async function commitRestore() {
           console.log(`  ⚠ ${name.padEnd(28)}  deleted ${deleted} existing rows`);
         }
       }
+
+      if (rows.length === 0) continue; // nothing to insert for this table
 
       // ─── Merge mode: figure out which rows to skip ──────────────────────
       let existingIds = new Set();
@@ -281,6 +309,23 @@ async function commitRestore() {
   } finally {
     await client.execute("PRAGMA foreign_keys = ON").catch(() => {});
   }
+
+  // Post-restore integrity validation (Codex review 2026-06-16): FK
+  // enforcement was off during the load, so prove the restored graph is clean
+  // rather than trusting insert order. Any dangling reference fails loud.
+  // NOTE (known limitation): this restore is NOT a single atomic transaction —
+  // it executes per-statement, so a mid-restore failure can leave a partial
+  // state. Merge mode (the default) is re-runnable and is the recommended
+  // path; replace mode is last-resort. The per-phase remediation scripts use
+  // their own atomic db.transaction('write') + rollback JSON as the PRIMARY
+  // rollback mechanism; this full-DB restore is the catastrophic backstop.
+  const fkCheck = await client.execute("PRAGMA foreign_key_check");
+  if (fkCheck.rows.length > 0) {
+    console.error(`  ✗ foreign_key_check FAILED — ${fkCheck.rows.length} dangling reference(s) after restore:`);
+    for (const v of fkCheck.rows.slice(0, 15)) console.error("    " + JSON.stringify(v));
+    process.exit(1);
+  }
+  console.log(`  ✓ foreign_key_check passed (no dangling references)`);
 
   console.log();
   console.log("─".repeat(60));

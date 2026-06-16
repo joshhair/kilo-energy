@@ -41,40 +41,28 @@ if (!url || !authToken) {
 
 const client = createClient({ url, authToken });
 
-// ─── Table list ─────────────────────────────────────────────────────────────
-// This is the canonical order for a DUMP (insertion order doesn't matter
-// here because we're only reading). The RESTORE script has a different
-// order that respects FK dependencies — see restore-turso.mjs.
+// ─── Table list — AUTO-DISCOVERED from the live DB ──────────────────────────
+// 2026-06-15: this list used to be hand-maintained and drifted to 25 of 42
+// tables (missing AuditLog, ProjectCloser/Setter, notifications, etc.), so a
+// "full backup" was silently incomplete and not a real rollback path. We now
+// read every user table from sqlite_master so the dump can NEVER miss data
+// again, regardless of schema changes. System/internal tables (sqlite_*,
+// _prisma_migrations, libsql_*, underscore-prefixed) are excluded.
 //
-// Kept in sync with prisma/schema.prisma. If you add a new `model Foo`,
-// add "Foo" to this list too.
-const TABLES = [
-  "User",
-  "Installer",
-  "Financer",
-  "InstallerPrepaidOption",
-  "InstallerPricingVersion",
-  "InstallerPricingTier",
-  "ProductCatalogConfig",
-  "Product",
-  "ProductPricingVersion",
-  "ProductPricingTier",
-  "Project",
-  "ProjectActivity",
-  "ProjectMessage",
-  "ProjectCheckItem",
-  "ProjectMention",
-  "PayrollEntry",
-  "Reimbursement",
-  "TrainerAssignment",
-  "TrainerOverrideTier",
-  "Incentive",
-  "IncentiveMilestone",
-  "Blitz",
-  "BlitzParticipant",
-  "BlitzCost",
-  "BlitzRequest",
-];
+// The RESTORE script (restore-turso.mjs) keeps an EXPLICIT FK-ordered list
+// because insertion order matters there; its sanity check fails loudly if a
+// dumped table is missing from that order.
+async function discoverTables() {
+  const res = await client.execute(
+    `SELECT name FROM sqlite_master
+     WHERE type = 'table'
+       AND name NOT LIKE 'sqlite_%'
+       AND name NOT LIKE 'libsql_%'
+       AND name NOT LIKE '\\_%' ESCAPE '\\'
+     ORDER BY name`,
+  );
+  return res.rows.map((r) => r.name);
+}
 
 function formatTimestamp(d = new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -94,6 +82,8 @@ async function main() {
   console.log();
 
   const takenAt = new Date().toISOString();
+  const TABLES = await discoverTables();
+  console.log(`  Discovered ${TABLES.length} tables from the live DB.\n`);
   const tables = {};
   const counts = {};
   let totalRows = 0;
