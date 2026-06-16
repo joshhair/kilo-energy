@@ -334,27 +334,17 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
-  const updateSolarTechTier = (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) =>
-    setSolarTechProducts((prev) => {
-      const newProducts = prev.map((p) => p.id !== productId ? p : {
-        ...p,
-        tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
-          ...t,
-          ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
-          ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
-          ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
-        }),
-      });
-      const updatedProduct = newProducts.find((p) => p.id === productId);
-      if (updatedProduct) {
-        fetch(`/api/products/${productId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tiers: updatedProduct.tiers }),
-        }).catch(console.error);
-      }
-      return newProducts;
-    });
+  // FROZEN (pricing-remediation Phase 1a, 2026-06-16): inline per-tier editing
+  // is paused until the draft-then-publish rework (Phase 3). It used to PATCH
+  // /api/products/[id] on every keystroke, minting a new pricing version each
+  // time (22 versions for one product in ~3 min). No-op now so the inline grid
+  // can't write; the server also rejects tier writes (defense in depth). New
+  // pricing goes through the validated bulk "Refresh pricing" flow.
+  const updateSolarTechTier = (
+    _productId: string,
+    _tierIndex: number,
+    _updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>,
+  ): void => { /* frozen — replaced by the Phase 3 draft-then-publish editor */ };
 
   const addProductCatalogInstaller = (name: string, config: ProductCatalogInstallerConfig) => {
     setInstallers((prev) => prev.find((i) => i.name === name) ? prev : [...prev, { name, active: true }]);
@@ -540,39 +530,14 @@ export function createInstallerActions(deps: InstallerDeps) {
     }
   };
 
-  const updateProductCatalogTier = async (productId: string, tierIndex: number, updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>) => {
-    let updatedTiers: ProductCatalogTier[] | undefined;
-    setProductCatalogProducts((prev) => {
-      const newProducts = prev.map((p) => p.id !== productId ? p : {
-        ...p,
-        tiers: p.tiers.map((t, i) => i !== tierIndex ? t : {
-          ...t,
-          ...(updates.closerPerW !== undefined ? { closerPerW: updates.closerPerW, setterPerW: Math.round((updates.closerPerW + 0.10) * 100) / 100 } : {}),
-          ...(updates.kiloPerW !== undefined ? { kiloPerW: updates.kiloPerW } : {}),
-          ...('subDealerPerW' in updates ? { subDealerPerW: updates.subDealerPerW } : {}),
-        }),
-      });
-      updatedTiers = newProducts.find((p) => p.id === productId)?.tiers;
-      return newProducts;
-    });
-    if (updatedTiers) {
-      try {
-        const res = await fetch(`/api/products/${productId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tiers: updatedTiers }),
-        });
-        const data = await res.json();
-        if (data.newVersion) {
-          const today = new Date().toISOString().slice(0, 10);
-          setProductCatalogPricingVersions((prev) => [
-            ...prev.map((v) => v.productId === productId && v.effectiveTo === null ? { ...v, effectiveTo: today } : v),
-            data.newVersion,
-          ]);
-        }
-      } catch (e) { console.error(e); }
-    }
-  };
+  // FROZEN (pricing-remediation Phase 1a, 2026-06-16) — see updateSolarTechTier.
+  // Inline per-tier editing minted a new pricing version on every keystroke;
+  // no-op until the Phase 3 draft-then-publish rework. Server also rejects it.
+  const updateProductCatalogTier = async (
+    _productId: string,
+    _tierIndex: number,
+    _updates: Partial<{ closerPerW: number; kiloPerW: number; subDealerPerW: number | undefined }>,
+  ): Promise<void> => { /* frozen — replaced by the Phase 3 draft-then-publish editor */ };
 
   const removeProductCatalogProduct = async (id: string) => {
     const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });

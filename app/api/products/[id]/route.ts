@@ -41,68 +41,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  // STOP-THE-BLEEDING GUARD (2026-06-16, pricing-remediation Phase 1a).
+  //
+  // This endpoint used to close the active ProductPricingVersion and create a
+  // NEW one effective-today on EVERY tier write. The inline Baselines grid
+  // called it on every keystroke, which minted 22 versions for one product in
+  // ~3 minutes (19 degenerate). Until the draft-then-publish rework (Phase 3)
+  // ships, tier/pricing changes through this route are REJECTED — version
+  // creation must go through the validated, transactional bulk flow
+  // (POST /api/baselines/bulk-version-create). Product metadata (name/family)
+  // edits above still work. The inline grid is frozen client-side to match.
   if (body.tiers) {
-    const today = new Date().toISOString().slice(0, 10);
-    const activeVersion = await prisma.productPricingVersion.findFirst({
-      where: { productId: id, effectiveTo: null },
-    });
-    if (activeVersion) {
-      await prisma.productPricingVersion.update({
-        where: { id: activeVersion.id },
-        data: { effectiveTo: today },
-      });
-    }
-    const newVersion = await prisma.productPricingVersion.create({
-      data: {
-        productId: id,
-        label: today,
-        effectiveFrom: today,
-        effectiveTo: null,
-        tiers: {
-          create: body.tiers.map((t) => ({
-            minKW: t.minKW,
-            maxKW: t.maxKW ?? null,
-            closerPerW: t.closerPerW,
-            setterPerW: t.setterPerW,
-            kiloPerW: t.kiloPerW,
-            subDealerPerW: t.subDealerPerW ?? null,
-          })),
-        },
+    return NextResponse.json(
+      {
+        error: 'pricing_edit_disabled',
+        message:
+          'Inline tier editing is temporarily disabled while the pricing editor is being reworked. ' +
+          'Create a new pricing version via the bulk "Refresh pricing" flow instead.',
       },
-      include: { tiers: true },
-    });
-    // Tier replacement is commission-affecting — audit the version cut.
-    await logChange({
-      actor: { id: actor.id, email: actor.email },
-      action: 'product_pricing_version_create',
-      entityType: 'ProductPricingVersion',
-      entityId: newVersion.id,
-      detail: {
-        productId: id,
-        closedPreviousVersionId: activeVersion?.id ?? null,
-        effectiveFrom: today,
-        tierCount: newVersion.tiers.length,
-        source: 'PATCH /api/products/[id]',
-      },
-    });
-    return NextResponse.json({
-      success: true,
-      newVersion: {
-        id: newVersion.id,
-        productId: newVersion.productId,
-        label: newVersion.label,
-        effectiveFrom: newVersion.effectiveFrom,
-        effectiveTo: newVersion.effectiveTo,
-        tiers: newVersion.tiers.map((t) => ({
-          minKW: t.minKW,
-          maxKW: t.maxKW,
-          closerPerW: t.closerPerW,
-          setterPerW: t.setterPerW,
-          kiloPerW: t.kiloPerW,
-          subDealerPerW: t.subDealerPerW ?? undefined,
-        })),
-      },
-    });
+      { status: 409 },
+    );
   }
 
   return NextResponse.json({ success: true });
