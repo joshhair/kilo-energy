@@ -7,9 +7,11 @@
 // referenced by 0 real projects. We delete its tier + version, then the
 // installers. Pattern (hardened per Codex review 2026-06-16): frozen IDs +
 // ALL reference asserts re-run INSIDE the write transaction immediately before
-// the deletes (FKs are ON DELETE SET NULL/CASCADE — they won't block, we
-// assert ourselves; this also covers User.scopedInstallerId which has NO
-// Turso FK so foreign_key_check can't catch it) + exact rowsAffected asserts +
+// the deletes (Project.installerId is RESTRICT — a real ref would block the
+// delete; other refs vary by SET NULL/CASCADE — either way we assert ourselves
+// rather than rely on FK behavior; this also covers User.scopedInstallerId
+// which has NO Turso FK so foreign_key_check can't catch it) + exact
+// rowsAffected asserts +
 // before-state rollback JSON + AuditLog + post-verify + rollback on mismatch.
 //
 //   node scripts/cleanup-fake-installers-2026-06-16.mjs            # dry-run
