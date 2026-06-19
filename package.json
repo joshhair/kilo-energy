@@ -13,6 +13,7 @@
     "check:audit": "node scripts/check-audit-coverage.mjs",
     "check:privacy-gate": "node scripts/check-privacy-gate-coverage.mjs",
     "check:primitives": "node scripts/check-primitive-usage.mjs",
+    "check:file-size": "node scripts/check-file-size.mjs",
     "check:notifications": "node scripts/check-notification-coverage.mjs",
     "check:button-contrast": "node scripts/check-button-contrast.mjs",
     "check:no-silent-rep-clears": "node scripts/check-no-silent-rep-clears.mjs",

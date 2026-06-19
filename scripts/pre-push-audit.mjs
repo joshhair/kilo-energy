@@ -55,6 +55,7 @@ const GATES = [
   ['check:audit', 'audit-log coverage'],
   ['check:privacy-gate', 'privacy-gate coverage'],
   ['check:primitives', 'primitive-component usage'],
+  ['check:file-size', 'mega-file / line-budget guard'],
   ['check:notifications', 'notification event coverage'],
   ['check:button-contrast', 'white-on-emerald contrast guard'],
   ['check:no-silent-rep-clears', 'setter/rep/blitz silent-clear guard'],
