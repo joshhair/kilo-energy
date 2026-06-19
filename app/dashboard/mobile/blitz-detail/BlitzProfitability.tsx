@@ -67,7 +67,7 @@ export default function BlitzProfitability({
     { label: 'Kilo Margin', value: formatCurrency(Math.round(kiloMargin)), tone: 'emerald' as const, sub: 'Baseline spread × kW' },
     { label: 'Blitz Costs', value: formatCurrency(totalCosts), tone: 'amber' as const },
     { label: 'Net Profit', value: formatCurrency(Math.round(netProfit)), tone: netProfit >= 0 ? 'emerald' as const : 'red' as const, sub: 'Margin − Costs' },
-    { label: 'ROI', value: `${roi.toFixed(0)}%`, tone: roi >= 0 ? 'emerald' as const : 'red' as const, icon: roi >= 0 },
+    { label: 'ROI', value: `${roi.toFixed(0)}%`, tone: roi >= 0 ? 'emerald' as const : 'red' as const, icon: roi === 0 ? undefined : roi > 0 },
   ];
 
   const toneColor = (t: 'emerald' | 'amber' | 'red') =>

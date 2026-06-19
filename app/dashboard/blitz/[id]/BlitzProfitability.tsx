@@ -91,7 +91,7 @@ export function BlitzProfitability({
           <p className="text-xs text-[var(--text-muted)] mb-1">ROI</p>
           <p className={`text-2xl font-black tabular-nums leading-none flex items-center gap-1.5 ${roi > 100 ? 'text-[var(--accent-emerald-text)]' : roi >= 0 ? 'text-[var(--accent-emerald-text)]' : 'text-[var(--accent-red-text)]'}`}>
             <span style={{ fontFamily: "'DM Serif Display', serif" }}>{roiAnim}%</span>
-            {roi >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+            {roi > 0 ? <TrendingUp className="w-5 h-5" /> : roi < 0 ? <TrendingDown className="w-5 h-5" /> : null}
           </p>
         </div>
       </div>
