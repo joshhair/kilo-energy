@@ -152,7 +152,7 @@ export function TrendBadge({ pctChange }: { pctChange: number | null | undefined
     return (
       <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-emerald-solid)]/15 text-[var(--accent-emerald-text)]">
         <TrendingUp className="w-2.5 h-2.5" />
-        +{Math.round(pctChange)}%
+        +{pctChange.toFixed(1)}%
       </span>
     );
   }
@@ -161,7 +161,7 @@ export function TrendBadge({ pctChange }: { pctChange: number | null | undefined
     return (
       <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-[var(--accent-red-text)]">
         <TrendingDown className="w-2.5 h-2.5" />
-        {Math.round(pctChange)}%
+        {pctChange.toFixed(1)}%
       </span>
     );
   }
