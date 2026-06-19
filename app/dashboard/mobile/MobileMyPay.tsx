@@ -746,7 +746,7 @@ export default function MobileMyPay() {
           <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>From</span>
             <input
-              type="date"
+              type="date" aria-label="Pay period from"
               value={payFilterFrom}
               onChange={(e) => setPayFilterFrom(e.target.value)}
               className="w-full min-w-0"
@@ -756,7 +756,7 @@ export default function MobileMyPay() {
           <label className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider px-1" style={{ color: MUTED, fontFamily: FONT_BODY, letterSpacing: '0.1em' }}>To</span>
             <input
-              type="date"
+              type="date" aria-label="Pay period to"
               value={payFilterTo}
               onChange={(e) => setPayFilterTo(e.target.value)}
               className="w-full min-w-0"
@@ -797,7 +797,7 @@ export default function MobileMyPay() {
                 {/* Entries */}
                 <div>
                   {period.entries.map((entry, i) => {
-                    const label = entry.customerName || (entry.type === 'Bonus' ? 'Bonus' : '--');
+                    const label = entry.customerName || (entry.paymentStage === 'Charge' || entry.isChargeback ? 'Chargeback' : entry.type === 'Bonus' ? 'Bonus' : '--');
                     // Link the customer name to the project when we have
                     // one — mirrors the desktop my-pay table. Bonus rows
                     // (no projectId) stay static text.

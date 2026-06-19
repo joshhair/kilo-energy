@@ -688,7 +688,7 @@ function MyPayPageInner() {
           <div className="flex items-center gap-2">
             <label className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider whitespace-nowrap">Pay Period From</label>
             <input
-              type="date"
+              type="date" aria-label="Pay period from"
               value={payFilterFrom}
               onChange={(e) => { setPayFilterFrom(e.target.value); setPeriodPage(1); }}
               className="bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
@@ -697,7 +697,7 @@ function MyPayPageInner() {
           <div className="flex items-center gap-2">
             <label className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider whitespace-nowrap">Pay Period To</label>
             <input
-              type="date"
+              type="date" aria-label="Pay period to"
               value={payFilterTo}
               onChange={(e) => { setPayFilterTo(e.target.value); setPeriodPage(1); }}
               className="bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-xl px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
@@ -863,7 +863,7 @@ function MyPayPageInner() {
                                     {entry.customerName || '—'}
                                   </Link>
                                 ) : (
-                                  <span className="text-[var(--text-secondary)] text-xs">{entry.customerName ? entry.customerName : (entry.type === 'Bonus' ? 'Bonus' : '—')}</span>
+                                  <span className="text-[var(--text-secondary)] text-xs">{entry.customerName ? entry.customerName : (entry.paymentStage === 'Charge' || entry.isChargeback ? 'Chargeback' : entry.type === 'Bonus' ? 'Bonus' : '—')}</span>
                                 )}
                               </td>
                               <td className="px-3 py-3"><StageBadge stage={entry.paymentStage} /></td>
