@@ -45,7 +45,7 @@ function AnnouncementRow({ a, canManage }: { a: BlitzAnnouncementRow; canManage:
       <div className="flex items-center gap-2 mb-1">
         <span className="text-xs font-semibold text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>{a.senderName}</span>
         <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>{a.senderRole === 'admin' ? 'Admin' : 'Leader'}</span>
-        <span className="text-[10px] ml-auto shrink-0" style={{ color: 'var(--text-dim)' }}>{relativeTime(a.createdAt)}</span>
+        <span className="text-[10px] ml-auto shrink-0" style={{ color: 'var(--text-dim)' }}>{relativeTime(a.createdAt.slice(0, 10))}</span>
       </div>
       <p
         className={`text-sm whitespace-pre-wrap break-words ${expanded ? '' : 'line-clamp-4'}`}
