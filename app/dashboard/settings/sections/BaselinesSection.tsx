@@ -961,7 +961,7 @@ export function BaselinesSection({
                   </div>
                   ) : (
                   <div className="p-4">
-                    <DraftPricingEditor
+                    <DraftPricingEditor key={`pc:${installerName}:${currentFamily}`}
                       scope={{ kind: 'productcatalog', installer: installerName, family: currentFamily }}
                       products={filteredProducts}
                       versions={productCatalogPricingVersions.filter((v) => filteredProducts.some((p) => p.id === v.productId))}
@@ -1529,7 +1529,7 @@ export function BaselinesSection({
                 </div>
                 ) : (
                   <div className="p-4">
-                    <DraftPricingEditor
+                    <DraftPricingEditor key={`st:${stFamily}`}
                       scope={{ kind: 'solartech', family: stFamily }}
                       products={stAllFamilyProducts}
                       versions={productCatalogPricingVersions.filter((v) => stAllFamilyProducts.some((p) => p.id === v.productId))}
