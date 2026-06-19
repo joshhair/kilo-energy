@@ -1489,6 +1489,16 @@ select {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ── Bottom-sheet enter/exit (Phase 3 mobile pricing editor) ──────────────── */
+@keyframes slideUpIn {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDownOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(100%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [style*='slideUp'], [style*='fadeIn'] {
     animation-duration: 1ms !important;

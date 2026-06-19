@@ -14,9 +14,9 @@
   },
 
   "BaselinesSection.tsx": {
-    "rawInputs": 44,
-    "rawButtons": 46,
-    "reason": "Largest Settings section (1948 LOC) with deeply custom UI: per-tier rate inputs, version timeline, refresh-pricing modal, archived-tab swap, bulk-tier-adjust dialog, and the SolarTech ↔ Product Catalog parity surfaces. PR 1 wired the inline validateProductName to the shared validateName; full primitive migration is deferred to a dedicated multi-PR effort because the surface is too risky to migrate in one shot. -3 buttons on 2026-05-15 — the 3 tab-row segmented controls migrated to the shared SegmentedPills primitive."
+    "rawInputs": 40,
+    "rawButtons": 40,
+    "reason": "Largest Settings section with deeply custom UI: per-tier rate inputs, version timeline, refresh-pricing modal, archived-tab swap, and the SolarTech ↔ Product Catalog parity surfaces. PR 1 wired the inline validateProductName to the shared validateName; full primitive migration is deferred because the surface is too risky to migrate in one shot. -3 buttons 2026-05-15 (tab-row → SegmentedPills). -2 buttons 2026-06-16 (Phase 3 A2: retired in-place 'Bulk Adjust' toggle buttons). -4 inputs/-4 buttons 2026-06-17 (Phase 3 A2 cleanup: deleted the two unreachable Bulk Adjust panels + their orphaned in-place bulk-tier-adjust endpoint/wrappers). Remaining raw elements are the legacy archive-view read-only table + add-product/refresh-version modals, a separate future migration."
   },
 
   "BlitzPermissionsSection.tsx": {

@@ -285,7 +285,12 @@ model ProductPricingVersion {
   tiers    ProductPricingTier[]
   projects Project[]            @relation("ProjectProductPricingVersion")
 
-  @@index([productId, effectiveFrom])
+  // Durable concurrency/idempotency guard for the draft-then-publish editor
+  // (Phase 3 A2): one version per (product, effectiveFrom). Applied to prod via
+  // scripts/migrate-pricing-version-unique-2026-06-17.mjs, which ALSO creates a
+  // partial UNIQUE(productId) WHERE effectiveTo IS NULL (one open version per
+  // product) — Prisma can't express partial indexes, so that one is raw-SQL only.
+  @@unique([productId, effectiveFrom])
 }
 
 /// kW-tier rates within a ProductPricingVersion.

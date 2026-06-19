@@ -77,13 +77,13 @@ describe('canViewSubDealerRateOnTier', () => {
   it('grants admins', () => {
     expect(canViewSubDealerRateOnTier({ role: 'admin' })).toBe(true);
   });
-  it('denies sub-dealers themselves (their contract is administered separately)', () => {
-    expect(canViewSubDealerRateOnTier({ role: 'sub-dealer' })).toBe(false);
+  it('grants sub-dealers their own rate (needed for their commission forecast)', () => {
+    expect(canViewSubDealerRateOnTier({ role: 'sub-dealer' })).toBe(true);
   });
-  it('denies all non-admin roles via fuzz', () => {
+  it('denies reps / PMs / trainers and all other roles via fuzz', () => {
     fc.assert(
       fc.property(fc.string(), (randomRole) => {
-        if (randomRole === 'admin') return true;
+        if (randomRole === 'admin' || randomRole === 'sub-dealer') return true;
         return canViewSubDealerRateOnTier({ role: randomRole }) === false;
       }),
     );

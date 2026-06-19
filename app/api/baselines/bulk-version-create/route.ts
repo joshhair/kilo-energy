@@ -31,7 +31,10 @@ import { logger, errorContext } from '../../../../lib/logger';
 import { logChange } from '../../../../lib/audit';
 import { recordAdminAction } from '../../../../lib/anomaly-detector';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
+import { validateTiers, validateWindowGraph, businessToday, type VersionWindow } from '../../../../lib/pricing/validate-version';
 import { z } from 'zod';
+
+const asDay = (v: string | Date | null): string | null => (v == null ? null : String(v).slice(0, 10));
 
 const tierInputSchema = z.object({
   minKW: z.number().finite().min(0).max(1000),
@@ -55,6 +58,10 @@ const bulkVersionCreateSchema = z.object({
    *  auth is enforced; the operation is logged with severity='sensitive'.
    *  Default false: past dates rejected with 400. */
   retroactive: z.boolean().optional().default(false),
+  /** Client-generated key to dedupe accidental double-submits (the editor sends
+   *  one per publish attempt). A second request with the same key returns 409
+   *  rather than minting a duplicate batch of versions. */
+  idempotencyKey: z.string().min(8).max(100).optional(),
   products: z.array(productEntrySchema).min(1).max(50),
 });
 
@@ -75,17 +82,22 @@ export async function POST(req: NextRequest) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(body.effectiveFrom)) {
     return NextResponse.json({ error: 'effectiveFrom must be YYYY-MM-DD' }, { status: 400 });
   }
-  const todayISO = new Date().toISOString().split('T')[0];
+  // Business-local today (Pacific), NOT UTC — the publish boundary must match
+  // where the business operates so a "future-dated" publish is genuinely after
+  // the current business day everywhere.
+  const today = businessToday();
 
-  // Past-dated effective: hard-block unless retroactive flag is set
-  // AND step-up auth succeeds. Retroactive operations get an elevated
-  // anomaly event so they're flagged for forensic review later.
-  if (body.effectiveFrom < todayISO) {
+  // Stage A is FUTURE-DATED ONLY: a new version must take effect strictly after
+  // today. Same-day and past dates are effectively retroactive (any deal sold
+  // earlier re-resolves its rate live until the frozen-version doctrine lands in
+  // Stage B), so they require the explicit retroactive flag + step-up auth and
+  // are flagged for forensic review.
+  if (body.effectiveFrom <= today) {
     if (!body.retroactive) {
       return NextResponse.json(
         {
           error: 'retroactive_effective_date',
-          message: `Effective dates in the past require an explicit retroactive flag. Got ${body.effectiveFrom}, today is ${todayISO}.`,
+          message: `Effective date must be after today (${today}); same-day/past dates require an explicit retroactive flag. Got ${body.effectiveFrom}.`,
         },
         { status: 400 },
       );
@@ -103,21 +115,17 @@ export async function POST(req: NextRequest) {
   prevDate.setUTCDate(prevDate.getUTCDate() - 1);
   const closePreviousAs = `${prevDate.getUTCFullYear()}-${String(prevDate.getUTCMonth() + 1).padStart(2, '0')}-${String(prevDate.getUTCDate()).padStart(2, '0')}`;
 
-  // Sanity-check tiers: refuse the whole batch if any tier would be
-  // loss-making (closer <= kilo). Better to fail loud than half-apply.
+  // Validate every product's tier grid with the SHARED validator (same rules
+  // the editor enforces inline): ≥1 tier, contiguous kW bands, last tier
+  // open-ended, rates > 0, closer > kilo (never loss-making), setter = closer +
+  // 0.10. Fail the whole batch loud rather than half-apply.
   for (const [pi, p] of body.products.entries()) {
-    for (const [ti, t] of p.tiers.entries()) {
-      if (t.closerPerW <= t.kiloPerW) {
-        return NextResponse.json(
-          {
-            error: 'tier_loss_making',
-            message: `Product ${pi + 1}, tier ${ti + 1}: closerPerW ($${t.closerPerW}) must be greater than kiloPerW ($${t.kiloPerW}).`,
-            productId: p.productId,
-            tierIndex: ti,
-          },
-          { status: 400 },
-        );
-      }
+    const v = validateTiers(p.tiers);
+    if (!v.ok) {
+      return NextResponse.json(
+        { error: 'invalid_tiers', productId: p.productId, productIndex: pi, messages: v.errors },
+        { status: 400 },
+      );
     }
   }
 
@@ -135,11 +143,66 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Window-graph validation: publishing this effectiveFrom over each product's
+  // EXISTING versions must yield a valid timeline — exactly one open version,
+  // no overlap, no duplicate start, no zero-width closed window. Catches
+  // double-publishes and data-integrity problems the per-tier check can't see.
+  const existingVersions = await prisma.productPricingVersion.findMany({
+    where: { productId: { in: productIds } },
+    select: { id: true, productId: true, effectiveFrom: true, effectiveTo: true },
+  });
+  const versionsByProduct = new Map<string, VersionWindow[]>();
+  for (const v of existingVersions) {
+    const list = versionsByProduct.get(v.productId) ?? [];
+    list.push({ id: v.id, effectiveFrom: asDay(v.effectiveFrom) as string, effectiveTo: asDay(v.effectiveTo) });
+    versionsByProduct.set(v.productId, list);
+  }
+  for (const [pi, p] of body.products.entries()) {
+    const w = validateWindowGraph(versionsByProduct.get(p.productId) ?? [], body.effectiveFrom, {
+      allowRetroactive: body.retroactive,
+      today,
+    });
+    if (!w.ok) {
+      return NextResponse.json(
+        { error: 'invalid_window', productId: p.productId, productIndex: pi, messages: w.errors },
+        { status: 400 },
+      );
+    }
+  }
+
+  // Idempotency: if a prior batch with this key already succeeded, do not mint a
+  // duplicate. Best-effort via the audit trail (durable unique-column guard
+  // lands with the gated A1 migration); the 10/min rate limit bounds the race.
+  if (body.idempotencyKey) {
+    const dup = await prisma.auditLog.findFirst({
+      where: { action: 'bulk_version_create', newValue: { contains: `"idempotencyKey":"${body.idempotencyKey}"` } },
+      select: { id: true },
+    });
+    if (dup) {
+      return NextResponse.json(
+        { error: 'duplicate_request', message: 'A publish with this idempotencyKey already completed.' },
+        { status: 409 },
+      );
+    }
+  }
+
   try {
     const created = await prisma.$transaction(async (tx) => {
       const newVersionsByProductId = new Map<string, { id: string; productId: string; label: string; effectiveFrom: string }>();
 
       for (const entry of body.products) {
+        // In-transaction concurrency guard: re-check that no version already
+        // starts on this effectiveFrom for this product. Write transactions
+        // serialize on libSQL, so a concurrent publish that committed first is
+        // visible here and we abort rather than mint a duplicate window. (The
+        // durable belt-and-suspenders is the gated A1 UNIQUE(productId,
+        // effectiveFrom) migration — a ship prerequisite for Stage A.)
+        const concurrentDup = await tx.productPricingVersion.findFirst({
+          where: { productId: entry.productId, effectiveFrom: body.effectiveFrom },
+          select: { id: true },
+        });
+        if (concurrentDup) throw new Error('CONCURRENT_DUPLICATE_VERSION');
+
         // Close the active version (effectiveTo: null) for this product.
         await tx.productPricingVersion.updateMany({
           where: { productId: entry.productId, effectiveTo: null },
@@ -191,6 +254,7 @@ export async function POST(req: NextRequest) {
           label: body.label,
           effectiveFrom: body.effectiveFrom,
           retroactive: body.retroactive,
+          ...(body.idempotencyKey ? { idempotencyKey: body.idempotencyKey } : {}),
         },
       });
     }
@@ -210,6 +274,13 @@ export async function POST(req: NextRequest) {
       created: Array.from(created.values()),
     }, { status: 201 });
   } catch (err) {
+    // Concurrency guard tripped (a sibling publish landed the same window first).
+    if (err instanceof Error && err.message === 'CONCURRENT_DUPLICATE_VERSION') {
+      return NextResponse.json(
+        { error: 'duplicate_request', message: 'A version for this effective date was just created — reload and retry.' },
+        { status: 409 },
+      );
+    }
     logger.error('bulk_version_create_failed', {
       actorId: actor.id,
       productCount: body.products.length,

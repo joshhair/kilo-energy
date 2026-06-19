@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, Fragment } from 'react';
 import {
   Plus, Pencil, Check, X, Trash2, Search, History, GitBranch, Copy, RotateCcw,
-  ChevronDown, ChevronUp, Sliders,
+  ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useApp } from '../../../../lib/context';
 import { useToast } from '../../../../lib/toast';
@@ -16,6 +16,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import { SectionHeader } from '../components/SectionHeader';
 import { validateName } from '../../../../lib/validation';
 import { SegmentedPills } from '../../../../components/ui';
+import { DraftPricingEditor } from './pricing/DraftPricingEditor';
 
 export interface BaselinesSectionProps {
   editingInstaller: string | null;
@@ -43,7 +44,7 @@ export function BaselinesSection({
   const {
     installerBaselines, updateInstallerBaseline,
     installerPricingVersions, createNewInstallerVersion,
-    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust, applyBulkVersionCreate,
+    solarTechProducts, updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct, removeSolarTechProduct, restoreProduct, applyBulkVersionCreate,
     productCatalogInstallerConfigs, productCatalogProducts,
     addProductCatalogProduct, updateProductCatalogProduct,
     updateProductCatalogTier, removeProductCatalogProduct,
@@ -192,10 +193,9 @@ export function BaselinesSection({
     return `Q${q} ${now.getFullYear()} Pricing`;
   };
 
-  // Bulk Adjust panel state
-  const [bulkAdjustOpen, setBulkAdjustOpen] = useState<'solartech' | 'productcatalog' | null>(null);
-  const [bulkRateAdj, setBulkRateAdj] = useState('');
-  const [bulkSpreadInputs, setBulkSpreadInputs] = useState<[string, string, string, string]>(['', '', '', '']);
+  // (Old in-place "Bulk Adjust" fully removed 2026-06-17 — replaced by the draft
+  // editor's inline Bulk adjust, which publishes a future-dated version instead
+  // of mutating live pricing. The bulk-tier-adjust endpoint + wrappers are gone.)
 
   // Product search state
   const [stProductSearch, setStProductSearch] = useState('');
@@ -818,138 +818,11 @@ export function BaselinesSection({
                       </button>
                     </>
                   )}
-                  {!isViewingArchive && (
-                    <button
-                      onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'productcatalog' ? null : 'productcatalog'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                        bulkAdjustOpen === 'productcatalog'
-                          ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]'
-                          : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'
-                      }`}
-                    >
-                      <Sliders className="w-3.5 h-3.5" /> Bulk Adjust
-                      {bulkAdjustOpen === 'productcatalog' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    </button>
-                  )}
+                  {/* Old in-place "Bulk Adjust" retired — see draft editor's inline Bulk adjust. */}
                 </div>
               );
             })()}
 
-            {/* Bulk Adjust Panel — Product Catalog.
-                Backed by POST /api/baselines/bulk-tier-adjust (single
-                transaction). Search filter respected. */}
-            {bulkAdjustOpen === 'productcatalog' && (() => {
-              const searchActive = pcProductSearch.trim().length > 0;
-              const targetProducts = searchActive
-                ? filteredProducts.filter((p) => p.name.toLowerCase().includes(pcProductSearch.toLowerCase().trim()))
-                : filteredProducts;
-              const adjVal = parseFloat(bulkRateAdj) || 0;
-              const spreadVals = bulkSpreadInputs.map((v) => parseFloat(v));
-              const anySpreadSet = spreadVals.some((v) => !isNaN(v) && v !== 0);
-
-              const applyAdjust = async () => {
-                const selections = targetProducts.flatMap((p) => p.tiers.map((_t, ti) => ({ productId: p.id, tierIndex: ti, isSolarTech: false })));
-                try {
-                  const result = await applyBulkTierAdjust({ operation: 'adjust', adjustment: adjVal }, selections);
-                  if (result.skipped.length > 0) console.warn('[bulk-adjust] skipped:', result.skipped);
-                  toast(
-                    `Closer ${adjVal >= 0 ? '+' : ''}$${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`,
-                    'success',
-                    result.affected > 0 ? {
-                      label: 'Undo',
-                      onClick: async () => {
-                        try {
-                          await undoBulkTierAdjust(result.undoData);
-                          toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
-                        } catch (err) {
-                          toast(err instanceof Error ? err.message : 'Undo failed', 'error');
-                        }
-                      },
-                    } : undefined,
-                  );
-                  setBulkRateAdj('');
-                } catch (err) {
-                  const msg = err instanceof Error ? err.message : 'Bulk adjust failed';
-                  toast(msg.includes('step_up_required') ? 'Re-authentication required for large adjustments. Sign out and back in, then retry.' : msg, 'error');
-                }
-              };
-
-              const applySpreads = async () => {
-                const spreadByTierIndex: Record<string, number> = {};
-                spreadVals.forEach((v, i) => { if (!isNaN(v) && v !== 0) spreadByTierIndex[String(i)] = v; });
-                const selections = targetProducts.flatMap((p) => p.tiers.map((_t, ti) => ({ productId: p.id, tierIndex: ti, isSolarTech: false })))
-                  .filter((s) => spreadByTierIndex[String(s.tierIndex)] !== undefined);
-                try {
-                  const result = await applyBulkTierAdjust({ operation: 'spread', spreadByTierIndex }, selections);
-                  if (result.skipped.length > 0) console.warn('[bulk-spread] skipped:', result.skipped);
-                  toast(
-                    `Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${pcProductSearch.trim()}"` : ''}`,
-                    'success',
-                    result.affected > 0 ? {
-                      label: 'Undo',
-                      onClick: async () => {
-                        try {
-                          await undoBulkTierAdjust(result.undoData);
-                          toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
-                        } catch (err) {
-                          toast(err instanceof Error ? err.message : 'Undo failed', 'error');
-                        }
-                      },
-                    } : undefined,
-                  );
-                  setBulkSpreadInputs(['', '', '', '']);
-                } catch (err) {
-                  toast(err instanceof Error ? err.message : 'Bulk spreads failed', 'error');
-                }
-              };
-
-              return (
-                <div className="card-surface rounded-xl p-4 mb-3 space-y-4 max-w-3xl motion-safe:animate-[fadeUpIn_220ms_cubic-bezier(0.16,1,0.3,1)_both]">
-                  <div>
-                    <p className="text-[var(--text-primary)] text-xs font-semibold mb-2">Bulk Rate Adjustment</p>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <label className="text-[var(--text-secondary)] text-xs whitespace-nowrap">Adjust closer baselines by</label>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[var(--text-muted)] text-xs">$</span>
-                        <input type="number" step="0.01" value={bulkRateAdj} onChange={(e) => setBulkRateAdj(e.target.value)} placeholder="+/- 0.00"
-                          className="w-24 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
-                        <span className="text-[var(--text-muted)] text-xs">/W</span>
-                      </div>
-                      {adjVal !== 0 && (
-                        <span className="text-[var(--text-muted)] text-[10px]">
-                          {targetProducts.length} {searchActive ? 'matching' : ''} product{targetProducts.length === 1 ? '' : 's'} × 4 tiers affected
-                          {searchActive && <span className="text-[var(--accent-amber-text)]"> (filtered)</span>}
-                        </span>
-                      )}
-                      <button disabled={adjVal === 0 || targetProducts.length === 0} onClick={applyAdjust} className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]" style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>Apply</button>
-                    </div>
-                  </div>
-                  <div className="border-t border-[var(--border-subtle)] pt-4">
-                    <p className="text-[var(--text-primary)] text-xs font-semibold mb-2">Kilo Spread Minimums</p>
-                    <p className="text-[var(--text-muted)] text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
-                    <div className="grid grid-cols-4 gap-2 mb-3">
-                      {['Under 5kW', '5-10kW', '10-13kW', '13+ kW'].map((label, i) => (
-                        <div key={label}>
-                          <p className="text-[10px] text-[var(--text-muted)] mb-1 text-center">{label} spread</p>
-                          <div className="flex items-center gap-1 justify-center">
-                            <span className="text-[var(--text-muted)] text-xs">$</span>
-                            <input type="number" step="0.01" min="0" value={bulkSpreadInputs[i]} onChange={(e) => setBulkSpreadInputs((prev) => { const next = [...prev] as [string, string, string, string]; next[i] = e.target.value; return next; })} placeholder="0.00"
-                              className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {anySpreadSet && (
-                      <p className="text-[var(--text-muted)] text-[10px] mb-2">
-                        Preview: {targetProducts.length} {searchActive ? 'matching' : ''} product{targetProducts.length === 1 ? '' : 's'} will have closer baselines recalculated per tier
-                        {searchActive && <span className="text-[var(--accent-amber-text)]"> (filtered)</span>}
-                      </p>
-                    )}
-                    <button disabled={!anySpreadSet || targetProducts.length === 0} onClick={applySpreads} className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]" style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>Apply Spreads</button>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Product table */}
             {(() => {
@@ -994,6 +867,7 @@ export function BaselinesSection({
                       </div>
                     </div>
                   </div>
+                  {pcIsArchive ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="table-header-frost">
@@ -1085,6 +959,36 @@ export function BaselinesSection({
                       </tbody>
                     </table>
                   </div>
+                  ) : (
+                  <div className="p-4">
+                    <DraftPricingEditor
+                      scope={{ kind: 'productcatalog', installer: installerName, family: currentFamily }}
+                      products={filteredProducts}
+                      versions={productCatalogPricingVersions.filter((v) => filteredProducts.some((p) => p.id === v.productId))}
+                      showSubDealerRates={showSubDealerRates}
+                      searchQuery={pcProductSearch}
+                      applyBulkVersionCreate={applyBulkVersionCreate}
+                      toast={toast}
+                      onRenameProduct={(id, name) => {
+                        const product = filteredProducts.find((p) => p.id === id);
+                        if (!product) return false;
+                        const r = validateProductName(name, product.name, filteredProducts, id);
+                        if (!r.ok) { toast(r.reason, 'error'); return false; }
+                        if (r.name !== product.name) { updateProductCatalogProduct(id, { name: r.name }); toast(`Renamed to "${r.name}"`, 'success'); }
+                        return true;
+                      }}
+                      onArchiveProduct={(id, pname) => setConfirmAction({
+                        title: `Archive "${pname}"?`,
+                        message: `This product will be hidden from the active ${installerName} — ${currentFamily} tab. Existing projects keep resolving against their historical pricing version. Restore from the Archived tab.`,
+                        onConfirm: async () => {
+                          try { await removeProductCatalogProduct(id); toast(`Archived "${pname}"`, 'success'); }
+                          catch (err) { toast(err instanceof Error ? err.message : 'Failed to archive product', 'error'); }
+                          setConfirmAction(null);
+                        },
+                      })}
+                    />
+                  </div>
+                  )}
 
                   {/* Archived products view — mirrors the SolarTech tab.
                       Toggled by "Archived" button in the action bar.
@@ -1139,7 +1043,7 @@ export function BaselinesSection({
                   )}
 
                   <div className="px-5 py-3 border-t border-[var(--border-subtle)]/50 bg-[var(--surface-card)]/20">
-                    <p className="text-xs text-[var(--text-dim)]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p>
+                    <p className="text-xs text-[var(--text-dim)]">Each cell: Closer $/W (top) over Kilo $/W (below) · Setter = Closer + $0.10/W (auto-calculated)</p>
                   </div>
                 </div>
               );
@@ -1288,12 +1192,17 @@ export function BaselinesSection({
           : productCatalogProducts.filter((p) => p.installer === scope.installer && p.family === scope.family);
         const familyLabel = scope.kind === 'solartech' ? scope.family : `${scope.installer} — ${scope.family}`;
         const todayISO = new Date().toISOString().split('T')[0];
-        const isPast = bulkVersionEffectiveFrom !== '' && bulkVersionEffectiveFrom < todayISO;
+        // Future-dated only (Stage A): same-day/past publishes are effectively
+        // retroactive (they re-resolve live deals until the frozen-version
+        // doctrine lands) and the server now rejects them without the
+        // retroactive flag. Block them here too so the UX matches.
+        const tomorrowISO = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+        const isNotFuture = bulkVersionEffectiveFrom !== '' && bulkVersionEffectiveFrom <= todayISO;
 
         const submit = async () => {
           if (!bulkVersionLabel.trim() || !bulkVersionEffectiveFrom) return;
-          if (isPast) {
-            toast('Effective date is in the past — past-dated versions are blocked. Use a future date or today.', 'error');
+          if (isNotFuture) {
+            toast('Effective date must be in the future — same-day and past-dated versions are blocked here.', 'error');
             return;
           }
           const breaks = [1, 5, 10, 13];
@@ -1364,8 +1273,8 @@ export function BaselinesSection({
                 </div>
                 <div>
                   <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Effective from</label>
-                  <input type="date" value={bulkVersionEffectiveFrom} onChange={(e) => setBulkVersionEffectiveFrom(e.target.value)} min={todayISO} className={`w-full bg-[var(--surface-card)] border ${isPast ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]`} />
-                  {isPast && <p className="text-[10px] text-[var(--accent-red-text)] mt-1">Past dates blocked</p>}
+                  <input type="date" value={bulkVersionEffectiveFrom} onChange={(e) => setBulkVersionEffectiveFrom(e.target.value)} min={tomorrowISO} className={`w-full bg-[var(--surface-card)] border ${isNotFuture ? 'border-[var(--accent-red-text)]' : 'border-[var(--border-subtle)]'} text-[var(--text-primary)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)]`} />
+                  {isNotFuture && <p className="text-[10px] text-[var(--accent-red-text)] mt-1">Must be a future date</p>}
                 </div>
                 <div>
                   <label className="block text-[10px] text-[var(--text-secondary)] uppercase tracking-wider mb-1">Reason (optional)</label>
@@ -1417,7 +1326,7 @@ export function BaselinesSection({
                 <button onClick={resetBulkVersion} disabled={bulkVersionSubmitting} className="flex-1 py-2 rounded-xl text-sm font-medium bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors disabled:opacity-50">Cancel</button>
                 <button
                   onClick={submit}
-                  disabled={!bulkVersionLabel.trim() || !bulkVersionEffectiveFrom || isPast || targetProducts.length === 0 || bulkVersionSubmitting}
+                  disabled={!bulkVersionLabel.trim() || !bulkVersionEffectiveFrom || isNotFuture || targetProducts.length === 0 || bulkVersionSubmitting}
                   className="flex-1 py-2 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]"
                   style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}
                 >
@@ -1511,135 +1420,14 @@ export function BaselinesSection({
                   >
                     <GitBranch className="w-3.5 h-3.5" /> Refresh Family Pricing
                   </button>
-                  <button onClick={() => { setBulkAdjustOpen(bulkAdjustOpen === 'solartech' ? null : 'solartech'); setBulkRateAdj(''); setBulkSpreadInputs(['', '', '', '']); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${bulkAdjustOpen === 'solartech' ? 'bg-[var(--accent-emerald-solid)]/15 border-[var(--accent-emerald-solid)]/30 text-[var(--accent-emerald-text)]' : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'}`}><Sliders className="w-3.5 h-3.5" /> Bulk Adjust{bulkAdjustOpen === 'solartech' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}</button>
+                  {/* Old in-place "Bulk Adjust" retired — the draft editor's inline
+                      Bulk adjust applies to a draft and publishes via the same
+                      future-dated path (no live in-place tier mutation). */}
                 </>)}
               </div>
             );
           })()}
 
-          {/* Bulk Adjust Panel — SolarTech.
-              Now backed by POST /api/baselines/bulk-tier-adjust (single
-              transaction). Search filter is respected — bulk operations
-              target only the products visible after search trims, not the
-              full family. Magnitude guard kicks in server-side via
-              requireFreshAdmin for >40 selections or >$1.00/W swing. */}
-          {bulkAdjustOpen === 'solartech' && (() => {
-            const searchActive = stProductSearch.trim().length > 0;
-            const familyProducts = solarTechProducts.filter((p) => p.family === stFamily);
-            const targetProducts = searchActive
-              ? familyProducts.filter((p) => p.name.toLowerCase().includes(stProductSearch.toLowerCase().trim()))
-              : familyProducts;
-            const adjVal = parseFloat(bulkRateAdj) || 0;
-            const spreadVals = bulkSpreadInputs.map((v) => parseFloat(v));
-            const anySpreadSet = spreadVals.some((v) => !isNaN(v) && v !== 0);
-
-            const applyBulkAdjust = async () => {
-              const selections = targetProducts.flatMap((p) => p.tiers.map((_t, ti) => ({ productId: p.id, tierIndex: ti, isSolarTech: true })));
-              try {
-                const result = await applyBulkTierAdjust({ operation: 'adjust', adjustment: adjVal }, selections);
-                const skippedNote = result.skipped.length > 0 ? ` (${result.skipped.length} skipped)` : '';
-                if (result.skipped.length > 0) console.warn('[bulk-adjust] skipped:', result.skipped);
-                toast(
-                  `Closer ${adjVal >= 0 ? '+' : ''}$${adjVal.toFixed(2)}/W on ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}${skippedNote}`,
-                  'success',
-                  result.affected > 0 ? {
-                    label: 'Undo',
-                    onClick: async () => {
-                      try {
-                        await undoBulkTierAdjust(result.undoData);
-                        toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
-                      } catch (err) {
-                        toast(err instanceof Error ? err.message : 'Undo failed', 'error');
-                      }
-                    },
-                  } : undefined,
-                );
-                setBulkRateAdj('');
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : 'Bulk adjust failed';
-                if (msg.includes('step_up_required')) {
-                  toast('Re-authentication required for large adjustments. Sign out and back in, then retry.', 'error');
-                } else {
-                  toast(msg, 'error');
-                }
-              }
-            };
-
-            const applyBulkSpreads = async () => {
-              const spreadByTierIndex: Record<string, number> = {};
-              spreadVals.forEach((v, i) => { if (!isNaN(v) && v !== 0) spreadByTierIndex[String(i)] = v; });
-              const selections = targetProducts.flatMap((p) => p.tiers.map((_t, ti) => ({ productId: p.id, tierIndex: ti, isSolarTech: true })))
-                .filter((s) => spreadByTierIndex[String(s.tierIndex)] !== undefined);
-              try {
-                const result = await applyBulkTierAdjust({ operation: 'spread', spreadByTierIndex }, selections);
-                if (result.skipped.length > 0) console.warn('[bulk-spread] skipped:', result.skipped);
-                toast(
-                  `Closer spreads applied to ${result.affected} tier${result.affected === 1 ? '' : 's'}${searchActive ? ` matching "${stProductSearch.trim()}"` : ''}`,
-                  'success',
-                  result.affected > 0 ? {
-                    label: 'Undo',
-                    onClick: async () => {
-                      try {
-                        await undoBulkTierAdjust(result.undoData);
-                        toast(`Undone — restored ${result.undoData.length} tier${result.undoData.length === 1 ? '' : 's'}`, 'info');
-                      } catch (err) {
-                        toast(err instanceof Error ? err.message : 'Undo failed', 'error');
-                      }
-                    },
-                  } : undefined,
-                );
-                setBulkSpreadInputs(['', '', '', '']);
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : 'Bulk spreads failed';
-                toast(msg, 'error');
-              }
-            };
-
-            return (
-              <div className="card-surface rounded-xl p-4 mb-3 space-y-4 motion-safe:animate-[fadeUpIn_220ms_cubic-bezier(0.16,1,0.3,1)_both]">
-                <div>
-                  <p className="text-[var(--text-primary)] text-xs font-semibold mb-2">Bulk Rate Adjustment</p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <label className="text-[var(--text-secondary)] text-xs whitespace-nowrap">Adjust closer baselines by</label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[var(--text-muted)] text-xs">$</span>
-                      <input type="number" step="0.01" value={bulkRateAdj} onChange={(e) => setBulkRateAdj(e.target.value)} placeholder="+/- 0.00" className="w-24 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
-                      <span className="text-[var(--text-muted)] text-xs">/W</span>
-                    </div>
-                    {adjVal !== 0 && (
-                      <span className="text-[var(--text-muted)] text-[10px]">
-                        {targetProducts.length} {searchActive ? 'matching' : ''} product{targetProducts.length === 1 ? '' : 's'} × 4 tiers affected
-                        {searchActive && <span className="text-[var(--accent-amber-text)]"> (filtered)</span>}
-                      </span>
-                    )}
-                    <button disabled={adjVal === 0 || targetProducts.length === 0} onClick={applyBulkAdjust} className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]" style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>Apply</button>
-                  </div>
-                </div>
-                <div className="border-t border-[var(--border-subtle)] pt-4">
-                  <p className="text-[var(--text-primary)] text-xs font-semibold mb-2">Kilo Spread Minimums</p>
-                  <p className="text-[var(--text-muted)] text-[10px] mb-2">Sets closerPerW = kiloPerW + spread for each tier (Kilo rate is the anchor)</p>
-                  <div className="grid grid-cols-4 gap-2 mb-3">
-                    {['Under 5kW', '5-10kW', '10-13kW', '13+ kW'].map((label, i) => (
-                      <div key={label}>
-                        <p className="text-[10px] text-[var(--text-muted)] mb-1 text-center">{label} spread</p>
-                        <div className="flex items-center gap-1 justify-center">
-                          <span className="text-[var(--text-muted)] text-xs">$</span>
-                          <input type="number" step="0.01" min="0" value={bulkSpreadInputs[i]} onChange={(e) => setBulkSpreadInputs((prev) => { const next = [...prev] as [string, string, string, string]; next[i] = e.target.value; return next; })} placeholder="0.00" className="w-16 bg-[var(--surface-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent-emerald-solid)] placeholder-[var(--text-dim)]" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {anySpreadSet && (
-                    <p className="text-[var(--text-muted)] text-[10px] mb-2">
-                      Preview: {targetProducts.length} {searchActive ? 'matching' : ''} product{targetProducts.length === 1 ? '' : 's'} will have closer baselines recalculated per tier
-                      {searchActive && <span className="text-[var(--accent-amber-text)]"> (filtered)</span>}
-                    </p>
-                  )}
-                  <button disabled={!anySpreadSet || targetProducts.length === 0} onClick={applyBulkSpreads} className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed motion-safe:transition-transform active:scale-[0.985]" style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>Apply Spreads</button>
-                </div>
-              </div>
-            );
-          })()}
 
           {/* SolarTech Product table */}
           {(() => {
@@ -1672,6 +1460,7 @@ export function BaselinesSection({
                     </div>
                   </div>
                 </div>
+                {stIsArchive ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="table-header-frost">
@@ -1738,6 +1527,36 @@ export function BaselinesSection({
                     </tbody>
                   </table>
                 </div>
+                ) : (
+                  <div className="p-4">
+                    <DraftPricingEditor
+                      scope={{ kind: 'solartech', family: stFamily }}
+                      products={stAllFamilyProducts}
+                      versions={productCatalogPricingVersions.filter((v) => stAllFamilyProducts.some((p) => p.id === v.productId))}
+                      showSubDealerRates={showSubDealerRates}
+                      searchQuery={stProductSearch}
+                      applyBulkVersionCreate={applyBulkVersionCreate}
+                      toast={toast}
+                      onRenameProduct={(id, name) => {
+                        const product = stAllFamilyProducts.find((p) => p.id === id);
+                        if (!product) return false;
+                        const r = validateProductName(name, product.name, stAllFamilyProducts, id);
+                        if (!r.ok) { toast(r.reason, 'error'); return false; }
+                        if (r.name !== product.name) { updateSolarTechProduct(id, { name: r.name }); toast(`Renamed to "${r.name}"`, 'success'); }
+                        return true;
+                      }}
+                      onArchiveProduct={(id, pname) => setConfirmAction({
+                        title: `Archive "${pname}"?`,
+                        message: `This product will be hidden from the active ${stFamily} tab. Existing projects keep resolving against their historical pricing version. Restore from the Archived tab.`,
+                        onConfirm: async () => {
+                          try { await removeSolarTechProduct(id); toast(`Archived "${pname}"`, 'success'); }
+                          catch (err) { toast(err instanceof Error ? err.message : 'Failed to archive product', 'error'); }
+                          setConfirmAction(null);
+                        },
+                      })}
+                    />
+                  </div>
+                )}
 
                 {/* Add Product to {stFamily} — admin-only flow.
                     Posts to /api/products with the SolarTech installer's id;
@@ -1906,7 +1725,7 @@ export function BaselinesSection({
                   </div>
                 )}
 
-                <div className="px-5 py-3 border-t border-[var(--border-subtle)]/50 bg-[var(--surface-card)]/20"><p className="text-xs text-[var(--text-dim)]">Green = Closer $/W · Blue = Kilo $/W · Setter = Closer + $0.10/W (auto)</p></div>
+                <div className="px-5 py-3 border-t border-[var(--border-subtle)]/50 bg-[var(--surface-card)]/20"><p className="text-xs text-[var(--text-dim)]">Each cell: Closer $/W (top) over Kilo $/W (below) · Setter = Closer + $0.10/W (auto-calculated)</p></div>
               </div>
             );
           })()}

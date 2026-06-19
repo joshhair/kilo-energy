@@ -7,7 +7,9 @@ import { scrubProjectForViewer } from '../../../lib/serialize';
 import {
   canViewKiloOnBaselineTier,
   canViewKiloOnProjectOverride,
+  canViewSubDealerRateOnTier,
 } from '../../../lib/baseline-visibility';
+import { pickEffectiveVersion } from '../../../lib/pricing/active-version';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -27,6 +29,9 @@ export async function GET() {
   // role-based pricing-visibility checks — extend the helpers instead.
   const showKiloOnTier = canViewKiloOnBaselineTier({ role: user.role });
   const showKiloOnProjectOverride = canViewKiloOnProjectOverride({ role: user.role });
+  // subDealerPerW (a sub-dealer's own comp rate) → admin + sub-dealer only;
+  // reps/PMs/trainers must not receive it (Codex privacy finding 2026-06-17).
+  const showSubDealerOnTier = canViewSubDealerRateOnTier({ role: user.role });
   // Vendor PM (role=project_manager AND scopedInstallerId set): sees only
   // projects whose installerId matches their scope. No payroll, no
   // reimbursements, no trainer assignments, no incentives, no rep
@@ -518,7 +523,7 @@ export async function GET() {
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
               ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
-              subDealerPerW: t.subDealerPerW ?? undefined,
+              ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
             })),
           }
         : {
@@ -526,7 +531,7 @@ export async function GET() {
             closerPerW: v.tiers[0].closerPerW,
             setterPerW: v.tiers[0].setterPerW ?? undefined,
             ...(showKiloOnTier ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
-            subDealerPerW: v.tiers[0].subDealerPerW ?? undefined,
+            ...(showSubDealerOnTier ? { subDealerPerW: v.tiers[0].subDealerPerW ?? undefined } : {}),
           },
     }];
   });
@@ -536,8 +541,7 @@ export async function GET() {
     .filter((p) => p.installerId === solarTechInstaller?.id)
     .map((p) => {
       const now = new Date();
-      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
-        ?? p.pricingVersions[0];
+      const activeVersion = pickEffectiveVersion(p.pricingVersions, now);
       return {
         id: p.id,
         family: p.family,
@@ -557,7 +561,7 @@ export async function GET() {
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
           ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
-          subDealerPerW: t.subDealerPerW ?? undefined,
+          ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
         })),
       };
     });
@@ -566,8 +570,7 @@ export async function GET() {
     .filter((p) => p.installerId !== solarTechInstaller?.id)
     .map((p) => {
       const now = new Date();
-      const activeVersion = p.pricingVersions.find((v) => v.effectiveTo === null && new Date(v.effectiveFrom) <= now)
-        ?? p.pricingVersions[0];
+      const activeVersion = pickEffectiveVersion(p.pricingVersions, now);
       return {
         id: p.id,
         installer: instIdToName[p.installerId] ?? '',
@@ -579,7 +582,7 @@ export async function GET() {
           closerPerW: t.closerPerW,
           setterPerW: t.setterPerW,
           ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
-          subDealerPerW: t.subDealerPerW ?? undefined,
+          ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
         })),
       };
     });
@@ -610,7 +613,7 @@ export async function GET() {
       closerPerW: t.closerPerW,
       setterPerW: t.setterPerW,
       ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
-      subDealerPerW: t.subDealerPerW ?? undefined,
+      ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
     })),
   }));
 

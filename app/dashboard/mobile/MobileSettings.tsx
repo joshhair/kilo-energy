@@ -19,6 +19,7 @@ import { SegmentedPills, Switch } from '../../../components/ui';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AppearanceSection from '../settings/sections/AppearanceSection';
 import NotificationsSection from '../settings/sections/NotificationsSection';
+import { MobileDraftPricingEditor } from '../settings/sections/pricing/MobileDraftPricingEditor';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1070,8 +1071,8 @@ function MobileBaselinesSection({ onUnsavedChange }: { onUnsavedChange: (v: bool
         ariaLabel="Baseline tabs"
       />
       {activeTab === 'standard' && <StandardBaselines onUnsavedChange={onUnsavedChange} />}
-      {activeTab === 'solartech' && <SolarTechBaselines />}
-      {activeTab === 'productcatalog' && <ProductCatalogBaselines />}
+      {activeTab === 'solartech' && <SolarTechBaselines onUnsavedChange={onUnsavedChange} />}
+      {activeTab === 'productcatalog' && <ProductCatalogBaselines onUnsavedChange={onUnsavedChange} />}
     </div>
   );
 }
@@ -1326,58 +1327,57 @@ function StandardBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) 
   );
 }
 
-function SolarTechBaselines() {
-  const { solarTechProducts } = useApp();
+function SolarTechBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) => void }) {
+  const { solarTechProducts, productCatalogPricingVersions, applyBulkVersionCreate } = useApp();
+  const { toast } = useToast();
   const [activeFamily, setActiveFamily] = useState<string>(SOLARTECH_FAMILIES[0]);
+  const [dirty, setDirty] = useState(false);
+  const [pendingFamily, setPendingFamily] = useState<string | null>(null);
 
   const familyProducts = solarTechProducts.filter((p) => p.family === activeFamily);
+  // Guard family switches: a key remount would silently discard unsaved edits.
+  const requestSwitch = (f: string) => { if (f === activeFamily) return; if (dirty) setPendingFamily(f); else setActiveFamily(f); };
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        Current rates by family. Full editing available on desktop.
-      </p>
       <SegmentedPills
         options={SOLARTECH_FAMILIES.map((f) => ({ value: f, label: f }))}
         value={activeFamily}
-        onChange={setActiveFamily}
+        onChange={requestSwitch}
         scrollable
         ariaLabel="SolarTech families"
       />
-      {familyProducts.length === 0 ? (
-        <MobileEmptyState icon={BookOpen} title="No products in this family" />
-      ) : (
-        familyProducts.map((product) => (
-          <MobileCard key={product.id}>
-            <p className="text-base font-semibold text-[var(--text-primary)] mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              {product.name}
-            </p>
-            <div className="space-y-1">
-              {product.tiers.map((tier) => (
-                <div key={tier.minKW} className="flex items-center justify-between">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {tier.minKW}–{tier.maxKW ?? '∞'} kW
-                  </span>
-                  <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </MobileCard>
-        ))
-      )}
+      <MobileDraftPricingEditor
+        key={`st:${activeFamily}`}
+        scope={{ kind: 'solartech', family: activeFamily }}
+        products={familyProducts}
+        versions={productCatalogPricingVersions.filter((v) => familyProducts.some((p) => p.id === v.productId))}
+        applyBulkVersionCreate={applyBulkVersionCreate}
+        toast={toast}
+        onUnsavedChange={(v) => { setDirty(v); onUnsavedChange(v); }}
+      />
+      <ConfirmDialog
+        open={pendingFamily !== null}
+        title="Discard Changes?"
+        message="You have unsaved pricing changes that will be lost. Switch family without publishing?"
+        confirmLabel="Discard"
+        onConfirm={() => { if (pendingFamily) setActiveFamily(pendingFamily); setPendingFamily(null); setDirty(false); onUnsavedChange(false); }}
+        onClose={() => setPendingFamily(null)}
+      />
     </div>
   );
 }
 
-function ProductCatalogBaselines() {
-  const { productCatalogInstallerConfigs, productCatalogProducts } = useApp();
+function ProductCatalogBaselines({ onUnsavedChange }: { onUnsavedChange: (v: boolean) => void }) {
+  const { productCatalogInstallerConfigs, productCatalogProducts, productCatalogPricingVersions, applyBulkVersionCreate } = useApp();
+  const { toast } = useToast();
   const installerNames = Object.keys(productCatalogInstallerConfigs);
   const [activeInstaller, setActiveInstaller] = useState<string>(installerNames[0] ?? '');
   const [activeFamily, setActiveFamily] = useState<string>(
     productCatalogInstallerConfigs[installerNames[0] ?? '']?.families[0] ?? ''
   );
+  const [dirty, setDirty] = useState(false);
+  const [pending, setPending] = useState<{ installer: string; family: string } | null>(null);
 
   if (installerNames.length === 0) return <MobileEmptyState icon={BookOpen} title="No product catalog installers" />;
 
@@ -1385,17 +1385,20 @@ function ProductCatalogBaselines() {
   const familyProducts = productCatalogProducts.filter(
     (p) => p.installer === activeInstaller && p.family === activeFamily
   );
+  // Guard installer/family switches: a key remount would silently discard edits.
+  const requestSwitch = (installer: string, family: string) => {
+    if (installer === activeInstaller && family === activeFamily) return;
+    if (dirty) setPending({ installer, family });
+    else { setActiveInstaller(installer); setActiveFamily(family); }
+  };
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-        Current rates by installer and family. Full editing available on desktop.
-      </p>
       {installerNames.length > 1 && (
         <SegmentedPills
           options={installerNames.map((n) => ({ value: n, label: n }))}
           value={activeInstaller}
-          onChange={(id) => { setActiveInstaller(id); setActiveFamily(productCatalogInstallerConfigs[id]?.families[0] ?? ''); }}
+          onChange={(id) => requestSwitch(id, productCatalogInstallerConfigs[id]?.families[0] ?? '')}
           scrollable
           ariaLabel="Installers"
         />
@@ -1404,34 +1407,28 @@ function ProductCatalogBaselines() {
         <SegmentedPills
           options={config.families.map((f) => ({ value: f, label: f }))}
           value={activeFamily}
-          onChange={setActiveFamily}
+          onChange={(f) => requestSwitch(activeInstaller, f)}
           scrollable
           ariaLabel="Families"
         />
       )}
-      {familyProducts.length === 0 ? (
-        <MobileEmptyState icon={BookOpen} title="No products" />
-      ) : (
-        familyProducts.map((product) => (
-          <MobileCard key={product.id}>
-            <p className="text-base font-semibold text-[var(--text-primary)] mb-2" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-              {product.name}
-            </p>
-            <div className="space-y-1">
-              {product.tiers.map((tier) => (
-                <div key={tier.minKW} className="flex items-center justify-between">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    {tier.minKW}–{tier.maxKW ?? '∞'} kW
-                  </span>
-                  <span className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "var(--m-font-body, 'DM Sans', sans-serif)" }}>
-                    C: ${tier.closerPerW.toFixed(2)} · K: ${tier.kiloPerW.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </MobileCard>
-        ))
-      )}
+      <MobileDraftPricingEditor
+        key={`pc:${activeInstaller}:${activeFamily}`}
+        scope={{ kind: 'productcatalog', installer: activeInstaller, family: activeFamily }}
+        products={familyProducts}
+        versions={productCatalogPricingVersions.filter((v) => familyProducts.some((p) => p.id === v.productId))}
+        applyBulkVersionCreate={applyBulkVersionCreate}
+        toast={toast}
+        onUnsavedChange={(v) => { setDirty(v); onUnsavedChange(v); }}
+      />
+      <ConfirmDialog
+        open={pending !== null}
+        title="Discard Changes?"
+        message="You have unsaved pricing changes that will be lost. Switch without publishing?"
+        confirmLabel="Discard"
+        onConfirm={() => { if (pending) { setActiveInstaller(pending.installer); setActiveFamily(pending.family); } setPending(null); setDirty(false); onUnsavedChange(false); }}
+        onClose={() => setPending(null)}
+      />
     </div>
   );
 }

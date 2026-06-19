@@ -68,9 +68,10 @@ const allowlistPatterns = [
   /^lib[\\/]data\.ts$/,
   // Admin-only API endpoints that explicitly serve baseline data.
   /^app[\\/]api[\\/]baseline-data[\\/]/,
-  // Admin-only baseline mutation routes — bulk-tier-adjust + bulk-version-create
-  // legitimately compose tier rows including kiloPerW / subDealerPerW. Auth is
-  // enforced by the route handlers (admin-only via getAuthenticatedUser).
+  // Admin-only baseline mutation route — bulk-version-create legitimately
+  // composes tier rows including kiloPerW / subDealerPerW. Auth is enforced by
+  // the route handler (admin-only via requireAdmin). (The old in-place
+  // bulk-tier-adjust route was removed in the Phase 3 A2 cleanup.)
   /^app[\\/]api[\\/]baselines[\\/]/,
   /^app[\\/]api[\\/]admin[\\/]/,
   /^app[\\/]api[\\/]products[\\/]/,
@@ -79,6 +80,13 @@ const allowlistPatterns = [
   /^app[\\/]api[\\/]installers[\\/]/,
   // Validation schemas — server-side only, never user-rendered.
   /^lib[\\/]schemas[\\/]/,
+  // Pure pricing-version validation + active-version resolution (Phase 3).
+  // No DB access and no viewer serialization — these operate on tier INPUT
+  // objects and effective-window metadata. Sensitive-field visibility is still
+  // enforced at the real boundaries (/api/data via canViewKiloOnBaselineTier;
+  // the admin-only bulk-version-create publish route). The validator only
+  // checks numeric constraints (kilo > 0, closer > kilo, subDealer null-or->0).
+  /^lib[\\/]pricing[\\/]/,
   // Admin-only routes that compute commission server-side.
   /^app[\\/]api[\\/]projects[\\/].+[\\/]route\.ts$/,
   /^app[\\/]api[\\/]data[\\/]route\.ts$/,

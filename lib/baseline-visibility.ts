@@ -8,17 +8,16 @@
  *     Reps need to forecast their own commission. Visible to everyone
  *     who sees a deal's product.
  *
- *   tier-2 / sub-dealer-visible: kiloPerW (on baseline tiers)
+ *   tier-2 / sub-dealer-visible: kiloPerW + subDealerPerW (on baseline tiers)
  *     Sub-dealers buy product through Kilo and need to see what Kilo
- *     pays the installer (their cost ceiling). Admins also see this.
- *     Reps / trainers / vendor PMs do NOT see kiloPerW on baseline
- *     tiers.
+ *     pays the installer (their cost ceiling, kiloPerW) AND their own
+ *     comp rate (subDealerPerW) to forecast their commission on the New
+ *     Deal form. Admins also see both. Reps / trainers / vendor PMs do
+ *     NOT see either on baseline tiers.
  *
  *   tier-3 / admin-only:        kiloPerW on per-project baselineOverride
- *                              + subDealerPerW on baseline tiers
  *     Per-project overrides reveal margin negotiations on a specific
- *     deal — admins only. subDealerPerW reveals what Kilo pays
- *     sub-dealers per watt — admins only.
+ *     deal — admins only.
  *
  * Routing every "should this field appear in this viewer's payload?"
  * decision through these helpers means a future field-add can't
@@ -67,14 +66,22 @@ export function canViewKiloOnProjectOverride(viewer: BaselineViewer): boolean {
 }
 
 /**
- * subDealerPerW on a baseline tier. Admins only.
+ * subDealerPerW on a baseline tier. Admins and sub-dealers.
  *
- * Rationale: this field is "what Kilo pays a sub-dealer per watt" —
- * the sub-dealer's compensation rate. Even sub-dealers themselves
- * don't see this on baseline tiers (they see their own contract,
- * which is admin-administered separately). Reps / trainers / PMs
- * never see it.
+ * Rationale: this field is "what Kilo pays a sub-dealer per watt" — the
+ * sub-dealer's own compensation rate. Sub-dealers legitimately need it to
+ * forecast their own commission on the New Deal form
+ * ((subDealerPerW − kiloPerW) × kW), so they DO see their own rate. Reps /
+ * trainers / project managers / vendor PMs never see it (it would leak another
+ * party's comp). Mirrors canViewKiloOnBaselineTier (admin + sub-dealer).
+ *
+ * NB (2026-06-17): tightened from the original admin-only after a Codex review
+ * found /api/data was serializing subDealerPerW to ALL roles — admin-only would
+ * have closed the leak but broken sub-dealer commission. admin+sub-dealer closes
+ * the leak to reps/PMs/trainers while preserving the sub-dealer's own forecast.
  */
 export function canViewSubDealerRateOnTier(viewer: BaselineViewer): boolean {
-  return viewer.role === 'admin';
+  if (viewer.role === 'admin') return true;
+  if (viewer.role === 'sub-dealer') return true;
+  return false;
 }

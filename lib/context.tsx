@@ -136,22 +136,15 @@ interface AppContextType {
   }) => Promise<string>;
   removeSolarTechProduct: (id: string) => Promise<void>;
   restoreProduct: (id: string) => Promise<void>;
-  applyBulkTierAdjust: (
-    op: { operation: 'adjust'; adjustment: number } | { operation: 'spread'; spreadByTierIndex: Record<string, number> },
-    selections: ReadonlyArray<{ productId: string; tierIndex: number; isSolarTech: boolean }>,
-  ) => Promise<{
-    affected: number;
-    skipped: Array<{ productId: string; tierIndex: number; reason: string }>;
-    undoData: Array<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>;
-  }>;
-  undoBulkTierAdjust: (
-    restorePoints: ReadonlyArray<{ tierId: string; productId: string; tierIndex: number; before: { closerPerW: number; setterPerW: number; kiloPerW: number } }>,
-  ) => Promise<{ restored: number }>;
   applyBulkVersionCreate: (input: {
     effectiveFrom: string;
     label: string;
     reason?: string;
     retroactive?: boolean;
+    /** Client-generated key to dedupe accidental double-submits (Phase 3 A2
+     *  draft-then-publish editor). A retry of the SAME attempt reuses it; the
+     *  server 409s on a duplicate. */
+    idempotencyKey?: string;
     products: ReadonlyArray<{
       productId: string;
       tiers: ReadonlyArray<{
@@ -1289,7 +1282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updateInstallerBaseline, addInstallerBaseline,
     addInstallerPricingVersion, updateInstallerPricingVersion, createNewInstallerVersion,
     updateSolarTechProduct, updateSolarTechTier, addSolarTechProduct,
-    removeSolarTechProduct, restoreProduct, applyBulkTierAdjust, undoBulkTierAdjust,
+    removeSolarTechProduct, restoreProduct,
     applyBulkVersionCreate,
     addProductCatalogInstaller, updateProductCatalogInstallerConfig,
     addProductCatalogProduct, updateProductCatalogProduct,
@@ -1554,8 +1547,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addSolarTechProduct,
         removeSolarTechProduct,
         restoreProduct,
-        applyBulkTierAdjust,
-        undoBulkTierAdjust,
         applyBulkVersionCreate,
         updateProductCatalogProduct,
         updateProductCatalogTier,
