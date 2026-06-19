@@ -986,7 +986,7 @@ export default function BlitzDetailPage() {
         {/* Earnings forecast — visible to reps + sub-dealers only.
             Slider lets them project earnings at this blitz against
             their historical avg. Phase 2d. */}
-        {(blitz.status === 'upcoming' || blitz.status === 'active') && (
+        {blitz.status === 'upcoming' && (
           <BlitzEarningsForecast
             variant="desktop"
             blitzId={viewerJoinStatus === 'approved' ? blitz.id : undefined}

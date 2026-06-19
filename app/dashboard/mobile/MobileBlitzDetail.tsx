@@ -551,7 +551,7 @@ export default function MobileBlitzDetail({ blitzId }: { blitzId: string }) {
                 onBroadcast={() => setShowBroadcast(true)}
               />
             )}
-            {(blitz.status === 'upcoming' || blitz.status === 'active') && (
+            {blitz.status === 'upcoming' && (
               <BlitzEarningsForecast
                 variant="mobile"
                 blitzId={viewerJoinStatus === 'approved' ? blitz.id : undefined}
