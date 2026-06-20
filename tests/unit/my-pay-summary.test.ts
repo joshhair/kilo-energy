@@ -96,4 +96,26 @@ describe('computeMyPaySummary', () => {
     expect(onlyCancelled.onPace).toBe(0);
     expect(onlyCancelled.pipeline).toBe(0); // Cancelled is not an active phase
   });
+
+  // Regression guard for the chain-trainee parity fix: a trainee's deal (the
+  // rep is the assignment trainer, NOT a party) must feed the trainer-override
+  // pipeline, yet stay OUT of the rep's own pipeline-base + on-pace.
+  it('trainee deals drive trainer-override pipeline but not on-pace', () => {
+    const TRAINEE = 'trainee_X';
+    const traineeDeal = project({
+      id: 'tn1', repId: TRAINEE, phase: 'Installed', kWSize: 10, installer: 'EXO',
+      m1Amount: 9999, m2Amount: 9999, m3Amount: 9999, // would explode on-pace if wrongly counted
+    });
+    const s = computeMyPaySummary({
+      payroll: [],
+      projects: [traineeDeal], // rep is NOT a party to this deal
+      trainerAssignments: [{ id: 'a1', trainerId: REP, traineeId: TRAINEE, tiers: [{ upToDeal: null, ratePerW: 0.10 }] }],
+      installerPayConfigs: {}, repId: REP, now: NOW,
+    });
+    // override = $0.10/W × 10kW × 1000 = $1000; base pipeline 0 (not a party).
+    expect(s.pipeline).toBe(1000);
+    // the trainee deal is excluded from the rep's own on-pace + lifetime.
+    expect(s.onPace).toBe(0);
+    expect(s.lifetimeEarned).toBe(0);
+  });
 });

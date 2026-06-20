@@ -7,9 +7,14 @@
  * native iOS app can fetch the same six numbers the web rep dashboard
  * shows, via GET /api/my-pay, with the formulas staying server-side.
  *
- * Inputs are the rep's OWN payroll + the projects they're a party to,
- * already serialized to dollars (same shape the client context holds).
- * Output is in dollars; the route converts to integer cents at the wire.
+ * Inputs are the rep's OWN payroll + the projects in their scope, already
+ * serialized to dollars (same shape /api/data hands the client context):
+ * the projects they're a PARTY to, PLUS their direct trainees' deals (so
+ * the trainer-override pipeline can be computed). This helper internally
+ * splits those — party-only projects drive pipeline-base + on-pace, while
+ * the full set (incl. trainee deals) feeds the trainer-override pipeline,
+ * exactly as the rep dashboard does. Output is in dollars; the route
+ * converts to integer cents at the wire.
  *
  * Mirrors:
  *   - pipeline   → app/dashboard/page.tsx ~981-989
@@ -76,7 +81,9 @@ export interface MyPaySummaryPayroll {
 export interface MyPaySummaryInput {
   /** The rep's own payroll entries (serialized to dollars). */
   payroll: ReadonlyArray<MyPaySummaryPayroll>;
-  /** Projects the rep is a party to (repId/setterId/trainerId/additional). */
+  /** The rep's project scope (serialized to dollars): the deals they're a
+   *  party to PLUS their direct trainees' deals — the same set /api/data's
+   *  rep branch returns. Split internally. */
   projects: ReadonlyArray<MyPaySummaryProject>;
   /** Trainer assignments where the rep is trainer or trainee. */
   trainerAssignments: ReadonlyArray<TrainerAssignment>;
@@ -97,6 +104,20 @@ export interface MyPaySummary {
   lifetimeEarned: number;
   onPace: number;
   onPaceCaption: string;
+}
+
+/** Is the rep a direct party to this deal? Matches the dashboard's
+ *  `allMyProjects` participation predicate (app/dashboard/page.tsx ~792):
+ *  primary closer (repId), primary setter, per-project trainer override,
+ *  or an additional closer/setter. Deals where the rep is only the
+ *  ASSIGNMENT trainer of the closer (chain-trainee deals) are NOT a party
+ *  here — they belong only to the trainer-override computation. */
+function isParty(p: MyPaySummaryProject, repId: string): boolean {
+  return p.repId === repId
+    || p.setterId === repId
+    || p.trainerId === repId
+    || (p.additionalClosers?.some((c) => c.userId === repId) ?? false)
+    || (p.additionalSetters?.some((s) => s.userId === repId) ?? false);
 }
 
 /** Business-local (Pacific) YYYY-MM-DD for a given instant. Pacific — not
@@ -132,17 +153,29 @@ export function computeMyPaySummary(input: MyPaySummaryInput): MyPaySummary {
   const { payroll, projects, trainerAssignments, installerPayConfigs, repId, now } = input;
   const todayStr = businessDateStr(now);
   const year = Number(todayStr.slice(0, 4));
+  // One consistent business-local (Pacific) clock for all period math, so
+  // the year used by isInPeriod / getPeriodDaysRemaining can't disagree
+  // with todayStr / onPaceCaption at the New Year UTC↔Pacific boundary.
+  // Noon UTC of the Pacific calendar date carries the right year, mid-day.
+  const businessNow = new Date(`${todayStr}T12:00:00Z`);
+
+  // Split the scope: party-only projects drive pipeline-base + on-pace; the
+  // FULL set (which also includes the rep's trainees' deals) feeds the
+  // trainer-override pipeline. Mirrors app/dashboard/page.tsx, which filters
+  // `allMyProjects` by participation but passes the full `projects` array to
+  // computeTrainerOverridePipeline.
+  const myProjects = projects.filter((p) => isParty(p, repId));
 
   // ── Lifetime earned + pending (canonical aggregators) ──
   const lifetimeEarned = sumPaid(payroll, { asOf: todayStr });
   const pending = sumPending(payroll);
 
   // ── Pipeline = unpaid M1+M2+M3 on active deals + trainer override ──
-  const activeProjects = projects.filter((p) => (ACTIVE_PHASES as readonly string[]).includes(p.phase));
+  const activeProjects = myProjects.filter((p) => (ACTIVE_PHASES as readonly string[]).includes(p.phase));
   const pipeline = viewerPipelineRemaining(activeProjects, repId, payroll, todayStr).total
     + computeTrainerOverridePipeline({
         trainerAssignments,
-        projects,
+        projects, // FULL set — trainee deals live here, not in myProjects
         payroll,
         installerPayConfigs,
         repId,
@@ -151,7 +184,7 @@ export function computeMyPaySummary(input: MyPaySummaryInput): MyPaySummary {
 
   // ── On-Pace (this-year horizon), mirroring the rep dashboard ──
   const horizon = 'this-year';
-  const nonCancelled = projects.filter((p) => p.phase !== 'Cancelled');
+  const nonCancelled = myProjects.filter((p) => p.phase !== 'Cancelled');
   let paceRate = 0;
   if (nonCancelled.length > 0) {
     const avgFullCommissionPerDeal =
@@ -160,15 +193,15 @@ export function computeMyPaySummary(input: MyPaySummaryInput): MyPaySummary {
     const firstDealDate = new Date(`${sorted[0].soldDate}T12:00:00`);
     // Floor effective days at 30 so a brand-new rep's first few days don't
     // extrapolate into an unrealistic monthly pace. Matches the dashboard.
-    const daysSinceFirst = Math.max((now.getTime() - firstDealDate.getTime()) / 86400000, 1);
+    const daysSinceFirst = Math.max((businessNow.getTime() - firstDealDate.getTime()) / 86400000, 1);
     const effectiveDays = Math.max(daysSinceFirst, 30);
     const dealsPerMonth = (nonCancelled.length / effectiveDays) * 30.44;
     paceRate = dealsPerMonth * avgFullCommissionPerDeal;
   }
-  const inPeriodCommissionEarned = projects
-    .filter((p) => p.phase !== 'Cancelled' && isInPeriod(p.soldDate, horizon))
+  const inPeriodCommissionEarned = nonCancelled
+    .filter((p) => isInPeriod(p.soldDate, horizon, businessNow))
     .reduce((s, p) => s + viewerFullCommission(p, repId), 0);
-  const daysRemainingInPeriod = getPeriodDaysRemaining(horizon, now) ?? 0;
+  const daysRemainingInPeriod = getPeriodDaysRemaining(horizon, businessNow) ?? 0;
   const onPace = computeOnPace({ inPeriodCommissionEarned, paceRate, daysRemainingInPeriod });
   const onPaceCaption = `On Pace For ${year}`;
 

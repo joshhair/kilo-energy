@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireInternalUser } from '../../../lib/api-auth';
+import { requireInternalUser, loadChainTrainees } from '../../../lib/api-auth';
 import { prisma } from '../../../lib/db';
 import { serializePayrollEntry, projectMoneyFromCents, serializeProjectParty, dollarsToCents } from '../../../lib/serialize';
 import { computeMyPaySummary, type MyPaySummaryProject } from '../../../lib/my-pay-summary';
@@ -31,15 +31,17 @@ export async function GET(_req: NextRequest) {
   }
   const repId = user.id;
 
-  // Scope to the rep's own data. Projects use the exact participation
-  // predicate the rep branch of /api/data uses (incl. trainer deals, so
-  // trainer-override pipeline resolves).
+  // The rep's direct trainees — their deals must be in scope so the
+  // trainer-override pipeline matches the dashboard (same as /api/data).
+  const chainTraineeIds = Array.from(await loadChainTrainees(repId));
+
+  // Scope to the rep's own data. Project scope = the exact rep branch of
+  // /api/data: deals the rep is a party to, PLUS their direct trainees'
+  // deals (closerId ∈ chainTrainees, unless the trainer was cleared).
   const [projectRows, payrollRows, trainerAssignments, installers] = await Promise.all([
     prisma.project.findMany({
-      // Participation predicate = the rep branch of /api/data's project
-      // scope. (The DB column for the closer is `closerId`; it serializes
-      // to `repId` on the wire.) Includes trainer deals so the trainer-
-      // override pipeline resolves.
+      // (The DB column for the closer is `closerId`; it serializes to
+      // `repId` on the wire.)
       where: {
         OR: [
           { closerId: repId },
@@ -47,6 +49,9 @@ export async function GET(_req: NextRequest) {
           { additionalClosers: { some: { userId: repId } } },
           { additionalSetters: { some: { userId: repId } } },
           { trainerId: repId },
+          ...(chainTraineeIds.length > 0
+            ? [{ AND: [{ closerId: { in: chainTraineeIds } }, { noChainTrainer: false }] }]
+            : []),
         ],
       },
       include: {
