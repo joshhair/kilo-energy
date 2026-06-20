@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { getInternalUser, relationshipToProject, loadChainTrainees, isVendorPM, isInternalPM } from '../../../lib/api-auth';
+import { getInternalUser, getInternalUserById, relationshipToProject, loadChainTrainees, isVendorPM, isInternalPM } from '../../../lib/api-auth';
+import { resolveEffectiveUser } from '../../../lib/view-as';
 import { logger } from '../../../lib/logger';
 import { toDollars, fromCents } from '../../../lib/money';
 import { scrubProjectForViewer } from '../../../lib/serialize';
@@ -15,9 +16,32 @@ import { pickEffectiveVersion } from '../../../lib/pricing/active-version';
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
 // projects, payroll, reimbursements, etc. This is the critical server-side
 // authorization layer — client-side filters were previously cosmetic.
-export async function GET() {
-  const user = await getInternalUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const realUser = await getInternalUser();
+  if (!realUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // View-As (admin impersonation): an admin may re-scope this whole response
+  // as another user via ?viewAs={userId}. resolveEffectiveUser is the
+  // security boundary — non-admins (or invalid targets) are silently scoped
+  // to themselves. The ENTIRE response below then reflects the effective
+  // user (scope, PII, pricing visibility) — that's the point of view-as —
+  // EXCEPT viewAsCandidates, which stays the REAL caller's so the app's
+  // picker persists across impersonation.
+  const realIsAdmin = realUser.role === 'admin';
+  const { effectiveUser, impersonating } = await resolveEffectiveUser(
+    realUser,
+    req.nextUrl.searchParams.get('viewAs'),
+    getInternalUserById,
+  );
+  if (impersonating) {
+    logger.info('view_as_read', {
+      route: '/api/data',
+      actorId: realUser.id,
+      effectiveUserId: effectiveUser.id,
+      effectiveRole: effectiveUser.role,
+    });
+  }
+  const user = effectiveUser;
 
   const isAdmin = user.role === 'admin';
   const isPM = user.role === 'project_manager';
@@ -291,8 +315,18 @@ export async function GET() {
   // As picker. Reps + sub-dealers + PMs get an empty list — view-as is an
   // admin-only privilege. PII (email/phone) is omitted; only id+name+role
   // are needed for the picker.
-  const viewAsCandidates = isAdmin
-    ? users
+  //
+  // Sourced from the REAL caller, not the effective user: the shared `users`
+  // list above is scoped to the effective user, so while impersonating (e.g.
+  // a vendor PM, whose user scope is empty) it would wrongly drop the picker.
+  // When impersonating we re-load the candidate pool as the real admin so the
+  // picker persists exactly as the spec requires. (No extra query on the
+  // common, non-impersonating path: `users` already IS the real caller's.)
+  const candidatePool = impersonating
+    ? await prisma.user.findMany({ where: { active: true }, orderBy: { lastName: 'asc' } })
+    : users;
+  const viewAsCandidates = realIsAdmin
+    ? candidatePool
         .filter((u) => u.active && (u.role === 'admin' || u.role === 'project_manager'))
         .map((u) => ({
           id: u.id,

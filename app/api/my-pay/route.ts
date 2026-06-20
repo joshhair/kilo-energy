@@ -15,21 +15,39 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireInternalUser, loadChainTrainees } from '../../../lib/api-auth';
+import { requireInternalUser, getInternalUserById, loadChainTrainees } from '../../../lib/api-auth';
+import { resolveEffectiveUser } from '../../../lib/view-as';
 import { prisma } from '../../../lib/db';
+import { logger } from '../../../lib/logger';
 import { serializePayrollEntry, projectMoneyFromCents, serializeProjectParty, dollarsToCents } from '../../../lib/serialize';
 import { computeMyPaySummary, type MyPaySummaryProject } from '../../../lib/my-pay-summary';
 
 const cents = (dollars: number): number => dollarsToCents(dollars) ?? 0;
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   let user;
   try {
     user = await requireInternalUser();
   } catch (response) {
     return response as NextResponse; // 401 from requireInternalUser
   }
-  const repId = user.id;
+
+  // View-As (admin impersonation): an admin may fetch another user's summary
+  // via ?viewAs={userId}. resolveEffectiveUser is the security boundary —
+  // non-admins (or invalid targets) are silently scoped to themselves.
+  const { effectiveUser, impersonating } = await resolveEffectiveUser(
+    user,
+    req.nextUrl.searchParams.get('viewAs'),
+    getInternalUserById,
+  );
+  if (impersonating) {
+    logger.info('view_as_read', {
+      route: '/api/my-pay',
+      actorId: user.id,
+      effectiveUserId: effectiveUser.id,
+    });
+  }
+  const repId = effectiveUser.id;
 
   // The rep's direct trainees — their deals must be in scope so the
   // trainer-override pipeline matches the dashboard (same as /api/data).

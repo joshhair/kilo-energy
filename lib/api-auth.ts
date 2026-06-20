@@ -97,6 +97,26 @@ export async function getInternalUser(): Promise<InternalUser | null> {
 }
 
 /**
+ * Load an internal user by id (active only), mapped to InternalUser.
+ * Returns null if missing or deactivated. Used as the View-As target
+ * fetcher (lib/view-as.ts) — NOT an auth check; the caller authorizes.
+ */
+export async function getInternalUserById(id: string): Promise<InternalUser | null> {
+  const user = await prisma.user.findFirst({ where: { id, active: true } });
+  if (!user) return null;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    role: user.role,
+    repType: user.repType,
+    clerkUserId: user.clerkUserId,
+    scopedInstallerId: user.scopedInstallerId ?? null,
+  };
+}
+
+/**
  * Require any authenticated internal user (any role). Returns the user
  * record or throws a 401/403 NextResponse.
  */
