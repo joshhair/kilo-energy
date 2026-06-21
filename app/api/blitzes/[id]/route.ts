@@ -66,10 +66,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // Kilo's net margin (closer baseline + kW + sold PPW minus costs). Lock
   // it down here; the desktop + mobile UI already hide the Costs tab from
   // non-admins, so this change has no UI-visible impact for owners.
-  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see the
-  // REP's blitz view. Visibility (owner-ness, join status, announcements,
-  // per-project scrub) uses the effective user; BlitzCost + audit identity
-  // stay on the REAL user.
+  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see ONLY
+  // the REP's view. All data visibility (owner-ness, join status,
+  // announcements, per-project scrub, BlitzCost) uses the effective user;
+  // only the audit identity + PM-access auth gate stay on the REAL user.
   const { effectiveUser, impersonating } = await resolveEffectiveUser(
     user, req.nextUrl.searchParams.get('viewAs'), getInternalUserById,
   );
@@ -78,7 +78,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const isBlitzOwner = blitz.ownerId === effectiveUser.id;
-  const visibleCosts = user.role === 'admin' ? blitz.costs : [];
+  // Costs gated on the EFFECTIVE user — viewing-as a rep shows ONLY the rep's
+  // view (no BlitzCost rows). The PATCH path keeps its own real-user gate.
+  const visibleCosts = effectiveUser.role === 'admin' ? blitz.costs : [];
 
   // ─── Announcements (field-gated) ───
   // The blitz detail itself is open-discovery for internal reps (above),

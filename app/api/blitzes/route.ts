@@ -23,11 +23,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see the
-  // REP's blitz view. resolveEffectiveUser is the security boundary
+  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see ONLY
+  // the REP's view. resolveEffectiveUser is the security boundary
   // (admin-only, narrows only, falls back to self). The list scope, owner
-  // check, and project scrubbing use the effective user; BlitzCost gating +
-  // audit identity stay on the REAL user (below).
+  // check, project scrubbing, AND BlitzCost gating use the effective user;
+  // only the audit identity + PM-access auth gate stay on the REAL user.
   const { effectiveUser, impersonating } = await resolveEffectiveUser(
     user, req.nextUrl.searchParams.get('viewAs'), getInternalUserById,
   );
@@ -65,8 +65,10 @@ export async function GET(req: NextRequest) {
     orderBy: { startDate: 'desc' },
   });
 
-  // Non-admins: hide costs unconditionally — matches the admin-only gate on GET /api/blitzes/[id].
-  if (user.role !== 'admin') {
+  // Costs are admin-only AND gated on the EFFECTIVE user: while an admin is
+  // viewing-as a rep, they must see ONLY what the rep sees — no BlitzCost
+  // rows. (Non-impersonating admin → effectiveUser is the admin → costs show.)
+  if (effectiveUser.role !== 'admin') {
     for (const b of blitzes) {
       (b as { costs: unknown[] }).costs = [];
     }
