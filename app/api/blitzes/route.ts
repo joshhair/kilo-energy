@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
-import { requireInternalUser, relationshipToProject } from '../../../lib/api-auth';
+import { requireInternalUser, getInternalUserById, relationshipToProject } from '../../../lib/api-auth';
+import { resolveEffectiveUser } from '../../../lib/view-as';
 import { parseJsonBody } from '../../../lib/api-validation';
 import { createBlitzSchema } from '../../../lib/schemas/business';
 import { serializeProject, serializeBlitzCost, serializeProjectParty, scrubProjectForViewer } from '../../../lib/serialize';
@@ -10,10 +11,11 @@ import { logChange } from '../../../lib/audit';
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
 // only blitzes they own, created, or participate in (approved status).
-export async function GET() {
+export async function GET(req: NextRequest) {
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
 
+  // Blitz-access authorization is on the REAL caller (can THEY use blitzes).
   if (user.role === 'project_manager') {
     const pm = await prisma.user.findUnique({ where: { id: user.id }, select: { canAccessBlitz: true } });
     if (!pm?.canAccessBlitz) {
@@ -21,17 +23,29 @@ export async function GET() {
     }
   }
 
+  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see the
+  // REP's blitz view. resolveEffectiveUser is the security boundary
+  // (admin-only, narrows only, falls back to self). The list scope, owner
+  // check, and project scrubbing use the effective user; BlitzCost gating +
+  // audit identity stay on the REAL user (below).
+  const { effectiveUser, impersonating } = await resolveEffectiveUser(
+    user, req.nextUrl.searchParams.get('viewAs'), getInternalUserById,
+  );
+  if (impersonating) {
+    logger.info('view_as_read', { route: '/api/blitzes', actorId: user.id, effectiveUserId: effectiveUser.id });
+  }
+
   // ─── Build a where clause that limits non-admin/non-PM users ───
   // Reps see: blitzes they're involved in (any status) OR upcoming/active
   // blitzes they haven't joined yet (so the "Browse Available" section works).
   const where: Record<string, unknown> =
-    user.role === 'admin' || user.role === 'project_manager'
+    effectiveUser.role === 'admin' || effectiveUser.role === 'project_manager'
       ? {}
       : {
           OR: [
-            { ownerId: user.id },
-            { createdById: user.id },
-            { participants: { some: { userId: user.id, joinStatus: { in: ['approved', 'pending'] } } } },
+            { ownerId: effectiveUser.id },
+            { createdById: effectiveUser.id },
+            { participants: { some: { userId: effectiveUser.id, joinStatus: { in: ['approved', 'pending'] } } } },
             { status: { in: ['upcoming', 'active'] } },
           ],
         };
@@ -71,9 +85,12 @@ export async function GET() {
         additionalClosers: p.additionalClosers.map(serializeProjectParty),
         additionalSetters: p.additionalSetters.map(serializeProjectParty),
       };
-      if (user.role !== 'admin') {
-        const isBlitzOwner = b.ownerId === user.id;
-        const naturalRel = relationshipToProject(user, {
+      // Scrub from the EFFECTIVE viewer's perspective so an admin
+      // viewing-as a rep sees the rep's commission view (only their own
+      // amounts), not the admin's full passthrough.
+      if (effectiveUser.role !== 'admin') {
+        const isBlitzOwner = b.ownerId === effectiveUser.id;
+        const naturalRel = relationshipToProject(effectiveUser, {
           closerId: p.closerId,
           setterId: p.setterId,
           subDealerId: (p as { subDealerId?: string | null }).subDealerId ?? null,

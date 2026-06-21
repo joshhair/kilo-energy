@@ -191,6 +191,14 @@ export function applyProjectVisibility<T extends Record<string, unknown>>(
     delete bo.kiloMargin;
     scrubbed.baselineOverride = bo;
   }
+  // The RAW override JSON (baselineOverrideJson) embeds kiloPerW/kiloMargin as
+  // a string, so the parsed-object strip above doesn't reach it. Some DTOs
+  // (e.g. the serializeProject-based /api/blitzes shapes) carry the raw string
+  // and no parsed object. Non-admin/pm viewers never need the override JSON —
+  // drop it entirely so Kilo's cost basis can't leak via the string form.
+  if ('baselineOverrideJson' in scrubbed) {
+    delete scrubbed.baselineOverrideJson;
+  }
 
   return scrubbed as T;
 }

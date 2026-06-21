@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireAdmin, requireInternalUser, relationshipToProject } from '../../../../lib/api-auth';
+import { requireAdmin, requireInternalUser, getInternalUserById, relationshipToProject } from '../../../../lib/api-auth';
+import { resolveEffectiveUser } from '../../../../lib/view-as';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { patchBlitzSchema } from '../../../../lib/schemas/business';
 import { serializeProject, serializeProjectParty, serializeBlitzCost, scrubProjectForViewer } from '../../../../lib/serialize';
@@ -11,7 +12,7 @@ import { logChange } from '../../../../lib/audit';
 // - admin, project_manager: yes
 // - owner, creator, or approved participant: yes
 // - everyone else: 403
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
   const { id } = await params;
@@ -65,7 +66,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // Kilo's net margin (closer baseline + kW + sold PPW minus costs). Lock
   // it down here; the desktop + mobile UI already hide the Costs tab from
   // non-admins, so this change has no UI-visible impact for owners.
-  const isBlitzOwner = blitz.ownerId === user.id;
+  // View-As: an admin may impersonate a rep (?viewAs=<repId>) to see the
+  // REP's blitz view. Visibility (owner-ness, join status, announcements,
+  // per-project scrub) uses the effective user; BlitzCost + audit identity
+  // stay on the REAL user.
+  const { effectiveUser, impersonating } = await resolveEffectiveUser(
+    user, req.nextUrl.searchParams.get('viewAs'), getInternalUserById,
+  );
+  if (impersonating) {
+    logger.info('view_as_read', { route: '/api/blitzes/[id]', actorId: user.id, effectiveUserId: effectiveUser.id });
+  }
+
+  const isBlitzOwner = blitz.ownerId === effectiveUser.id;
   const visibleCosts = user.role === 'admin' ? blitz.costs : [];
 
   // ─── Announcements (field-gated) ───
@@ -75,12 +87,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // excluded until promoted (announcements can carry operational
   // logistics that aren't theirs yet — flip deliberately if waitlist
   // becomes a standby roster). Non-participant discovery viewers see none.
-  const viewerJoinStatus = blitz.participants.find((p) => p.userId === user.id)?.joinStatus ?? null;
+  const viewerJoinStatus = blitz.participants.find((p) => p.userId === effectiveUser.id)?.joinStatus ?? null;
   const canSeeAnnouncements =
-    user.role === 'admin' ||
-    user.role === 'project_manager' ||
+    effectiveUser.role === 'admin' ||
+    effectiveUser.role === 'project_manager' ||
     isBlitzOwner ||
-    blitz.createdById === user.id ||
+    blitz.createdById === effectiveUser.id ||
     viewerJoinStatus === 'approved' ||
     viewerJoinStatus === 'invited';
   const [announcements, announcementsTotal] = canSeeAnnouncements
@@ -114,8 +126,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       // Without the override they'd resolve to 'none' on deals they aren't
       // on and see $0 payouts — the cycle 1127 bug. The override fixes the
       // leaderboard without re-leaking margin.
-      if (user.role !== 'admin') {
-        const naturalRel = relationshipToProject(user, {
+      if (effectiveUser.role !== 'admin') {
+        const naturalRel = relationshipToProject(effectiveUser, {
           closerId: p.closerId,
           setterId: p.setterId,
           subDealerId: p.subDealerId,

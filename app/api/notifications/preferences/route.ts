@@ -9,26 +9,39 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { requireInternalUser } from '../../../../lib/api-auth';
+import { requireInternalUser, getInternalUserById } from '../../../../lib/api-auth';
+import { resolveEffectiveUser } from '../../../../lib/view-as';
 import { parseJsonBody } from '../../../../lib/api-validation';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { logChange } from '../../../../lib/audit';
+import { logger } from '../../../../lib/logger';
 import { eventsForRole, getEventDefinition } from '../../../../lib/notifications/events';
 import { patchNotificationPreferenceSchema } from '../../../../lib/schemas/notification';
 import type { Role } from '../../../../lib/notifications/types';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   let user;
   try { user = await requireInternalUser(); } catch (r) { return r as NextResponse; }
 
-  const events = eventsForRole(user.role as Role);
+  // View-As (read-only): an admin may impersonate a rep (?viewAs=<repId>) to
+  // see the REP's notification preferences. Admin-only, narrows only, falls
+  // back to self. The paired PATCH is unchanged (writes stay self-only; the
+  // client blocks pref writes while impersonating).
+  const { effectiveUser, impersonating } = await resolveEffectiveUser(
+    user, req.nextUrl.searchParams.get('viewAs'), getInternalUserById,
+  );
+  if (impersonating) {
+    logger.info('view_as_read', { route: '/api/notifications/preferences', actorId: user.id, effectiveUserId: effectiveUser.id });
+  }
+
+  const events = eventsForRole(effectiveUser.role as Role);
   const prefs = await prisma.notificationPreference.findMany({
-    where: { userId: user.id },
+    where: { userId: effectiveUser.id },
   });
   const prefMap = new Map(prefs.map((p) => [p.eventType, p]));
 
   const phoneInfo = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: effectiveUser.id },
     select: {
       notificationPhone: true,
       notificationPhoneVerifiedAt: true,

@@ -224,6 +224,22 @@ describe('scrubProjectForViewer — field visibility contract', () => {
     });
   });
 
+  describe('baselineOverrideJson — raw override string (carries kiloPerW), admin/pm only', () => {
+    const RAW = '{"closerPerW":2.45,"kiloPerW":1.75}';
+    it('passes through for admin / pm', () => {
+      for (const rel of ['admin', 'pm'] as const) {
+        const out = scrubProjectForViewer({ ...sampleProject(), baselineOverrideJson: RAW } as unknown as ReturnType<typeof sampleProject>, rel);
+        expect((out as Record<string, unknown>).baselineOverrideJson).toBe(RAW);
+      }
+    });
+    for (const rel of ['closer', 'setter', 'trainer', 'sub-dealer', 'vendor_pm', 'blitz_owner', 'none'] as const) {
+      it(`is stripped for ${rel} (no kiloPerW leak via the raw JSON)`, () => {
+        const out = scrubProjectForViewer({ ...sampleProject(), baselineOverrideJson: RAW } as unknown as ReturnType<typeof sampleProject>, rel);
+        expect((out as Record<string, unknown>).baselineOverrideJson).toBeUndefined();
+      });
+    }
+  });
+
   describe('kiloMargin — internal P&L, admin/pm only', () => {
     it('passes through for admin', () => {
       const p = { ...sampleProject(), kiloMargin: 0.45 };
