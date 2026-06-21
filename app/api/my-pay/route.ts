@@ -129,5 +129,11 @@ export async function GET(req: NextRequest) {
     lifetimeEarnedCents: cents(summary.lifetimeEarned),
     onPaceCents: cents(summary.onPace),
     onPaceCaption: summary.onPaceCaption,
+    // 2026 Cash Forecast (computeCashForecast). total === pipeline + new +
+    // paid by construction (non-negative case). Each component ≥ 0.
+    cashForecast2026Cents: cents(summary.cashForecast2026),
+    cashForecastPipelineCents: cents(summary.cashForecastPipeline),
+    cashForecastNewCents: cents(summary.cashForecastNew),
+    cashForecastPaidCents: cents(summary.cashForecastPaid),
   });
 }

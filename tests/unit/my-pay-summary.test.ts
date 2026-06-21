@@ -82,6 +82,18 @@ describe('computeMyPaySummary', () => {
     expect(summary.pipeline).toBeGreaterThan(0); // P1 has unpaid milestones
   });
 
+  it('2026 cash forecast: components non-negative and sum to the total', () => {
+    // PROJECTS has an active in-flight deal (P1) and PAYROLL has paid-YTD,
+    // so all three forecast components are positive for this viewer.
+    expect(summary.cashForecastPipeline).toBeGreaterThanOrEqual(0);
+    expect(summary.cashForecastNew).toBeGreaterThanOrEqual(0);
+    expect(summary.cashForecastPaid).toBeGreaterThanOrEqual(0);
+    expect(summary.cashForecast2026).toBe(
+      summary.cashForecastPipeline + summary.cashForecastNew + summary.cashForecastPaid,
+    );
+    expect(summary.cashForecast2026).toBeGreaterThan(0);
+  });
+
   it('onPace is at least the in-period commission earned, with year caption', () => {
     // P1 ($14,500 full commission) sold in-year; the cancelled P2 is excluded.
     expect(summary.onPace).toBeGreaterThanOrEqual(14_500);

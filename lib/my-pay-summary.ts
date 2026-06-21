@@ -27,7 +27,9 @@ import {
   viewerPipelineRemaining,
   computeTrainerOverridePipeline,
   computeOnPace,
+  computeCashForecast,
   viewerFullCommission,
+  viewerMilestones,
 } from './period-projection';
 import { ACTIVE_PHASES, type TrainerAssignment } from './data';
 import { isInPeriod, getPeriodDaysRemaining } from './period';
@@ -104,6 +106,12 @@ export interface MyPaySummary {
   lifetimeEarned: number;
   onPace: number;
   onPaceCaption: string;
+  /** "2026 Cash Forecast" hero (computeCashForecast). total === pipeline +
+   *  futureSales + paid (when non-negative). All in dollars. */
+  cashForecast2026: number;
+  cashForecastPipeline: number;
+  cashForecastNew: number;
+  cashForecastPaid: number;
 }
 
 /** Is the rep a direct party to this deal? Matches the dashboard's
@@ -205,6 +213,34 @@ export function computeMyPaySummary(input: MyPaySummaryInput): MyPaySummary {
   const onPace = computeOnPace({ inPeriodCommissionEarned, paceRate, daysRemainingInPeriod });
   const onPaceCaption = `On Pace For ${year}`;
 
+  // ── 2026 Cash Forecast — reuse computeCashForecast exactly as the rep
+  // dashboard does (MobileDashboard ~456-486). Pending milestones with ETAs
+  // landing by Dec 31 + future-sales at current pace + paid YTD. total ===
+  // pipeline + new + paid (when non-negative). NO new forecast math here.
+  // asOf = Pacific todayStr (not sumPaid's host-local default) so the paid
+  // cutoff matches the rest of this endpoint's business clock — otherwise a
+  // UTC server could count a next-day-Pacific paid row the dashboard wouldn't.
+  const paidYTD = sumPaid(payroll.filter((p) => isInPeriod(p.date, 'this-year', businessNow)), { asOf: todayStr });
+  const avgMilestones = (() => {
+    if (nonCancelled.length === 0) return { avgM1: 0, avgM2: 0, avgM3: 0 };
+    let m1 = 0, m2 = 0, m3 = 0;
+    for (const p of nonCancelled) { const m = viewerMilestones(p, repId); m1 += m.m1; m2 += m.m2; m3 += m.m3; }
+    return { avgM1: m1 / nonCancelled.length, avgM2: m2 / nonCancelled.length, avgM3: m3 / nonCancelled.length };
+  })();
+  const avgMilestoneSum = avgMilestones.avgM1 + avgMilestones.avgM2 + avgMilestones.avgM3;
+  // dealsPerMonth recovered from paceRate exactly as MobileDashboard does.
+  const forecastDealsPerMonth = paceRate && avgMilestoneSum > 0 ? paceRate / avgMilestoneSum : 0;
+  const forecast = computeCashForecast({
+    projects: myProjects,
+    repId,
+    dealsPerMonth: forecastDealsPerMonth,
+    avgM1: avgMilestones.avgM1,
+    avgM2: avgMilestones.avgM2,
+    avgM3: avgMilestones.avgM3,
+    paidYTD,
+    today: businessNow,
+  });
+
   // ── Next payout = Pending payroll landing on the next Friday ──
   const { date: nextFridayDate, label: nextPayoutLabel } = nextFridayFor(todayStr);
   const onFriday = payroll.filter((p) => p.date === nextFridayDate && p.status === 'Pending');
@@ -212,5 +248,11 @@ export function computeMyPaySummary(input: MyPaySummaryInput): MyPaySummary {
     ? onFriday.reduce((s, p) => s + p.amount, 0)
     : null;
 
-  return { nextPayout, nextPayoutLabel, pending, pipeline, lifetimeEarned, onPace, onPaceCaption };
+  return {
+    nextPayout, nextPayoutLabel, pending, pipeline, lifetimeEarned, onPace, onPaceCaption,
+    cashForecast2026: forecast.total,
+    cashForecastPipeline: forecast.pipeline,
+    cashForecastNew: forecast.futureSales,
+    cashForecastPaid: forecast.paid,
+  };
 }
