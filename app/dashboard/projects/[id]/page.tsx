@@ -118,6 +118,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     // and they no longer earn override). Only set true via the Clear button.
     noChainTrainer: false,
     solarTechProductId: '',
+    // Installer-catalog product (e.g. BVI's SEG-440 variants). Separate from
+    // solarTechProductId; both map to the unified productId on save.
+    installerProductId: '',
     // Installer-specific prepaid sub-option (HDM/PE…). Mirrors New Deal —
     // PATCH support added 2026-06-10 (Rebekah's report).
     prepaidSubType: '',
@@ -446,6 +449,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerRate: project.trainerRate != null ? String(project.trainerRate) : '',
       noChainTrainer: project.noChainTrainer ?? false,
       solarTechProductId: project.solarTechProductId ?? '',
+      installerProductId: project.installerProductId ?? '',
       prepaidSubType: project.prepaidSubType ?? '',
       leadSource: project.leadSource ?? '',
       blitzId: project.blitzId ?? '',
@@ -521,8 +525,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     } else if (editVals.installer === 'SolarTech' && !editVals.solarTechProductId) {
       editBaseline = { closerPerW: 0, kiloPerW: 0 };
       baselineResolutionFailed = true;
-    } else if (project.installerProductId && editVals.installer === project.installer) {
-      editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
+    } else if (productCatalogProducts.some((p) => p.installer === editVals.installer)) {
+      // Product-catalog installer (e.g. BVI). Resolve from the chosen product
+      // (the admin's new pick if changed, else the deal's current product).
+      const pcProductId = editVals.installerProductId || project.installerProductId;
+      if (pcProductId) {
+        editBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, kw, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
+      } else {
+        editBaseline = { closerPerW: 0, kiloPerW: 0 };
+        baselineResolutionFailed = true;
+      }
     } else {
       editBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, kw, installerPricingVersions);
     }
@@ -633,8 +645,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       trainerName: trainerRep?.name,
       trainerRate: nextTrainerRate,
       noChainTrainer: editVals.noChainTrainer,
-      solarTechProductId: (editVals.installer !== project.installer && editVals.installer !== 'SolarTech') ? undefined : (editVals.solarTechProductId || undefined),
-      ...(editVals.installer !== project.installer ? { installerProductId: undefined } : {}),
+      // Equipment: send whichever product field matches the installer type;
+      // the context mapper unifies solarTech/installer product → the DB
+      // productId. On an installer change, the mismatched field sends
+      // undefined → clears the now-wrong product.
+      solarTechProductId: editVals.installer === 'SolarTech' ? (editVals.solarTechProductId || undefined) : undefined,
+      installerProductId: (editVals.installer !== 'SolarTech' && productCatalogProducts.some((p) => p.installer === editVals.installer)) ? (editVals.installerProductId || undefined) : undefined,
       // Always sent: '' clears (PATCH maps empty → null), a value sets.
       prepaidSubType: editVals.prepaidSubType,
       leadSource: nextLeadSource ?? undefined,

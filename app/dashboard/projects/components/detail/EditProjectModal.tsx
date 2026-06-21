@@ -64,6 +64,7 @@ export interface EditDraft {
   trainerRate: string;
   noChainTrainer: boolean;
   solarTechProductId: string;
+  installerProductId: string;
   prepaidSubType: string;
   leadSource: string;
   blitzId: string;
@@ -113,6 +114,17 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
     installerPricingVersions, productCatalogProducts, productCatalogPricingVersions,
     installerPayConfigs, trainerAssignments, payrollEntries, getInstallerPrepaidOptions,
   } = data;
+  // Paid-milestone guard for equipment edits: changing the equipment
+  // recomputes the redline + realigns UNPAID payroll, but already-PAID
+  // amounts are intentionally left untouched server-side. Warn the admin so
+  // they reconcile the difference manually (Josh's "warn + manual reconcile").
+  const equipmentChanged =
+    (editVals.solarTechProductId || '') !== (project.solarTechProductId ?? '')
+    || (editVals.installerProductId || '') !== (project.installerProductId ?? '');
+  const hasPaidMilestone = payrollEntries.some(
+    (e) => e.projectId === project.id && e.status === 'Paid' && !e.isChargeback,
+  );
+  const showPaidEquipmentWarning = equipmentChanged && hasPaidMilestone;
   if (!open || typeof document === 'undefined') return null;
   return createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop flex items-center justify-center z-50 p-4"
@@ -144,8 +156,12 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
                 {editErrors.installer && <p className="text-[var(--accent-red-text)] text-xs mt-1">{editErrors.installer}</p>}
               </div>
 
+              {/* Equipment pickers — ADMIN-ONLY. Reps pick equipment at sale;
+                  only an admin may correct a wrong pick afterward (it changes
+                  the redline → commission). Hidden for PM/rep viewers. */}
+
               {/* SolarTech Product — shown only when installer is SolarTech */}
-              {editVals.installer === 'SolarTech' && (
+              {effectiveRole === 'admin' && editVals.installer === 'SolarTech' && (
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">SolarTech Product</label>
                   <select
@@ -160,6 +176,34 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
                     {SOLARTECH_FAMILIES.map((family) => {
                       const familyProducts = solarTechProducts.filter((p) => p.family === family);
                       if (familyProducts.length === 0) return null;
+                      return (
+                        <optgroup key={family} label={family}>
+                          {familyProducts.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {/* Installer-catalog Product (e.g. BVI's SEG-440 variants) —
+                  shown when the installer carries a product catalog. This is
+                  the equipment whose pick sets the redline; admins can fix a
+                  wrong selection here. */}
+              {effectiveRole === 'admin' && editVals.installer !== 'SolarTech'
+                && productCatalogProducts.some((p) => p.installer === editVals.installer) && (
+                <div>
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Equipment / Product</label>
+                  <select
+                    value={editVals.installerProductId}
+                    onChange={(e) => { setEditVals((v) => ({ ...v, installerProductId: e.target.value })); setEditErrors((prev) => ({ ...prev, installer: '' })); }}
+                    className={`w-full bg-[var(--surface-card)] border ${editErrors.installer && !editVals.installerProductId ? 'border-red-500' : 'border-[var(--border)]'} text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-emerald-solid)]`}
+                  >
+                    <option value="">— Select product —</option>
+                    {[...new Set(productCatalogProducts.filter((p) => p.installer === editVals.installer).map((p) => p.family))].map((family) => {
+                      const familyProducts = productCatalogProducts.filter((p) => p.installer === editVals.installer && p.family === family);
                       return (
                         <optgroup key={family} label={family}>
                           {familyProducts.map((p) => (
@@ -618,8 +662,22 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
                     </div>
                   );
                 }
-              } else if (project.installerProductId && editVals.installer === project.installer) {
-                previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
+              } else if (productCatalogProducts.some((p) => p.installer === editVals.installer)) {
+                // Product-catalog installer (e.g. BVI). Preview from the
+                // admin's chosen product (the new pick if changed, else the
+                // deal's current one) so the redline updates live on change.
+                const pcProductId = editVals.installerProductId || project.installerProductId;
+                if (!pcProductId) {
+                  return (
+                    <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/30">
+                      <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-2">Commission Preview</p>
+                      <p className="text-[var(--accent-amber-text)] text-xs flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Select a product to preview commission.
+                      </p>
+                    </div>
+                  );
+                }
+                previewBaseline = getProductCatalogBaselineVersioned(productCatalogProducts, pcProductId, previewKW, editVals.soldDate || project.soldDate, productCatalogPricingVersions);
               } else {
                 previewBaseline = getInstallerRatesForDeal(editVals.installer, editVals.soldDate || project.soldDate, previewKW, installerPricingVersions);
               }
@@ -816,8 +874,27 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
               );
             })()}
 
+            {showPaidEquipmentWarning && (
+              <div className="mt-4 rounded-xl p-4 bg-[var(--accent-amber-soft)] border border-amber-500/40">
+                <p className="text-[var(--accent-amber-text)] text-xs font-semibold flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5" /> This deal has a paid milestone
+                </p>
+                <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                  Changing equipment recomputes the redline and re-aligns unpaid (Draft/Pending) amounts, but <strong className="text-[var(--text-primary)]">already-paid amounts are NOT adjusted</strong>. Reconcile any difference manually via the paid-entry edit / chargeback tools after saving.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3 mt-6">
-              <button onClick={onSave}
+              <button
+                onClick={() => {
+                  // Confirm before a redline change on a deal with paid money.
+                  if (showPaidEquipmentWarning && typeof window !== 'undefined'
+                    && !window.confirm('This deal has a paid milestone. Changing equipment recomputes the redline but will NOT adjust already-paid amounts — you must reconcile manually. Continue?')) {
+                    return;
+                  }
+                  onSave();
+                }}
                 className="flex-1 font-semibold py-2.5 rounded-xl transition-colors text-sm"
                 style={{ backgroundColor: 'var(--brand)', color: 'var(--text-on-accent)' }}>
                 Save Changes

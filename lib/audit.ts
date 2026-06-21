@@ -158,6 +158,10 @@ export const AUDITED_FIELDS = {
     "kWSize",
     "installerId",
     "financerId",
+    // Equipment (the unified product FK). Admin equipment edits change the
+    // redline → commission; log them. A same-installer product swap (e.g. a
+    // BVI SEG-440 variant) is invisible via installerId alone.
+    "productId",
     "cancellationReason",
     // Lead-source attribution. Added 2026-05-10 when retroactive blitz
     // claims surfaced (deal sold on a blitz day where the closer didn't

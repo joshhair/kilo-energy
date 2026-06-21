@@ -242,6 +242,13 @@ export function mapProjectUpdateToDb(updates: Partial<Project>): Record<string, 
   // Installer prepaid sub-option. '' flows through — the API maps empty → null
   // (clear). Added 2026-06-10 with edit-modal prepaid support (Rebekah's report).
   if (updates.prepaidSubType !== undefined) dbUpdates.prepaidSubType = updates.prepaidSubType;
+  // Equipment (product) change. The client tracks SolarTech vs installer-
+  // catalog product as two separate fields, but the DB column is the unified
+  // `productId`. Map whichever is present so an admin equipment edit persists
+  // (the API gates the change to admins + only acts when it differs).
+  if ('solarTechProductId' in updates || 'installerProductId' in updates) {
+    dbUpdates.productId = (updates.solarTechProductId || updates.installerProductId) || null;
+  }
   if (updates.kWSize !== undefined) dbUpdates.kWSize = updates.kWSize;
   if (updates.netPPW !== undefined) dbUpdates.netPPW = updates.netPPW;
   // Primary closer + setter — server uses `closerId`, client uses `repId`.

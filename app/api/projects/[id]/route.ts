@@ -184,6 +184,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // route stores null for "none", keep PATCH symmetric).
   if (body.prepaidSubType !== undefined) data.prepaidSubType = body.prepaidSubType || null;
 
+  // Equipment (product) change — admin-only. `productId` is the unified FK
+  // (a SolarTech product OR an installer-catalog product). Reps pick it at
+  // sale; only an admin may correct it after the fact (a wrong pick changes
+  // the redline). The edit modal re-sends the current productId on every
+  // save, so only gate/persist when it actually CHANGES — otherwise a
+  // normal non-admin edit (notes, phase) on a deal would 403.
+  if (body.productId !== undefined) {
+    const curProduct = await prisma.project.findUnique({ where: { id }, select: { productId: true, installerId: true } });
+    const nextProductId = body.productId || null;
+    if (nextProductId !== (curProduct?.productId ?? null)) {
+      if (user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden — equipment (product) is admin-only' }, { status: 403 });
+      }
+      if (nextProductId) {
+        // Validate the product exists AND belongs to the deal's EFFECTIVE
+        // installer (the new installer if it's changing in this same PATCH,
+        // else the current one). UI filtering is not a security boundary —
+        // without this, a forged request could price e.g. an ESP deal off a
+        // BVI product, resolving the redline from the wrong catalog.
+        const product = await prisma.product.findUnique({ where: { id: nextProductId }, select: { installerId: true } });
+        if (!product) {
+          return NextResponse.json({ error: 'Product not found' }, { status: 400 });
+        }
+        let effectiveInstallerId = curProduct?.installerId ?? null;
+        if (body.installer !== undefined) {
+          const inst = await prisma.installer.findFirst({ where: { name: body.installer }, select: { id: true } });
+          effectiveInstallerId = inst?.id ?? effectiveInstallerId;
+        }
+        if (product.installerId !== effectiveInstallerId) {
+          return NextResponse.json({ error: 'Product does not belong to this installer' }, { status: 400 });
+        }
+      }
+      data.productId = nextProductId;
+    }
+  }
+
   // FK resolution: installer/financer name → ID.
   //
   // Archived guard: an archived installer/financer must not be SELECTABLE on
@@ -218,7 +254,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Prevents the Timothy-Salunga-shape bug where editing netPPW left
   // stale stored amounts. Same resolvers as the client — see
   // lib/commission-server.ts for how it mirrors the new-deal compute.
-  const bodyTouchesCommissionInputs = COMMISSION_INPUT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined);
+  // `productId` (the unified equipment FK) is its own recompute trigger:
+  // changing the product re-resolves the redline/baseline. It is not in
+  // COMMISSION_INPUT_KEYS because the resolver reads it via the effective
+  // product below, not the raw key.
+  const bodyTouchesCommissionInputs = COMMISSION_INPUT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined)
+    || body.productId !== undefined;
 
   // Direct-amount edits (inline saveM1/saveM2 editors) send ONLY these
   // output keys. They skip recompute (admin's explicit override sticks)
@@ -389,6 +430,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ? body.additionalSetters.map((s) => ({ m1Amount: s.m1Amount ?? 0, m2Amount: s.m2Amount ?? 0, m3Amount: s.m3Amount ?? null }))
       : current.additionalSetters.map((s) => ({ m1Amount: s.m1AmountCents / 100, m2Amount: s.m2AmountCents / 100, m3Amount: s.m3AmountCents == null ? null : s.m3AmountCents / 100 }));
 
+    // Effective equipment: the admin's new product if changed, else current.
+    const rawEffectiveProductId = body.productId !== undefined ? (body.productId || null) : (current.productId ?? null);
+    // Cross-installer guard (defense-in-depth). Null the product ONLY when it
+    // is found in the WRONG catalog — i.e. it belongs to a different installer
+    // than the deal's effective installer. This covers the installer-ONLY
+    // change case (no productId sent) that would otherwise leave a stale
+    // product from the old installer attached and resolve the redline from the
+    // wrong catalog. A LEGACY/archived product (not in any active catalog) is
+    // left intact so the fallback branch preserves the deal's stored amounts.
+    const foundInWrongCatalog = rawEffectiveProductId != null && (installerName === 'SolarTech'
+      ? productCatalogProducts.some((p) => p.id === rawEffectiveProductId)
+      : (solarTechProducts.some((p) => p.id === rawEffectiveProductId)
+        || productCatalogProducts.some((p) => p.id === rawEffectiveProductId && p.installer !== installerName)));
+    const effectiveProductId = foundInWrongCatalog ? null : rawEffectiveProductId;
+    // Persist the clear so DB installer/product state can't drift apart.
+    if (foundInWrongCatalog) data.productId = null;
+
     const result = computeProjectCommission(
       {
         soldDate: body.soldDate ?? current.soldDate,
@@ -399,8 +457,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         closerId: body.closerId !== undefined ? (body.closerId || null) : current.closerId,
         setterId: body.setterId !== undefined ? (body.setterId || null) : current.setterId,
         subDealerId: current.subDealerId,
-        solarTechProductId: installerName === 'SolarTech' ? (current.productId ?? null) : null,
-        installerProductId: installerName !== 'SolarTech' ? (current.productId ?? null) : null,
+        // Resolve the redline from the EFFECTIVE product (the new one if the
+        // admin changed equipment, else the deal's current product).
+        solarTechProductId: installerName === 'SolarTech' ? effectiveProductId : null,
+        installerProductId: installerName !== 'SolarTech' ? effectiveProductId : null,
         baselineOverride: effectiveBaselineOverride,
         trainerId: body.trainerId !== undefined ? (body.trainerId || null) : current.trainerId,
         trainerRate: body.trainerRate !== undefined ? (body.trainerRate ?? null) : current.trainerRate,

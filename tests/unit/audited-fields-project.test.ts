@@ -21,10 +21,19 @@ describe('AUDITED_FIELDS.Project', () => {
       'closerId', 'setterId', 'subDealerId',
       'netPPW', 'kWSize',
       'installerId', 'financerId',
+      'productId',
       'cancellationReason',
     ]) {
       expect(fields, `missing ${key}`).toContain(key);
     }
+  });
+
+  it('includes the equipment (product) FK', () => {
+    // Added 2026-06-21 with admin equipment editing — a wrong-equipment fix
+    // changes the redline → commission, and a same-installer product swap
+    // (e.g. a BVI SEG-440 variant) is invisible via installerId alone.
+    const fields = new Set<string>(AUDITED_FIELDS.Project);
+    expect(fields).toContain('productId');
   });
 
   it('includes lead-source attribution fields', () => {
@@ -36,8 +45,9 @@ describe('AUDITED_FIELDS.Project', () => {
   });
 
   it('does not silently drop fields (pin the count)', () => {
-    // 17 = the contract as of 2026-05-10. Adding a field bumps this
-    // intentionally; dropping one without intent fails this test loud.
-    expect(AUDITED_FIELDS.Project.length).toBe(17);
+    // 18 = the contract as of 2026-06-21 (added productId for equipment
+    // edits). Adding a field bumps this intentionally; dropping one without
+    // intent fails this test loud.
+    expect(AUDITED_FIELDS.Project.length).toBe(18);
   });
 });

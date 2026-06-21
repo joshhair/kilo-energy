@@ -127,6 +127,10 @@ export const patchProjectSchema = z.object({
   blitzId: optionalId,
 
   // Core deal shape (affects commission math)
+  // Equipment (unified product FK — SolarTech OR installer-catalog product).
+  // Admin-only equipment edit; the handler 403s a non-admin change and only
+  // persists when it differs from the deal's current product. '' clears.
+  productId: optionalId,
   productType: z.string().min(1).optional(),
   // Installer-specific prepaid sub-option (e.g. HDM/PE). Settable at create
   // since launch; PATCH support added 2026-06-10 (Rebekah: "editing the
