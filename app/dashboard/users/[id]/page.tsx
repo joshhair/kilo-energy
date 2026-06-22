@@ -7,6 +7,7 @@ import { useApp } from '../../../../lib/context';
 import { useIsHydrated, useMediaQuery } from '../../../../lib/hooks';
 import MobileRepDetail from '../../mobile/MobileRepDetail';
 import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../../lib/data';
+import { classifyEntryRole } from '../../../../lib/commission-by-role';
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../../lib/utils';
 import { useToast } from '../../../../lib/toast';
 import { PaginationBar } from '../../components/PaginationBar';
@@ -1300,26 +1301,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         // notes and were misclassified as Closer pay (e.g. Kenneth on
         // Willard Coleman M2 paid 2026-05-15). Project-relation is the source
         // of truth: if you're the setterId on a deal, the entry is setter pay.
+        // Classification shared with the mobile rep detail + the iOS endpoint
+        // (GET /api/reps/[id]/commission-by-role) via lib/commission-by-role.ts
+        // so all three can't drift on a money figure. Same logic as before —
+        // project-relation is the source of truth (see the note above).
         const projectById = new Map(projects.map((p) => [p.id, p]));
-        const classifyEntry = (e: typeof repPayroll[number]): 'Closer' | 'Co-closer' | 'Setter' | 'Co-setter' | 'Trainer' | 'Bonus' => {
-          if (e.paymentStage === 'Trainer') return 'Trainer';
-          if (e.type !== 'Deal') return 'Bonus';
-          if (!e.projectId) return 'Bonus'; // standalone Bonus/Charge entries have no project
-          const proj = projectById.get(e.projectId);
-          if (!proj) return 'Closer'; // unknown project — fall back to historical default
-          // Self-gen: the same person is both closer + setter. The M1 portion
-          // accrues to the setter slot, M2/M3 to the closer slot — preserve
-          // the legacy notes hint as the disambiguator since it's still
-          // stamped on engine-generated self-gen entries.
-          if (proj.repId === id && proj.setterId === id) {
-            return e.notes === 'Setter' ? 'Setter' : 'Closer';
-          }
-          if (proj.repId === id) return 'Closer';
-          if (proj.setterId === id) return 'Setter';
-          if (proj.additionalClosers?.some((c: { userId: string }) => c.userId === id)) return 'Co-closer';
-          if (proj.additionalSetters?.some((c: { userId: string }) => c.userId === id)) return 'Co-setter';
-          return 'Closer';
-        };
+        const classifyEntry = (e: typeof repPayroll[number]) => classifyEntryRole(e, projectById, id);
         const closerEntries = repPayroll.filter((e) => classifyEntry(e) === 'Closer');
         const coCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Co-closer');
         const setterEntries = repPayroll.filter((e) => classifyEntry(e) === 'Setter' || classifyEntry(e) === 'Co-setter');

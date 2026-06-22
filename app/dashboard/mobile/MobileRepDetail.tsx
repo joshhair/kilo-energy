@@ -8,6 +8,7 @@ import { useIsHydrated } from '../../../lib/hooks';
 import { formatDate, formatCompactKW, todayLocalDateStr } from '../../../lib/utils';
 import { ArrowLeft, FolderKanban, DollarSign, Settings, Pencil, UserCog, UserX, UserCheck, Mail, UserPlus, Trash2, CheckSquare, Square, Check, X, Plus } from 'lucide-react';
 import { getTrainerOverrideRate, TrainerOverrideTier } from '../../../lib/data';
+import { classifyEntryRole } from '../../../lib/commission-by-role';
 import MobileBadge from './shared/MobileBadge';
 import MobileSection from './shared/MobileSection';
 import MobileListItem from './shared/MobileListItem';
@@ -549,23 +550,11 @@ export default function MobileRepDetail({ repId }: { repId: string }) {
   }, 0);
   const recentPayroll = repPayroll.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Commission by Role — mirrors desktop users/[id] page classification logic
+  // Commission by Role — classification is shared with the iOS endpoint
+  // (GET /api/reps/[id]/commission-by-role) via lib/commission-by-role.ts so
+  // the web and the app can't drift on a money figure. Same logic as before.
   const projectById = new Map(projects.map((p) => [p.id, p]));
-  const classifyEntry = (e: typeof repPayroll[number]): 'Closer' | 'Co-closer' | 'Setter' | 'Co-setter' | 'Trainer' | 'Bonus' => {
-    if (e.paymentStage === 'Trainer') return 'Trainer';
-    if (e.type !== 'Deal') return 'Bonus';
-    if (!e.projectId) return 'Bonus';
-    const proj = projectById.get(e.projectId);
-    if (!proj) return 'Closer';
-    if (proj.repId === repId && proj.setterId === repId) {
-      return e.notes === 'Setter' ? 'Setter' : 'Closer';
-    }
-    if (proj.repId === repId) return 'Closer';
-    if (proj.setterId === repId) return 'Setter';
-    if (proj.additionalClosers?.some((c: { userId: string }) => c.userId === repId)) return 'Co-closer';
-    if (proj.additionalSetters?.some((c: { userId: string }) => c.userId === repId)) return 'Co-setter';
-    return 'Closer';
-  };
+  const classifyEntry = (e: typeof repPayroll[number]) => classifyEntryRole(e, projectById, repId);
   const roleCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Closer');
   const roleCoCloserEntries = repPayroll.filter((e) => classifyEntry(e) === 'Co-closer');
   const roleSetterEntries = repPayroll.filter((e) => classifyEntry(e) === 'Setter' || classifyEntry(e) === 'Co-setter');
