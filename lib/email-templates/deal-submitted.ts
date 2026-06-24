@@ -20,6 +20,7 @@
  */
 
 import { renderNotificationEmail, escapeHtml } from './notification';
+import { formatSystemSize } from '@/lib/utils';
 
 /** What a rep sees in their deal_submitted_rep email. The shape itself
  *  is the privacy gate — no kilo / margin / other-party amount fields
@@ -139,7 +140,7 @@ export function renderDealSubmittedRepEmail(data: RepDealEmailData): {
       <p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;">
         <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br/>
         <strong>Sold date:</strong> ${escapeHtml(data.soldDate)}<br/>
-        <strong>System size:</strong> ${data.kWSize.toFixed(2)} kW<br/>
+        <strong>System size:</strong> ${formatSystemSize(data.kWSize)}<br/>
         <strong>Sale price:</strong> ${formatMoney(data.salePrice)}
       </p>
       ${partiesBlock}
@@ -187,7 +188,7 @@ export function renderDealSubmittedAdminEmail(data: AdminDealEmailData): {
         ${data.trainerPayout > 0 ? `<tr><td style="padding:4px 0;color:#5a6378;">Trainer override</td><td style="padding:4px 0;text-align:right;font-weight:600;">${formatMoney(data.trainerPayout)}</td></tr>` : ''}
       `;
 
-  const subject = `New deal: ${data.customerName} (${data.kWSize.toFixed(1)} kW)`;
+  const subject = `New deal: ${data.customerName} (${formatSystemSize(data.kWSize)})`;
   const html = renderNotificationEmail({
     heading: `New deal submitted — ${escapeHtml(data.customerName)}`,
     bodyHtml: `
@@ -195,7 +196,7 @@ export function renderDealSubmittedAdminEmail(data: AdminDealEmailData): {
       <p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;">
         <strong>Installer:</strong> ${escapeHtml(data.installer)}${data.financer ? ` &middot; <strong>Financer:</strong> ${escapeHtml(data.financer)}` : ''}<br/>
         <strong>Sold date:</strong> ${escapeHtml(data.soldDate)}<br/>
-        <strong>System size:</strong> ${data.kWSize.toFixed(2)} kW @ $${data.netPPW.toFixed(2)}/W<br/>
+        <strong>System size:</strong> ${formatSystemSize(data.kWSize)} @ $${data.netPPW.toFixed(2)}/W<br/>
         <strong>Sale price:</strong> ${formatMoney(data.salePrice)}
       </p>
       <p style="margin:0 0 8px 0;font-weight:600;">Commission breakdown:</p>

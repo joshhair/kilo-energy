@@ -59,19 +59,29 @@ export function formatKW(kw: number): string {
 }
 
 /**
- * Exact system-size formatter for a SINGLE deal's size. NEVER rounds — the
+ * Exact system-size value (no unit) for a SINGLE deal. NEVER rounds — the
  * system size is a precise spec value (panel count × wattage) and rounding it
  * is a data-integrity problem for design, permitting, and the installer
  * handoff. Trims floating-point noise without imposing a rounding grid:
  * preserves up to 3 decimals (the finest real panel-math precision) and drops
- * trailing zeros. 8.84 → "8.84 kW", 8.4 → "8.4 kW", 8 → "8 kW".
+ * trailing zeros. 8.84 → "8.84", 8.4 → "8.4", 8 → "8".
  *
- * Use this for any per-deal system-size display. Use formatKW / formatCompactKW
- * ONLY for aggregate totals where 1-decimal / MW rounding is acceptable.
+ * Use this where the caller supplies its own unit/suffix (email subjects,
+ * "X kW @ $Y/W" lines). For a plain "X kW" string use formatSystemSize.
+ */
+export function formatSystemSizeValue(kw: number): string {
+  const n = Number.isFinite(kw) ? kw : 0;
+  return String(parseFloat(n.toFixed(3)));
+}
+
+/**
+ * Exact "X kW" string for a SINGLE deal's size — never rounds (see
+ * formatSystemSizeValue). Use this for any per-deal system-size display.
+ * Use formatKW / formatCompactKW ONLY for aggregate totals where
+ * 1-decimal / MW rounding is acceptable.
  */
 export function formatSystemSize(kw: number): string {
-  const n = Number.isFinite(kw) ? kw : 0;
-  return `${parseFloat(n.toFixed(3))} kW`;
+  return `${formatSystemSizeValue(kw)} kW`;
 }
 
 /**

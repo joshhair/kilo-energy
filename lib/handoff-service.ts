@@ -28,6 +28,7 @@ import { sendEmail, buildHandoffReplyTo } from '@/lib/email-helpers';
 import { renderInstallerHandoffPdf, type HandoffPdfPayload } from '@/lib/pdf/installer-handoff';
 import { renderHandoffEmailHtml } from '@/lib/email-templates/installer-handoff';
 import { parseBviIntake, bviHandoffFilename } from '@/lib/installer-intakes/bvi';
+import { formatSystemSizeValue } from '@/lib/utils';
 
 /**
  * Derive BVI's "Finance Product" checkbox state from existing Project
@@ -227,12 +228,12 @@ export async function sendInstallerHandoff(opts: SendHandoffOptions): Promise<Se
   }
 
   const subjectPrefix = project.installer.subjectPrefix?.trim() || `[${project.installer.name}]`;
-  const baseSubject = `${subjectPrefix} New Project — ${project.customerName} | ${project.kWSize.toFixed(1)}kW | Rep: ${repName}`;
+  const baseSubject = `${subjectPrefix} New Project — ${project.customerName} | ${formatSystemSizeValue(project.kWSize)}kW | Rep: ${repName}`;
   const html = renderHandoffEmailHtml({
     installerDisplayName: project.installer.name,
     customerName: project.customerName,
     customerAddress: intake.customerAddress,
-    systemSizeKw: project.kWSize.toFixed(1),
+    systemSizeKw: formatSystemSizeValue(project.kWSize),
     financeProduct: project.financer.name,
     exportType: intake.exportType ?? '',
     siteSurveyText:
