@@ -59,6 +59,22 @@ export function formatKW(kw: number): string {
 }
 
 /**
+ * Exact system-size formatter for a SINGLE deal's size. NEVER rounds — the
+ * system size is a precise spec value (panel count × wattage) and rounding it
+ * is a data-integrity problem for design, permitting, and the installer
+ * handoff. Trims floating-point noise without imposing a rounding grid:
+ * preserves up to 3 decimals (the finest real panel-math precision) and drops
+ * trailing zeros. 8.84 → "8.84 kW", 8.4 → "8.4 kW", 8 → "8 kW".
+ *
+ * Use this for any per-deal system-size display. Use formatKW / formatCompactKW
+ * ONLY for aggregate totals where 1-decimal / MW rounding is acceptable.
+ */
+export function formatSystemSize(kw: number): string {
+  const n = Number.isFinite(kw) ? kw : 0;
+  return `${parseFloat(n.toFixed(3))} kW`;
+}
+
+/**
  * Compact system-size formatter for stat cards and tight spaces.
  * Below 1,000 kW: shown as kW with one decimal (`987.5 kW`).
  * 1,000+ kW: converted to MW (`1.2 MW`, `16.1 MW`) — matches how solar

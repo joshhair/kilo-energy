@@ -1589,7 +1589,7 @@ export default function MobileNewDeal() {
                 type="number"
                 inputMode="decimal"
                 enterKeyHint="next"
-                step="0.1"
+                step="any"
                 min="1"
                 placeholder="8.4"
                 value={form.kWSize}

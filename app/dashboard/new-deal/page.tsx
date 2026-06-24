@@ -1629,7 +1629,7 @@ function NewDealPage() {
                     <span className="inline-flex items-center gap-1">System Size (kW) {fieldCheck('kWSize')}</span>
                   </label>
                   <div className="relative">
-                    <input id="field-kWSize" type="number" step="0.1" min="1" placeholder="8.4"
+                    <input id="field-kWSize" type="number" step="any" min="1" placeholder="8.4"
                       value={form.kWSize} onChange={(e) => update('kWSize', e.target.value)}
                       onBlur={() => handleBlur('kWSize')} aria-invalid={!!errors.kWSize}
                       className={inputCls('kWSize') + (kW > 0 && !errors.kWSize ? ' pr-9' : '')} style={inputFieldStyle('kWSize')} />
@@ -1747,7 +1747,7 @@ function NewDealPage() {
                 <div>
                   <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
                   <p className="text-[var(--text-primary)] font-medium">
-                    {kW > 0 ? `${kW.toFixed(1)} kW` : <span className="text-[var(--text-dim)] italic">—</span>}
+                    {kW > 0 ? `${parseFloat(kW.toFixed(3))} kW` : <span className="text-[var(--text-dim)] italic">—</span>}
                     {kW > 0 && soldPPW > 0 && <span className="text-[var(--text-secondary)]"> @ ${soldPPW.toFixed(2)}/W</span>}
                   </p>
                 </div>

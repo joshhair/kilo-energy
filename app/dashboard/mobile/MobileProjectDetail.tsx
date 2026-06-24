@@ -1758,7 +1758,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
               </label>
               <input
                 type="number"
-                step="0.1"
+                step="any"
                 value={editDraft.kWSize}
                 onChange={(e) => setEditDraft((d) => ({ ...d, kWSize: e.target.value }))}
                 className="w-full min-h-[48px] outline-none"

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, ArrowRight, RotateCcw, PlusCircle } from 'lucide-react';
 import { SubmittedDeal } from './shared';
+import { formatSystemSize } from '../../../../lib/utils';
 
 export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset: () => void }) {
   const router = useRouter();
@@ -54,7 +55,7 @@ export function SuccessScreen({ deal, onReset }: { deal: SubmittedDeal; onReset:
               </div>
               <div>
                 <p className="text-[var(--text-muted)] text-xs mb-0.5">System Size</p>
-                <p className="text-[var(--text-primary)] font-medium">{deal.kW.toFixed(1)} kW @ ${deal.soldPPW.toFixed(2)}/W</p>
+                <p className="text-[var(--text-primary)] font-medium">{formatSystemSize(deal.kW)} @ ${deal.soldPPW.toFixed(2)}/W</p>
               </div>
             </div>
           </div>
