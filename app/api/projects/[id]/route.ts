@@ -7,6 +7,7 @@ import { patchProjectSchema, type PatchProjectInput } from '../../../../lib/sche
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../../lib/serialize';
 import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib/commission-server';
+import { loadCommissionDeps } from '../../../../lib/commission-deps';
 import { resolveTrainerLegs } from '../../../../lib/commission';
 import { fromDollars } from '../../../../lib/money';
 import type { InstallerBaseline } from '../../../../lib/data';
@@ -295,126 +296,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       delete data.setterM3AmountCents;
     } else {
 
-    // Load the pricing/trainer data needed by the resolver.
-    const [
-      installerPricingVersionsRaw,
-      productCatalogProductsRaw,
-      productCatalogPricingVersionsRaw,
-      trainerAssignmentsRaw,
-      payrollEntriesRaw,
-      installers,
-      allProjectPartiesRaw,
-    ] = await Promise.all([
-      prisma.installerPricingVersion.findMany({ include: { tiers: true } }),
-      prisma.product.findMany({ where: { active: true }, include: { pricingVersions: { include: { tiers: true } } } }),
-      prisma.productPricingVersion.findMany({ include: { tiers: true } }),
-      prisma.trainerAssignment.findMany({ include: { tiers: { orderBy: { sortOrder: 'asc' } } } }),
-      prisma.payrollEntry.findMany({ where: { paymentStage: 'Trainer' } }),
-      prisma.installer.findMany({ select: { id: true, name: true, installPayPct: true, usesProductCatalog: true } }),
-      prisma.project.findMany({ select: { id: true, closerId: true, setterId: true } }),
-    ]);
-    // projectId → parties: scope the setter's trainer-tier count to their own deals (under-pay fix).
-    const projectParties = new Map(allProjectPartiesRaw.map((p) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
-
-    // Shape the loaded data into the forms the resolvers expect.
-    // Library types use camelCase / slightly different field names than
-    // the Prisma shape — do the conversion here at the seam.
-    const installerPricingVersions = installerPricingVersionsRaw.map((v) => ({
-      id: v.id,
-      installer: installers.find((i) => i.id === v.installerId)?.name ?? '',
-      label: v.label ?? '',
-      effectiveFrom: v.effectiveFrom,
-      effectiveTo: v.effectiveTo,
-      rates: v.rateType === 'tiered'
-        ? { type: 'tiered' as const, bands: v.tiers.map((t) => ({ minKW: t.minKW, maxKW: t.maxKW, closerPerW: t.closerPerW, kiloPerW: t.kiloPerW, setterPerW: t.setterPerW ?? undefined, subDealerPerW: t.subDealerPerW ?? undefined })) }
-        : { type: 'flat' as const, closerPerW: v.tiers[0]?.closerPerW ?? 0, kiloPerW: v.tiers[0]?.kiloPerW ?? 0, setterPerW: v.tiers[0]?.setterPerW ?? undefined, subDealerPerW: v.tiers[0]?.subDealerPerW ?? undefined },
-    }));
-
-    const solarTechInstaller = installers.find((i) => i.name === 'SolarTech');
-    const solarTechProducts = productCatalogProductsRaw
-      .filter((p) => p.installerId === solarTechInstaller?.id)
-      .map((p) => {
-        const effectiveSoldDate = new Date(body.soldDate ?? current.soldDate);
-        const versionCandidates = p.pricingVersions.filter((v) =>
-          new Date(v.effectiveFrom) <= effectiveSoldDate &&
-          (v.effectiveTo === null || new Date(v.effectiveTo) >= effectiveSoldDate)
-        );
-        const activeVersion = versionCandidates.length > 0
-          ? versionCandidates.reduce((a, b) => (a.effectiveFrom >= b.effectiveFrom ? a : b))
-          : p.pricingVersions[0];
-        const familyFinancerMap: Record<string, string> = {
-          'Goodleap': 'Goodleap',
-          'Enfin': 'Enfin',
-          'Lightreach': 'LightReach',
-          'Cash/HDM/PE': 'Cash',
-        };
-        return {
-          id: p.id,
-          family: p.family,
-          financer: familyFinancerMap[p.family] ?? p.family,
-          name: p.name,
-          tiers: (activeVersion?.tiers ?? []).map((t) => ({
-            minKW: t.minKW,
-            maxKW: t.maxKW ?? null,
-            closerPerW: t.closerPerW,
-            setterPerW: t.setterPerW,
-            kiloPerW: t.kiloPerW,
-            subDealerPerW: t.subDealerPerW ?? undefined,
-          })),
-        };
-      });
-
-    const productCatalogProducts = productCatalogProductsRaw
-      .filter((p) => p.installerId !== solarTechInstaller?.id)
-      .map((p) => ({
-        id: p.id,
-        installer: installers.find((i) => i.id === p.installerId)?.name ?? '',
-        family: p.family,
-        name: p.name,
-        tiers: (p.pricingVersions.find((pv) => pv.effectiveTo === null)?.tiers ?? []).map((t) => ({
-          minKW: t.minKW,
-          maxKW: t.maxKW,
-          closerPerW: t.closerPerW,
-          setterPerW: t.setterPerW,
-          kiloPerW: t.kiloPerW,
-          subDealerPerW: t.subDealerPerW ?? undefined,
-        })),
-      }));
-
-    const productCatalogPricingVersions = productCatalogPricingVersionsRaw.map((v) => ({
-      id: v.id,
-      productId: v.productId,
-      label: v.label,
-      effectiveFrom: v.effectiveFrom,
-      effectiveTo: v.effectiveTo,
-      tiers: v.tiers.map((t) => ({
-        minKW: t.minKW,
-        maxKW: t.maxKW,
-        closerPerW: t.closerPerW,
-        setterPerW: t.setterPerW,
-        kiloPerW: t.kiloPerW,
-        subDealerPerW: t.subDealerPerW ?? undefined,
-      })),
-    }));
-
-    const trainerAssignments = trainerAssignmentsRaw.map((a) => ({
-      id: a.id,
-      trainerId: a.trainerId,
-      traineeId: a.traineeId,
-      isActiveTraining: a.isActiveTraining,
-      tiers: a.tiers.map((t) => ({ upToDeal: t.upToDeal, ratePerW: t.ratePerW })),
-    }));
-
-    const payrollEntries = payrollEntriesRaw.map((e) => ({
-      repId: e.repId,
-      projectId: e.projectId,
-      paymentStage: e.paymentStage,
-      amount: e.amountCents / 100,
-      status: e.status,
-    }));
-
-    const installerPayConfigs: Record<string, { installPayPct: number; usesProductCatalog: boolean }> = {};
-    for (const i of installers) installerPayConfigs[i.name] = { installPayPct: i.installPayPct, usesProductCatalog: i.usesProductCatalog };
+    // Load + shape the pricing/trainer deps (sold-date pricing + projectParties),
+    // shared with POST /api/projects so a created deal computes like an edited one.
+    const { installers, ...commissionDeps } = await loadCommissionDeps(body.soldDate ?? current.soldDate);
 
     // Build effective inputs: body value if sent, else current DB value.
     const installerName = body.installer !== undefined
@@ -444,9 +328,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // wrong catalog. A LEGACY/archived product (not in any active catalog) is
     // left intact so the fallback branch preserves the deal's stored amounts.
     const foundInWrongCatalog = rawEffectiveProductId != null && (installerName === 'SolarTech'
-      ? productCatalogProducts.some((p) => p.id === rawEffectiveProductId)
-      : (solarTechProducts.some((p) => p.id === rawEffectiveProductId)
-        || productCatalogProducts.some((p) => p.id === rawEffectiveProductId && p.installer !== installerName)));
+      ? commissionDeps.productCatalogProducts.some((p) => p.id === rawEffectiveProductId)
+      : (commissionDeps.solarTechProducts.some((p) => p.id === rawEffectiveProductId)
+        || commissionDeps.productCatalogProducts.some((p) => p.id === rawEffectiveProductId && p.installer !== installerName)));
     const effectiveProductId = foundInWrongCatalog ? null : rawEffectiveProductId;
     // Persist the clear so DB installer/product state can't drift apart.
     if (foundInWrongCatalog) data.productId = null;
@@ -472,17 +356,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         additionalClosers: effectiveAdditionalClosers,
         additionalSetters: effectiveAdditionalSetters,
       },
-      {
-        installerPricingVersions,
-        solarTechProducts,
-        productCatalogProducts,
-        productCatalogPricingVersions,
-        trainerAssignments,
-        payrollEntries,
-        installerPayConfigs,
-        projectParties,
-        currentProjectId: id,
-      },
+      { ...commissionDeps, currentProjectId: id },
     );
 
     // Preserve sold-at commission when the original product left the active

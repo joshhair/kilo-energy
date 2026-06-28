@@ -93,6 +93,10 @@ export const createProjectSchema = z.object({
   /// freshly-created rows even if the client tried to set them.
   trainerId:   optionalId,
   trainerRate: finiteNumber.min(0).max(5).nullable().optional(),
+  /// Admin clears all chain trainers on this deal at create (per-project override
+  /// still pays; chain-derived legs suppressed). Admin-only money config — the
+  /// POST route IGNORES it from non-admin callers (mirrors PATCH PM_BLOCKED_FIELDS).
+  noChainTrainer: z.boolean().optional(),
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 

@@ -86,10 +86,17 @@ test('rep creates a loan deal — commission persists cent-exact', async ({
   expect(response.status()).toBe(201);
   const project = await response.json();
   expect(project.customerName).toBe(customerName);
-  // Cent-exact round-trip: 1890.01 dollars → 189001 cents → 1890.01 dollars.
-  expect(project.m1Amount).toBe(1890.01);
-  expect(project.m2Amount).toBe(1890.02);
-  expect(project.m3Amount).toBe(472.51);
+  // POST is server-AUTHORITATIVE (2026-06): the client-sent m1/m2/m3 above are
+  // not trusted — commission is recomputed from the deal inputs (kW/netPPW/
+  // installer at soldDate). So the persisted amounts are server-derived (and may
+  // differ from 1890.01); when the deal's product isn't in the active catalog,
+  // the preserve-on-fallback guard keeps the client values instead of zeroing.
+  // Either way they must round-trip as valid cents. The cent-exact odd-cents
+  // round-trip is now exercised by the payroll entry below (POST /api/payroll is
+  // NOT recomputed), so this assertion only checks shape/validity here.
+  expect(typeof project.m1Amount).toBe('number');
+  expect(typeof project.m2Amount).toBe('number');
+  expect(project.m3Amount === null || typeof project.m3Amount === 'number').toBe(true);
 
   createdProjectId = project.id;
 });

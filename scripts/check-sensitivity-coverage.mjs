@@ -80,6 +80,9 @@ const allowlistPatterns = [
   // data-rollup + the blitz profitability endpoints). Returns arrays the
   // resolvers read; emits cents at the route. No DB access; never client-imported.
   /^lib[\\/]kilo-pricing-arrays\.ts$/,
+  // Server-only loader: shapes sold-date pricing (kiloPerW-included) into the
+  // CommissionDeps that POST + PATCH /api/projects feed computeProjectCommission.
+  /^lib[\\/]commission-deps\.ts$/,
   /^lib[\\/]data\.ts$/,
   // Admin-only API endpoints that explicitly serve baseline data.
   /^app[\\/]api[\\/]baseline-data[\\/]/,

@@ -90,7 +90,11 @@ test('admin edits commission amounts — cents round-trip exact', async () => {
   });
   expect(create.status()).toBe(201);
   const project = await create.json();
-  expect(project.m1Amount).toBe(1234.56);
+  // POST is server-AUTHORITATIVE (2026-06): commission is recomputed from the deal
+  // inputs, so project.m1Amount is server-derived (not necessarily 1234.56). The
+  // cent-exact odd-cents round-trip is asserted on the PATCH direct-amount edit
+  // below, which is preserved verbatim (only amounts sent → no recompute).
+  expect(typeof project.m1Amount).toBe('number');
 
   // Edit with new cent-odd amounts. This is the bug surface we care
   // about — fromDollars(1999.99).cents === 199999 must round-trip.

@@ -5,6 +5,10 @@ import { parseJsonBody } from '../../../lib/api-validation';
 import { createProjectSchema } from '../../../lib/schemas/project';
 import { enforceRateLimit } from '../../../lib/rate-limit';
 import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNullableCents, scrubProjectForViewer } from '../../../lib/serialize';
+import { computeProjectCommission } from '../../../lib/commission-server';
+import { loadCommissionDeps } from '../../../lib/commission-deps';
+import { fromDollars } from '../../../lib/money';
+import type { InstallerBaseline } from '../../../lib/data';
 import { logger, errorContext } from '../../../lib/logger';
 import { logChange } from '../../../lib/audit';
 import { sendInstallerHandoff } from '../../../lib/handoff-service';
@@ -200,6 +204,109 @@ export async function POST(req: NextRequest) {
     position: s.position ?? i + 1,
   }));
 
+  // ── Server-AUTHORITATIVE commission (parity with PATCH /api/projects/[id]).
+  //    Recompute the primary closer/setter amounts from the deal inputs — a NO-OP
+  //    for a legit form deal, but it stops a client POSTing arbitrary commission.
+  //    Admin-only money config (baseline override, per-project trainer override,
+  //    chain-trainer suppression) is IGNORED from non-admin callers, mirroring
+  //    PATCH's PM/REP_BLOCKED_FIELDS so a rep can't craft those to inflate the
+  //    authoritative amount. Sub-dealer deals keep client amounts (separate comp). ──
+  const isAdmin = user.role === 'admin';
+  const effOverrideJson = isAdmin ? (body.baselineOverrideJson ?? null) : null;
+  const effTrainerId = isAdmin ? (body.trainerId ?? null) : null;
+  const effTrainerRate = isAdmin ? (body.trainerRate ?? null) : null;
+  const effNoChainTrainer = isAdmin ? (body.noChainTrainer ?? false) : false;
+
+  let m1Cents = dollarsToCents(body.m1Amount) ?? 0;
+  let m2Cents = dollarsToCents(body.m2Amount) ?? 0;
+  let m3Cents = dollarsToNullableCents(body.m3Amount) ?? null;
+  let setterM1Cents = dollarsToCents(body.setterM1Amount) ?? 0;
+  let setterM2Cents = dollarsToCents(body.setterM2Amount) ?? 0;
+  let setterM3Cents = dollarsToNullableCents(body.setterM3Amount) ?? null;
+  let persistProductId = body.productId ?? null;
+  // The sub-dealer comp formula lives client-side (computeProjectCommission ZEROES
+  // sub-dealers — there is no server-side sub-dealer comp), so a sub-dealer deal
+  // keeps its client amounts ONLY when the caller is trusted: an admin, or a
+  // sub-dealer creating their OWN deal. A rep/PM CANNOT attach a subDealerId to skip
+  // the authoritative recompute and inject arbitrary commission — they fall through
+  // to the recompute below (which zeroes the sub-dealer-flagged row).
+  // RESIDUAL (pre-existing, flagged): a sub-dealer can still over-price their OWN
+  // deal here because there's no server formula to recompute it — same trust POST
+  // has always given them; mitigated by admin payroll review. Closing it cleanly
+  // needs a server-side sub-dealer comp (subDealerPerW × kW) — a separate unit.
+  const trustedSubDealerDeal = !!body.subDealerId
+    && (isAdmin || (user.role === 'sub-dealer' && body.subDealerId === user.id));
+  if (!trustedSubDealerDeal) {
+    const { installers, ...deps } = await loadCommissionDeps(body.soldDate);
+    const installerName = installers.find((i) => i.id === body.installerId)?.name ?? '';
+    // Wrong-catalog guard (mirrors PATCH): a product from a DIFFERENT installer's
+    // catalog must not price this deal — null it so the resolver uses installer rates.
+    const rawProductId = body.productId ?? null;
+    const foundInWrongCatalog = rawProductId != null && (installerName === 'SolarTech'
+      ? deps.productCatalogProducts.some((p) => p.id === rawProductId)
+      : (deps.solarTechProducts.some((p) => p.id === rawProductId)
+        || deps.productCatalogProducts.some((p) => p.id === rawProductId && p.installer !== installerName)));
+    const effProductId = foundInWrongCatalog ? null : rawProductId;
+    persistProductId = effProductId;
+    // Archived/unknown product → its pricing can't be recomputed; preserve client amounts.
+    const productResolvable = effProductId == null
+      || deps.solarTechProducts.some((p) => p.id === effProductId)
+      || deps.productCatalogProducts.some((p) => p.id === effProductId);
+    let baselineOverride: InstallerBaseline | null = null;
+    if (effOverrideJson) { try { baselineOverride = JSON.parse(effOverrideJson) as InstallerBaseline; } catch {} }
+    // Round co-party amounts to whole cents UP FRONT so the recompute subtracts the
+    // same cent-aligned values that persist (each row via dollarsToCents = round×100)
+    // — no sub-cent residual can round into the primary commission.
+    const r2 = (d: number) => Math.round(d * 100) / 100;
+    const coClosers = (body.additionalClosers ?? []).map((c) => ({ m1Amount: r2(c.m1Amount ?? 0), m2Amount: r2(c.m2Amount ?? 0), m3Amount: c.m3Amount == null ? null : r2(c.m3Amount) }));
+    const coSetters = (body.additionalSetters ?? []).map((s) => ({ m1Amount: r2(s.m1Amount ?? 0), m2Amount: r2(s.m2Amount ?? 0), m3Amount: s.m3Amount == null ? null : r2(s.m3Amount) }));
+    const inputs = {
+      soldDate: body.soldDate, netPPW: body.netPPW, kWSize: body.kWSize, installer: installerName,
+      // Pass the real subDealerId: an untrusted caller (rep/PM) who attached one
+      // reaches here, and computeProjectCommission zeroes sub-dealer deals — so the
+      // persisted amounts match the persisted subDealerId classification (0), not a
+      // direct-rep price on a sub-dealer-flagged row.
+      productType: body.productType, closerId: body.closerId, setterId: body.setterId ?? null, subDealerId: body.subDealerId ?? null,
+      solarTechProductId: installerName === 'SolarTech' ? effProductId : null,
+      installerProductId: installerName !== 'SolarTech' ? effProductId : null,
+      baselineOverride, trainerId: effTrainerId, trainerRate: effTrainerRate, noChainTrainer: effNoChainTrainer,
+      additionalClosers: coClosers, additionalSetters: coSetters,
+    };
+    // Co-party guard: a non-admin must not inflate co-party pay beyond the deal's
+    // pool. Compute the pool (no co-parties) and reject if a co-party sum exceeds
+    // it (admins set co-party freely, like PATCH). Compare INTEGER CENTS so there's
+    // no float tolerance / sub-cent overpay, and so an m3 row is rejected when the
+    // pool has no M3 (pool.m3Amount null → 0).
+    if (!isAdmin && (coClosers.length || coSetters.length)) {
+      const pool = computeProjectCommission({ ...inputs, additionalClosers: [], additionalSetters: [] }, deps);
+      // Sum PER-ROW rounded cents (matching how each co-party row persists via
+      // dollarsToCents = round(amount×100)) so sub-cent inputs can't slip a
+      // cent-level overage past an aggregate-rounded comparison.
+      const sumCents = (arr: ReadonlyArray<{ m1Amount: number; m2Amount: number; m3Amount: number | null }>, k: 'm1Amount' | 'm2Amount' | 'm3Amount') => arr.reduce((s, x) => s + Math.round((x[k] ?? 0) * 100), 0);
+      const overC = (coCents: number, poolDollars: number | null) => coCents > Math.round((poolDollars ?? 0) * 100);
+      const over = overC(sumCents(coClosers, 'm1Amount'), pool.m1Amount) || overC(sumCents(coClosers, 'm2Amount'), pool.m2Amount) || overC(sumCents(coClosers, 'm3Amount'), pool.m3Amount)
+        || overC(sumCents(coSetters, 'm1Amount'), pool.setterM1Amount) || overC(sumCents(coSetters, 'm2Amount'), pool.setterM2Amount) || overC(sumCents(coSetters, 'm3Amount'), pool.setterM3Amount);
+      if (over) return NextResponse.json({ error: "Co-party amounts exceed the deal's commission pool" }, { status: 400 });
+    }
+    const result = computeProjectCommission(inputs, deps);
+    const cleanPricing = productResolvable && result.diagnostics.pricingSource !== 'fallback';
+    // Non-admin amounts are ALWAYS server-derived: even on fallback / unresolvable
+    // pricing we take the RECOMPUTE result (NaN-guarded to 0), never the client
+    // values — so a rep can't force the preserve path to keep arbitrary commission.
+    // Only an ADMIN may preserve client amounts on an edge deal (archived product)
+    // they're trusted to hand-price; the defaults already hold those client values.
+    if (cleanPricing || !isAdmin) {
+      const safe = (d: number) => (Number.isFinite(d) ? fromDollars(d).cents : 0);
+      const safeN = (d: number | null) => (d == null ? null : safe(d));
+      m1Cents = safe(result.m1Amount);
+      m2Cents = safe(result.m2Amount);
+      m3Cents = safeN(result.m3Amount);
+      setterM1Cents = safe(result.setterM1Amount);
+      setterM2Cents = safe(result.setterM2Amount);
+      setterM3Cents = safeN(result.setterM3Amount);
+    }
+  }
+
   const project = await prisma.project.create({
     data: {
       customerName: body.customerName,
@@ -212,30 +319,29 @@ export async function POST(req: NextRequest) {
       kWSize: body.kWSize,
       netPPW: body.netPPW,
       phase: body.phase,
-      m1AmountCents: dollarsToCents(body.m1Amount) ?? 0,
-      m2AmountCents: dollarsToCents(body.m2Amount) ?? 0,
-      m3AmountCents: dollarsToNullableCents(body.m3Amount) ?? null,
-      setterM1AmountCents: dollarsToCents(body.setterM1Amount) ?? 0,
-      setterM2AmountCents: dollarsToCents(body.setterM2Amount) ?? 0,
-      setterM3AmountCents: dollarsToNullableCents(body.setterM3Amount) ?? null,
+      m1AmountCents: m1Cents,
+      m2AmountCents: m2Cents,
+      m3AmountCents: m3Cents,
+      setterM1AmountCents: setterM1Cents,
+      setterM2AmountCents: setterM2Cents,
+      setterM3AmountCents: setterM3Cents,
       notes: body.notes ?? '',
       installerPricingVersionId: body.installerPricingVersionId ?? null,
-      productId: body.productId ?? null,
+      productId: persistProductId,
       productPricingVersionId: body.productPricingVersionId ?? null,
-      baselineOverrideJson: body.baselineOverrideJson ?? null,
+      // Admin-only money config — persist the GATED values (non-admin → null/false).
+      baselineOverrideJson: effOverrideJson,
       prepaidSubType: body.prepaidSubType ?? null,
       leadSource: body.leadSource ?? null,
       blitzId: body.blitzId ?? null,
       subDealerId: body.subDealerId ?? null,
       installerIntakeJson: body.installerIntakeJson ?? null,
-      // Project-level trainer override: when admin assigns a specific
-      // trainer + rate to a single deal (one-off, overrides TrainerAssignment
-      // chain). Schema accepts both fields but the create payload was
-      // dropping them on insert — the deal_submitted_rep trainer email
-      // and downstream phase-transition trainer payout logic depend on
-      // these landing in the row at create time.
-      trainerId: body.trainerId ?? null,
-      trainerRate: body.trainerRate ?? null,
+      // Per-project trainer override + chain-trainer suppression (admin-only,
+      // gated above). Persisting them at create keeps the recompute, the row,
+      // and downstream payroll/email logic in agreement.
+      trainerId: effTrainerId,
+      trainerRate: effTrainerRate,
+      noChainTrainer: effNoChainTrainer,
       ...(additionalClosersCreate.length ? { additionalClosers: { create: additionalClosersCreate } } : {}),
       ...(additionalSettersCreate.length ? { additionalSetters: { create: additionalSettersCreate } } : {}),
     },
