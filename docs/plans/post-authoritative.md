@@ -66,6 +66,39 @@ Imports: `computeProjectCommission` (lib/commission-server), `fromDollars` (lib/
 - Verify framework: unit/api test for POST recompute (assert server amounts, sub-dealer
   bypass, co-party remainder) + adversarial + Codex, same bar as the rest.
 
-## Status: PLAN ONLY — ready. Deferred from the mega-session because it's the
-## riskiest money WRITE-path change AND its integration test (the e2e golden)
-## can't be validated locally. Implement fresh with CI in the loop.
+## ⚠ SECURITY REQUIREMENTS — learned from a built-then-reverted first attempt (2026-06-27)
+
+The first build recomputed amounts but MISSED that POST is rep/PM-callable (unlike
+PATCH, which gates money-config). Codex found 4 HIGH + 1 MEDIUM. The rebuild MUST
+mirror PATCH's `PM_BLOCKED_FIELDS` / `REP_BLOCKED_FIELDS` gating ([id]/route.ts:18-38):
+
+1. **HIGH — admin-only money config.** For NON-admin POST callers, IGNORE
+   `baselineOverrideJson`, `noChainTrainer`, `trainerId`, `trainerRate` (treat as
+   null/false) BEFORE feeding the recompute + persisting. Else a rep crafts a
+   baseline override / suppresses chain trainers / sets a per-project trainer rate
+   to inflate the *authoritative* commission. PATCH blocks all of these for PM+rep.
+   (PM may be allowed trainerId/trainerRate per the create-schema comment — but
+   verify against PATCH; PATCH blocks them for PM too, so POST should match.)
+2. **HIGH — wrong-catalog guard.** Port PATCH's `foundInWrongCatalog` logic to POST:
+   a non-SolarTech create sending another installer's active `productId` prices by
+   product-id without installer scoping → authoritative-but-WRONG amounts. Null the
+   product when it's in the wrong catalog before recompute.
+3. **HIGH — co-party inflation (PRE-EXISTING, shared with PATCH).** Co-party amounts
+   persist from body while the recompute only subtracts them from primary (clamped
+   ≥0), so a rep crafts arbitrary co-party pay. This is NOT POST-specific (PATCH has
+   it too) — fix it in BOTH (recompute/validate co-party splits server-side) or
+   explicitly accept + document. Don't silently inherit it.
+4. **MEDIUM — preserve-on-fallback is incomplete.** `result.diagnostics.pricingSource
+   !== 'fallback'` misses non-SolarTech catalog misses: resolveBaselines catches a
+   product-catalog lookup failure and falls through to `installer-version` (NOT
+   `fallback`), so an archived/missing product overwrites client amounts instead of
+   preserving them. Detect the product-miss case explicitly (or treat any non-active
+   product as preserve).
+
+Also: POST has `user` (requireInternalUser) + `user.role` — `isAdmin = role==='admin'`.
+loadCommissionDeps(soldDate) extraction + the PATCH refactor onto it were CLEAN
+(Codex didn't flag them) — re-do them, they're behavior-preserving + DRY POST/PATCH.
+
+## Status: PLAN ONLY — built once, REVERTED for the 4 HIGH security gaps above.
+## Riskiest money WRITE-path; its e2e golden can't run locally (needs CI). Rebuild
+## fresh WITH the security gating from the start, then Codex + CI in the loop.
