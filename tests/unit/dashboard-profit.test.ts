@@ -25,15 +25,18 @@ describe('computeDashboardProfitCents', () => {
     expect(r.thisYear).toBe(400000);
   });
 
-  it('buckets each project by its soldDate', () => {
+  it('buckets each project by its soldDate across all 6 periods', () => {
     const june = deal({ soldDate: '2026-06-10' });     // this month + quarter + year
-    const march = deal({ soldDate: '2026-03-10' });    // this year only (Q1, not June)
-    const lastYear = deal({ soldDate: '2025-06-10' });  // allTime only
-    const r = computeDashboardProfitCents([june, march, lastYear], emptyData, now);
-    expect(r.allTime).toBe(1200000);    // all three
-    expect(r.thisYear).toBe(800000);    // june + march
-    expect(r.thisQuarter).toBe(400000); // june only
+    const may = deal({ soldDate: '2026-05-10' });      // last month + this quarter (Q2) + this year
+    const march = deal({ soldDate: '2026-03-10' });    // this year only (Q1)
+    const lastYear = deal({ soldDate: '2025-06-10' });  // allTime + last year
+    const r = computeDashboardProfitCents([june, may, march, lastYear], emptyData, now);
+    expect(r.allTime).toBe(1600000);    // all four
+    expect(r.thisYear).toBe(1200000);   // june + may + march
+    expect(r.thisQuarter).toBe(800000); // june + may (both Q2)
     expect(r.thisMonth).toBe(400000);   // june only
+    expect(r.lastMonth).toBe(400000);   // may only
+    expect(r.lastYear).toBe(400000);    // 2025 deal only
   });
 
   it('skips Cancelled and On Hold but INCLUDES Completed (mirrors the web)', () => {

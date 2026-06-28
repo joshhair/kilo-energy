@@ -59,6 +59,8 @@ export interface DashboardProfitCents {
   thisMonth: number;
   thisQuarter: number;
   thisYear: number;
+  lastMonth: number;
+  lastYear: number;
 }
 
 const PERIOD_BY_KEY: Record<keyof DashboardProfitCents, Period> = {
@@ -66,6 +68,8 @@ const PERIOD_BY_KEY: Record<keyof DashboardProfitCents, Period> = {
   thisMonth: 'this-month',
   thisQuarter: 'this-quarter',
   thisYear: 'this-year',
+  lastMonth: 'last-month',
+  lastYear: 'last-year',
 };
 
 /** Map raw /api/data project rows → DashboardProfitProject: resolve the installer
@@ -97,7 +101,7 @@ export function computeDashboardProfitCents(
   data: ViewBaselineData,
   now: Date,
 ): DashboardProfitCents {
-  const d: DashboardProfitCents = { allTime: 0, thisMonth: 0, thisQuarter: 0, thisYear: 0 };
+  const d: DashboardProfitCents = { allTime: 0, thisMonth: 0, thisQuarter: 0, thisYear: 0, lastMonth: 0, lastYear: 0 };
   const keys = Object.keys(PERIOD_BY_KEY) as (keyof DashboardProfitCents)[];
   for (const p of projects) {
     if (p.phase === 'Cancelled' || p.phase === 'On Hold') continue;
@@ -112,5 +116,7 @@ export function computeDashboardProfitCents(
     thisMonth: Math.round(d.thisMonth * 100),
     thisQuarter: Math.round(d.thisQuarter * 100),
     thisYear: Math.round(d.thisYear * 100),
+    lastMonth: Math.round(d.lastMonth * 100),
+    lastYear: Math.round(d.lastYear * 100),
   };
 }
