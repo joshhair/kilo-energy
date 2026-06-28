@@ -12,6 +12,9 @@ import {
 } from '../../../lib/baseline-visibility';
 import { pickEffectiveVersion } from '../../../lib/pricing/active-version';
 import { buildProjectRollups } from '../../../lib/data-rollup';
+import { buildKiloPricingArrays } from '../../../lib/kilo-pricing-arrays';
+import { computeDashboardProfitCents, toDashboardProfitProjects, type DashboardProfitCents } from '../../../lib/dashboard-profit';
+import type { ViewBaselineData } from '../../../lib/baseline-resolve';
 import { viewerTrainerOverridePerW, effectiveRateFields } from '../../../lib/trainer-effective';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
@@ -715,7 +718,12 @@ export async function GET(req: NextRequest) {
   //    deriveProjectCommissionView to the cent. See lib/commission-rollup-server.ts.
   const wantsRollup = isAdmin || isInternalPM(user);
   let projectsOut = scrubbedProjects;
+  // Admin/internal-PM dashboard "Profit" total (baseline-spread, per period) so the
+  // native iOS dashboard renders it without kiloPerW on-device. Gated like the rollup
+  // (vendor-PM + reps get nil). See lib/dashboard-profit (single source w/ the web).
+  let dashboardProfitCents: DashboardProfitCents | undefined;
   if (wantsRollup) {
+    const now = new Date();
     // Internal PM's main payroll is scoped to self; the rollup needs the FULL
     // set for accurate trainer-leg tier resolution. Admin already loaded all.
     const rollupPayroll = isAdmin
@@ -731,12 +739,17 @@ export async function GET(req: NextRequest) {
       instIdToName,
       solarTechInstallerId: solarTechInstaller?.id,
       users,
-      now: new Date(),
+      now,
     });
     projectsOut = scrubbedProjects.map((dto) => {
       const extra = rollupByProject.get(dto.id);
       return extra ? { ...dto, ...extra } : dto;
     });
+
+    // setterPerW nullability differs from ViewBaselineData; the profit only reads
+    // closerPerW/kiloPerW, so the cast is safe (same pattern as data-rollup's deps).
+    const baselineData = buildKiloPricingArrays({ installerPricingVersions, products, productPricingVersions, instIdToName, solarTechInstallerId: solarTechInstaller?.id, now }) as unknown as ViewBaselineData;
+    dashboardProfitCents = computeDashboardProfitCents(toDashboardProfitProjects(projects, instIdToName), baselineData, now);
   }
 
   return NextResponse.json({
@@ -747,6 +760,8 @@ export async function GET(req: NextRequest) {
     financers: financerNames,
     installerPayConfigs,
     projects: projectsOut,
+    // Admin/internal-PM only (undefined → JSON omits it for reps/vendor-PMs).
+    dashboardProfitCents,
     payrollEntries: transformedPayroll,
     reimbursements: transformedReimbursements,
     trainerAssignments: transformedTrainers,

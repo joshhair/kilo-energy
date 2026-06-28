@@ -5,12 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../lib/context';
 import { fmt$, fmtCompact$, formatCompactKWParts } from '../../../lib/utils';
 import { sumPaid } from '../../../lib/aggregators';
-import {
-  ACTIVE_PHASES,
-  getSolarTechBaseline,
-  getProductCatalogBaselineVersioned,
-  getInstallerRatesForDeal,
-} from '../../../lib/data';
+import { ACTIVE_PHASES } from '../../../lib/data';
+import { resolveDashboardBaseline } from '../../../lib/dashboard-profit';
 import { type Period, PERIODS, isInPeriod, getPhaseStuckThresholds } from '../components/dashboard-utils';
 import { MyTasksSection, type MentionItem } from '../page';
 import { AlertTriangle, TrendingUp, CreditCard, ChevronRight, Flag, Clock, PauseCircle, BarChart2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -145,28 +141,14 @@ export default function MobileAdminDashboard() {
   const periodProjects = useMemo(() => projects.filter((p) => isInPeriod(p.soldDate, period)), [projects, period]);
   const periodPayroll = useMemo(() => payrollEntries.filter((p) => isInPeriod(p.date, period)), [payrollEntries, period]);
 
-  // ── Baseline helper ─────────────────────────────────────────────────────
+  // ── Baseline helper — delegates to the shared lib/dashboard-profit ladder so
+  //    this dashboard's Profit total and the server's dashboardProfitCents (which
+  //    iOS renders) stay byte-identical from one source. ──
   function getBaselines(p: (typeof projects)[number]) {
-    if (p.baselineOverride) return p.baselineOverride;
-    if (p.installer === 'SolarTech' && p.solarTechProductId) {
-      try {
-        return getSolarTechBaseline(p.solarTechProductId, p.kWSize, solarTechProducts);
-      } catch {
-        return { closerPerW: 0, kiloPerW: 0 };
-      }
-    }
-    if (p.installerProductId) {
-      try {
-        return getProductCatalogBaselineVersioned(productCatalogProducts, p.installerProductId, p.kWSize, p.soldDate, productCatalogPricingVersions);
-      } catch {
-        return { closerPerW: 0, kiloPerW: 0 };
-      }
-    }
-    try {
-      return getInstallerRatesForDeal(p.installer, p.soldDate, p.kWSize, installerPricingVersions);
-    } catch {
-      return { closerPerW: 0, kiloPerW: 0 };
-    }
+    return resolveDashboardBaseline(
+      { installer: p.installer, solarTechProductId: p.solarTechProductId, installerProductId: p.installerProductId, kWSize: p.kWSize, soldDate: p.soldDate, baselineOverride: p.baselineOverride },
+      { solarTechProducts, productCatalogProducts, productCatalogPricingVersions, installerPricingVersions },
+    );
   }
 
   // ── Computations (period-filtered) ───────────────────────────────────────

@@ -83,6 +83,10 @@ const allowlistPatterns = [
   // Server-only loader: shapes sold-date pricing (kiloPerW-included) into the
   // CommissionDeps that POST + PATCH /api/projects feed computeProjectCommission.
   /^lib[\\/]commission-deps\.ts$/,
+  // Shared admin-dashboard baseline-spread profit (single source for /api/data's
+  // dashboardProfitCents + the admin-only MobileAdminDashboard). kiloPerW only
+  // feeds the cents the server emits / the admin-gated web render.
+  /^lib[\\/]dashboard-profit\.ts$/,
   /^lib[\\/]data\.ts$/,
   // Admin-only API endpoints that explicitly serve baseline data.
   /^app[\\/]api[\\/]baseline-data[\\/]/,
