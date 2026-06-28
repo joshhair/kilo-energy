@@ -7,6 +7,8 @@ import { patchBlitzSchema } from '../../../../lib/schemas/business';
 import { serializeProject, serializeProjectParty, serializeBlitzCost, scrubProjectForViewer } from '../../../../lib/serialize';
 import { logger } from '../../../../lib/logger';
 import { logChange } from '../../../../lib/audit';
+import { computeBlitzProfitabilityCents } from '../../../../lib/blitzComputed';
+import { buildKiloPricingArrays } from '../../../../lib/kilo-pricing-arrays';
 
 // GET /api/blitzes/[id] — Get a single blitz. Access:
 // - admin, project_manager: yes
@@ -108,8 +110,41 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       ])
     : [[], 0];
 
+  // ── Admin-only blitz profitability (server-computed integer cents) so the
+  //    native Blitz Profitability tab renders without on-device cost-basis math.
+  //    Reconciles to the client (same computeBlitzKiloMargin). NEVER the blitz
+  //    owner — this is Kilo's P&L; gated on effectiveUser.role === 'admin'. ──
+  let blitzProfitability: ReturnType<typeof computeBlitzProfitabilityCents> | null = null;
+  if (effectiveUser.role === 'admin') {
+    const [installers, products, installerPricingVersions, productPricingVersions] = await Promise.all([
+      prisma.installer.findMany(),
+      prisma.product.findMany({ where: { active: true }, include: { pricingVersions: { include: { tiers: true }, orderBy: { effectiveFrom: 'desc' } } } }),
+      prisma.installerPricingVersion.findMany({ include: { tiers: true } }),
+      prisma.productPricingVersion.findMany({ include: { tiers: true } }),
+    ]);
+    const instIdToName: Record<string, string> = {};
+    for (const inst of installers) instIdToName[inst.id] = inst.name;
+    const pricing = buildKiloPricingArrays({
+      installerPricingVersions, products, productPricingVersions, instIdToName,
+      solarTechInstallerId: installers.find((i) => i.name === 'SolarTech')?.id, now: new Date(),
+    });
+    blitzProfitability = computeBlitzProfitabilityCents(blitz, {
+      solarTechProducts: pricing.solarTechProducts,
+      productCatalogProducts: pricing.productCatalogProducts,
+      installerPricingVersions: pricing.installerPricingVersions,
+    });
+  }
+  const projectMarginById = new Map((blitzProfitability?.projectMarginsCents ?? []).map((m) => [m.projectId, m.kiloMarginCents]));
+
   return NextResponse.json({
     ...blitz,
+    ...(blitzProfitability ? {
+      kiloMarginCents: blitzProfitability.kiloMarginCents,
+      totalCostsCents: blitzProfitability.totalCostsCents,
+      netProfitCents: blitzProfitability.netProfitCents,
+      roiBps: blitzProfitability.roiBps,
+      costsByCategoryCents: blitzProfitability.costsByCategoryCents,
+    } : {}),
     canSeeAnnouncements,
     announcements,
     announcementsTotal,
@@ -140,7 +175,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const rel = isBlitzOwner ? 'blitz_owner' : naturalRel;
         return scrubProjectForViewer(withParties, rel);
       }
-      return withParties;
+      // Admin: passthrough + per-project blitz margin cents (only on approved-
+      // participant deals, which are the ones that contribute to the rollup).
+      return projectMarginById.has(p.id) ? { ...withParties, kiloMarginCents: projectMarginById.get(p.id) } : withParties;
     }),
   });
 }

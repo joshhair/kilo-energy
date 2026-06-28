@@ -154,6 +154,14 @@ const payrollEntries = payrollEntriesRaw.map((e) => ({
 const installerPayConfigs: Record<string, { installPayPct: number; usesProductCatalog: boolean }> = {};
 for (const i of installers) installerPayConfigs[i.name] = { installPayPct: i.installPayPct, usesProductCatalog: i.usesProductCatalog };
 
+// projectId → parties, so a trainee's trainer-tier count is scoped to their
+// own deals (multi-trainee under-pay fix). MUST span EVERY project — the scan
+// set above is filtered (no Cancelled/Glide), but Trainer entries reference
+// those deals too; building from the filtered set would drop them and
+// under-count. Load all projects' parties independently.
+const allProjectPartiesRaw = await prisma.project.findMany({ select: { id: true, closerId: true, setterId: true } });
+const projectParties = new Map(allProjectPartiesRaw.map((p) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
+
 const sharedDeps: Omit<CommissionDeps, 'currentProjectId'> = {
   installerPricingVersions,
   solarTechProducts: [],
@@ -162,6 +170,7 @@ const sharedDeps: Omit<CommissionDeps, 'currentProjectId'> = {
   trainerAssignments,
   payrollEntries,
   installerPayConfigs,
+  projectParties,
 };
 
 interface Drift {
@@ -211,6 +220,7 @@ for (const p of projects) {
     baselineOverride,
     trainerId: p.trainerId,
     trainerRate: p.trainerRate,
+    noChainTrainer: p.noChainTrainer,
     additionalClosers: p.additionalClosers.map((c) => ({
       m1Amount: c.m1AmountCents / 100,
       m2Amount: c.m2AmountCents / 100,
@@ -328,6 +338,7 @@ for (const d of drifts) {
       baselineOverride,
       trainerId: p.trainerId,
       trainerRate: p.trainerRate,
+      noChainTrainer: p.noChainTrainer,
       additionalClosers: p.additionalClosers.map((c) => ({
         m1Amount: c.m1AmountCents / 100,
         m2Amount: c.m2AmountCents / 100,

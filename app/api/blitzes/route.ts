@@ -7,6 +7,8 @@ import { createBlitzSchema } from '../../../lib/schemas/business';
 import { serializeProject, serializeBlitzCost, serializeProjectParty, scrubProjectForViewer } from '../../../lib/serialize';
 import { logger } from '../../../lib/logger';
 import { logChange } from '../../../lib/audit';
+import { computeBlitzProfitabilityCents } from '../../../lib/blitzComputed';
+import { buildKiloPricingArrays } from '../../../lib/kilo-pricing-arrays';
 
 // GET /api/blitzes — List blitzes scoped to the current user's role.
 // Admin: all blitzes. PM: all blitzes if canAccessBlitz is true. Others:
@@ -74,12 +76,41 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── Admin-only per-blitz profitability (server-computed cents) so the list
+  //    cards' Net Profit stops being client-derived. NEVER non-admin; an admin
+  //    impersonating a rep resolves to non-admin here and gets none. ──
+  const blitzRollupById = new Map<string, { kiloMarginCents: number; netProfitCents: number; roiBps: number }>();
+  if (effectiveUser.role === 'admin') {
+    const [installers, products, installerPricingVersions, productPricingVersions] = await Promise.all([
+      prisma.installer.findMany(),
+      prisma.product.findMany({ where: { active: true }, include: { pricingVersions: { include: { tiers: true }, orderBy: { effectiveFrom: 'desc' } } } }),
+      prisma.installerPricingVersion.findMany({ include: { tiers: true } }),
+      prisma.productPricingVersion.findMany({ include: { tiers: true } }),
+    ]);
+    const instIdToName: Record<string, string> = {};
+    for (const inst of installers) instIdToName[inst.id] = inst.name;
+    const pricing = buildKiloPricingArrays({
+      installerPricingVersions, products, productPricingVersions, instIdToName,
+      solarTechInstallerId: installers.find((i) => i.name === 'SolarTech')?.id, now: new Date(),
+    });
+    const deps = {
+      solarTechProducts: pricing.solarTechProducts,
+      productCatalogProducts: pricing.productCatalogProducts,
+      installerPricingVersions: pricing.installerPricingVersions,
+    };
+    for (const b of blitzes) {
+      const pr = computeBlitzProfitabilityCents(b, deps);
+      blitzRollupById.set(b.id, { kiloMarginCents: pr.kiloMarginCents, netProfitCents: pr.netProfitCents, roiBps: pr.roiBps });
+    }
+  }
+
   // Wire format is dollars; per-project financial scrubbing uses
   // scrubProjectForViewer (same as GET /api/blitzes/[id]) so co-party
   // relationships are classified correctly and only the viewer's own
   // commission amounts are visible.
   const serialized = blitzes.map((b) => ({
     ...b,
+    ...(blitzRollupById.get(b.id) ?? {}),
     projects: b.projects.map((p) => {
       const sp = serializeProject(p);
       const withParties = {

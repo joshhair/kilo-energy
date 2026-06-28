@@ -11,10 +11,9 @@
  * must come from the same closure or the exclusion silently breaks.
  */
 
-import {
-  getSolarTechBaseline, getProductCatalogBaselineVersioned, getInstallerRatesForDeal,
-} from '@/lib/data';
 import { computeProjectedTrainerLegs } from '@/lib/trainer-projection';
+import { computeProjectRollup } from '@/lib/commission-rollup';
+import { resolveProjectViewBaselines } from '@/lib/baseline-resolve';
 import type {
   Project, PayrollEntry, TrainerAssignment, SolarTechProduct,
   ProductCatalogProduct, ProductCatalogPricingVersion, InstallerPricingVersion,
@@ -54,21 +53,12 @@ export function deriveProjectCommissionView({
   const trainerEntries = projectEntries.filter((e) => e.paymentStage === 'Trainer');
   const otherEntries  = projectEntries.filter((e) => !closerEntries.includes(e) && !setterEntries.includes(e) && !coCloserIds.has(e.repId) && !coSetterIds.has(e.repId) && !trainerEntries.includes(e) && !e.isChargeback);
 
-  // Resolved baseline rates for this project
-  const projectBaselines = (() => {
-    if (project.baselineOverride) return project.baselineOverride;
-    if (project.installer === 'SolarTech' && project.solarTechProductId) {
-      try {
-        return getSolarTechBaseline(project.solarTechProductId, project.kWSize, solarTechProducts);
-      } catch {
-        // Product deactivated — fall through to generic installer rates
-      }
-    }
-    if (project.installerProductId) {
-      return getProductCatalogBaselineVersioned(productCatalogProducts, project.installerProductId, project.kWSize, project.soldDate, productCatalogPricingVersions);
-    }
-    return getInstallerRatesForDeal(project.installer, project.soldDate, project.kWSize, installerPricingVersions);
-  })();
+  // Resolved baseline rates for this project — shared "view" ladder so the
+  // server read-path (/api/data) resolves Kilo cost identically (incl. the
+  // deactivated-SolarTech fall-through). See lib/baseline-resolve.ts.
+  const projectBaselines = resolveProjectViewBaselines(project, {
+    solarTechProducts, productCatalogProducts, productCatalogPricingVersions, installerPricingVersions,
+  });
 
   const closerExpectedM2 = project.m2Amount ?? 0;
   const setterPerW = 'setterPerW' in projectBaselines && projectBaselines.setterPerW != null
@@ -99,6 +89,7 @@ export function deriveProjectCommissionView({
       repId: project.repId,
       setterId: project.setterId ?? null,
       kWSize: project.kWSize ?? 0,
+      noChainTrainer: project.noChainTrainer,
       m2Amount: project.m2Amount,
       setterM2Amount: project.setterM2Amount,
       additionalClosers: (project.additionalClosers ?? []).map((c) => ({
@@ -132,9 +123,20 @@ export function deriveProjectCommissionView({
   // ((sold − Kilo cost) × W); Rep = everything paid out to reps (closer +
   // setter + co-parties + trainers); Margin = what Kilo keeps. Margin is
   // derived by subtraction so the three always reconcile to the cent.
-  const repCommissionTotal = Math.round((closerTotalExpected + setterTotalExpected + coCloserTotal + coSetterTotal + trainerTotalExpected) * 100) / 100;
-  const totalCommissionGross = Math.round((project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000 * 100) / 100;
-  const kiloMarginAmount = Math.round((totalCommissionGross - repCommissionTotal) * 100) / 100;
+  //
+  // The arithmetic lives in lib/commission-rollup.ts so the server read-path
+  // endpoints compute the identical figures (and ship only the cents). This
+  // call is behavior-preserving — same formula, same rounding.
+  const { repCommissionTotal, totalCommissionGross, kiloMarginAmount } = computeProjectRollup({
+    netPPW: project.netPPW,
+    kWSize: project.kWSize,
+    kiloPerW: projectBaselines.kiloPerW,
+    closerTotalExpected,
+    setterTotalExpected,
+    coCloserTotal,
+    coSetterTotal,
+    trainerTotalExpected,
+  });
 
   return {
     myEntries, projectEntries, closerEntries, setterEntries, coCloserIds, coSetterIds,

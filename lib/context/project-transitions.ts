@@ -9,6 +9,7 @@
 import type { Project, PayrollEntry, Phase, Rep, TrainerAssignment, InstallerPayConfig } from '../data';
 import { resolveTrainerLegs, DEFAULT_INSTALL_PAY_PCT } from '../data';
 import type { TrainerLeg, TrainerPartyInput } from '../data';
+import type { ProjectPartiesLookup } from '../commission';
 import { getM1PayDate, getM2PayDate, getM3PayDate, localDateString } from '../utils';
 
 // ─── Shared types ────────────────────────────────────────────────────────────
@@ -26,33 +27,16 @@ export interface ProjectTransitionDeps {
 const PIPELINE: string[] = ['New', 'Acceptance', 'Site Survey', 'Design', 'Permitting', 'Pending Install', 'Installed', 'PTO', 'Completed'];
 
 // ─── Multi-party trainer-leg aggregation ────────────────────────────────────
-//
-// Added 2026-05-23 for the multi-setter/multi-trainer scenario (Bryce/Patrick/
-// Tyson with separate trainers Hunter + Paul, splitting the deal 50/50).
-//
-// Wraps `resolveTrainerLegs` for use in createMilestonePayroll + createM3Payroll.
-// Returns per-party deductions AND deduped trainer-entry data, applying the
-// preserved historical behaviors:
-//
-//   * Self-trainer-with-setter guard: a closer-side leg whose trainer IS the
-//     closer (self) is suppressed when ANY setter party exists. Preserves the
-//     pre-multi-party rule that a self-loop closer-trainer with a setter
-//     present has its override owned by the setter leg.
-//
-//   * Cross-side trainer cap: when the same trainer is reached via BOTH a
-//     closer-side and a setter-side leg (or via multiple legs whose shares
-//     sum > 1.0), the trainer's total share is capped at 1.0 — they get
-//     paid the override ONCE per deal per milestone, never more.
-//
-//   * Per-party deductions: each party pays its leg's amount, scaled down
-//     proportionally if the cross-side cap reduces the trainer's total
-//     payout. Sum of party deductions for a given trainer == trainer's
-//     emitted amount.
-//
-//   * M2-rate-lock for M3: pass `rateLockByTrainerId` so the M3 pass uses
-//     the same per-watt rate that was emitted at M2, even if tier
-//     progression has since changed the chain's current rate. Matches
-//     existing single-trainer M3 behavior at line ~686.
+// Added 2026-05-23 for multi-setter/multi-trainer deals (Bryce/Patrick/Tyson,
+// separate trainers Hunter + Paul, 50/50 split). Wraps `resolveTrainerLegs` for
+// createMilestonePayroll + createM3Payroll; returns per-party deductions + deduped
+// trainer-entry data, preserving: (1) self-trainer-with-setter guard — a closer
+// leg whose trainer is the closer (self) is suppressed when any setter exists
+// (setter leg owns the override); (2) cross-side trainer cap — a trainer reached
+// via both sides (or legs summing >1.0) is capped at 1.0, paid once per deal per
+// milestone; (3) per-party deductions scale down proportionally under the cap
+// (sum == trainer's emitted amount); (4) M2-rate-lock for M3 via rateLockByTrainerId
+// so M3 reuses M2's per-watt rate despite tier progression.
 
 interface TrainerLegMilestoneInput {
   project: { id: string; trainerId?: string | null; trainerRate?: number | null; noChainTrainer?: boolean | null };
@@ -60,6 +44,9 @@ interface TrainerLegMilestoneInput {
   setterParties: TrainerPartyInput[];
   trainerAssignments: readonly TrainerAssignment[];
   prevEntries: readonly PayrollEntry[];
+  /** projectId → closer/setter, so each trainee's consumed-deal count is
+   *  scoped to their own deals (multi-trainee under-pay fix). */
+  projectParties?: ProjectPartiesLookup;
   repsRef: React.MutableRefObject<Rep[]>;
   kW: number;
   /** Fraction of the deal paid at this milestone — installPct/100 for M2,
@@ -101,6 +88,7 @@ function computeTrainerLegsForMilestone(input: TrainerLegMilestoneInput): Traine
       setterParties: input.setterParties,
       trainerAssignments: input.trainerAssignments,
       payrollEntries: input.prevEntries,
+      projectParties: input.projectParties,
     },
     repName,
   );
@@ -580,6 +568,10 @@ export function createMilestonePayroll(
         m2Amount: s.m2Amount ?? 0,
       }));
 
+  // projectId → parties for the whole book, so each trainee's tier counts only
+  // their own deals (multi-trainee under-pay fix). closerId === project.repId.
+  const projectParties = new Map(updatedProjects.map((p) => [p.id, { closerId: p.repId, setterId: p.setterId ?? null }]));
+
   const m2TrainerLegs = isInstalled
     ? computeTrainerLegsForMilestone({
         project: { id: projectId, trainerId: freshProject.trainerId, trainerRate: freshProject.trainerRate, noChainTrainer: freshProject.noChainTrainer },
@@ -587,6 +579,7 @@ export function createMilestonePayroll(
         setterParties: m2SetterParties,
         trainerAssignments: deps.trainerAssignmentsRef.current,
         prevEntries,
+        projectParties,
         repsRef: deps.repsRef,
         kW: old.kWSize,
         milestonePct: installPayPct / 100,
@@ -874,6 +867,10 @@ export function createM3Payroll(
     if (Number.isFinite(parsed)) m3RateLock.set(e.repId, parsed);
   }
 
+  // projectId → parties (whole book) so each trainee's tier counts only their
+  // own deals; M3 mostly rate-locks to M2, but unlocked trainers resolve here.
+  const projectParties = new Map(updatedProjects.map((p) => [p.id, { closerId: p.repId, setterId: p.setterId ?? null }]));
+
   const m3TrainerLegs = (m3 > 0 && !old.subDealerId)
     ? computeTrainerLegsForMilestone({
         project: { id: projectId, trainerId: proj?.trainerId, trainerRate: proj?.trainerRate, noChainTrainer: proj?.noChainTrainer },
@@ -881,6 +878,7 @@ export function createM3Payroll(
         setterParties: m3SetterParties,
         trainerAssignments: deps.trainerAssignmentsRef.current,
         prevEntries,
+        projectParties,
         repsRef: deps.repsRef,
         kW: old.kWSize,
         milestonePct: (100 - installPayPct) / 100,

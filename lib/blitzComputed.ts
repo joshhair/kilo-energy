@@ -180,6 +180,67 @@ export function computeBlitzKiloMargin(
 }
 
 /**
+ * Per-deal blitz margin in INTEGER CENTS, keyed by projectId — for the
+ * server-side /api/blitzes wire (admin-only). Same per-deal formula + approved-
+ * participant filter as computeBlitzKiloMargin (which stays the authoritative
+ * aggregate the client reconciles to); summing these cents can differ from the
+ * aggregate by a cent due to per-deal rounding, so the wire sends BOTH.
+ */
+export function computeBlitzProjectMarginsCents(
+  approvedVisibleProjects: any[],
+  approvedParticipantIds: Set<string>,
+  deps: {
+    solarTechProducts: any[];
+    productCatalogProducts: any[];
+    installerPricingVersions: any[];
+  },
+): Array<{ projectId: string; kiloMarginCents: number }> {
+  const out: Array<{ projectId: string; kiloMarginCents: number }> = [];
+  for (const p of approvedVisibleProjects) {
+    const isSelfGen = p.closer?.id && p.closer?.id === p.setter?.id;
+    const closerApproved = p.closer?.id && approvedParticipantIds.has(p.closer.id);
+    const anyAdditionalCloserApproved = (p.additionalClosers ?? []).some((cc: any) => approvedParticipantIds.has(cc.userId));
+    if (isSelfGen && !approvedParticipantIds.has(p.closer.id)) continue;
+    if (!isSelfGen && !closerApproved && !anyAdditionalCloserApproved) continue;
+    const { closerPerW, kiloPerW } = getBlitzProjectBaselines(p, deps);
+    const kW = p.kWSize ?? 0;
+    const setterCost = ((p.setter?.id && p.setter?.id !== p.closer?.id) || (!p.setter?.id && (p.additionalSetters ?? []).length > 0)) ? 0.10 * kW * 1000 : 0;
+    out.push({ projectId: p.id, kiloMarginCents: Math.round(((closerPerW - kiloPerW) * kW * 1000 - setterCost) * 100) });
+  }
+  return out;
+}
+
+/**
+ * Server-side ADMIN-ONLY blitz profitability rollup, all integer cents (roiBps
+ * in basis points). Computes the approved-participant set from the blitz, then
+ * the aggregate Kilo margin (reconciles to the client's computeBlitzKiloMargin),
+ * total/net/roi, costs-by-category, and per-project margins. Caller gates to
+ * admin (never the blitz owner) and supplies the kiloPerW-included `deps`.
+ */
+export function computeBlitzProfitabilityCents(
+  blitz: { projects: any[]; costs: Array<{ amountCents: number; category: string }>; participants: Array<{ joinStatus: string; userId: string }> },
+  deps: { solarTechProducts: any[]; productCatalogProducts: any[]; installerPricingVersions: any[] },
+): {
+  kiloMarginCents: number; totalCostsCents: number; netProfitCents: number; roiBps: number;
+  costsByCategoryCents: Record<string, number>;
+  projectMarginsCents: Array<{ projectId: string; kiloMarginCents: number }>;
+} {
+  const approvedParticipantIds = new Set(blitz.participants.filter((p) => p.joinStatus === 'approved').map((p) => p.userId));
+  // Match the client (blitz/[id]/page.tsx visibleProjects): Cancelled / On Hold
+  // deals are excluded from blitz P&L. Using raw blitz.projects would include
+  // them and OVERSTATE margin / break reconciliation.
+  const visibleProjects = (blitz.projects as Array<{ phase?: string }>).filter((p) => p.phase !== 'Cancelled' && p.phase !== 'On Hold');
+  const kiloMarginCents = Math.round(computeBlitzKiloMargin(visibleProjects, approvedParticipantIds, deps) * 100);
+  const totalCostsCents = blitz.costs.reduce((s, c) => s + c.amountCents, 0);
+  const netProfitCents = kiloMarginCents - totalCostsCents;
+  const roiBps = totalCostsCents > 0 ? Math.round((netProfitCents / totalCostsCents) * 10000) : 0;
+  const costsByCategoryCents: Record<string, number> = {};
+  for (const c of blitz.costs) costsByCategoryCents[c.category] = (costsByCategoryCents[c.category] ?? 0) + c.amountCents;
+  const projectMarginsCents = computeBlitzProjectMarginsCents(visibleProjects, approvedParticipantIds, deps);
+  return { kiloMarginCents, totalCostsCents, netProfitCents, roiBps, costsByCategoryCents, projectMarginsCents };
+}
+
+/**
  * Sums costs grouped by category. Returned record is unordered;
  * callers sort for display.
  */

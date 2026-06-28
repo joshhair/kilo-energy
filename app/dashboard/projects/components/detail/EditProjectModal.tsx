@@ -727,7 +727,7 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
                 return editVals.trainerId && Number.isFinite(r) ? r : 0;
               })();
               const closerChainResolved = resolveTrainerRate(
-                { id: project.id, trainerId: editVals.trainerId || null, trainerRate: projectOverrideRate || null },
+                { id: project.id, trainerId: editVals.trainerId || null, trainerRate: projectOverrideRate || null, noChainTrainer: editVals.noChainTrainer },
                 project.repId,
                 trainerAssignments,
                 payrollEntries,
@@ -735,7 +735,7 @@ export function EditProjectModal({ open, project, effectiveRole, canSeeInternalO
               const closerTrainerRate = closerChainResolved.rate;
               const setterChainResolved = editVals.setterId
                 ? resolveTrainerRate(
-                    { id: project.id, trainerId: null, trainerRate: null },
+                    { id: project.id, trainerId: null, trainerRate: null, noChainTrainer: editVals.noChainTrainer },
                     editVals.setterId,
                     trainerAssignments,
                     payrollEntries,

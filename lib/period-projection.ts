@@ -300,6 +300,9 @@ type TrainerOverrideProject = {
   installer: string;
   repId?: string | null;
   setterId?: string | null;
+  /** Admin "removed all chain trainers" — excludes the deal from chain trainer
+   *  override pipeline + tier progression (mirrors actual payroll generation). */
+  noChainTrainer?: boolean | null;
   m1Paid?: boolean | null;
   m2Paid?: boolean | null;
   m3Paid?: boolean | null;
@@ -354,6 +357,8 @@ export function computeTrainerOverridePipeline(inputs: {
     // pay split — < 100% means M3 is the final payout, otherwise M2 is.
     const completedDeals = projects.filter((p) => {
       if (!isTraineeParty(p)) return false;
+      if (p.noChainTrainer) return false; // cleared deal earned no chain trainer pay
+
       const installPct = installerPayConfigs[p.installer]?.installPayPct
         ?? INSTALLER_PAY_CONFIGS[p.installer]?.installPayPct
         ?? DEFAULT_INSTALL_PAY_PCT;
@@ -364,7 +369,7 @@ export function computeTrainerOverridePipeline(inputs: {
     if (overrideRate <= 0) return sum;
 
     const traineeActive = projects.filter(
-      (p) => (ACTIVE_PHASES as readonly string[]).includes(p.phase) && isTraineeParty(p),
+      (p) => (ACTIVE_PHASES as readonly string[]).includes(p.phase) && isTraineeParty(p) && !p.noChainTrainer,
     );
 
     return sum + traineeActive.reduce((pSum, p) => {

@@ -13,6 +13,7 @@ import {
 import { formatDate, fmt$ } from '../../../lib/utils';
 import { myCommissionOnProject } from '../../../lib/commissionHelpers';
 import { computeProjectedTrainerLegs } from '../../../lib/trainer-projection';
+import { computeProjectRollup } from '../../../lib/commission-rollup';
 import { ArrowLeft, Flag, FlagOff, Trash2, X as XIcon, Pencil, Copy, GraduationCap, MoreHorizontal } from 'lucide-react';
 import MobileActivityTimeline from './MobileActivityTimeline';
 import RecordChargebackModal from '../projects/components/RecordChargebackModal';
@@ -646,7 +647,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
       trainerRate: project.trainerRate ?? null,
       repId: project.repId,
       setterId: project.setterId ?? null,
-      kWSize: project.kWSize ?? 0,
+      kWSize: project.kWSize ?? 0, noChainTrainer: project.noChainTrainer,
       m2Amount: project.m2Amount,
       setterM2Amount: project.setterM2Amount,
       additionalClosers: (project.additionalClosers ?? []).map((c) => ({
@@ -671,13 +672,11 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
   const coSetterTotal = (project.additionalSetters ?? []).reduce(
     (s, c) => s + (c.m1Amount ?? 0) + (c.m2Amount ?? 0) + (c.m3Amount ?? 0), 0,
   );
-  // Three admin-only rollups related by: Rep Commission + Kilo Margin =
-  // Total Commission. Total = gross pool Kilo receives from the installer;
-  // Rep = everything paid out to reps; Margin = what Kilo keeps. Margin is
-  // derived by subtraction so the three always reconcile to the cent.
-  const repCommissionTotal = Math.round((closerTotalForSummary + setterTotalForSummary + coCloserTotal + coSetterTotal + mobileTrainerTotal) * 100) / 100;
-  const totalCommissionGross = Math.round((project.netPPW - projectBaselines.kiloPerW) * project.kWSize * 1000 * 100) / 100;
-  const kiloMarginAmount = Math.round((totalCommissionGross - repCommissionTotal) * 100) / 100;
+  // Total / Rep / Kilo-Margin rollup — shared SSoT; see lib/commission-rollup.ts.
+  const { repCommissionTotal, totalCommissionGross, kiloMarginAmount } = computeProjectRollup({
+    netPPW: project.netPPW, kWSize: project.kWSize, kiloPerW: projectBaselines.kiloPerW, closerTotalExpected: closerTotalForSummary,
+    setterTotalExpected: setterTotalForSummary, coCloserTotal, coSetterTotal, trainerTotalExpected: mobileTrainerTotal,
+  });
 
   // ── Info rows ──
 
@@ -1217,7 +1216,7 @@ export default function MobileProjectDetail({ projectId }: { projectId: string }
                         trainerRate: project.trainerRate ?? null,
                         repId: project.repId,
                         setterId: project.setterId ?? null,
-                        kWSize: project.kWSize ?? 0,
+                        kWSize: project.kWSize ?? 0, noChainTrainer: project.noChainTrainer,
                         m2Amount: project.m2Amount,
                         setterM2Amount: project.setterM2Amount,
                         additionalClosers: (project.additionalClosers ?? []).map((c) => ({

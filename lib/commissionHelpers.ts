@@ -83,6 +83,7 @@ export function myCommissionOnProject(
       repId: project.repId,
       setterId: project.setterId ?? null,
       kWSize: project.kWSize ?? 0,
+      noChainTrainer: project.noChainTrainer,
     },
     trainerAssignments,
     payrollEntries,

@@ -11,6 +11,8 @@ import {
   canViewSubDealerRateOnTier,
 } from '../../../lib/baseline-visibility';
 import { pickEffectiveVersion } from '../../../lib/pricing/active-version';
+import { buildProjectRollups } from '../../../lib/data-rollup';
+import { viewerTrainerOverridePerW, effectiveRateFields } from '../../../lib/trainer-effective';
 
 // GET /api/data — Returns the data needed to hydrate the app context,
 // SCOPED TO THE CURRENT USER'S ROLE. Non-admins only ever see their own
@@ -424,6 +426,12 @@ export async function GET(req: NextRequest) {
     trainerId:   isAdmin ? (p.trainerId ?? undefined) : undefined,
     trainerName: isAdmin && p.trainer ? `${p.trainer.firstName} ${p.trainer.lastName}` : undefined,
     trainerRate: isAdmin ? (p.trainerRate ?? undefined) : undefined,
+    // noChainTrainer (admin "removed all trainers" flag) — NOT confidential
+    // (a boolean, not a rate) and required by every client-side trainer
+    // projection (deriveProjectCommissionView, my-pay) to suppress chain legs
+    // correctly. Sent to all roles so the client reconciles with the server
+    // rollup; without it the client would re-project a phantom trainer leg.
+    noChainTrainer: p.noChainTrainer,
     cancellationReason: p.cancellationReason ?? undefined,
     cancellationNotes: p.cancellationNotes ?? undefined,
     phaseChangedAt: p.phaseChangedAt?.toISOString(),
@@ -497,6 +505,31 @@ export async function GET(req: NextRequest) {
     archivedAt: r.archivedAt ? r.archivedAt.toISOString() : undefined,
   }));
 
+  // ── Trained-rep effective baseline (§2): the VIEWING REP's own current-tier
+  //    trainer-override $/W + consumedDeals (any-party union, no current-deal
+  //    exclusion). Gated to their OWN trainee assignment; the bare pricing tiers
+  //    below get effectiveCloser/SetterPerW = base + this override (same on both
+  //    sides). Non-trainees → no assignment → override 0 → no effective fields. ──
+  const viewerAssignment = trainerAssignments.find((a) => a.traineeId === user.id) ?? null;
+  let viewerConsumedDeals = 0;
+  let viewerOverride = 0;
+  if (viewerAssignment) {
+    // The rep's own payroll is scoped to repId === them, so it lacks their
+    // TRAINER's Trainer-stage entries. Query them directly: distinct deals where
+    // the trainer earned AND the rep was a party (closer OR setter).
+    const trainerEntries = await prisma.payrollEntry.findMany({
+      where: {
+        paymentStage: 'Trainer',
+        repId: viewerAssignment.trainerId,
+        projectId: { not: null },
+        project: { OR: [{ closerId: user.id }, { setterId: user.id }] },
+      },
+      select: { projectId: true },
+    });
+    viewerConsumedDeals = new Set(trainerEntries.map((e) => e.projectId)).size;
+    viewerOverride = viewerTrainerOverridePerW(viewerAssignment, viewerConsumedDeals);
+  }
+
   const transformedTrainers = trainerAssignments.map((ta) => ({
     id: ta.id,
     trainerId: ta.trainerId,
@@ -505,6 +538,9 @@ export async function GET(req: NextRequest) {
     // client can distinguish Active Trainees from Residuals. Old consumers
     // that ignore the field keep working — it's optional on the wire type.
     isActiveTraining: ta.isActiveTraining,
+    // consumedDeals only on the VIEWING rep's own assignment (current-tier
+    // resolution for the native deal-count badge); never another rep's.
+    ...(ta.traineeId === user.id ? { consumedDeals: viewerConsumedDeals } : {}),
     tiers: ta.tiers.map((t) => ({
       upToDeal: t.upToDeal,
       ratePerW: t.ratePerW,
@@ -553,11 +589,15 @@ export async function GET(req: NextRequest) {
             type: 'tiered' as const,
             bands: v.tiers.map((t) => ({
               minKW: t.minKW,
-              maxKW: t.maxKW ?? undefined,
+              // null (not undefined) for unbounded top bands — getInstallerRatesForDeal
+              // treats only `=== null` as open-ended (undefined would throw on a
+              // top-band tiered deal). Matches the product/rollup transforms.
+              maxKW: t.maxKW ?? null,
               closerPerW: t.closerPerW,
               setterPerW: t.setterPerW ?? undefined,
               ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
               ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
+              ...effectiveRateFields(t, viewerOverride),
             })),
           }
         : {
@@ -566,6 +606,7 @@ export async function GET(req: NextRequest) {
             setterPerW: v.tiers[0].setterPerW ?? undefined,
             ...(showKiloOnTier ? { kiloPerW: v.tiers[0].kiloPerW } : {}),
             ...(showSubDealerOnTier ? { subDealerPerW: v.tiers[0].subDealerPerW ?? undefined } : {}),
+            ...effectiveRateFields(v.tiers[0], viewerOverride),
           },
     }];
   });
@@ -596,6 +637,7 @@ export async function GET(req: NextRequest) {
           setterPerW: t.setterPerW,
           ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
+          ...effectiveRateFields(t, viewerOverride),
         })),
       };
     });
@@ -617,6 +659,7 @@ export async function GET(req: NextRequest) {
           setterPerW: t.setterPerW,
           ...(showKiloOnTier ? { kiloPerW: t.kiloPerW } : {}),
           ...(showSubDealerOnTier ? { subDealerPerW: t.subDealerPerW ?? undefined } : {}),
+          ...effectiveRateFields(t, viewerOverride),
         })),
       };
     });
@@ -660,6 +703,42 @@ export async function GET(req: NextRequest) {
     installerPrepaidOptions[installerName].push(opt.name);
   }
 
+  // ── Admin / internal-PM per-project margin rollup + projected trainer legs.
+  //    Computed from RAW kiloPerW + FULL payroll/trainer chains (independent of
+  //    the viewer's scrubbed pricing view), attached ONLY for admin + internal
+  //    PM. Vendor PMs are excluded HERE (isInternalPM is false for them).
+  //    NOTE: these fields are attached AFTER scrubProjectForViewer, so the
+  //    field-visibility matrix does NOT run on them — the `wantsRollup` gate
+  //    below is the SOLE active protection. (The matrix rows for these fields
+  //    are a backstop only for a future path that attaches them pre-scrub or
+  //    via another endpoint.) Keep this gate airtight. Reconciles to
+  //    deriveProjectCommissionView to the cent. See lib/commission-rollup-server.ts.
+  const wantsRollup = isAdmin || isInternalPM(user);
+  let projectsOut = scrubbedProjects;
+  if (wantsRollup) {
+    // Internal PM's main payroll is scoped to self; the rollup needs the FULL
+    // set for accurate trainer-leg tier resolution. Admin already loaded all.
+    const rollupPayroll = isAdmin
+      ? payrollEntries
+      : await prisma.payrollEntry.findMany({ include: { rep: true, project: true }, orderBy: { date: 'desc' } });
+    const rollupByProject = buildProjectRollups({
+      projects,
+      installerPricingVersions,
+      products,
+      productPricingVersions,
+      trainerAssignments: transformedTrainers,
+      payrollEntries: rollupPayroll,
+      instIdToName,
+      solarTechInstallerId: solarTechInstaller?.id,
+      users,
+      now: new Date(),
+    });
+    projectsOut = scrubbedProjects.map((dto) => {
+      const extra = rollupByProject.get(dto.id);
+      return extra ? { ...dto, ...extra } : dto;
+    });
+  }
+
   return NextResponse.json({
     reps,
     subDealers,
@@ -667,7 +746,7 @@ export async function GET(req: NextRequest) {
     installers: installerNames,
     financers: financerNames,
     installerPayConfigs,
-    projects: scrubbedProjects,
+    projects: projectsOut,
     payrollEntries: transformedPayroll,
     reimbursements: transformedReimbursements,
     trainerAssignments: transformedTrainers,

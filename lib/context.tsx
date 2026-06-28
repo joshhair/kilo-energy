@@ -488,12 +488,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateProject = (id: string, updates: Partial<Project>, opts?: { editReason?: string }) => {
     // ── 1. Find old project & log activity ──
     const old = projectsRef.current.find((p) => p.id === id);
+    // projectId → parties (client DTO closer === repId): scopes each trainee's tier count to their own deals (under-pay fix).
+    const projectParties = new Map(projectsRef.current.map((p) => [p.id, { closerId: p.repId, setterId: p.setterId ?? null }]));
     if (old) {
-      // Phase changes are NOT logged optimistically — the server may
-      // strip the phase field (e.g. rep PATCH on a non-cancelled phase)
-      // and we don't want the activity feed to claim a transition that
-      // never happened. Logged below from the PATCH .then() handler
-      // only when the server's returned phase actually differs.
+      // Phase changes are NOT logged optimistically — the server may strip the
+      // phase field (e.g. rep PATCH on a non-cancelled phase) and we don't want
+      // the feed to claim a transition that never happened. Logged below from the
+      // PATCH .then() handler only when the server's returned phase differs.
       if (updates.flagged !== undefined && updates.flagged !== old.flagged) {
         logProjectActivity(id, updates.flagged ? 'flagged' : 'unflagged', updates.flagged ? 'Project flagged' : 'Project unflagged');
       }
@@ -634,9 +635,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 old.repId,
                 trainerAssignmentsRef.current,
                 prevEntries,
+                projectParties,
               );
               const trainerEntries: PayrollEntry[] = [];
-              if (closerRes.rate > 0 && closerRes.trainerId) {
+              if (closerRes.rate > 0 && closerRes.trainerId && !((updates.noChainTrainer ?? old.noChainTrainer) && closerRes.reason !== 'project-override')) {
                 const closerTrainerRep = repsRef.current.find((r) => r.id === closerRes.trainerId);
                 const closerOverrideRate = closerRes.rate;
                 const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
@@ -758,18 +760,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
               });
             }
 
-            // Pre-compute setter trainer deductions so the trainer's cut comes from
-            // the setter's entry rather than being paid on top (mirrors
-            // project-transitions.ts). Uses the unified resolver so counting +
-            // precedence stay consistent with the phase-transition path.
+            // Pre-compute setter trainer deductions so the trainer's cut comes from the
+            // setter's entry, not on top (mirrors project-transitions.ts via the unified resolver).
             let setterM2TrainerDeduction = 0;
             let setterM3TrainerDeduction = 0;
-            if (!old.subDealerId && !old.noChainTrainer) {
+            if (!old.subDealerId && !(updates.noChainTrainer ?? old.noChainTrainer)) {
               const earlyRes = resolveTrainerRate(
-                { id, trainerId: null, trainerRate: null },
+                { id, trainerId: null, trainerRate: null, noChainTrainer: updates.noChainTrainer ?? old.noChainTrainer },
                 newSetterId,
                 trainerAssignmentsRef.current,
                 prevEntries,
+                projectParties,
               );
               if (earlyRes.rate > 0) {
                 const earlyInstPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
@@ -834,6 +835,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               newSetterId,
               trainerAssignmentsRef.current,
               prevEntries,
+              projectParties,
             );
             if (setterRes.rate > 0 && setterRes.trainerId) {
               const setterTrainerRep = repsRef.current.find((r) => r.id === setterRes.trainerId);
@@ -841,7 +843,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const trainerInstallPayPct = installerPayConfigs[old.installer]?.installPayPct ?? DEFAULT_INSTALL_PAY_PCT;
               const setterName = newSetterRep?.name ?? '';
 
-              if (pastInstalled && !old.subDealerId && !old.noChainTrainer) {
+              if (pastInstalled && !old.subDealerId && !(updates.noChainTrainer ?? old.noChainTrainer)) {
                 const hasTrainerM2 = prevEntries.some((e) =>
                   e.projectId === id &&
                   e.repId === setterRes.trainerId &&
@@ -869,7 +871,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
               }
 
-              if (pastPTO && !old.subDealerId && !old.noChainTrainer) {
+              if (pastPTO && !old.subDealerId && !(updates.noChainTrainer ?? old.noChainTrainer)) {
                 const hasTrainerM3 = prevEntries.some((e) =>
                   e.projectId === id &&
                   e.repId === setterRes.trainerId &&
@@ -1185,10 +1187,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       || updates.kWSize !== undefined;
     if (hasAmountUpdates) {
       // Re-compute trainer deductions so syncPayrollAmounts subtracts them,
-      // mirroring the deduction logic at createMilestonePayroll / createM3Payroll
-      // time. All four go through resolveTrainerRate so the project-level
-      // override (Project.trainerId + Project.trainerRate) wins over the tier
-      // chain, and "deals consumed" counts off prior Trainer PayrollEntries.
+      // mirrors createMilestonePayroll/createM3Payroll deductions; all go through
+      // resolveTrainerRate so the project override wins + counts prior Trainer entries.
       let closerM2TrainerDeduction = 0;
       let closerM3TrainerDeduction = 0;
       let setterM2TrainerDeduction = 0;
@@ -1200,16 +1200,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const effectiveTrainerRate = updates.trainerRate !== undefined ? updates.trainerRate : old.trainerRate;
         if (updates.m2Amount !== undefined || updates.m3Amount !== undefined) {
           const closerRes = resolveTrainerRate(
-            { id, trainerId: effectiveTrainerId, trainerRate: effectiveTrainerRate },
+            { id, trainerId: effectiveTrainerId, trainerRate: effectiveTrainerRate, noChainTrainer: updates.noChainTrainer ?? old.noChainTrainer },
             old.repId,
             trainerAssignmentsRef.current,
             payrollEntriesRef.current,
+            projectParties,
           );
-          // Self-trainer-with-setter guard: when trainer === closer and a
-          // setter is present, the setter-trainer leg owns the override
-          // (deducted from setter pay via splitPoint). Skipping the closer
-          // deduction here keeps live-edit preview in lockstep with the
-          // install-time generator at project-transitions.ts:340-350.
+          // Self-trainer-with-setter guard: trainer===closer + setter present →
+          // setter-trainer leg owns the override; skipping the closer deduction
+          // keeps live-edit preview in lockstep with project-transitions.ts:340-350.
           const closerSelfTrainerWithSetter = closerRes.trainerId === old.repId && !!old.setterId;
           if (closerRes.rate > 0 && !closerSelfTrainerWithSetter) {
             if (updates.m2Amount !== undefined) {
@@ -1222,10 +1221,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if ((updates.setterM2Amount !== undefined || updates.setterM3Amount !== undefined) && old.setterId) {
           const setterResRaw = resolveTrainerRate(
-            { id, trainerId: null, trainerRate: null },
+            { id, trainerId: null, trainerRate: null, noChainTrainer: updates.noChainTrainer ?? old.noChainTrainer },
             old.setterId,
             trainerAssignmentsRef.current,
             payrollEntriesRef.current,
+            projectParties,
           );
           const overrideMatchesSetter =
             effectiveTrainerId &&

@@ -104,6 +104,26 @@ export const ProjectFieldVisibility: Record<string, FieldPolicy> = {
     none: 'undefined',
   },
 
+  // Server-computed margin rollup (cents) + projected trainer legs — same
+  // confidentiality as kiloMargin: only admin + internal PM ever receive them.
+  // In /api/data today these are attached AFTER scrubbing (the `wantsRollup`
+  // DTO-build gate is the actual protection), so these matrix rows are a
+  // BACKSTOP, not the live filter — they strip the fields for any FUTURE path
+  // that attaches them pre-scrub or via another endpoint using this matrix.
+  // (vendor_pm resolves to relationship 'vendor_pm', which is in the strip list.)
+  totalCommissionGrossCents: {
+    vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined',
+    trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined',
+  },
+  kiloMarginCents: {
+    vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined',
+    trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined',
+  },
+  trainerLegs: {
+    vendor_pm: 'undefined', closer: 'undefined', setter: 'undefined',
+    trainer: 'undefined', 'sub-dealer': 'undefined', blitz_owner: 'undefined', none: 'undefined',
+  },
+
   // Co-party arrays — nuanced per relationship.
   //   admin/pm: passthrough (full structure + amounts).
   //   vendor_pm: empty-array for both — vendor PMs don't need to know

@@ -187,6 +187,10 @@ const payrollEntries = payrollEntriesRaw.map((e: any) => ({
   date: e.date,
 }));
 
+// projectId → parties, so a trainee's trainer-tier count is scoped to their own
+// deals (multi-trainee under-pay fix) — matches the live recompute paths.
+const projectParties = new Map(projects.map((p: any) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
+
 const installerPayConfigs: Record<string, { installPayPct: number }> = {};
 for (const i of installers) {
   installerPayConfigs[i.name] = { installPayPct: i.installPayPct ?? 80 };
@@ -274,6 +278,7 @@ for (const p of projects) {
         baselineOverride,
         trainerId: p.trainerId,
         trainerRate: p.trainerRate,
+        noChainTrainer: p.noChainTrainer,
         additionalClosers: p.additionalClosers.map((c: any) => ({ m1Amount: c.m1AmountCents / 100, m2Amount: c.m2AmountCents / 100, m3Amount: c.m3AmountCents == null ? null : c.m3AmountCents / 100 })),
         additionalSetters: p.additionalSetters.map((s: any) => ({ m1Amount: s.m1AmountCents / 100, m2Amount: s.m2AmountCents / 100, m3Amount: s.m3AmountCents == null ? null : s.m3AmountCents / 100 })),
       },
@@ -285,6 +290,7 @@ for (const p of projects) {
         trainerAssignments: trainerAssignments as any,
         payrollEntries: payrollEntries as any,
         installerPayConfigs: installerPayConfigs as any,
+        projectParties: projectParties as any,
         currentProjectId: p.id,
       },
     );

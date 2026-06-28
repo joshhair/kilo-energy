@@ -264,3 +264,61 @@ describe('resolveTrainerRate — counting rules', () => {
     expect(out.reason).toBe('none');
   });
 });
+
+// ─── Multi-trainee scoping (live pay-bug fix) ──────────────────────────────
+// A trainer with several trainees: each trainee's tier must count ONLY the
+// trainee's own deals (closer or setter), not the trainer's combined count.
+// Without projectParties the count is unscoped (legacy/buggy); with it, scoped.
+
+describe('resolveTrainerRate — multi-trainee count scoping', () => {
+  const TRAINEE_B = 'rep_b';
+  const TRAINEE_C = 'rep_c';
+  // 0.30 for the first 2 of the TRAINEE's own deals, then 0.10 forever.
+  const assignment: TrainerResolverAssignment = {
+    id: 'ta1', trainerId: TRAINER_ID, traineeId: TRAINEE_B,
+    tiers: [{ upToDeal: 2, ratePerW: 0.30 }, { upToDeal: null, ratePerW: 0.10 }],
+  };
+  // Trainer earned on ONE of B's deals + THREE of C's deals.
+  const entries: TrainerResolverPayrollEntry[] = [
+    { repId: TRAINER_ID, projectId: 'b_deal_0', paymentStage: 'Trainer' },
+    { repId: TRAINER_ID, projectId: 'c_deal_0', paymentStage: 'Trainer' },
+    { repId: TRAINER_ID, projectId: 'c_deal_1', paymentStage: 'Trainer' },
+    { repId: TRAINER_ID, projectId: 'c_deal_2', paymentStage: 'Trainer' },
+  ];
+  const parties: ReadonlyMap<string, { closerId: string | null; setterId: string | null }> = new Map([
+    ['b_deal_0', { closerId: TRAINEE_B, setterId: null }],
+    ['c_deal_0', { closerId: TRAINEE_C, setterId: null }],
+    ['c_deal_1', { closerId: TRAINEE_C, setterId: null }],
+    ['c_deal_2', { closerId: TRAINEE_C, setterId: null }],
+  ]);
+
+  it('legacy (no projectParties) over-counts → B underpaid (documents the bug)', () => {
+    // 4 combined → past the upToDeal:2 cap → drops to tier 1 (0.10).
+    const out = resolveTrainerRate(baseProject, TRAINEE_B, [assignment], entries);
+    expect(out.rate).toBe(0.10);
+    expect(out.reason).toBe('active-tier-1');
+  });
+
+  it('scoped (with projectParties) counts only B\'s own deal → B keeps tier 0', () => {
+    // Only b_deal_0 counts → 1 < 2 → tier 0 (0.30). The fix.
+    const out = resolveTrainerRate(baseProject, TRAINEE_B, [assignment], entries, parties);
+    expect(out.rate).toBe(0.30);
+    expect(out.reason).toBe('active-tier-0');
+  });
+
+  it('counts deals where the trainee was the SETTER too (any-party union)', () => {
+    // B was the setter (not closer) on two more deals → 3 of B's own deals → past cap.
+    const setterEntries: TrainerResolverPayrollEntry[] = [
+      ...entries,
+      { repId: TRAINER_ID, projectId: 'b_setter_0', paymentStage: 'Trainer' },
+      { repId: TRAINER_ID, projectId: 'b_setter_1', paymentStage: 'Trainer' },
+    ];
+    const setterParties = new Map(parties);
+    setterParties.set('b_setter_0', { closerId: 'someone', setterId: TRAINEE_B });
+    setterParties.set('b_setter_1', { closerId: 'someone', setterId: TRAINEE_B });
+    const out = resolveTrainerRate(baseProject, TRAINEE_B, [assignment], setterEntries, setterParties);
+    // B's own deals = b_deal_0 + b_setter_0 + b_setter_1 = 3 ≥ 2 → tier 1 (0.10).
+    expect(out.rate).toBe(0.10);
+    expect(out.reason).toBe('active-tier-1');
+  });
+});

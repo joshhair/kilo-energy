@@ -21,7 +21,7 @@ const PM_BLOCKED_FIELDS: Array<keyof PatchProjectInput> = [
   // Tag-team splits are money — admin-only same as the primary amounts.
   'additionalClosers', 'additionalSetters',
   // Per-project trainer override is pay config — admin-only.
-  'trainerId', 'trainerRate',
+  'trainerId', 'trainerRate', 'noChainTrainer',
 ];
 
 // Fields reps/sub-dealers are NEVER allowed to modify on their own deals —
@@ -303,6 +303,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       trainerAssignmentsRaw,
       payrollEntriesRaw,
       installers,
+      allProjectPartiesRaw,
     ] = await Promise.all([
       prisma.installerPricingVersion.findMany({ include: { tiers: true } }),
       prisma.product.findMany({ where: { active: true }, include: { pricingVersions: { include: { tiers: true } } } }),
@@ -310,7 +311,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       prisma.trainerAssignment.findMany({ include: { tiers: { orderBy: { sortOrder: 'asc' } } } }),
       prisma.payrollEntry.findMany({ where: { paymentStage: 'Trainer' } }),
       prisma.installer.findMany({ select: { id: true, name: true, installPayPct: true, usesProductCatalog: true } }),
+      prisma.project.findMany({ select: { id: true, closerId: true, setterId: true } }),
     ]);
+    // projectId → parties: scope the setter's trainer-tier count to their own deals (under-pay fix).
+    const projectParties = new Map(allProjectPartiesRaw.map((p) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
 
     // Shape the loaded data into the forms the resolvers expect.
     // Library types use camelCase / slightly different field names than
@@ -476,19 +480,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         trainerAssignments,
         payrollEntries,
         installerPayConfigs,
+        projectParties,
         currentProjectId: id,
       },
     );
 
-    // Preserve sold-at commission for projects whose original product is no
-    // longer in the active catalog. Without this guard, a non-baseline edit
-    // (trainer override, setter change, notes) on a legacy-product project
-    // would route through resolveBaselines's fallback branch and silently
-    // overwrite real historical commission with $0. Trainer/setter/other
-    // field writes proceed normally — only the commission amount cents are
-    // preserved. Client-side validation also avoids this path on no-op
-    // edits; this server-side defense is the backstop. (Corrine Brooks
-    // shape, 2026-05-07.)
+    // Preserve sold-at commission when the original product left the active
+    // catalog: a non-baseline edit would hit resolveBaselines's fallback and
+    // silently zero real historical commission. Only the amount cents are
+    // preserved; other field writes proceed. Backstop. (Corrine Brooks, 2026-05-07.)
     const isFallbackResolution = result.diagnostics.pricingSource === 'fallback';
     const hasStoredAmounts =
       current.m1AmountCents > 0 ||
@@ -651,27 +651,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    // Trainer stage: multi-party recompute (2026-05-23). Rather than
-    // realign a single trainer pool's amounts (the pre-2026-05-23 logic
-    // which assumed one trainer per project), DELETE all unpaid Trainer
-    // entries and regenerate from current project state using the
-    // multi-party leg resolver. Paid entries are NEVER touched — money
-    // has moved and rewriting the row would falsify the audit trail.
-    // The Bryce/Patrick/Tyson case (two setters with different trainers)
-    // requires this: editing the deal to add Tyson as a co-setter must
-    // generate Paul's Trainer entry alongside Hunter's.
+    // Trainer stage: multi-party recompute (2026-05-23). DELETE all unpaid
+    // Trainer entries + regenerate from current state via the multi-party leg
+    // resolver (old logic assumed one trainer/project). Paid entries are NEVER
+    // touched — money moved; rewriting would falsify the audit trail. The
+    // Bryce/Patrick/Tyson case (two setters, different trainers) needs this.
     const trainerEntryRows = draftsToSync.filter((e) => e.paymentStage === 'Trainer');
     if (trainerEntryRows.length > 0) {
       // Look up trainer assignments + every prior Trainer entry on the
       // system (the resolver uses them for tier-progression counting).
-      const [trainerAssignmentsForRegen, allTrainerEntries, allReps] = await Promise.all([
+      const [trainerAssignmentsForRegen, allTrainerEntries, allReps, allProjectPartiesRaw] = await Promise.all([
         prisma.trainerAssignment.findMany({ include: { tiers: { orderBy: { sortOrder: 'asc' } } } }),
         prisma.payrollEntry.findMany({
           where: { paymentStage: 'Trainer' },
           select: { repId: true, projectId: true, paymentStage: true, status: true },
         }),
         prisma.user.findMany({ select: { id: true, firstName: true, lastName: true } }),
+        prisma.project.findMany({ select: { id: true, closerId: true, setterId: true } }),
       ]);
+      // projectId → parties: scope each trainee's tier to their own deals (under-pay fix).
+      const projectPartiesForRegen = new Map(allProjectPartiesRaw.map((p) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
       const repNameById = (uid: string): string | undefined => {
         const u = allReps.find((r) => r.id === uid);
         if (!u) return undefined;
@@ -711,7 +710,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       const rawLegs = resolveTrainerLegs(
         {
-          project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate },
+          project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate, noChainTrainer: project.noChainTrainer },
           closerParties: closerPartiesForRegen,
           setterParties: setterPartiesForRegen,
           trainerAssignments: trainerAssignmentsResolverShape,
@@ -720,6 +719,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             projectId: e.projectId,
             paymentStage: e.paymentStage,
           })),
+          projectParties: projectPartiesForRegen,
         },
         repNameById,
       );

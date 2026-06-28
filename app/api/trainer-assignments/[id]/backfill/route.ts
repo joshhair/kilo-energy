@@ -41,6 +41,13 @@ export async function POST(
     select: { repId: true, projectId: true, paymentStage: true },
   });
 
+  // 3b. projectId → closer/setter for EVERY project (not just the requested
+  //     ones — Trainer entries reference deals across the whole book). Scopes
+  //     each trainee's consumed-deal count to their own deals so a trainer
+  //     with multiple trainees doesn't under-pay them.
+  const allProjectParties = await prisma.project.findMany({ select: { id: true, closerId: true, setterId: true } });
+  const projectParties = new Map(allProjectParties.map((p) => [p.id, { closerId: p.closerId, setterId: p.setterId }]));
+
   // 4. Load all trainer assignments (for resolveTrainerRate — it may need to
   //    see other assignments if the project override routes to a different trainer)
   const allAssignments = await prisma.trainerAssignment.findMany({
@@ -83,6 +90,16 @@ export async function POST(
       continue;
     }
 
+    // Admin cleared all chain trainers on this deal — skip. This route backfills
+    // CHAIN (assignment-scoped) trainer pay only; a per-project override is a
+    // separate mechanism paid via the deal's own PATCH/install-time path (and may
+    // be a different trainer entirely), so it must NOT be minted under this
+    // assignment's backfill.
+    if (project.noChainTrainer) {
+      skipped.push({ projectId: project.id, reason: 'Chain trainers cleared on this deal (noChainTrainer)' });
+      continue;
+    }
+
     const installPayPct = project.installer?.installPayPct ?? 80;
 
     // Resolve rate for this project using the full entry set (including newly created)
@@ -92,6 +109,7 @@ export async function POST(
       project.closerId === assignment.traineeId ? project.closerId : project.setterId,
       resolverAssignments,
       allResolverEntries,
+      projectParties,
     );
 
     if (resolution.rate <= 0 || !resolution.trainerId) {

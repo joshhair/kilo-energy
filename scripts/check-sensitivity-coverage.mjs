@@ -65,6 +65,21 @@ const allowlistPatterns = [
   // Server-authoritative commission compute is admin-trusted.
   /^lib[\\/]commission(-server|-core)?\.ts$/,
   /^lib[\\/]commission\.ts$/,
+  // Total/Rep/Kilo-Margin rollup. commission-rollup.ts is pure arithmetic
+  // (kiloPerW is a passed-in input, never a column read). commission-rollup-
+  // server.ts is the admin/internal-PM-trusted server compute that resolves
+  // kiloPerW via the shared baseline ladder and returns ONLY cents + id-based
+  // trainer legs — the rate never crosses the wire. Both are gated at the
+  // route (admin + internal PM); neither touches the DB directly.
+  /^lib[\\/]commission-rollup(-server)?\.ts$/,
+  // Server-only /api/data rollup orchestrator: resolves kiloPerW from raw
+  // pricing for the admin/internal-PM margin compute and returns ONLY cents
+  // (no DB access; no rate on the wire). Gated at the route by wantsRollup.
+  /^lib[\\/]data-rollup\.ts$/,
+  // Shared server-only builder for the kiloPerW-included pricing arrays (used by
+  // data-rollup + the blitz profitability endpoints). Returns arrays the
+  // resolvers read; emits cents at the route. No DB access; never client-imported.
+  /^lib[\\/]kilo-pricing-arrays\.ts$/,
   /^lib[\\/]data\.ts$/,
   // Admin-only API endpoints that explicitly serve baseline data.
   /^app[\\/]api[\\/]baseline-data[\\/]/,

@@ -92,6 +92,12 @@ export interface TrainerProjectionInput {
   additionalSetters?: ReadonlyArray<{ userId: string; userName?: string; m2Amount: number }>;
   m2Amount?: number;
   setterM2Amount?: number;
+  /** Admin "remove all chain trainers" flag. When set (and there's no
+   *  per-project override), the projection emits NO chain trainer legs —
+   *  mirroring resolveTrainerLegs (lib/commission.ts) + the actual payroll
+   *  generation in project-transitions.ts. Without this the projected margin
+   *  would include a trainer leg that never gets paid. */
+  noChainTrainer?: boolean;
 }
 
 /**
@@ -125,6 +131,20 @@ export function computeProjectedTrainerLegs(
   // for callers that haven't been upgraded yet. ─────────────────────────
   const legs: ProjectedTrainerLeg[] = [];
   const wattsTotal = (project.kWSize ?? 0) * 1000;
+
+  // Admin cleared all chain trainers — mirror resolveTrainerLegs EXACTLY: a
+  // per-project override still pays its single leg (named like the multi-party
+  // override leg: setter-trainer when a setter exists, else closer-trainer);
+  // every chain-derived leg is suppressed. (In the UI, setting noChainTrainer
+  // also clears trainerId/trainerRate, so this is normally a clean "no legs" —
+  // the override branch only matters for API-set deals, where it keeps this
+  // legacy path consistent with the engine + actual payroll generation.)
+  if (project.noChainTrainer) {
+    if (project.trainerId && project.trainerRate != null) {
+      return [buildLeg(project.trainerId, project.trainerRate, wattsTotal, project.setterId ? 'setter-trainer' : 'closer-trainer', 'project-override', project.id, payrollEntries)];
+    }
+    return legs;
+  }
 
   // ── Closer-trainer leg ──
   // Resolves the closer's chain trainer, honoring the per-project
@@ -267,7 +287,7 @@ function computeMultiPartyProjectedLegs(
   const repName = (_id: string): string | undefined => undefined; // names hydrated by caller
   const rawLegs = resolveTrainerLegs(
     {
-      project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate },
+      project: { id: project.id, trainerId: project.trainerId, trainerRate: project.trainerRate, noChainTrainer: project.noChainTrainer },
       closerParties,
       setterParties,
       trainerAssignments,

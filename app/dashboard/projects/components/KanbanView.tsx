@@ -38,7 +38,7 @@ function calcProjectCommission(
   let setterTrainerId: string | null = null;
   if (p.setterId) {
     const setterResRaw = resolveTrainerRate(
-      { id: p.id, trainerId: null, trainerRate: null },
+      { id: p.id, trainerId: null, trainerRate: null, noChainTrainer: p.noChainTrainer },
       p.setterId,
       trainerAssignments,
       payrollEntries,

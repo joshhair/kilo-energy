@@ -475,7 +475,7 @@ function TrainingPageInner() {
         (p) =>
           (p.repId === assignment.traineeId || p.setterId === assignment.traineeId) &&
           p.phase !== 'Cancelled' &&
-          p.phase !== 'On Hold' &&
+          p.phase !== 'On Hold' && !p.noChainTrainer &&
           (!assignment._isDirect || p.trainerId === effectiveRepId)
       );
       const dealCount = traineeDeals.length;
@@ -2967,7 +2967,7 @@ function BackfillWizard({
 
     for (const p of selected) {
       const resolution = resolveTrainerRate(
-        { id: p.id, trainerId: p.trainerId ?? null, trainerRate: p.trainerRate ?? null },
+        { id: p.id, trainerId: p.trainerId ?? null, trainerRate: p.trainerRate ?? null, noChainTrainer: p.noChainTrainer },
         p.repId === assignment.traineeId ? p.repId : p.setterId,
         resolverAssignments,
         workingEntries,

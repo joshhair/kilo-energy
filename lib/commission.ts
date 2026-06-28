@@ -58,6 +58,17 @@ export interface TrainerResolverPayrollEntry {
 }
 
 /**
+ * projectId → the deal's closer/setter ids. Lets the resolver scope a trainee's
+ * consumed-deal count to projects THEY were a party to (closer or setter).
+ * Without this scoping, a trainer with multiple trainees has every trainee's
+ * tier resolved against the trainer's COMBINED Trainer-entry count, so trainees
+ * burn numbered tiers early and are UNDERPAID. Callers on the actual-pay path
+ * MUST pass it; when omitted the resolver falls back to the legacy unscoped
+ * count (display/projection callers, corrected separately via the server field).
+ */
+export type ProjectPartiesLookup = ReadonlyMap<string, { closerId: string | null; setterId: string | null }>;
+
+/**
  * Why the resolver picked a given rate. Useful for debugging + telemetry;
  * `active-tier-N` encodes the 0-based tier index that was selected.
  */
@@ -81,15 +92,18 @@ export interface TrainerRateResolution {
  * into memory by the hydrating call site).
  *
  * `priorDealsConsumed` counts DISTINCT projectIds where this trainer has
- * already earned a Trainer PayrollEntry for this trainee — not including
- * the current project. A trainee's first deal sees `consumed = 0` even if
- * that deal already has draft Trainer entries on it.
+ * already earned a Trainer PayrollEntry AND this trainee was a party (closer
+ * or setter) — not including the current project. A trainee's first deal sees
+ * `consumed = 0` even if that deal already has draft Trainer entries on it.
+ * Pass `projectParties` so the count is scoped to the trainee (see its docs);
+ * omitting it falls back to the legacy unscoped count.
  */
 export function resolveTrainerRate(
   project: TrainerResolverProject,
   closerRepId: string | null | undefined,
   trainerAssignments: readonly TrainerResolverAssignment[],
   payrollEntries: readonly TrainerResolverPayrollEntry[],
+  projectParties?: ProjectPartiesLookup,
 ): TrainerRateResolution {
   // 1. Per-project override short-circuits the entire chain.
   if (project.trainerId && project.trainerRate != null) {
@@ -98,6 +112,14 @@ export function resolveTrainerRate(
       trainerId: project.trainerId,
       reason: 'project-override',
     };
+  }
+
+  // 1b. Admin removed all chain trainers from this deal. The override above
+  //     still pays (checked first); everything chain-derived is suppressed.
+  //     Mirrors resolveTrainerLegs + install-time payroll generation. Callers
+  //     must pass the EFFECTIVE noChainTrainer for this to take effect.
+  if (project.noChainTrainer) {
+    return { rate: 0, trainerId: null, reason: 'none' };
   }
 
   // 2. Rep-level assignment. The closer is the trainee; match on traineeId.
@@ -111,13 +133,21 @@ export function resolveTrainerRate(
 
   // Count PRIOR deals where this trainer-trainee pair already earned a
   // Trainer PayrollEntry. Using a Set on projectId de-duplicates multi-entry
-  // deals (M2 + M3 both emit a Trainer row for the same project).
+  // deals (M2 + M3 both emit a Trainer row for the same project). The
+  // projectParties scope (when supplied) restricts the count to deals where
+  // THIS trainee was closer or setter — without it, a trainer with multiple
+  // trainees resolves each trainee's tier against the combined count and
+  // underpays them. Mirrors calculator/page.tsx:381-383 / :398-400.
   const consumedProjectIds = new Set<string>();
   for (const entry of payrollEntries) {
     if (entry.paymentStage !== 'Trainer') continue;
     if (entry.repId !== assignment.trainerId) continue;
     if (entry.projectId == null) continue;
     if (entry.projectId === project.id) continue;
+    if (projectParties) {
+      const parties = projectParties.get(entry.projectId);
+      if (!parties || (parties.closerId !== assignment.traineeId && parties.setterId !== assignment.traineeId)) continue;
+    }
     consumedProjectIds.add(entry.projectId);
   }
   const dealsConsumed = consumedProjectIds.size;
@@ -195,6 +225,9 @@ export interface TrainerLegsInput {
   setterParties: TrainerPartyInput[];
   trainerAssignments: readonly TrainerResolverAssignment[];
   payrollEntries: readonly TrainerResolverPayrollEntry[];
+  /** Scopes each trainee's consumed-deal count to their own deals — see
+   *  ProjectPartiesLookup. Actual-pay callers MUST pass it. */
+  projectParties?: ProjectPartiesLookup;
 }
 
 /** Which side of the deal a trainer leg attributes to. */
@@ -223,7 +256,7 @@ export function resolveTrainerLegs(
   input: TrainerLegsInput,
   repNameById: (id: string) => string | undefined,
 ): TrainerLeg[] {
-  const { project, closerParties, setterParties, trainerAssignments, payrollEntries } = input;
+  const { project, closerParties, setterParties, trainerAssignments, payrollEntries, projectParties } = input;
 
   // 1. Per-project override — single leg covering the whole deal.
   if (project.trainerId && project.trainerRate != null) {
@@ -254,6 +287,7 @@ export function resolveTrainerLegs(
       party.userId,
       trainerAssignments,
       payrollEntries,
+      projectParties,
     );
     if (res.rate <= 0 || !res.trainerId) continue;
     const share = totalCloserM2 > 0 ? (party.m2Amount || 0) / totalCloserM2 : 0;
@@ -278,6 +312,7 @@ export function resolveTrainerLegs(
       party.userId,
       trainerAssignments,
       payrollEntries,
+      projectParties,
     );
     if (res.rate <= 0 || !res.trainerId) continue;
     const share = totalSetterM2 > 0 ? (party.m2Amount || 0) / totalSetterM2 : 0;

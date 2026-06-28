@@ -98,6 +98,7 @@ export async function GET(req: NextRequest) {
     repId: p.closerId,
     setterId: p.setterId,
     trainerId: p.trainerId,
+    noChainTrainer: p.noChainTrainer,
     m1Paid: p.m1Paid,
     m2Paid: p.m2Paid,
     m3Paid: p.m3Paid,

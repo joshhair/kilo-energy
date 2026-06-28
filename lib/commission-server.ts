@@ -25,6 +25,7 @@ import {
   splitCloserSetterPay,
   resolveTrainerRate,
   type TrainerResolverPayrollEntry,
+  type ProjectPartiesLookup,
 } from './commission';
 import {
   getInstallerRatesForDeal,
@@ -78,6 +79,10 @@ export interface CommissionDeps {
   trainerAssignments: TrainerAssignment[];
   payrollEntries: TrainerResolverPayrollEntry[];
   installerPayConfigs: Record<string, InstallerPayConfig>;
+  /** projectId → closer/setter, so a trainee's deal-count is scoped to their
+   *  own deals. Without it a trainer with multiple trainees underpays them.
+   *  Actual-pay callers (PATCH/POST recompute) MUST supply it. */
+  projectParties?: ProjectPartiesLookup;
   /** The id of the project being recomputed, so resolveTrainerRate
    *  excludes it from its own "completed deals" count (otherwise a
    *  trainer's deal-count bumps mid-compute and rates shift). */
@@ -105,8 +110,13 @@ export interface CommissionOutputs {
 
 /** Resolve the baseline trio (closerPerW, setterPerW, kiloPerW) via the
  *  correct code path for this installer. Mirrors the IIFE in
- *  new-deal/page.tsx:338-360 so client + server agree. */
-function resolveBaselines(
+ *  new-deal/page.tsx:338-360 so client + server agree.
+ *
+ *  Exported so the read-path endpoints (/api/data, the blitz GETs) resolve
+ *  kiloPerW through this exact ladder before handing it to
+ *  computeProjectRollup() — keeping the cost-basis resolution server-side and
+ *  in lockstep with the recompute path. */
+export function resolveBaselines(
   inputs: CommissionInputs,
   deps: CommissionDeps,
 ): { closerPerW: number; setterPerW: number; kiloPerW: number; source: CommissionOutputs['diagnostics']['pricingSource'] } {
@@ -194,6 +204,7 @@ function resolveTrainerRateForDeal(
     inputs.setterId,
     deps.trainerAssignments,
     deps.payrollEntries,
+    deps.projectParties,
   );
   return { rate: resolution.rate };
 }

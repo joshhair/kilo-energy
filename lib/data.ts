@@ -131,10 +131,10 @@ export interface TrainerAssignment {
   trainerId: string;
   traineeId: string;
   tiers: TrainerOverrideTier[];
-  // Training vs. residuals. true = actively coaching; false = graduated but
-  // override still earns on existing tier capacity. Defaults to true when
-  // the wire format omits it (backward-compat with pre-3a payloads).
+  // Training vs. residuals (true=coaching, false=graduated but still earns); defaults true.
   isActiveTraining?: boolean;
+  // Server-computed any-party union deal count; present ONLY on the viewing rep's own assignment.
+  consumedDeals?: number;
 }
 
 export function getTrainerOverrideRate(
