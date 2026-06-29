@@ -64,6 +64,13 @@ export const createProjectSchema = z.object({
   /// thousands of rows would blow up the createMany batch.
   additionalClosers: z.array(additionalPartySchema).max(10).optional(),
   additionalSetters: z.array(additionalPartySchema).max(10).optional(),
+  /// Co-party split intent. 'explicit' (default — the web) uses the m1/m2/m3
+  /// amounts on each co-party row as-sent. 'even' tells the SERVER to compute each
+  /// co-party's M1/M2/M3 by dividing the deal's commission pool evenly among
+  /// (primary + co-parties) — so a client that can't do the math (iOS) submits
+  /// co-parties with just userId. Byte-identical to the web's "Split equally";
+  /// overrides any amounts sent. Applies to whichever co-party arrays are present.
+  coPartySplit: z.enum(['even', 'explicit']).optional().default('explicit'),
 
   /// Per-installer intake JSON. Shape depends on the installer (BVI vs
   /// future Lumio/Sunova/etc.) — typed at lib/installer-intakes/<slug>.ts.
@@ -156,6 +163,10 @@ export const patchProjectSchema = z.object({
   // inserts these. Omit to leave current rows untouched.
   additionalClosers: z.array(additionalPartySchema).max(10).optional(),
   additionalSetters: z.array(additionalPartySchema).max(10).optional(),
+  /// Co-party split intent on edit — same semantics as create. 'even' has the
+  /// server compute each co-party's M1/M2/M3 from the pool; 'explicit' (default)
+  /// uses the amounts as-sent (the web). Co-party edits are admin-only here.
+  coPartySplit: z.enum(['even', 'explicit']).optional().default('explicit'),
 
   // Per-project trainer override. Admin-only one-off attachment that bypasses
   // the rep-level TrainerAssignment chain. Send both together to set, both

@@ -8,6 +8,7 @@ import { serializeProject, serializeProjectParty, dollarsToCents, dollarsToNulla
 import { computeProjectCommission } from '../../../lib/commission-server';
 import { loadCommissionDeps } from '../../../lib/commission-deps';
 import { fromDollars } from '../../../lib/money';
+import { evenSplit } from '../../../lib/commission-split';
 import type { InstallerBaseline } from '../../../lib/data';
 import { logger, errorContext } from '../../../lib/logger';
 import { logChange } from '../../../lib/audit';
@@ -184,25 +185,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Build the additionalClosers / additionalSetters nested-create payload
-  // so the project + its co-party rows land in a single Prisma transaction.
-  // Fallback position assignment: if the client didn't send one, use the
-  // array index + 1 (so the first co-closer is position 1, matching the
-  // UI's "1-indexed display order" contract).
-  const additionalClosersCreate = (body.additionalClosers ?? []).map((c, i) => ({
-    userId: c.userId,
-    m1AmountCents: dollarsToCents(c.m1Amount) ?? 0,
-    m2AmountCents: dollarsToCents(c.m2Amount) ?? 0,
-    m3AmountCents: dollarsToNullableCents(c.m3Amount) ?? null,
-    position: c.position ?? i + 1,
-  }));
-  const additionalSettersCreate = (body.additionalSetters ?? []).map((s, i) => ({
-    userId: s.userId,
-    m1AmountCents: dollarsToCents(s.m1Amount) ?? 0,
-    m2AmountCents: dollarsToCents(s.m2Amount) ?? 0,
-    m3AmountCents: dollarsToNullableCents(s.m3Amount) ?? null,
-    position: s.position ?? i + 1,
-  }));
+  // Co-party participants (the primary stays on Project.closerId/.setterId). Their
+  // per-milestone amounts are RESOLVED below: 'explicit' (from the body — the web
+  // path) or, when coPartySplit==='even', computed server-side from the deal's
+  // commission pool so a client that can't do the math (iOS) can submit co-parties
+  // with just userId. The nested-create payload is built AFTER the resolution so it
+  // and the authoritative recompute use the same amounts.
+  const splitEven = body.coPartySplit === 'even';
+  const coCloserParties = body.additionalClosers ?? [];
+  const coSetterParties = body.additionalSetters ?? [];
+  type CoAmounts = { m1Amount: number; m2Amount: number; m3Amount: number | null };
+  let coCloserAmounts: CoAmounts[] = coCloserParties.map((c) => ({ m1Amount: c.m1Amount ?? 0, m2Amount: c.m2Amount ?? 0, m3Amount: c.m3Amount ?? null }));
+  let coSetterAmounts: CoAmounts[] = coSetterParties.map((s) => ({ m1Amount: s.m1Amount ?? 0, m2Amount: s.m2Amount ?? 0, m3Amount: s.m3Amount ?? null }));
 
   // ── Server-AUTHORITATIVE commission (parity with PATCH /api/projects/[id]).
   //    Recompute the primary closer/setter amounts from the deal inputs — a NO-OP
@@ -254,13 +248,10 @@ export async function POST(req: NextRequest) {
       || deps.productCatalogProducts.some((p) => p.id === effProductId);
     let baselineOverride: InstallerBaseline | null = null;
     if (effOverrideJson) { try { baselineOverride = JSON.parse(effOverrideJson) as InstallerBaseline; } catch {} }
-    // Round co-party amounts to whole cents UP FRONT so the recompute subtracts the
-    // same cent-aligned values that persist (each row via dollarsToCents = round×100)
-    // — no sub-cent residual can round into the primary commission.
     const r2 = (d: number) => Math.round(d * 100) / 100;
-    const coClosers = (body.additionalClosers ?? []).map((c) => ({ m1Amount: r2(c.m1Amount ?? 0), m2Amount: r2(c.m2Amount ?? 0), m3Amount: c.m3Amount == null ? null : r2(c.m3Amount) }));
-    const coSetters = (body.additionalSetters ?? []).map((s) => ({ m1Amount: r2(s.m1Amount ?? 0), m2Amount: r2(s.m2Amount ?? 0), m3Amount: s.m3Amount == null ? null : r2(s.m3Amount) }));
-    const inputs = {
+    // Pool inputs (NO co-parties) → the full closer/setter pool. Used by the even
+    // split and the non-admin explicit guard.
+    const poolInputs = {
       soldDate: body.soldDate, netPPW: body.netPPW, kWSize: body.kWSize, installer: installerName,
       // Pass the real subDealerId: an untrusted caller (rep/PM) who attached one
       // reaches here, and computeProjectCommission zeroes sub-dealer deals — so the
@@ -270,19 +261,43 @@ export async function POST(req: NextRequest) {
       solarTechProductId: installerName === 'SolarTech' ? effProductId : null,
       installerProductId: installerName !== 'SolarTech' ? effProductId : null,
       baselineOverride, trainerId: effTrainerId, trainerRate: effTrainerRate, noChainTrainer: effNoChainTrainer,
-      additionalClosers: coClosers, additionalSetters: coSetters,
+      additionalClosers: [] as CoAmounts[], additionalSetters: [] as CoAmounts[],
     };
-    // Co-party guard: a non-admin must not inflate co-party pay beyond the deal's
-    // pool. Compute the pool (no co-parties) and reject if a co-party sum exceeds
-    // it (admins set co-party freely, like PATCH). Compare INTEGER CENTS so there's
-    // no float tolerance / sub-cent overpay, and so an m3 row is rejected when the
-    // pool has no M3 (pool.m3Amount null → 0).
-    if (!isAdmin && (coClosers.length || coSetters.length)) {
-      const pool = computeProjectCommission({ ...inputs, additionalClosers: [], additionalSetters: [] }, deps);
-      // Sum PER-ROW rounded cents (matching how each co-party row persists via
-      // dollarsToCents = round(amount×100)) so sub-cent inputs can't slip a
-      // cent-level overage past an aggregate-rounded comparison.
-      const sumCents = (arr: ReadonlyArray<{ m1Amount: number; m2Amount: number; m3Amount: number | null }>, k: 'm1Amount' | 'm2Amount' | 'm3Amount') => arr.reduce((s, x) => s + Math.round((x[k] ?? 0) * 100), 0);
+    // coPartySplit:'even' — divide each milestone's pool evenly among (primary +
+    // co-parties), exactly like the web's "Split equally": evenSplit index 0 is the
+    // primary's trailing-cent remainder, co-party i takes share i+1. Server-computed
+    // from the pool, so it can NEVER exceed the pool (the explicit guard below is
+    // therefore unnecessary for this path). Overrides any amounts the client sent.
+    if (splitEven && (coCloserParties.length || coSetterParties.length)) {
+      const pool = computeProjectCommission(poolInputs, deps);
+      // An even split needs a RELIABLE pool. Refuse on EITHER fallback pricing OR an
+      // unresolvable product — i.e. exactly when cleanPricing would be false below, so
+      // the admin preserve path (which keeps the client primary instead of recomputing
+      // it to share 0) can't combine with persisted co-party shares to make
+      // primary + co-parties > pool (mint money). The explicit path is unaffected.
+      if (!productResolvable || pool.diagnostics.pricingSource === 'fallback') {
+        return NextResponse.json({ error: "Cannot even-split co-parties: the deal's pricing is unresolvable (archived/unknown product or missing rate). Send explicit co-party amounts." }, { status: 400 });
+      }
+      const cN = coCloserParties.length, sN = coSetterParties.length;
+      const cM1 = evenSplit(pool.m1Amount, cN + 1), cM2 = evenSplit(pool.m2Amount, cN + 1), cM3 = evenSplit(pool.m3Amount ?? 0, cN + 1);
+      const sM1 = evenSplit(pool.setterM1Amount, sN + 1), sM2 = evenSplit(pool.setterM2Amount, sN + 1), sM3 = evenSplit(pool.setterM3Amount ?? 0, sN + 1);
+      coCloserAmounts = coCloserParties.map((_, i) => ({ m1Amount: cM1[i + 1], m2Amount: cM2[i + 1], m3Amount: pool.m3Amount == null ? null : cM3[i + 1] }));
+      coSetterAmounts = coSetterParties.map((_, i) => ({ m1Amount: sM1[i + 1], m2Amount: sM2[i + 1], m3Amount: pool.setterM3Amount == null ? null : sM3[i + 1] }));
+    }
+    // Round co-party amounts to whole cents UP FRONT so the recompute subtracts the
+    // same cent-aligned values that persist (each row via dollarsToCents = round×100).
+    const coClosers = coCloserAmounts.map((c) => ({ m1Amount: r2(c.m1Amount), m2Amount: r2(c.m2Amount), m3Amount: c.m3Amount == null ? null : r2(c.m3Amount) }));
+    const coSetters = coSetterAmounts.map((s) => ({ m1Amount: r2(s.m1Amount), m2Amount: r2(s.m2Amount), m3Amount: s.m3Amount == null ? null : r2(s.m3Amount) }));
+    // Persist payload reads these rounded values, so it matches the recompute exactly.
+    coCloserAmounts = coClosers; coSetterAmounts = coSetters;
+    const inputs = { ...poolInputs, additionalClosers: coClosers, additionalSetters: coSetters };
+    // Co-party guard (EXPLICIT amounts only): a non-admin must not inflate co-party
+    // pay beyond the deal's pool. The even path is pool-derived so it can't exceed it.
+    // Compare INTEGER CENTS (no float tolerance; an m3 row is rejected when the pool
+    // has no M3 → pool.m3Amount null → 0). Admins set co-party freely, like PATCH.
+    if (!isAdmin && !splitEven && (coClosers.length || coSetters.length)) {
+      const pool = computeProjectCommission(poolInputs, deps);
+      const sumCents = (arr: ReadonlyArray<CoAmounts>, k: 'm1Amount' | 'm2Amount' | 'm3Amount') => arr.reduce((s, x) => s + Math.round((x[k] ?? 0) * 100), 0);
       const overC = (coCents: number, poolDollars: number | null) => coCents > Math.round((poolDollars ?? 0) * 100);
       const over = overC(sumCents(coClosers, 'm1Amount'), pool.m1Amount) || overC(sumCents(coClosers, 'm2Amount'), pool.m2Amount) || overC(sumCents(coClosers, 'm3Amount'), pool.m3Amount)
         || overC(sumCents(coSetters, 'm1Amount'), pool.setterM1Amount) || overC(sumCents(coSetters, 'm2Amount'), pool.setterM2Amount) || overC(sumCents(coSetters, 'm3Amount'), pool.setterM3Amount);
@@ -306,6 +321,24 @@ export async function POST(req: NextRequest) {
       setterM3Cents = safeN(result.setterM3Amount);
     }
   }
+
+  // Nested-create payload from the RESOLVED co-party amounts (explicit body values,
+  // or the server's even-split) so the project + its co-party rows land in one
+  // transaction. Fallback position = array index + 1 (1-indexed display order).
+  const additionalClosersCreate = coCloserParties.map((c, i) => ({
+    userId: c.userId,
+    m1AmountCents: dollarsToCents(coCloserAmounts[i].m1Amount) ?? 0,
+    m2AmountCents: dollarsToCents(coCloserAmounts[i].m2Amount) ?? 0,
+    m3AmountCents: dollarsToNullableCents(coCloserAmounts[i].m3Amount) ?? null,
+    position: c.position ?? i + 1,
+  }));
+  const additionalSettersCreate = coSetterParties.map((s, i) => ({
+    userId: s.userId,
+    m1AmountCents: dollarsToCents(coSetterAmounts[i].m1Amount) ?? 0,
+    m2AmountCents: dollarsToCents(coSetterAmounts[i].m2Amount) ?? 0,
+    m3AmountCents: dollarsToNullableCents(coSetterAmounts[i].m3Amount) ?? null,
+    position: s.position ?? i + 1,
+  }));
 
   const project = await prisma.project.create({
     data: {

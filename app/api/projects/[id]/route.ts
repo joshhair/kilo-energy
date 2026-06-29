@@ -10,6 +10,7 @@ import { computeProjectCommission, COMMISSION_INPUT_KEYS } from '../../../../lib
 import { loadCommissionDeps } from '../../../../lib/commission-deps';
 import { resolveTrainerLegs } from '../../../../lib/commission';
 import { fromDollars } from '../../../../lib/money';
+import { evenSplit } from '../../../../lib/commission-split';
 import type { InstallerBaseline } from '../../../../lib/data';
 import { logger, errorContext } from '../../../../lib/logger';
 import { notify } from '../../../../lib/notifications/service';
@@ -272,6 +273,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     'setterM1Amount', 'setterM2Amount', 'setterM3Amount',
   ] as const;
   const bodyTouchesDirectAmounts = DIRECT_AMOUNT_KEYS.some((k) => (body as Record<string, unknown>)[k] !== undefined);
+  // Resolved co-party amounts for the persist below — set by the recompute block
+  // when this PATCH sends co-party arrays (explicit body values, or the even-split).
+  // additionalClosers/Setters are in COMMISSION_INPUT_KEYS, so the recompute ALWAYS
+  // runs when they're sent; the persist reads these so persisted cents match the
+  // recompute (and reflect coPartySplit:'even').
+  let resolvedCloserPersist: { m1Amount: number; m2Amount: number; m3Amount: number | null }[] | null = null;
+  let resolvedSetterPersist: { m1Amount: number; m2Amount: number; m3Amount: number | null }[] | null = null;
   if (bodyTouchesCommissionInputs) {
     const current = await prisma.project.findUnique({
       where: { id },
@@ -282,6 +290,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
     if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    // Resolved co-party amounts (dollars), default = body values (or current rows
+    // when this PATCH leaves the array untouched). coPartySplit:'even' overwrites the
+    // SENT arrays from the pool in the recompute branch below; the persist reads these.
+    let effectiveAdditionalClosers = body.additionalClosers !== undefined
+      ? body.additionalClosers.map((c) => ({ m1Amount: c.m1Amount ?? 0, m2Amount: c.m2Amount ?? 0, m3Amount: c.m3Amount ?? null }))
+      : current.additionalClosers.map((c) => ({ m1Amount: c.m1AmountCents / 100, m2Amount: c.m2AmountCents / 100, m3Amount: c.m3AmountCents == null ? null : c.m3AmountCents / 100 }));
+    let effectiveAdditionalSetters = body.additionalSetters !== undefined
+      ? body.additionalSetters.map((s) => ({ m1Amount: s.m1Amount ?? 0, m2Amount: s.m2Amount ?? 0, m3Amount: s.m3Amount ?? null }))
+      : current.additionalSetters.map((s) => ({ m1Amount: s.m1AmountCents / 100, m2Amount: s.m2AmountCents / 100, m3Amount: s.m3AmountCents == null ? null : s.m3AmountCents / 100 }));
 
     // Sub-dealer deals don't use the standard commission formula — skip the
     // recompute entirely so we don't overwrite stored amounts with zeros.
@@ -311,13 +329,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       try { return JSON.parse(json) as InstallerBaseline; } catch { return null; }
     })();
 
-    const effectiveAdditionalClosers = body.additionalClosers !== undefined
-      ? body.additionalClosers.map((c) => ({ m1Amount: c.m1Amount ?? 0, m2Amount: c.m2Amount ?? 0, m3Amount: c.m3Amount ?? null }))
-      : current.additionalClosers.map((c) => ({ m1Amount: c.m1AmountCents / 100, m2Amount: c.m2AmountCents / 100, m3Amount: c.m3AmountCents == null ? null : c.m3AmountCents / 100 }));
-    const effectiveAdditionalSetters = body.additionalSetters !== undefined
-      ? body.additionalSetters.map((s) => ({ m1Amount: s.m1Amount ?? 0, m2Amount: s.m2Amount ?? 0, m3Amount: s.m3Amount ?? null }))
-      : current.additionalSetters.map((s) => ({ m1Amount: s.m1AmountCents / 100, m2Amount: s.m2AmountCents / 100, m3Amount: s.m3AmountCents == null ? null : s.m3AmountCents / 100 }));
-
     // Effective equipment: the admin's new product if changed, else current.
     const rawEffectiveProductId = body.productId !== undefined ? (body.productId || null) : (current.productId ?? null);
     // Cross-installer guard (defense-in-depth). Null the product ONLY when it
@@ -335,28 +346,54 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Persist the clear so DB installer/product state can't drift apart.
     if (foundInWrongCatalog) data.productId = null;
 
+    const commissionInputsBase = {
+      soldDate: body.soldDate ?? current.soldDate,
+      netPPW: body.netPPW ?? current.netPPW,
+      kWSize: body.kWSize ?? current.kWSize,
+      installer: installerName,
+      productType: body.productType ?? current.productType,
+      closerId: body.closerId !== undefined ? (body.closerId || null) : current.closerId,
+      setterId: body.setterId !== undefined ? (body.setterId || null) : current.setterId,
+      subDealerId: current.subDealerId,
+      // Resolve the redline from the EFFECTIVE product (the new one if the
+      // admin changed equipment, else the deal's current product).
+      solarTechProductId: installerName === 'SolarTech' ? effectiveProductId : null,
+      installerProductId: installerName !== 'SolarTech' ? effectiveProductId : null,
+      baselineOverride: effectiveBaselineOverride,
+      trainerId: body.trainerId !== undefined ? (body.trainerId || null) : current.trainerId,
+      trainerRate: body.trainerRate !== undefined ? (body.trainerRate ?? null) : current.trainerRate,
+      noChainTrainer: body.noChainTrainer !== undefined ? body.noChainTrainer : current.noChainTrainer,
+    };
+    const commissionDepsFull = { ...commissionDeps, currentProjectId: id };
+    // coPartySplit:'even' — compute each SENT co-party array's M1/M2/M3 from the pool
+    // (primary + co-parties), exactly like the web's "Split equally" (evenSplit index 0
+    // is the primary's trailing-cent remainder, co-party i takes share i+1). Server-
+    // derived from the pool → can't exceed it. Only the arrays the admin actually sent
+    // are re-split; the persist below reads these same resolved amounts.
+    if (body.coPartySplit === 'even' && (body.additionalClosers !== undefined || body.additionalSetters !== undefined)) {
+      const pool = computeProjectCommission({ ...commissionInputsBase, additionalClosers: [], additionalSetters: [] }, commissionDepsFull);
+      // An even split needs a RELIABLE pool. On fallback pricing the primary is
+      // PRESERVED (stored amount, the Corrine archived-product fix below) rather than
+      // reduced — so persisting even-split co-party rows would add pay without
+      // reducing the primary (money created). Refuse; the admin can send explicit
+      // amounts (which the fallback-preservation path handles correctly).
+      if (pool.diagnostics.pricingSource === 'fallback') {
+        return NextResponse.json({ error: "Cannot even-split co-parties: the deal's pricing is unresolvable. Send explicit co-party amounts." }, { status: 400 });
+      }
+      if (body.additionalClosers !== undefined && body.additionalClosers.length > 0) {
+        const n = body.additionalClosers.length;
+        const m1 = evenSplit(pool.m1Amount, n + 1), m2 = evenSplit(pool.m2Amount, n + 1), m3 = evenSplit(pool.m3Amount ?? 0, n + 1);
+        effectiveAdditionalClosers = body.additionalClosers.map((_, i) => ({ m1Amount: m1[i + 1], m2Amount: m2[i + 1], m3Amount: pool.m3Amount == null ? null : m3[i + 1] }));
+      }
+      if (body.additionalSetters !== undefined && body.additionalSetters.length > 0) {
+        const n = body.additionalSetters.length;
+        const s1 = evenSplit(pool.setterM1Amount, n + 1), s2 = evenSplit(pool.setterM2Amount, n + 1), s3 = evenSplit(pool.setterM3Amount ?? 0, n + 1);
+        effectiveAdditionalSetters = body.additionalSetters.map((_, i) => ({ m1Amount: s1[i + 1], m2Amount: s2[i + 1], m3Amount: pool.setterM3Amount == null ? null : s3[i + 1] }));
+      }
+    }
     const result = computeProjectCommission(
-      {
-        soldDate: body.soldDate ?? current.soldDate,
-        netPPW: body.netPPW ?? current.netPPW,
-        kWSize: body.kWSize ?? current.kWSize,
-        installer: installerName,
-        productType: body.productType ?? current.productType,
-        closerId: body.closerId !== undefined ? (body.closerId || null) : current.closerId,
-        setterId: body.setterId !== undefined ? (body.setterId || null) : current.setterId,
-        subDealerId: current.subDealerId,
-        // Resolve the redline from the EFFECTIVE product (the new one if the
-        // admin changed equipment, else the deal's current product).
-        solarTechProductId: installerName === 'SolarTech' ? effectiveProductId : null,
-        installerProductId: installerName !== 'SolarTech' ? effectiveProductId : null,
-        baselineOverride: effectiveBaselineOverride,
-        trainerId: body.trainerId !== undefined ? (body.trainerId || null) : current.trainerId,
-        trainerRate: body.trainerRate !== undefined ? (body.trainerRate ?? null) : current.trainerRate,
-        noChainTrainer: body.noChainTrainer !== undefined ? body.noChainTrainer : current.noChainTrainer,
-        additionalClosers: effectiveAdditionalClosers,
-        additionalSetters: effectiveAdditionalSetters,
-      },
-      { ...commissionDeps, currentProjectId: id },
+      { ...commissionInputsBase, additionalClosers: effectiveAdditionalClosers, additionalSetters: effectiveAdditionalSetters },
+      commissionDepsFull,
     );
 
     // Preserve sold-at commission when the original product left the active
@@ -391,6 +428,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data.setterM3AmountCents = result.setterM3Amount == null ? null : fromDollars(result.setterM3Amount).cents;
     }
     } // end else (not sub-dealer)
+    // Hand the resolved co-party amounts (explicit, or the even-split) to the persist.
+    resolvedCloserPersist = effectiveAdditionalClosers;
+    resolvedSetterPersist = effectiveAdditionalSetters;
   }
 
   // Snapshot before-state for audit diff (only fields we care about).
@@ -414,14 +454,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         await tx.projectCloser.deleteMany({ where: { projectId: id } });
         if (body.additionalClosers.length > 0) {
           await tx.projectCloser.createMany({
-            data: body.additionalClosers.map((c, i) => ({
-              projectId: id,
-              userId: c.userId,
-              m1AmountCents: dollarsToCents(c.m1Amount) ?? 0,
-              m2AmountCents: dollarsToCents(c.m2Amount) ?? 0,
-              m3AmountCents: dollarsToNullableCents(c.m3Amount) ?? null,
-              position: c.position ?? i + 1,
-            })),
+            // Amounts from the RESOLVED array (explicit body values, or the even-split)
+            // so persisted cents match what the recompute subtracted from the primary.
+            data: body.additionalClosers.map((c, i) => {
+              const a = resolvedCloserPersist?.[i] ?? c;
+              return {
+                projectId: id,
+                userId: c.userId,
+                m1AmountCents: dollarsToCents(a.m1Amount) ?? 0,
+                m2AmountCents: dollarsToCents(a.m2Amount) ?? 0,
+                m3AmountCents: dollarsToNullableCents(a.m3Amount) ?? null,
+                position: c.position ?? i + 1,
+              };
+            }),
           });
         }
       }
@@ -429,14 +474,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         await tx.projectSetter.deleteMany({ where: { projectId: id } });
         if (body.additionalSetters.length > 0) {
           await tx.projectSetter.createMany({
-            data: body.additionalSetters.map((s, i) => ({
-              projectId: id,
-              userId: s.userId,
-              m1AmountCents: dollarsToCents(s.m1Amount) ?? 0,
-              m2AmountCents: dollarsToCents(s.m2Amount) ?? 0,
-              m3AmountCents: dollarsToNullableCents(s.m3Amount) ?? null,
-              position: s.position ?? i + 1,
-            })),
+            data: body.additionalSetters.map((s, i) => {
+              const a = resolvedSetterPersist?.[i] ?? s;
+              return {
+                projectId: id,
+                userId: s.userId,
+                m1AmountCents: dollarsToCents(a.m1Amount) ?? 0,
+                m2AmountCents: dollarsToCents(a.m2Amount) ?? 0,
+                m3AmountCents: dollarsToNullableCents(a.m3Amount) ?? null,
+                position: s.position ?? i + 1,
+              };
+            }),
           });
         }
       }
