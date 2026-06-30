@@ -258,6 +258,10 @@ export async function PATCH(req: NextRequest) {
   // — the single-entry reversal clears it explicitly).
   const updateData: Record<string, unknown> = { status };
   if (status === 'Paid') updateData.paidAt = new Date();
+  // Single pay date for the APNs deep-link payload, derived from the SAME paidAt
+  // stamped above (not a fresh new Date() per rep) — so every rep's stub-date matches
+  // /api/data paidAt and a bulk transition crossing UTC midnight stays consistent.
+  const paidDateStr = updateData.paidAt instanceof Date ? updateData.paidAt.toISOString().slice(0, 10) : null;
 
   // Capture which IDs are actually eligible for the transition before we
   // run updateMany — gives us the exact set to audit. Cheap (PK lookup,
@@ -353,7 +357,15 @@ export async function PATCH(req: NextRequest) {
             footerNote: `Sent because you have ${eventType === 'pay_paid' ? 'pay-sent' : 'pay-pending'} alerts on. Manage at /dashboard/preferences.`,
           }),
           smsBody: `Kilo: ${entries.length === 1 ? '' : `${entries.length} `}commission${entries.length === 1 ? '' : 's'} ${verb} — ${totalDollars}.`,
-          pushBody: `${heading} — ${totalDollars}`,
+          // Native iOS APNs copy + deep-link payload for the pay_paid event (the
+          // iOS Earnings tab opens the matching weekly stub from { type, date }).
+          // pushTitle/pushData are ignored by web-push; only used when push fires.
+          pushBody: status === 'Paid'
+            ? "Your pay's on the way — tap to see this week's stub."
+            : `${heading} — ${totalDollars}`,
+          ...(status === 'Paid' && paidDateStr
+            ? { pushTitle: `Payday, ${greeting} 💸`, pushData: { type: 'pay_paid', date: paidDateStr } }
+            : {}),
         });
       }),
     ).catch((err) => {

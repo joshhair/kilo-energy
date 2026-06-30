@@ -14,6 +14,7 @@
  */
 
 import type { Channel, DeliveryStatus } from '../types';
+import { loadApns, sendApns } from './apns';
 
 export interface PushEnvelope {
   /** Subscription endpoint (web_push) or platform token (apns/fcm). */
@@ -28,6 +29,9 @@ export interface PushEnvelope {
   body: string;
   /** Optional deep-link URL the service worker uses on notification click. */
   url?: string;
+  /** Optional structured payload for native push (APNs custom keys / FCM data),
+   *  e.g. { type: 'pay_paid', date: 'YYYY-MM-DD' } for deep-linking. */
+  data?: Record<string, string>;
 }
 
 export interface ChannelSendResult {
@@ -48,12 +52,27 @@ function loadVapid(): { publicKey: string; privateKey: string; subject: string }
 }
 
 export async function sendPushChannel(env: PushEnvelope): Promise<ChannelSendResult> {
-  if (env.provider !== 'web_push') {
+  if (env.provider === 'apns') {
+    const cfg = loadApns();
+    if (!cfg) {
+      return { channel: 'push', ok: false, status: 'failed', errorReason: 'NOT_CONFIGURED: APNS_KEY_P8 / APNS_KEY_ID / APNS_TEAM_ID / APNS_BUNDLE_ID env not set.' };
+    }
+    if (!env.nativeToken) {
+      return { channel: 'push', ok: false, status: 'failed', errorReason: 'INVALID_SUBSCRIPTION: missing APNs device token.' };
+    }
+    const r = await sendApns({ cfg, deviceToken: env.nativeToken, title: env.title, body: env.body, data: env.data, nowMs: Date.now() });
+    // Use Apple's unique apns-id (NOT the status code — providerMessageId is @unique,
+    // so a constant value would collide on the 2nd delivery). Absent → undefined → null.
+    if (r.ok) return { channel: 'push', ok: true, status: 'sent', providerMessageId: r.apnsId };
+    // 410/BadDeviceToken → 'GONE' so the service GC prunes the dead token (same as web-push 410).
+    return { channel: 'push', ok: false, status: 'failed', errorReason: r.gone ? 'GONE' : (r.reason ?? 'APNS_ERROR') };
+  }
+  if (env.provider === 'fcm') {
     return {
       channel: 'push',
       ok: false,
       status: 'failed',
-      errorReason: 'UNSUPPORTED: native push (apns/fcm) ships with the iOS/Android apps.',
+      errorReason: 'UNSUPPORTED: FCM (Android) ships with the Android app.',
     };
   }
 

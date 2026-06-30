@@ -40,8 +40,17 @@ export interface NotifyInput {
    *  caller for now — no template DSL until we have ≥3 SMS event types. */
   smsBody?: string;
 
-  /** Push payload — title is taken from `subject`; body from this. */
+  /** Push payload — title is taken from `subject` (or `pushTitle`); body from this. */
   pushBody?: string;
+
+  /** Optional push-specific title overriding `subject` for the push channel —
+   *  e.g. native APNs copy ("Payday, Sam 💸"). Falls back to `subject`. */
+  pushTitle?: string;
+
+  /** Optional structured payload delivered with NATIVE push (APNs custom keys /
+   *  FCM data) for deep-linking, e.g. { type: 'pay_paid', date: 'YYYY-MM-DD' }.
+   *  Ignored by web-push. */
+  pushData?: Record<string, string>;
 
   /** When set, send to this address regardless of the user's stored
    *  email/phone. Used for email-archive fanout, system digests, and

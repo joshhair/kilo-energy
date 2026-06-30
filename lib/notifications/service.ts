@@ -366,8 +366,9 @@ export async function notify(input: NotifyInput): Promise<NotifyResult> {
             p256dh: s.p256dh,
             auth: s.auth,
             nativeToken: s.nativeToken,
-            title: input.subject,
+            title: input.pushTitle ?? input.subject,
             body,
+            data: input.pushData,
           });
           const deliveryId = await persistDelivery({
             userId: input.userId,
