@@ -492,7 +492,10 @@ export async function GET(req: NextRequest) {
     paymentStage: pe.paymentStage,
     status: pe.status,
     date: pe.date,
-    notes: pe.notes,
+    // When an admin marked it Paid — drives the iOS Earnings weekly pay stubs
+    // (grouped by actual pay date). Null until paid. ISO like reimbursement.archivedAt.
+    paidAt: pe.paidAt ? pe.paidAt.toISOString() : null,
+    notes: pe.notes, // rep-visible note (editReason is admin-only — never exposed here)
   }));
 
   const transformedReimbursements = reimbursements.map((r) => ({
